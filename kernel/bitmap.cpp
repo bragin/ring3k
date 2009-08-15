@@ -291,7 +291,7 @@ BOOL bitmap_t::line_bresenham( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
 }
 
 /* see http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html */
-static INT line_error(INT x0, INT y0, INT x1, INT y1, INT x, INT y)
+INT bitmap_t::line_error(INT x0, INT y0, INT x1, INT y1, INT x, INT y)
 {
 	INT top = (x1 - x0)*(y0 - y) - (x0 - x)*(y1 - y0);
 	INT bottom = (x1 - x0)*(x1 - x0) + (y1 - y0)*(y1 - y0);
