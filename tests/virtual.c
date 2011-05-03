@@ -384,7 +384,7 @@ void test_granularity( void )
 	}
 }
 
-// The granulatiry of memory allocations on NT seems to be 0x10000 or 16 x 4k pages.
+// The granularity of memory allocations on NT seems to be 0x10000 or 16 x 4k pages.
 // The size is rounded to multiples of pages size.
 // So what happens when we try to allocate memory at an address that is not
 // a multiple of 0x10000?  What happens if a chunk of memory in that set of 16 pages
