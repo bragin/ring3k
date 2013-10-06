@@ -324,7 +324,6 @@ bool pe_section_t::add_relay_stub( address_space *vm, BYTE *stub_addr, ULONG fun
 void pe_section_t::add_relay(address_space *vm)
 {
 	IMAGE_DATA_DIRECTORY *export_data_dir;
-	IMAGE_SECTION_HEADER *section;
 	IMAGE_EXPORT_DIRECTORY *exp;
 	IMAGE_NT_HEADERS *nt;
 	ULONG *funcs;
@@ -333,7 +332,6 @@ void pe_section_t::add_relay(address_space *vm)
 	nt = get_nt_header();
 
 	export_data_dir = &nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
-	section = (IMAGE_SECTION_HEADER*) &nt[1];
 	exp = (IMAGE_EXPORT_DIRECTORY*) virtual_addr_to_offset( export_data_dir->VirtualAddress );
 	if (!exp)
 	{

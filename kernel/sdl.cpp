@@ -129,9 +129,8 @@ COLORREF sdl_16bpp_bitmap_t::get_pixel( INT x, INT y )
 BOOL sdl_16bpp_bitmap_t::rectangle(INT left, INT top, INT right, INT bottom, brush_t* brush )
 {
 	trace("sdl_16bpp_bitmap_t::rectangle\n");
-	BOOL r;
 	lock();
-	r = bitmap_t::rectangle( left, top, right, bottom, brush );
+	bitmap_t::rectangle( left, top, right, bottom, brush );
 	unlock();
 	SDL_UpdateRect( surface, left, top, right - left, bottom - top );
 	return TRUE;

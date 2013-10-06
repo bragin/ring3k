@@ -813,7 +813,6 @@ static COLORREF freetype_get_pixel( int x, int y, FT_Bitmap* ftbm )
 static void freetype_bitblt( bitmap_t* bm, int x, int y, FT_Bitmap* ftbm )
 {
 	INT bmpX, bmpY;
-	BYTE *buf;
 	INT j, i;
 
 	trace("glyph is %dx%d\n", ftbm->rows, ftbm->width);
@@ -822,7 +821,6 @@ static void freetype_bitblt( bitmap_t* bm, int x, int y, FT_Bitmap* ftbm )
 	trace("pitch is %d\n", ftbm->pitch );
 
 	/* loop for every pixel in bitmap */
-	buf = ftbm->buffer;
 	for (bmpY = 0, i = y; bmpY < ftbm->rows; bmpY++, i++)
 	{
 		for (bmpX = 0, j = x; bmpX < ftbm->width; bmpX++, j++)
