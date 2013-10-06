@@ -184,11 +184,11 @@ static int szddd_extract(struct msszdd_decompressor *self,
 			 struct msszddd_header *szdd, char *filename)
 {
   struct msszdd_decompressor_p *this = (struct msszdd_decompressor_p *) self;
-  struct mspack_system *sys;
+  //struct mspack_system *sys;
   //struct mspack_file *outfh;
 
   if (!this) return MSPACK_ERR_ARGS;
-  sys = this->system;
+  //sys = this->system;
   // something missing here?
   assert(0);
   return 0;
