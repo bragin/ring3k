@@ -34,12 +34,12 @@ protected:
 	T *prev;
 	T *next;
 public:
-	void init() { prev = (T*)-1; next = (T*)-1; }
+	void init() { this->prev = (T*)-1; this->next = (T*)-1; }
 	explicit list_element() {init();}
 	~list_element() {}
-	bool is_linked() { return prev != (T*)-1; }
-	T* get_next() {return next;}
-	T* get_prev() {return prev;}
+	bool is_linked() { return this->prev != (T*)-1; }
+	T* get_next() {return this->next;}
+	T* get_prev() {return this->prev;}
 };
 
 template<class T> class list_element_accessor
@@ -54,71 +54,71 @@ template<class T, const int X> class list_anchor : public list_element_accessor<
 	T *_head;
 	T *_tail;
 public:
-	explicit list_anchor() { _head = 0; _tail = 0; }
+	explicit list_anchor() { this->_head = 0; this->_tail = 0; }
 	~list_anchor() {}
-	bool empty() { return !(_head || _tail); }
-	T *head() { return _head; }
-	T *tail() { return _tail; }
+	bool empty() { return !(this->_head || this->_tail); }
+	T *head() { return this->_head; }
+	T *tail() { return this->_tail; }
 	void unlink(T* elem)
 	{
 		assert(elem->entry[X].is_linked());
-		if (_head == elem)
-			_head = nextptr(elem->entry[X]);
+		if (this->_head == elem)
+			this->_head = list_element_accessor<T>::nextptr(elem->entry[X]);
 		else
-			nextptr(prevptr(elem->entry[X])->entry[X]) = nextptr(elem->entry[X]);
-		if (_tail == elem)
-			_tail = prevptr(elem->entry[X]);
+			list_element_accessor<T>::nextptr(list_element_accessor<T>::prevptr(elem->entry[X])->entry[X]) = list_element_accessor<T>::nextptr(elem->entry[X]);
+		if (this->_tail == elem)
+			this->_tail = list_element_accessor<T>::prevptr(elem->entry[X]);
 		else
-			prevptr(nextptr(elem->entry[X])->entry[X]) = prevptr(elem->entry[X]);
+			list_element_accessor<T>::prevptr(list_element_accessor<T>::nextptr(elem->entry[X])->entry[X]) = list_element_accessor<T>::prevptr(elem->entry[X]);
 		elem->entry[X].init();
 	}
 
 	void append( T* elem )
 	{
 		assert(!elem->entry[X].is_linked());
-		if (_tail)
-			nextptr(_tail->entry[X]) = elem;
+		if (this->_tail)
+			list_element_accessor<T>::nextptr(this->_tail->entry[X]) = elem;
 		else
-			_head = elem;
-		prevptr(elem->entry[X]) = _tail;
-		nextptr(elem->entry[X]) = 0;
-		_tail = elem;
+			this->_head = elem;
+		list_element_accessor<T>::prevptr(elem->entry[X]) = this->_tail;
+		list_element_accessor<T>::nextptr(elem->entry[X]) = 0;
+		this->_tail = elem;
 	}
 
 	void prepend( T* elem )
 	{
 		assert(!elem->entry[X].is_linked());
-		if (_head)
-			prevptr(_head->entry[X]) = elem;
+		if (this->_head)
+			list_element_accessor<T>::prevptr(this->_head->entry[X]) = elem;
 		else
-			_tail = elem;
-		nextptr(elem->entry[X]) = _head;
-		prevptr(elem->entry[X]) = 0;
-		_head = elem;
+			this->_tail = elem;
+		list_element_accessor<T>::nextptr(elem->entry[X]) = this->_head;
+		list_element_accessor<T>::prevptr(elem->entry[X]) = 0;
+		this->_head = elem;
 	}
 
 	void insert_after( T* point, T* elem )
 	{
 		assert(!elem->entry[X].is_linked());
-		if (nextptr(point->entry[X]))
-			prevptr(nextptr(point->entry[X])->entry[X]) = elem;
+		if (list_element_accessor<T>::nextptr(point->entry[X]))
+			list_element_accessor<T>::prevptr(list_element_accessor<T>::nextptr(point->entry[X])->entry[X]) = elem;
 		else
-			_tail = elem;
-		nextptr(elem->entry[X]) = nextptr(point->entry[X]);
-		nextptr(point->entry[X]) = elem;
-		prevptr(elem->entry[X]) = point;
+			this->_tail = elem;
+		list_element_accessor<T>::nextptr(elem->entry[X]) = list_element_accessor<T>::nextptr(point->entry[X]);
+		list_element_accessor<T>::nextptr(point->entry[X]) = elem;
+		list_element_accessor<T>::prevptr(elem->entry[X]) = point;
 	}
 
 	void insert_before( T* point, T* elem )
 	{
 		assert(!elem->entry[X].is_linked());
-		if (prevptr(point->entry[X]))
-			nextptr(prevptr(point->entry[X])->entry[X]) = elem;
+		if (list_element_accessor<T>::prevptr(point->entry[X]))
+			list_element_accessor<T>::nextptr(list_element_accessor<T>::prevptr(point->entry[X])->entry[X]) = elem;
 		else
-			_head = elem;
-		prevptr(elem->entry[X]) = prevptr(point->entry[X]);
-		prevptr(point->entry[X]) = elem;
-		nextptr(elem->entry[X]) = point;
+			this->_head = elem;
+		list_element_accessor<T>::prevptr(elem->entry[X]) = list_element_accessor<T>::prevptr(point->entry[X]);
+		list_element_accessor<T>::prevptr(point->entry[X]) = elem;
+		list_element_accessor<T>::nextptr(elem->entry[X]) = point;
 	}
 };
 
@@ -128,7 +128,7 @@ template<class T, const int X> class list_iter : public list_element_accessor<T>
 	T* i;
 public:
 	explicit list_iter(list_anchor<T,X>& l) : list(l), i(l.head()) {}
-	T* next() { i = nextptr(i->entry[X]); return i; }
+	T* next() { i = list_element_accessor<T>::nextptr(i->entry[X]); return i; }
 	T* cur() { return i; }
 	operator bool() { return i != 0; }
 	operator T*() { return i; }
