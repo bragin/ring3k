@@ -53,7 +53,7 @@ QVariant RegistryValueModel::headerData(int /*section*/, Qt::Orientation orienta
 QModelIndex RegistryValueModel::index(int row, int column, const QModelIndex& parent) const
 {
 	if (!parent.isValid() && row == 0 && column == 0)
-		return createIndex( row, column, NULL );
+	  return createIndex( row, column, (void *)NULL );
 	return QModelIndex();
 }
 

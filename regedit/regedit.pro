@@ -18,5 +18,7 @@ INCLUDEPATH += ../libntreg
 
 LIBS += ../libntreg/libntreg.a
 
+QT += widgets
+
 CONFIG += qt
 

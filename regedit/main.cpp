@@ -25,6 +25,7 @@
 #include <QList>
 #include <QHBoxLayout>
 #include <qstring.h>
+#include <stdio.h>
 #include <assert.h>
 #include "registryitem.h"
 #include "registrymodel.h"

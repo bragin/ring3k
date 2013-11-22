@@ -24,6 +24,7 @@
 #include <QAbstractItemModel>
 #include <qstring.h>
 #include <assert.h>
+#include <stdio.h>
 #include "registryeditor.h"
 
 RegistryEditor::RegistryEditor( struct hive* h ) :

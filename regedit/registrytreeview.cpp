@@ -24,6 +24,7 @@
 #include <QAbstractItemModel>
 #include <qstring.h>
 #include <assert.h>
+#include <stdio.h>
 #include "registryeditor.h"
 
 void RegistryTreeView::currentChanged( const QModelIndex &current, const QModelIndex &previous )
