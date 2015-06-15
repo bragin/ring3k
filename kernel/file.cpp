@@ -243,8 +243,8 @@ class directory_t : public file_t
 protected:
 	void reset();
 	void add_entry(const char *name);
-	int open_unicode_file( const char *unix_path, int flags, bool& created, bool case_insensitive );
-	int open_unicode_dir( const char *unix_path, int flags, bool& created, bool case_insensitive );
+	int open_unicode_file( const char *unix_path, int flags, bool& created );
+	int open_unicode_dir( const char *unix_path, int flags, bool& created );
 public:
 	directory_t( int fd );
 	~directory_t();
@@ -657,29 +657,7 @@ char *get_unix_path( int fd, UNICODE_STRING& str, bool case_insensitive )
 	return file;
 }
 
-int check_case_sensitive( int fd, const char *unix_path, bool case_insensitive )
-{
-    char filePath[1024];
-    char temp[64];
-    
-    sprintf(temp,"/proc/self/fd/%d",fd);
-    int count = readlink(temp, filePath, 1024);
-    if (count == -1)
-    {
-        trace("readlink error: fd = %d, temp = %s, errno = %d\n",fd, temp, errno);
-        return -1;
-    }
-    filePath[count] = '\0';
-    
-    if (!case_insensitive && strcmp(filePath, unix_path)) {
-        trace("!case_insensitive\n");
-        close(fd);
-        return -1;
-    }
-    return fd;
-}
-
-int directory_t::open_unicode_file( const char *unix_path, int flags, bool &created, bool case_insensitive )
+int directory_t::open_unicode_file( const char *unix_path, int flags, bool &created )
 {
 	int r = -1;
 
@@ -692,13 +670,10 @@ int directory_t::open_unicode_file( const char *unix_path, int flags, bool &crea
 		if (r >= 0)
 			created = true;
 	}
-    
-    r = check_case_sensitive(r, unix_path, case_insensitive);
-    
 	return r;
 }
 
-int directory_t::open_unicode_dir( const char *unix_path, int flags, bool &created, bool case_insensitive )
+int directory_t::open_unicode_dir( const char *unix_path, int flags, bool &created )
 {
 	int r = -1;
 
@@ -712,8 +687,6 @@ int directory_t::open_unicode_dir( const char *unix_path, int flags, bool &creat
 	trace("open name : %s\n", unix_path);
 	r = ::open( unix_path, flags & ~O_CREAT );
 	trace("r = %d\n", r);
-    
-    
 	return r;
 }
 
@@ -753,7 +726,7 @@ NTSTATUS directory_t::open_file(
 
 	if (Options & FILE_DIRECTORY_FILE)
 	{
-		file_fd = open_unicode_dir( unix_path, mode, created, case_insensitive );
+		file_fd = open_unicode_dir( unix_path, mode, created );
 		delete[] unix_path;
 		if (file_fd == -1)
 			return STATUS_OBJECT_PATH_NOT_FOUND;
@@ -768,7 +741,7 @@ NTSTATUS directory_t::open_file(
 	}
 	else
 	{
-		file_fd = open_unicode_file( unix_path, mode, created, case_insensitive );
+		file_fd = open_unicode_file( unix_path, mode, created );
 		delete[] unix_path;
 		if (file_fd == -1)
 			return STATUS_OBJECT_PATH_NOT_FOUND;
