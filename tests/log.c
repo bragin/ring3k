@@ -22,6 +22,7 @@
 #include "ntapi.h"
 #include "rtlapi.h"
 #include "log.h"
+#include "ntstatus.h"
 
 static WCHAR slotname[] = L"\\device\\mailslot\\nthost";
 static WCHAR eventname[] = L"\\BaseNamedObjects\\nthost";

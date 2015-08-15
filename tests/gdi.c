@@ -21,6 +21,7 @@
 #include "ntapi.h"
 #include "ntwin32.h"
 #include "log.h"
+#include "ntstatus.h"
 
 ////// gdi32 callbacks
 

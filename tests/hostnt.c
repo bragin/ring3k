@@ -20,7 +20,7 @@
 
 #include <stdio.h>
 #include "ntapi.h"
-#include <windows.h>
+#include "ntstatus.h"
 
 void* get_process_peb( HANDLE process )
 {

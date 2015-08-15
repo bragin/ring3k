@@ -21,6 +21,7 @@
 
 #include "ntapi.h"
 #include "log.h"
+#include "ntstatus.h"
 
 // test various combinations of invalid parameters to NtCreateSection
 void test_createsection_invalid( void )

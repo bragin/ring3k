@@ -17,12 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdarg.h>
 
 #include "ntapi.h"
 #include "rtlapi.h"
 #include "log.h"
+#include "ntstatus.h"
 
 static const WCHAR PORTNAME[] = {'\\','M','y','P','o','r','t',0};
 
@@ -34,7 +35,7 @@ static const WCHAR PORTNAME[] = {'\\','M','y','P','o','r','t',0};
 
 UNICODE_STRING  port;
 
-int lstrcmp(const char *a, const char *b)
+int _lstrcmp(const char *a, const char *b)
 {
 	while (*a || *b)
 	{
@@ -48,7 +49,7 @@ int lstrcmp(const char *a, const char *b)
 	return 0;
 }
 
-int lstrlen(const char *a)
+int _lstrlen(const char *a)
 {
 	int n = 0;
 	while (a[n])
@@ -56,7 +57,7 @@ int lstrlen(const char *a)
 	return n;
 }
 
-void lstrcpy(char *dest, const char *src)
+void _lstrcpy(char *dest, const char *src)
 {
 	while ((*dest++ = *src++))
 		;
@@ -83,16 +84,16 @@ static void ProcessLpcRequest(HANDLE PortHandle, PLPC_MESSAGE LpcMessage)
 
     ok(LpcMessage->MessageType == LPC_REQUEST,
        "Expected LPC_REQUEST, got %d\n", LpcMessage->MessageType);
-    ok(!lstrcmp((LPSTR)LpcMessage->Data, REQUEST2),
+    ok(!_lstrcmp((LPSTR)LpcMessage->Data, REQUEST2),
        "Expected %s, got %s\n", REQUEST2, LpcMessage->Data);
 
-    lstrcpy((LPSTR)LpcMessage->Data, REPLY);
+    _lstrcpy((LPSTR)LpcMessage->Data, REPLY);
 
     status = NtReplyPort(PortHandle, LpcMessage);
     ok(status == STATUS_SUCCESS, "Expected STATUS_SUCCESS, got %08lx\n", status);
     ok(LpcMessage->MessageType == LPC_REQUEST,
        "Expected LPC_REQUEST, got %d\n", LpcMessage->MessageType);
-    ok(!lstrcmp((LPSTR)LpcMessage->Data, REPLY),
+    ok(!_lstrcmp((LPSTR)LpcMessage->Data, REPLY),
        "Expected %s, got %s\n", REPLY, LpcMessage->Data);
 }
 
@@ -124,26 +125,26 @@ static DWORD WINAPI test_ports_client(LPVOID arg)
 	memset( out_buf, 0, sizeof out_buf );
     out = (void*) out_buf;
 
-    LpcMessage->DataSize = lstrlen(REQUEST1) + 1;
+    LpcMessage->DataSize = _lstrlen(REQUEST1) + 1;
     LpcMessage->MessageSize = FIELD_OFFSET(LPC_MESSAGE, Data) + LpcMessage->DataSize;
-    lstrcpy((LPSTR)LpcMessage->Data, REQUEST1);
+    _lstrcpy((LPSTR)LpcMessage->Data, REQUEST1);
 
     status = NtRequestPort(PortHandle, LpcMessage);
     ok(status == STATUS_SUCCESS, "Expected STATUS_SUCCESS, got %08lx\n", status);
     ok(LpcMessage->MessageType == 0, "Expected 0, got %d\n", LpcMessage->MessageType);
-    ok(!lstrcmp((LPSTR)LpcMessage->Data, REQUEST1),
+    ok(!_lstrcmp((LPSTR)LpcMessage->Data, REQUEST1),
        "Expected %s, got %s\n", REQUEST1, LpcMessage->Data);
 
     /* Fill in the message */
     memset(LpcMessage, 0, size);
-    LpcMessage->DataSize = lstrlen(REQUEST2) + 1;
+    LpcMessage->DataSize = _lstrlen(REQUEST2) + 1;
     LpcMessage->MessageSize = FIELD_OFFSET(LPC_MESSAGE, Data) + LpcMessage->DataSize;
-    lstrcpy((LPSTR)LpcMessage->Data, REQUEST2);
+    _lstrcpy((LPSTR)LpcMessage->Data, REQUEST2);
 
     /* Send the message and wait for the reply */
     status = NtRequestWaitReplyPort(PortHandle, LpcMessage, out);
     ok(status == STATUS_SUCCESS, "Expected STATUS_SUCCESS, got %08lx\n", status);
-    ok(!lstrcmp((LPSTR)out->Data, REPLY), "Expected %s, got %s\n", REPLY, out->Data);
+    ok(!_lstrcmp((LPSTR)out->Data, REPLY), "Expected %s, got %s\n", REPLY, out->Data);
     ok(out->MessageType == LPC_REPLY, "Expected LPC_REPLY, got %d\n", out->MessageType);
 
 	// returning from here crashes and terminates this thread...
@@ -197,7 +198,7 @@ static void test_ports_server(void)
                 break;
 
             case LPC_DATAGRAM:
-                ok(!lstrcmp((LPSTR)LpcMessage->Data, REQUEST1),
+                ok(!_lstrcmp((LPSTR)LpcMessage->Data, REQUEST1),
                    "Expected %s, got %s\n", REQUEST1, LpcMessage->Data);
                 break;
 

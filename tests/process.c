@@ -21,6 +21,7 @@
 
 #include "ntapi.h"
 #include "log.h"
+#include "ntstatus.h"
 
 void test_open_process( void )
 {

@@ -22,6 +22,7 @@
 #include <stdarg.h>
 #include "ntapi.h"
 #include "log.h"
+#include "ntstatus.h"
 
 static inline NTSTATUS ntcall(ULONG num, void *args)
 {

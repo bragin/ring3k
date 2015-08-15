@@ -22,7 +22,7 @@
 #include "ntapi.h"
 #include "log.h"
 #include "ntwin32.h"
-
+#include "ntstatus.h"
 const USHORT magic = 0xfedc;
 
 static void test_atom(void)

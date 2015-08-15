@@ -21,6 +21,7 @@
 #include "ntapi.h"
 #include "ntwin32.h"
 #include "log.h"
+#include "ntstatus.h"
 
 ULONG NTAPI testWndProc( HANDLE Window, UINT Message, UINT Wparam, ULONG Lparam );
 void *get_exe_base( void );
