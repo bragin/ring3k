@@ -287,8 +287,6 @@ void test_apc(void)
 	ok( r == STATUS_SUCCESS, "return was (%08lx)\n", r);
 }
 
-#define DBG_PRINTEXCEPTION_C 0x40010006
-
 void test_outputdebugstring( void )
 {
 	char string[] = "hello";
