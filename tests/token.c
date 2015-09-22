@@ -22,7 +22,6 @@
 #include "ntapi.h"
 #include "rtlapi.h"
 #include "log.h"
-#include "ntstatus.h"
 
 void test_open_thread_token( void )
 {

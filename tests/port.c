@@ -22,7 +22,6 @@
 #include "ntapi.h"
 #include "rtlapi.h"
 #include "log.h"
-#include "ntstatus.h"
 
 void test_create_port(void)
 {

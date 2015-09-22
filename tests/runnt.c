@@ -21,7 +21,7 @@
 
 #include <stdio.h>
 #include "ntapi.h"
-#include "ntstatus.h"
+#include <windows.h>
 
 void* get_process_peb( HANDLE process )
 {

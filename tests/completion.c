@@ -22,7 +22,7 @@
 #include "ntapi.h"
 #include "rtlapi.h"
 #include "log.h"
-#include "ntstatus.h"
+
 // NtWaitForSingleObject appears to never block on an IO completion port handle
 
 void completion_proc( void *param )

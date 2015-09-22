@@ -22,7 +22,7 @@
 #include <stdarg.h>
 #include "ntapi.h"
 #include "rtlapi.h"
-#include "ntstatus.h"
+
 void dprintf(char *fmt, ...)
 {
 	static char buffer[0x100];

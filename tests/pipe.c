@@ -23,7 +23,6 @@
 #include "ntapi.h"
 #include "rtlapi.h"
 #include "log.h"
-#include "ntstatus.h"
 
 static WCHAR pipename[] = L"\\??\\PIPE\\test";
 static WCHAR pipedev[] = L"\\DosDevices\\pipe\\";

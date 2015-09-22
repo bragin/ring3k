@@ -24,7 +24,6 @@
 #include "ntapi.h"
 #include "ntwin32.h"
 #include "log.h"
-#include "ntstatus.h"
 
 BOOL quit;
 

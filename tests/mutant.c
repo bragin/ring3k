@@ -21,7 +21,6 @@
 #include <stdarg.h>
 #include "ntapi.h"
 #include "log.h"
-#include "ntstatus.h"
 
 #define MAGIC ((void*) 0xf00)
 

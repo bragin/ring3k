@@ -21,7 +21,6 @@
 #include <stdarg.h>
 #include "ntapi.h"
 #include "log.h"
-#include "ntstatus.h"
 
 static void test_eventpair(void)
 {

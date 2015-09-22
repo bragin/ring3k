@@ -812,7 +812,7 @@ static COLORREF freetype_get_pixel( int x, int y, FT_Bitmap* ftbm )
 
 static void freetype_bitblt( bitmap_t* bm, int x, int y, FT_Bitmap* ftbm )
 {
-	UINT bmpX, bmpY;
+	INT bmpX, bmpY;
 	INT j, i;
 
 	trace("glyph is %dx%d\n", ftbm->rows, ftbm->width);

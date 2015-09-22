@@ -22,7 +22,6 @@
 #include <stdarg.h>
 #include "ntapi.h"
 #include "log.h"
-#include "ntstatus.h"
 
 BYTE buffer[0x10000];
 

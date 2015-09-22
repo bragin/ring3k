@@ -25,8 +25,7 @@
 
 static WCHAR testAtom1[] = {'H','e','l','l','o',' ','W','o','r','l','d',0};
 
-
-int _lstrcmpW(const WCHAR *a, const WCHAR *b)
+int lstrcmpW(const WCHAR *a, const WCHAR *b)
 {
 	while (*a || *b)
 	{
@@ -40,7 +39,7 @@ int _lstrcmpW(const WCHAR *a, const WCHAR *b)
 	return 0;
 }
 
-int _lstrlenW(const WCHAR *a)
+int lstrlenW(const WCHAR *a)
 {
 	int n = 0;
 	while (a[n])
@@ -48,7 +47,7 @@ int _lstrlenW(const WCHAR *a)
 	return n;
 }
 
-void _lstrcpy(WCHAR *dest, const WCHAR *src)
+void lstrcpy(WCHAR *dest, const WCHAR *src)
 {
 	while ((*dest++ = *src++))
 		;
@@ -62,30 +61,30 @@ static void test_Global(void)
     ATOM_BASIC_INFORMATION*     abi = (ATOM_BASIC_INFORMATION*)ptr;
     ULONG       ptr_size = sizeof(ATOM_BASIC_INFORMATION) + 255 * sizeof(WCHAR);
 
-    res = NtAddAtom(testAtom1, _lstrlenW(testAtom1) * sizeof(WCHAR), &atom);
+    res = NtAddAtom(testAtom1, lstrlenW(testAtom1) * sizeof(WCHAR), &atom);
     ok(!res, "Added atom (%lx)\n", res);
 
     memset(abi->Name, 0x55, 255 * sizeof(WCHAR));
     res = NtQueryInformationAtom( atom, AtomBasicInformation, (void*)ptr, ptr_size, NULL );
     ok(!res, "atom lookup\n");
-    ok(!_lstrcmpW(abi->Name, testAtom1), "ok strings\n");
-    ok(abi->NameLength == _lstrlenW(testAtom1) * sizeof(WCHAR), "wrong string length\n");
-    ok(abi->Name[_lstrlenW(testAtom1)] == 0, "wrong string termination %x\n", abi->Name[_lstrlenW(testAtom1)]);
-    ok(abi->Name[_lstrlenW(testAtom1) + 1] == 0x5555, "buffer overwrite %x\n", abi->Name[_lstrlenW(testAtom1) + 1]);
+    ok(!lstrcmpW(abi->Name, testAtom1), "ok strings\n");
+    ok(abi->NameLength == lstrlenW(testAtom1) * sizeof(WCHAR), "wrong string length\n");
+    ok(abi->Name[lstrlenW(testAtom1)] == 0, "wrong string termination %x\n", abi->Name[lstrlenW(testAtom1)]);
+    ok(abi->Name[lstrlenW(testAtom1) + 1] == 0x5555, "buffer overwrite %x\n", abi->Name[lstrlenW(testAtom1) + 1]);
 
     ptr_size = sizeof(ATOM_BASIC_INFORMATION);
     res = NtQueryInformationAtom( atom, AtomBasicInformation, (void*)ptr, ptr_size, NULL );
     ok(res == STATUS_BUFFER_TOO_SMALL, "wrong return status (%08lx)\n", res);
-    ok(abi->NameLength == _lstrlenW(testAtom1) * sizeof(WCHAR), "ok string length\n");
+    ok(abi->NameLength == lstrlenW(testAtom1) * sizeof(WCHAR), "ok string length\n");
 
-    memset(abi->Name, 0x55, _lstrlenW(testAtom1) * sizeof(WCHAR));
-    ptr_size = sizeof(ATOM_BASIC_INFORMATION) + _lstrlenW(testAtom1) * sizeof(WCHAR);
+    memset(abi->Name, 0x55, lstrlenW(testAtom1) * sizeof(WCHAR));
+    ptr_size = sizeof(ATOM_BASIC_INFORMATION) + lstrlenW(testAtom1) * sizeof(WCHAR);
     res = NtQueryInformationAtom( atom, AtomBasicInformation, (void*)ptr, ptr_size, NULL );
     ok(!res, "atom lookup %08lx\n", res);
-    ok(!_lstrcmpW(abi->Name, testAtom1), "strings don't match\n");
-    ok(abi->NameLength == _lstrlenW(testAtom1) * sizeof(WCHAR), "wrong string length\n");
-    ok(abi->Name[_lstrlenW(testAtom1)] == 0, "buffer overwrite %x\n", abi->Name[_lstrlenW(testAtom1)]);
-    ok(abi->Name[_lstrlenW(testAtom1) + 1] == 0x5555, "buffer overwrite %x\n", abi->Name[_lstrlenW(testAtom1) + 1]);
+    ok(!lstrcmpW(abi->Name, testAtom1), "strings don't match\n");
+    ok(abi->NameLength == lstrlenW(testAtom1) * sizeof(WCHAR), "wrong string length\n");
+    ok(abi->Name[lstrlenW(testAtom1)] == 0, "buffer overwrite %x\n", abi->Name[lstrlenW(testAtom1)]);
+    ok(abi->Name[lstrlenW(testAtom1) + 1] == 0x5555, "buffer overwrite %x\n", abi->Name[lstrlenW(testAtom1) + 1]);
 
     ptr_size = sizeof(ATOM_BASIC_INFORMATION) + 4 * sizeof(WCHAR);
     abi->Name[0] = abi->Name[1] = abi->Name[2] = abi->Name[3] = '\0';
