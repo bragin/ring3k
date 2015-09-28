@@ -57,14 +57,14 @@ fi
 ac_save_CPPFLAGS="$CPPFLAGS"
 CPPFLAGS="$CPPFLAGS $ac_freetype_incl"
 AC_CHECK_HEADERS(ft2build.h \
-	freetype/freetype.h,,,[
+	freetype2/freetype.h,,,[
 	#ifdef HAVE_FT2BUILD_H
 	# include <ft2build.h>
 	#endif
 	])
 AC_CHECK_LIB(freetype,FT_Init_FreeType,[ft_lib=yes],[ft_lib=no],[$ac_freetype_libs])
 CPPFLAGS="$ac_save_CPPFLAGS"
-if test "$ac_cv_header_freetype_freetype_h" = "yes" -a "$ft_lib" = "yes"
+if test "$ac_cv_header_freetype2_freetype_h" = "yes" -a "$ft_lib" = "yes"
 then
 	AC_DEFINE(HAVE_FREETYPE, 1, [Define if you have the Freetype 2 library])
 	AC_SUBST(FREETYPELIBS,"$ac_freetype_libs")
@@ -126,7 +126,7 @@ then
 	AC_MSG_WARN([libSDL development libraries not present (Debian package is libsdl1.2-dev)])
 fi
 
-if test "$ac_cv_header_freetype_freetype_h" != "yes" -o \
+if test "$ac_cv_header_freetype2_freetype_h" != "yes" -o \
 	"$ft_lib" != "yes"
 then
 	AC_MSG_WARN([freetype2 development libraries not present (Debian package is libfreetype6-dev)])
