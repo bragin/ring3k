@@ -25,7 +25,7 @@
 #include "unicode.h"
 
 class OBJECT;
-class object_dir_t;
+class OBJECT_DIR;
 
 typedef LIST_ANCHOR<OBJECT, 0> object_list_t;
 typedef LIST_ELEMENT<OBJECT> object_entry_t;
@@ -46,7 +46,7 @@ public:
 	{
 		return Attributes & OBJ_CASE_INSENSITIVE;
 	}
-	virtual NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info ) = 0;
+	virtual NTSTATUS on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info ) = 0;
 	virtual ~OPEN_INFO();
 };
 
@@ -59,10 +59,10 @@ class OBJECT
 	ULONG refcount;
 public:
 	ULONG attr;
-	object_dir_t *parent;
+	OBJECT_DIR *parent;
 	unicode_string_t name;
-	friend class object_dir_t;
-	void set_parent( object_dir_t *dir );
+	friend class OBJECT_DIR;
+	void set_parent( OBJECT_DIR *dir );
 	unicode_string_t& get_name()
 	{
 		return name;
@@ -81,7 +81,7 @@ class OBJECT_FACTORY : public OPEN_INFO
 {
 protected:
 	virtual NTSTATUS alloc_object(OBJECT** obj) = 0;
-	virtual NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info );
+	virtual NTSTATUS on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
 public:
 	NTSTATUS create(
 		PHANDLE Handle,
@@ -126,7 +126,7 @@ public:
 	ACCESS_MASK access;
 };
 
-class handle_table_t
+class HANDLE_TABLE
 {
 	static const unsigned int max_handles = 0x100;
 
@@ -136,7 +136,7 @@ protected:
 	static HANDLE index_to_handle( ULONG index );
 	static ULONG handle_to_index( HANDLE handle );
 public:
-	~handle_table_t();
+	~HANDLE_TABLE();
 	void free_all_handles();
 	HANDLE alloc_handle( OBJECT *obj, ACCESS_MASK access );
 	NTSTATUS free_handle( HANDLE handle );

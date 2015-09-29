@@ -36,15 +36,15 @@
 
 static OBJECT_DIR_IMPL *root = 0;
 
-object_dir_t::object_dir_t()
+OBJECT_DIR::OBJECT_DIR()
 {
 }
 
-object_dir_t::~object_dir_t()
+OBJECT_DIR::~OBJECT_DIR()
 {
 }
 
-void object_dir_t::set_obj_parent( OBJECT *child, object_dir_t *dir )
+void OBJECT_DIR::set_obj_parent( OBJECT *child, OBJECT_DIR *dir )
 {
 	child->parent = dir;
 }
@@ -102,13 +102,13 @@ OBJECT *OBJECT_DIR_IMPL::lookup( UNICODE_STRING& name, bool ignore_case )
 	return 0;
 }
 
-class object_dir_factory : public OBJECT_FACTORY
+class OBJECT_DIR_FACTORY : public OBJECT_FACTORY
 {
 public:
 	virtual NTSTATUS alloc_object(OBJECT** obj);
 };
 
-NTSTATUS object_dir_factory::alloc_object(OBJECT** obj)
+NTSTATUS OBJECT_DIR_FACTORY::alloc_object(OBJECT** obj)
 {
 	*obj = new OBJECT_DIR_IMPL;
 	if (!*obj)
@@ -148,7 +148,7 @@ OBJECT *create_directory_object( PCWSTR name )
 NTSTATUS open_root( OBJECT*& obj, OPEN_INFO& info )
 {
 	// look each directory in the path and make sure it exists
-	object_dir_t *dir = 0;
+	OBJECT_DIR *dir = 0;
 
 	NTSTATUS r;
 
@@ -215,15 +215,15 @@ NTSTATUS OBJECT_DIR_IMPL::open( OBJECT*& obj, OPEN_INFO& info )
 	return obj->open( obj, info );
 }
 
-class find_object_t : public OPEN_INFO
+class FIND_OBJECT : public OPEN_INFO
 {
 public:
-	virtual NTSTATUS on_open( object_dir_t *dir, OBJECT*& obj, OPEN_INFO& info );
+	virtual NTSTATUS on_open( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
-NTSTATUS find_object_t::on_open( object_dir_t *dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS FIND_OBJECT::on_open( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 {
-	trace("find_object_t::on_open %pus %s\n", &info.path,
+	trace("FIND_OBJECT::on_open %pus %s\n", &info.path,
 		  obj ? "exists" : "doesn't exist");
 	if (!obj)
 		return STATUS_OBJECT_NAME_NOT_FOUND;
@@ -254,7 +254,7 @@ NTSTATUS find_object_by_name( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 	if (oa->ObjectName->Length & 1)
 		return STATUS_OBJECT_PATH_SYNTAX_BAD;
 
-	find_object_t oi;
+	FIND_OBJECT oi;
 	oi.Attributes = oa->Attributes;
 	oi.root = oa->RootDirectory;
 	oi.path.set( *oa->ObjectName );
@@ -262,22 +262,22 @@ NTSTATUS find_object_by_name( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 	return open_root( *out, oi );
 }
 
-class name_object_t : public OPEN_INFO
+class NAME_OBJECT : public OPEN_INFO
 {
 	OBJECT *obj_to_name;
 public:
-	name_object_t( OBJECT *in );
-	virtual NTSTATUS on_open( object_dir_t *dir, OBJECT*& obj, OPEN_INFO& info );
+	NAME_OBJECT( OBJECT *in );
+	virtual NTSTATUS on_open( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
-name_object_t::name_object_t( OBJECT *in ) :
+NAME_OBJECT::NAME_OBJECT( OBJECT *in ) :
 	obj_to_name( in )
 {
 }
 
-NTSTATUS name_object_t::on_open( object_dir_t *dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS NAME_OBJECT::on_open( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 {
-	trace("name_object_t::on_open %pus\n", &info.path);
+	trace("NAME_OBJECT::on_open %pus\n", &info.path);
 
 	if (obj)
 	{
@@ -310,9 +310,9 @@ NTSTATUS name_object( OBJECT *obj, const OBJECT_ATTRIBUTES *oa )
 	if (!oa->ObjectName->Length)
 		return STATUS_SUCCESS;
 
-	trace("name_object_t %pus\n", oa->ObjectName);
+	trace("NAME_OBJECT %pus\n", oa->ObjectName);
 
-	name_object_t oi( obj );
+	NAME_OBJECT oi( obj );
 	oi.Attributes = oa->Attributes;
 	oi.root = oa->RootDirectory;
 	oi.path.set( *oa->ObjectName );
@@ -354,7 +354,7 @@ NTSTATUS NTAPI NtCreateDirectoryObject(
 {
 	trace("%p %08lx %p\n", DirectoryHandle, DesiredAccess, ObjectAttributes );
 
-	object_dir_factory factory;
+	OBJECT_DIR_FACTORY factory;
 	return factory.create( DirectoryHandle, DesiredAccess, ObjectAttributes );
 }
 
@@ -363,7 +363,7 @@ NTSTATUS NTAPI NtOpenDirectoryObject(
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes )
 {
-	return nt_open_object<object_dir_t>( DirectoryObjectHandle, DesiredAccess, ObjectAttributes );
+	return nt_open_object<OBJECT_DIR>( DirectoryObjectHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtQueryDirectoryObject(
@@ -383,7 +383,7 @@ NTSTATUS NTAPI NtQueryDirectoryObject(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	object_dir_t* dir = 0;
+	OBJECT_DIR* dir = 0;
 	r = object_from_handle( dir, DirectoryHandle, DIRECTORY_QUERY );
 	if (r < STATUS_SUCCESS)
 		return r;

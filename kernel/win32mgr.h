@@ -36,11 +36,11 @@ template<typename T> static inline void swap( T& a, T& b )
 	b = x;
 }
 
-class win32k_info_t
+class WIN32K_INFO
 {
 public:
-	win32k_info_t();
-	~win32k_info_t();
+	WIN32K_INFO();
+	~WIN32K_INFO();
 	// address that device context shared memory is mapped to
 	BYTE* dc_shared_mem;
 	BYTE* user_shared_mem;
@@ -51,36 +51,36 @@ public:
 class brush_t;
 class pen_t;
 class CBITMAP;
-class device_context_t;
+class DEVICE_CONTEXT;
 
-class win32k_manager_t
+class WIN32K_MANAGER
 {
 	ULONG key_state[0x100];
 	FT_Library ftlib;
 	FT_Face face;
 public:
-	win32k_manager_t();
+	WIN32K_MANAGER();
 	void init_stock_objects();
 	HANDLE get_stock_object( ULONG Index );
 	HANDLE create_solid_brush( COLORREF color );
 	HANDLE create_pen( UINT style, UINT width, COLORREF color );
-	virtual ~win32k_manager_t();
+	virtual ~WIN32K_MANAGER();
 	virtual BOOL init() = 0;
 	virtual void fini() = 0;
 	virtual HGDIOBJ alloc_compatible_dc();
 	virtual HGDIOBJ alloc_screen_dc();
-	virtual device_context_t* alloc_screen_dc_ptr() = 0;
+	virtual DEVICE_CONTEXT* alloc_screen_dc_ptr() = 0;
 	virtual BOOL release_dc( HGDIOBJ dc );
-	win32k_info_t* alloc_win32k_info();
+	WIN32K_INFO* alloc_win32k_info();
 	virtual void send_input( INPUT* input );
 	ULONG get_async_key_state( ULONG Key );
 	virtual int getcaps( int index ) = 0;
 	FT_Face get_face();
 };
 
-extern win32k_manager_t* win32k_manager;
+extern WIN32K_MANAGER* win32k_manager;
 
-class gdi_object_t
+class GDI_OBJECT
 {
 protected:
 	HGDIOBJ handle;
@@ -94,13 +94,13 @@ protected:
 	static BYTE *alloc_gdi_shared_memory( size_t len, BYTE** kernel_shm = NULL );
 	static void free_gdi_shared_memory( BYTE* ptr );
 protected:
-	gdi_object_t();
+	GDI_OBJECT();
 public:
 	HGDIOBJ get_handle()
 	{
 		return handle;
 	}
-	virtual ~gdi_object_t() {};
+	virtual ~GDI_OBJECT() {};
 	virtual BOOL release();
 	void select()
 	{
@@ -136,7 +136,7 @@ struct stretch_di_bits_args
 	RGBQUAD* colors;
 };
 
-class brush_t : public gdi_object_t
+class brush_t : public GDI_OBJECT
 {
 	ULONG style;
 	COLORREF color;
@@ -150,7 +150,7 @@ public:
 	}
 };
 
-class pen_t : public gdi_object_t
+class pen_t : public GDI_OBJECT
 {
 	ULONG style;
 	ULONG width;
@@ -168,7 +168,7 @@ public:
 	}
 };
 
-class CBITMAP : public gdi_object_t
+class CBITMAP : public GDI_OBJECT
 {
 	friend CBITMAP* alloc_bitmap( int width, int height, int depth );
 	static const int magic_val = 0xbb11aa22;
@@ -246,7 +246,7 @@ public:
 	RECT BoundsRect;
 };
 
-class device_context_t : public gdi_object_t
+class DEVICE_CONTEXT : public GDI_OBJECT
 {
 	CBITMAP* selected_bitmap;
 	RECT BoundsRect;
@@ -257,7 +257,7 @@ public:
 	static const ULONG dc_size = 0x100;
 
 public:
-	device_context_t();
+	DEVICE_CONTEXT();
 	GDI_DEVICE_CONTEXT_SHARED* get_dc_shared_mem() const;
 	virtual BOOL release();
 	virtual brush_t* get_selected_brush();
@@ -281,7 +281,7 @@ public:
 							 LPRECT rect, UNICODE_STRING& text );
 	virtual HANDLE select_bitmap( CBITMAP *bitmap );
 	virtual BOOL bitblt( INT xDest, INT yDest, INT cx, INT cy,
-						 device_context_t* src, INT xSrc, INT ySrc, ULONG rop );
+						 DEVICE_CONTEXT* src, INT xSrc, INT ySrc, ULONG rop );
 	virtual COLORREF get_pixel( INT x, INT y );
 	virtual BOOL polypatblt( ULONG Rop, PRECT rect );
 	virtual int getcaps( int index ) = 0;
@@ -290,7 +290,7 @@ public:
 	virtual BOOL moveto( INT xpos, INT ypos, POINT& pt );
 };
 
-class memory_device_context_t : public device_context_t
+class memory_device_context_t : public DEVICE_CONTEXT
 {
 public:
 	memory_device_context_t();
@@ -302,7 +302,7 @@ class window_tt;
 class window_tt;
 extern window_tt* active_window;
 void free_user32_handles( PROCESS *p );
-HGDIOBJ alloc_gdi_handle( BOOL stock, ULONG type, void *user_info, gdi_object_t* obj );
+HGDIOBJ alloc_gdi_handle( BOOL stock, ULONG type, void *user_info, GDI_OBJECT* obj );
 HGDIOBJ alloc_gdi_object( BOOL stock, ULONG type );
 gdi_handle_table_entry *get_handle_table_entry(HGDIOBJ handle);
 BOOLEAN do_gdi_init();

@@ -183,7 +183,7 @@ class PIPE_FACTORY : public OBJECT_FACTORY
 public:
 	PIPE_FACTORY( ULONG _MaxInstances );
 	NTSTATUS alloc_object(OBJECT** obj);
-	NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info );
+	NTSTATUS on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
 NTSTATUS PIPE_DEVICE::open( OBJECT *&out, OPEN_INFO& info )
@@ -693,7 +693,7 @@ NTSTATUS PIPE_FACTORY::alloc_object(OBJECT** obj)
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS PIPE_FACTORY::on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS PIPE_FACTORY::on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	NTSTATUS r;
 

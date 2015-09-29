@@ -60,7 +60,7 @@ protected:
 	virtual ULONG map_colorref( COLORREF color );
 };
 
-class sdl_device_context_t : public device_context_t
+class sdl_device_context_t : public DEVICE_CONTEXT
 {
 public:
 	CBITMAP *sdl_bitmap;
@@ -74,9 +74,9 @@ public:
 
 class sdl_sleeper_t : public SLEEPER
 {
-	win32k_manager_t *manager;
+	WIN32K_MANAGER *manager;
 public:
-	sdl_sleeper_t( win32k_manager_t* mgr );
+	sdl_sleeper_t( WIN32K_MANAGER* mgr );
 	virtual bool check_events( bool wait );
 	static Uint32 timeout_callback( Uint32 interval, void *arg );
 	bool handle_sdl_event( SDL_Event& event );
@@ -84,7 +84,7 @@ public:
 	ULONG get_mouse_button( Uint8 button, bool up );
 };
 
-class win32k_sdl_t : public win32k_manager_t
+class win32k_sdl_t : public WIN32K_MANAGER
 {
 protected:
 	SDL_Surface *screen;
@@ -94,7 +94,7 @@ public:
 	virtual BOOL init();
 	virtual void fini();
 	win32k_sdl_t();
-	virtual device_context_t* alloc_screen_dc_ptr();
+	virtual DEVICE_CONTEXT* alloc_screen_dc_ptr();
 
 protected:
 	Uint16 map_colorref( COLORREF );
@@ -163,7 +163,7 @@ BOOL sdl_16bpp_bitmap_t::line( INT x1, INT y1, INT x2, INT y2, pen_t *pen )
 	return r;
 }
 
-sdl_sleeper_t::sdl_sleeper_t( win32k_manager_t* mgr ) :
+sdl_sleeper_t::sdl_sleeper_t( WIN32K_MANAGER* mgr ) :
 	manager( mgr )
 {
 }
@@ -412,7 +412,7 @@ Uint16 win32k_sdl_16bpp_t::map_colorref( COLORREF color )
 
 win32k_sdl_16bpp_t win32k_manager_sdl_16bpp;
 
-win32k_manager_t* init_sdl_win32k_manager()
+WIN32K_MANAGER* init_sdl_win32k_manager()
 {
 	return &win32k_manager_sdl_16bpp;
 }
@@ -440,7 +440,7 @@ int sdl_device_context_t::getcaps( int index )
 	return win32k_manager->getcaps( index );
 }
 
-device_context_t* win32k_sdl_t::alloc_screen_dc_ptr()
+DEVICE_CONTEXT* win32k_sdl_t::alloc_screen_dc_ptr()
 {
 	trace("allocating SDL DC sdl_bitmap = %p\n", sdl_bitmap);
 	return new sdl_device_context_t( sdl_bitmap );
@@ -448,7 +448,7 @@ device_context_t* win32k_sdl_t::alloc_screen_dc_ptr()
 
 #else
 
-win32k_manager_t* init_sdl_win32k_manager()
+WIN32K_MANAGER* init_sdl_win32k_manager()
 {
 	return NULL;
 }

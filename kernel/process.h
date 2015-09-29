@@ -23,7 +23,7 @@
 
 #include "thread.h"
 
-class win32k_info_t;
+class WIN32K_INFO;
 
 struct PROCESS : public SYNC_OBJECT
 {
@@ -39,7 +39,7 @@ struct PROCESS : public SYNC_OBJECT
 	void* PebBaseAddress;
 	ULONG id;
 
-	handle_table_t handle_table;
+	HANDLE_TABLE handle_table;
 
 	process_element_t entry[1];
 
@@ -49,7 +49,7 @@ struct PROCESS : public SYNC_OBJECT
 	KPRIORITY priority;
 	ULONG hard_error_mode;
 
-	win32k_info_t *win32k_info;
+	WIN32K_INFO *win32k_info;
 
 	ULONG execute_flags;
 

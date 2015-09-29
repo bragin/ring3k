@@ -37,41 +37,41 @@
 #include "debug.h"
 #include "win32mgr.h"
 
-class win32k_null_t : public win32k_manager_t
+class WIN32K_NULL : public WIN32K_MANAGER
 {
 public:
 	virtual BOOL init();
 	virtual void fini();
-	virtual device_context_t* alloc_screen_dc_ptr();
+	virtual DEVICE_CONTEXT* alloc_screen_dc_ptr();
 	virtual int getcaps( int index );
 };
 
-BOOL win32k_null_t::init()
+BOOL WIN32K_NULL::init()
 {
 	return TRUE;
 }
 
-void win32k_null_t::fini()
+void WIN32K_NULL::fini()
 {
 }
 
-int win32k_null_t::getcaps( int index )
+int WIN32K_NULL::getcaps( int index )
 {
 	trace("%d\n", index);
 	return 0;
 }
 
-device_context_t* win32k_null_t::alloc_screen_dc_ptr()
+DEVICE_CONTEXT* WIN32K_NULL::alloc_screen_dc_ptr()
 {
 	// FIXME: make graphics functions more generic
 	assert( 0 );
 	return 0;
-	//return new device_context_t;
+	//return new DEVICE_CONTEXT;
 }
 
-win32k_null_t win32k_manager_null;
+WIN32K_NULL win32k_manager_null;
 
-win32k_manager_t* init_null_win32k_manager()
+WIN32K_MANAGER* init_null_win32k_manager()
 {
 	return &win32k_manager_null;
 }

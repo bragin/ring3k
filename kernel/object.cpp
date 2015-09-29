@@ -77,17 +77,17 @@ NTSTATUS OBJECT::open( OBJECT *&out, OPEN_INFO& info )
 	return STATUS_SUCCESS;
 }
 
-HANDLE handle_table_t::index_to_handle( ULONG index )
+HANDLE HANDLE_TABLE::index_to_handle( ULONG index )
 {
 	return (HANDLE)((index+1)*4);
 }
 
-ULONG handle_table_t::handle_to_index( HANDLE handle )
+ULONG HANDLE_TABLE::handle_to_index( HANDLE handle )
 {
 	return ((ULONG)handle)/4 - 1;
 }
 
-HANDLE handle_table_t::alloc_handle( OBJECT *obj, ACCESS_MASK access )
+HANDLE HANDLE_TABLE::alloc_handle( OBJECT *obj, ACCESS_MASK access )
 {
 	ULONG i;
 
@@ -104,7 +104,7 @@ HANDLE handle_table_t::alloc_handle( OBJECT *obj, ACCESS_MASK access )
 	return 0;
 }
 
-NTSTATUS handle_table_t::free_handle( HANDLE handle )
+NTSTATUS HANDLE_TABLE::free_handle( HANDLE handle )
 {
 	OBJECT *obj;
 	ULONG n;
@@ -130,7 +130,7 @@ NTSTATUS handle_table_t::free_handle( HANDLE handle )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS handle_table_t::object_from_handle( OBJECT*& obj, HANDLE handle, ACCESS_MASK access )
+NTSTATUS HANDLE_TABLE::object_from_handle( OBJECT*& obj, HANDLE handle, ACCESS_MASK access )
 {
 	if (handle == NtCurrentThread())
 	{
@@ -158,12 +158,12 @@ NTSTATUS handle_table_t::object_from_handle( OBJECT*& obj, HANDLE handle, ACCESS
 	return STATUS_SUCCESS;
 }
 
-handle_table_t::~handle_table_t()
+HANDLE_TABLE::~HANDLE_TABLE()
 {
 	free_all_handles();
 }
 
-void handle_table_t::free_all_handles()
+void HANDLE_TABLE::free_all_handles()
 {
 	OBJECT *obj;
 	ULONG i;
@@ -179,7 +179,7 @@ void handle_table_t::free_all_handles()
 	}
 }
 
-NTSTATUS OBJECT_FACTORY::on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS OBJECT_FACTORY::on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	// object already exists?
 	if (obj)

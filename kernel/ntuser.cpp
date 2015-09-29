@@ -75,7 +75,7 @@ ULONG NTAPI NtUserGetThreadState( ULONG InfoClass )
 
 #define USER_HANDLE_WINDOW 1
 
-struct user_handle_entry_t
+struct USER_HANDLE_ENTRY
 {
 	union
 	{
@@ -87,7 +87,7 @@ struct user_handle_entry_t
 	USHORT highpart;
 };
 
-struct user_shared_mem_t
+struct USER_SHARED_MEM
 {
 	ULONG x1;
 	ULONG x2;
@@ -104,13 +104,13 @@ static const ULONG user_shared_mem_reserve = 0x10000;
 static section_t *user_handle_table_section = 0;
 
 // kernel address for user handle table (shared)
-static user_handle_entry_t *user_handle_table;
+static USER_HANDLE_ENTRY *user_handle_table;
 
 // section for user shared memory
 static section_t *user_shared_section = 0;
 
 // kernel address for memory shared with the user process
-static user_shared_mem_t *user_shared;
+static USER_SHARED_MEM *user_shared;
 
 // bitmap of free memory
 ALLOCATION_BITMAP user_shared_bitmap;
@@ -178,7 +178,7 @@ void free_user_handle( HANDLE handle )
 
 void delete_user_object( ULONG i )
 {
-	user_handle_entry_t *entry = user_handle_table+i;
+	USER_HANDLE_ENTRY *entry = user_handle_table+i;
 	trace("deleting user handle %ld\n", i);
 	assert(entry->object != NULL);
 	switch (entry->type)
@@ -237,12 +237,12 @@ void *init_user_shared_memory()
 		LARGE_INTEGER sz;
 		NTSTATUS r;
 
-		sz.QuadPart = sizeof (user_handle_entry_t) * MAX_USER_HANDLES;
+		sz.QuadPart = sizeof (USER_HANDLE_ENTRY) * MAX_USER_HANDLES;
 		r = create_section( &user_handle_table_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return 0;
 
-		user_handle_table = (user_handle_entry_t*) user_handle_table_section->get_kernel_address();
+		user_handle_table = (USER_HANDLE_ENTRY*) user_handle_table_section->get_kernel_address();
 
 		init_user_handle_table();
 
@@ -251,7 +251,7 @@ void *init_user_shared_memory()
 		if (r < STATUS_SUCCESS)
 			return 0;
 
-		user_shared = (user_shared_mem_t*) user_shared_section->get_kernel_address();
+		user_shared = (USER_SHARED_MEM*) user_shared_section->get_kernel_address();
 
 		// setup the allocation bitmap for user objects (eg. windows)
 		void *object_area = (void*) ((BYTE*) user_shared + user_shared_mem_reserve);
@@ -272,14 +272,14 @@ void *init_user_shared_memory()
 	return user_shared;
 }
 
-class ntusershm_tracer : public BLOCK_TRACER
+class NTUSERSHM_TRACER : public BLOCK_TRACER
 {
 public:
 	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool enabled() const;
 };
 
-bool ntusershm_tracer::enabled() const
+bool NTUSERSHM_TRACER::enabled() const
 {
 	return trace_is_enabled( "usershm" );
 }
@@ -321,7 +321,7 @@ bool window_on_access( BYTE *address, ULONG eip )
 	return false;
 }
 
-void ntusershm_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
+void NTUSERSHM_TRACER::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->get_base_address();
 	if (ofs < user_shared_mem_reserve)
@@ -348,24 +348,24 @@ void ntusershm_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 			current->trace_id(), ofs, eip);
 }
 
-static ntusershm_tracer ntusershm_trace;
+static NTUSERSHM_TRACER ntusershm_trace;
 
-class ntuserhandle_tracer : public BLOCK_TRACER
+class NTUSERHANDLE_TRACER : public BLOCK_TRACER
 {
 public:
 	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool enabled() const;
 };
 
-bool ntuserhandle_tracer::enabled() const
+bool NTUSERHANDLE_TRACER::enabled() const
 {
 	return trace_is_enabled( "usershm" );
 }
 
-void ntuserhandle_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
+void NTUSERHANDLE_TRACER::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->get_base_address();
-	const int sz = sizeof (user_handle_entry_t);
+	const int sz = sizeof (USER_HANDLE_ENTRY);
 	ULONG number = ofs/sz;
 	const char *field = "unknown";
 	switch (ofs % sz)
@@ -383,7 +383,7 @@ void ntuserhandle_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 	fprintf(stderr, "%04lx: accessed user handle[%04lx]+%s (%ld) from %08lx\n",
 			current->trace_id(), number, field, ofs%sz, eip);
 }
-static ntuserhandle_tracer ntuserhandle_trace;
+static NTUSERHANDLE_TRACER ntuserhandle_trace;
 
 BYTE* alloc_message_bitmap( PROCESS* proc, MESSAGE_MAP_SHARED_MEMORY& map, ULONG last_message )
 {
@@ -1477,7 +1477,7 @@ void window_tt::set_window_pos( UINT flags )
 
 HGDIOBJ window_tt::get_dc()
 {
-	device_context_t *dc = win32k_manager->alloc_screen_dc_ptr();
+	DEVICE_CONTEXT *dc = win32k_manager->alloc_screen_dc_ptr();
 	if (!dc)
 		return 0;
 

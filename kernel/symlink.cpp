@@ -46,10 +46,10 @@ symlink_t::~symlink_t()
 class symlink_opener : public OPEN_INFO
 {
 public:
-	NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info );
+	NTSTATUS on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
-NTSTATUS symlink_opener::on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS symlink_opener::on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	if (!obj)
 		return STATUS_OBJECT_PATH_NOT_FOUND;

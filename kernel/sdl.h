@@ -21,6 +21,6 @@
 #ifndef __RING3K_SDL_H__
 #define __RING3K_SDL_H__
 
-win32k_manager_t* init_sdl_win32k_manager();
+WIN32K_MANAGER* init_sdl_win32k_manager();
 
 #endif // __RING3K_SDL_H__

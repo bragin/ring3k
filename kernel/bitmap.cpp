@@ -416,7 +416,7 @@ CBITMAP* bitmap_from_handle( HANDLE handle )
 	if (entry->Type != GDI_OBJECT_BITMAP)
 		return FALSE;
 	assert( entry->kernel_info );
-	gdi_object_t* obj = reinterpret_cast<gdi_object_t*>( entry->kernel_info );
+	GDI_OBJECT* obj = reinterpret_cast<GDI_OBJECT*>( entry->kernel_info );
 	return static_cast<CBITMAP*>( obj );
 }
 

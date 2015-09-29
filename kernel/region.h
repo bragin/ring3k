@@ -145,7 +145,7 @@ public:
 	rect_tt extents;
 };
 
-class region_tt : public gdi_object_t
+class region_tt : public GDI_OBJECT
 {
 	static const int RGN_DEFAULT_RECTS;
 	gdi_region_shared_tt *rgn;

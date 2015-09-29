@@ -23,21 +23,21 @@
 
 #include "object.h"
 
-class object_dir_t : virtual public OBJECT
+class OBJECT_DIR : virtual public OBJECT
 {
 protected:
 	friend class OBJECT;
-	static void set_obj_parent( OBJECT *child, object_dir_t *dir );
+	static void set_obj_parent( OBJECT *child, OBJECT_DIR *dir );
 	virtual void unlink( OBJECT *child ) = 0;
 public:
-	object_dir_t();
-	virtual ~object_dir_t();
+	OBJECT_DIR();
+	virtual ~OBJECT_DIR();
 	virtual bool access_allowed( ACCESS_MASK access, ACCESS_MASK handle_access ) = 0;
 	virtual OBJECT *lookup( UNICODE_STRING& name, bool ignore_case ) = 0;
 	virtual void append( OBJECT *child ) = 0;
 };
 
-class OBJECT_DIR_IMPL : public object_dir_t
+class OBJECT_DIR_IMPL : public OBJECT_DIR
 {
 	object_list_t object_list;
 public:
@@ -53,6 +53,6 @@ public:
 };
 
 OBJECT *create_directory_object( PCWSTR name );
-NTSTATUS parse_path( const OBJECT_ATTRIBUTES& oa, object_dir_t*& dir, UNICODE_STRING& file );
+NTSTATUS parse_path( const OBJECT_ATTRIBUTES& oa, OBJECT_DIR*& dir, UNICODE_STRING& file );
 
 #endif // __NTNATIVE_OBJDIR_H__

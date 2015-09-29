@@ -108,7 +108,7 @@ public:
 	bool created;
 public:
 	FILE_CREATE_INFO( ULONG _Attributes, ULONG _CreateOptions, ULONG _CreateDisposition );
-	virtual NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info );
+	virtual NTSTATUS on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
 FILE_CREATE_INFO::FILE_CREATE_INFO( ULONG _Attributes, ULONG _CreateOptions, ULONG _CreateDisposition ) :
@@ -119,7 +119,7 @@ FILE_CREATE_INFO::FILE_CREATE_INFO( ULONG _Attributes, ULONG _CreateOptions, ULO
 {
 }
 
-NTSTATUS FILE_CREATE_INFO::on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS FILE_CREATE_INFO::on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	trace("FILE_CREATE_INFO::on_open()\n");
 	if (!obj)
