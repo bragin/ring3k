@@ -83,7 +83,7 @@ public:
 // derived from Wine's struct thread_input
 // see wine/server/queue.c (by Alexandre Julliard)
 class thread_message_queue_tt :
-	public sync_object_t,
+	public SYNC_OBJECT,
 	public timeout_t
 {
 	bool	quit_message;    // is there a pending quit message?

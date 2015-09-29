@@ -25,7 +25,7 @@
 
 class win32k_info_t;
 
-struct PROCESS : public sync_object_t
+struct PROCESS : public SYNC_OBJECT
 {
 	sibling_list_t threads;
 	ADDRESS_SPACE *vm;

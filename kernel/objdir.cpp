@@ -34,7 +34,7 @@
 #include "ntcall.h"
 #include "symlink.h"
 
-static object_dir_impl_t *root = 0;
+static OBJECT_DIR_IMPL *root = 0;
 
 object_dir_t::object_dir_t()
 {
@@ -49,11 +49,11 @@ void object_dir_t::set_obj_parent( OBJECT *child, object_dir_t *dir )
 	child->parent = dir;
 }
 
-object_dir_impl_t::object_dir_impl_t()
+OBJECT_DIR_IMPL::OBJECT_DIR_IMPL()
 {
 }
 
-object_dir_impl_t::~object_dir_impl_t()
+OBJECT_DIR_IMPL::~OBJECT_DIR_IMPL()
 {
 	//trace("destroying directory %pus\n", &name );
 	object_iter_t i(object_list);
@@ -65,21 +65,21 @@ object_dir_impl_t::~object_dir_impl_t()
 	}
 }
 
-void object_dir_impl_t::unlink( OBJECT *obj )
+void OBJECT_DIR_IMPL::unlink( OBJECT *obj )
 {
 	assert( obj );
 	object_list.unlink( obj );
 	set_obj_parent( obj, 0 );
 }
 
-void object_dir_impl_t::append( OBJECT *obj )
+void OBJECT_DIR_IMPL::append( OBJECT *obj )
 {
 	assert( obj );
 	object_list.append( obj );
 	set_obj_parent( obj, this );
 }
 
-bool object_dir_impl_t::access_allowed( ACCESS_MASK required, ACCESS_MASK handle )
+bool OBJECT_DIR_IMPL::access_allowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
 	return check_access( required, handle,
 						 DIRECTORY_QUERY | DIRECTORY_TRAVERSE,
@@ -87,7 +87,7 @@ bool object_dir_impl_t::access_allowed( ACCESS_MASK required, ACCESS_MASK handle
 						 DIRECTORY_ALL_ACCESS );
 }
 
-OBJECT *object_dir_impl_t::lookup( UNICODE_STRING& name, bool ignore_case )
+OBJECT *OBJECT_DIR_IMPL::lookup( UNICODE_STRING& name, bool ignore_case )
 {
 	//trace("searching for %pus\n", &name );
 	for( object_iter_t i(object_list); i; i.next() )
@@ -110,7 +110,7 @@ public:
 
 NTSTATUS object_dir_factory::alloc_object(OBJECT** obj)
 {
-	*obj = new object_dir_impl_t;
+	*obj = new OBJECT_DIR_IMPL;
 	if (!*obj)
 		return STATUS_NO_MEMORY;
 	return STATUS_SUCCESS;
@@ -118,7 +118,7 @@ NTSTATUS object_dir_factory::alloc_object(OBJECT** obj)
 
 OBJECT *create_directory_object( PCWSTR name )
 {
-	object_dir_impl_t *obj = new object_dir_impl_t;
+	OBJECT_DIR_IMPL *obj = new OBJECT_DIR_IMPL;
 
 	if (name && name[0] == '\\' && name[1] == 0)
 	{
@@ -182,7 +182,7 @@ NTSTATUS open_root( OBJECT*& obj, OPEN_INFO& info )
 	return dir->open( obj, info );
 }
 
-NTSTATUS object_dir_impl_t::open( OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS OBJECT_DIR_IMPL::open( OBJECT*& obj, OPEN_INFO& info )
 {
 	ULONG n = 0;
 	UNICODE_STRING& path = info.path;
@@ -338,7 +338,7 @@ NTSTATUS get_named_object( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 
 void init_root()
 {
-	root = new object_dir_impl_t;
+	root = new OBJECT_DIR_IMPL;
 	assert( root );
 }
 

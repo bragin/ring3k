@@ -50,10 +50,10 @@ typedef LIST_ITER<thread_obj_wait_t, 0> thread_obj_wait_iter_t;
 struct thread_obj_wait_t : public watch_t
 {
 	thread_obj_wait_element_t entry[1];
-	sync_object_t *obj;
+	SYNC_OBJECT *obj;
 	THREAD_IMPL *thread;
 public:
-	thread_obj_wait_t( THREAD_IMPL* t, sync_object_t* o);
+	thread_obj_wait_t( THREAD_IMPL* t, SYNC_OBJECT* o);
 	virtual void notify();
 	virtual ~thread_obj_wait_t();
 	BOOLEAN is_signalled()
@@ -188,7 +188,7 @@ public:
 	// wait related functions
 	NTSTATUS wait_on_handles( ULONG count, PHANDLE handles, WAIT_TYPE type, BOOLEAN alert, PLARGE_INTEGER timeout );
 	NTSTATUS check_wait();
-	NTSTATUS wait_on( sync_object_t *obj );
+	NTSTATUS wait_on( SYNC_OBJECT *obj );
 	NTSTATUS check_wait_all();
 	NTSTATUS check_wait_any();
 	void end_wait();
@@ -1063,7 +1063,7 @@ NTSTATUS NTAPI NtSuspendThread(
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-thread_obj_wait_t::thread_obj_wait_t( THREAD_IMPL* t, sync_object_t* o):
+thread_obj_wait_t::thread_obj_wait_t( THREAD_IMPL* t, SYNC_OBJECT* o):
 	obj(o),
 	thread(t)
 {
@@ -1113,7 +1113,7 @@ thread_obj_wait_t::~thread_obj_wait_t()
 	release(obj);
 }
 
-NTSTATUS THREAD_IMPL::wait_on( sync_object_t *obj )
+NTSTATUS THREAD_IMPL::wait_on( SYNC_OBJECT *obj )
 {
 	thread_obj_wait_t *wait = new thread_obj_wait_t( this, obj );
 	if (!wait)
@@ -1217,7 +1217,7 @@ NTSTATUS THREAD_IMPL::wait_on_handles(
 			return r;
 		}
 
-		sync_object_t *obj = dynamic_cast<sync_object_t*>( any );
+		SYNC_OBJECT *obj = dynamic_cast<SYNC_OBJECT*>( any );
 		if (!obj)
 		{
 			end_wait();
@@ -1293,7 +1293,7 @@ NTSTATUS NTAPI NtWaitForSingleObject(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	sync_object_t *obj = dynamic_cast<sync_object_t*>( any );
+	SYNC_OBJECT *obj = dynamic_cast<SYNC_OBJECT*>( any );
 	if (!obj)
 		return STATUS_INVALID_HANDLE;
 

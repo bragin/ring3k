@@ -224,7 +224,7 @@ timeout_t::~timeout_t()
 	remove();
 }
 
-class nttimer_t : public sync_object_t, public timeout_t
+class nttimer_t : public SYNC_OBJECT, public timeout_t
 {
 protected:
 	BOOLEAN expired;

@@ -28,7 +28,7 @@
 #include "object.h"
 #include "event.h"
 
-class COMPLETION_PORT : public sync_object_t
+class COMPLETION_PORT : public SYNC_OBJECT
 {
 public:
 	virtual ~COMPLETION_PORT() = 0;

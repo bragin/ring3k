@@ -30,7 +30,7 @@
 
 #include "object.h"
 
-class EVENT : public sync_object_t
+class EVENT : public SYNC_OBJECT
 {
 public:
 	virtual ~EVENT();

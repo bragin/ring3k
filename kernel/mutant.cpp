@@ -31,24 +31,24 @@
 #include "ntcall.h"
 #include "object.inl"
 
-class mutant_t : public sync_object_t
+class MUTANT : public SYNC_OBJECT
 {
 	THREAD *owner;
 	ULONG count;
 public:
-	mutant_t(BOOLEAN InitialOwner);
+	MUTANT(BOOLEAN InitialOwner);
 	NTSTATUS take_ownership();
 	NTSTATUS release_ownership(ULONG& prev);
 	virtual BOOLEAN is_signalled();
 	virtual BOOLEAN satisfy();
 };
 
-mutant_t *mutant_from_obj( OBJECT *obj )
+MUTANT *mutant_from_obj( OBJECT *obj )
 {
-	return dynamic_cast<mutant_t*>( obj );
+	return dynamic_cast<MUTANT*>( obj );
 }
 
-mutant_t::mutant_t(BOOLEAN InitialOwner) :
+MUTANT::MUTANT(BOOLEAN InitialOwner) :
 	owner(0),
 	count(0)
 {
@@ -56,18 +56,18 @@ mutant_t::mutant_t(BOOLEAN InitialOwner) :
 		take_ownership();
 }
 
-BOOLEAN mutant_t::is_signalled()
+BOOLEAN MUTANT::is_signalled()
 {
 	return current != NULL;
 }
 
-BOOLEAN mutant_t::satisfy()
+BOOLEAN MUTANT::satisfy()
 {
 	take_ownership();
 	return TRUE;
 }
 
-NTSTATUS mutant_t::take_ownership()
+NTSTATUS MUTANT::take_ownership()
 {
 	if (owner && owner != current)
 		return STATUS_MUTANT_NOT_OWNED;
@@ -76,7 +76,7 @@ NTSTATUS mutant_t::take_ownership()
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS mutant_t::release_ownership(ULONG& prev)
+NTSTATUS MUTANT::release_ownership(ULONG& prev)
 {
 	if (owner != current)
 		return STATUS_MUTANT_NOT_OWNED;
@@ -86,18 +86,18 @@ NTSTATUS mutant_t::release_ownership(ULONG& prev)
 	return STATUS_SUCCESS;
 }
 
-class mutant_factory : public OBJECT_FACTORY
+class MUTANT_FACTORY : public OBJECT_FACTORY
 {
 private:
 	BOOLEAN InitialOwner;
 public:
-	mutant_factory(BOOLEAN io) : InitialOwner(io) {};
+	MUTANT_FACTORY(BOOLEAN io) : InitialOwner(io) {};
 	virtual NTSTATUS alloc_object(OBJECT** obj);
 };
 
-NTSTATUS mutant_factory::alloc_object(OBJECT** obj)
+NTSTATUS MUTANT_FACTORY::alloc_object(OBJECT** obj)
 {
-	*obj = new mutant_t(InitialOwner);
+	*obj = new MUTANT(InitialOwner);
 	if (!*obj)
 		return STATUS_NO_MEMORY;
 	return STATUS_SUCCESS;
@@ -112,7 +112,7 @@ NTSTATUS NTAPI NtCreateMutant(
 	trace("%p %08lx %p %u\n", MutantHandle,
 		  AccessMask, ObjectAttributes, InitialOwner);
 
-	mutant_factory factory( InitialOwner );
+	MUTANT_FACTORY factory( InitialOwner );
 	return factory.create( MutantHandle, AccessMask, ObjectAttributes );
 }
 
@@ -120,7 +120,7 @@ NTSTATUS NTAPI NtReleaseMutant(
 	HANDLE MutantHandle,
 	PULONG PreviousState)
 {
-	mutant_t *mutant = 0;
+	MUTANT *mutant = 0;
 	ULONG prev = 0;
 	NTSTATUS r;
 
@@ -150,7 +150,7 @@ NTSTATUS NTAPI NtOpenMutant(
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
 	trace("%p %08lx %p\n", MutantHandle, DesiredAccess, ObjectAttributes );
-	return nt_open_object<mutant_t>( MutantHandle, DesiredAccess, ObjectAttributes );
+	return nt_open_object<MUTANT>( MutantHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtQueryMutant(

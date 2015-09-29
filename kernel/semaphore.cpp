@@ -29,7 +29,7 @@
 #include "ntcall.h"
 #include "object.inl"
 
-class semaphore_t : public sync_object_t
+class semaphore_t : public SYNC_OBJECT
 {
 protected:
 	ULONG count;

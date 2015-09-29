@@ -105,13 +105,13 @@ public:
 	virtual ~watch_t();
 };
 
-class sync_object_t : virtual public OBJECT
+class SYNC_OBJECT : virtual public OBJECT
 {
 private:
 	watch_list_t watchers;
 public:
-	sync_object_t();
-	virtual ~sync_object_t();
+	SYNC_OBJECT();
+	virtual ~SYNC_OBJECT();
 	virtual BOOLEAN is_signalled( void ) = 0;
 	virtual BOOLEAN satisfy( void );
 	void add_watch( watch_t* watcher );

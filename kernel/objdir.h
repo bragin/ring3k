@@ -37,12 +37,12 @@ public:
 	virtual void append( OBJECT *child ) = 0;
 };
 
-class object_dir_impl_t : public object_dir_t
+class OBJECT_DIR_IMPL : public object_dir_t
 {
 	object_list_t object_list;
 public:
-	object_dir_impl_t();
-	virtual ~object_dir_impl_t();
+	OBJECT_DIR_IMPL();
+	virtual ~OBJECT_DIR_IMPL();
 	virtual bool access_allowed( ACCESS_MASK access, ACCESS_MASK handle_access );
 	virtual void unlink( OBJECT *child );
 	virtual void append( OBJECT *child );

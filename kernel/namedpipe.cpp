@@ -33,19 +33,19 @@
 #include "objdir.h"
 #include "debug.h"
 
-class pipe_server_t;
-class pipe_client_t;
-class pipe_container_t;
+class PIPE_SERVER;
+class PIPE_CLIENT;
+class PIPE_CONTAINER;
 
-typedef LIST_ANCHOR<pipe_server_t,0> pipe_server_list_t;
-typedef LIST_ELEMENT<pipe_server_t> pipe_server_element_t;
-typedef LIST_ITER<pipe_server_t,0> pipe_server_iter_t;
-typedef LIST_ANCHOR<pipe_client_t,0> pipe_client_list_t;
-typedef LIST_ELEMENT<pipe_client_t> pipe_client_element_t;
-typedef LIST_ITER<pipe_client_t,0> pipe_client_iter_t;
+typedef LIST_ANCHOR<PIPE_SERVER,0> pipe_server_list_t;
+typedef LIST_ELEMENT<PIPE_SERVER> pipe_server_element_t;
+typedef LIST_ITER<PIPE_SERVER,0> pipe_server_iter_t;
+typedef LIST_ANCHOR<PIPE_CLIENT,0> pipe_client_list_t;
+typedef LIST_ELEMENT<PIPE_CLIENT> pipe_client_element_t;
+typedef LIST_ITER<PIPE_CLIENT,0> pipe_client_iter_t;
 
 // the pipe device \Device\NamedPipe, contains pipes of different names
-class pipe_device_t : public object_dir_impl_t, public IO_OBJECT
+class PIPE_DEVICE : public OBJECT_DIR_IMPL, public IO_OBJECT
 {
 public:
 	virtual NTSTATUS read( PVOID buffer, ULONG length, ULONG *read );
@@ -57,24 +57,24 @@ public:
 };
 
 // factory to create the pipe device at startup
-class pipe_device_factory : public OBJECT_FACTORY
+class PIPE_DEVICE_FACTORY : public OBJECT_FACTORY
 {
 public:
 	NTSTATUS alloc_object(OBJECT** obj);
 };
 
 // contains all clients and servers associated with a specific pipe name
-class pipe_container_t : virtual public OBJECT
+class PIPE_CONTAINER : virtual public OBJECT
 {
 	pipe_server_list_t servers;
 	pipe_client_list_t clients;
 	ULONG num_instances;
 	ULONG max_instances;
 public:
-	pipe_container_t( ULONG max );
-	NTSTATUS create_server( pipe_server_t*& pipe, ULONG max_inst );
-	NTSTATUS create_client( pipe_client_t*& pipe );
-	void unlink( pipe_server_t *pipe );
+	PIPE_CONTAINER( ULONG max );
+	NTSTATUS create_server( PIPE_SERVER*& pipe, ULONG max_inst );
+	NTSTATUS create_client( PIPE_CLIENT*& pipe );
+	void unlink( PIPE_SERVER *pipe );
 	pipe_server_list_t& get_servers()
 	{
 		return servers;
@@ -84,35 +84,35 @@ public:
 		return clients;
 	}
 	virtual NTSTATUS open( OBJECT *&out, OPEN_INFO& info );
-	pipe_server_t* find_idle_server();
+	PIPE_SERVER* find_idle_server();
 };
 
-class pipe_message_t;
+class PIPE_MESSAGE;
 
-typedef LIST_ANCHOR<pipe_message_t,0> pipe_message_list_t;
-typedef LIST_ELEMENT<pipe_message_t> pipe_message_element_t;
-typedef LIST_ITER<pipe_message_t,0> pipe_message_iter_t;
+typedef LIST_ANCHOR<PIPE_MESSAGE,0> PIPE_MESSAGE_LIST;
+typedef LIST_ELEMENT<PIPE_MESSAGE> PIPE_MESSAGE_ELEMENT;
+typedef LIST_ITER<PIPE_MESSAGE,0> PIPE_MESSAGE_ITER;
 
-class pipe_message_t
+class PIPE_MESSAGE
 {
 protected:
 	void *operator new(unsigned int count, void*&ptr)
 	{
-		assert( count == sizeof (pipe_message_t));
+		assert( count == sizeof (PIPE_MESSAGE));
 		return ptr;
 	}
-	pipe_message_t(ULONG _Length);
+	PIPE_MESSAGE(ULONG _Length);
 public:
-	pipe_message_element_t entry[1];
+	PIPE_MESSAGE_ELEMENT entry[1];
 	ULONG Length;
-	static pipe_message_t* alloc_pipe_message( ULONG _Length );
+	static PIPE_MESSAGE* alloc_pipe_message( ULONG _Length );
 	unsigned char *data_ptr();
 };
 
 // a single server instance
-class pipe_server_t : public IO_OBJECT
+class PIPE_SERVER : public IO_OBJECT
 {
-	friend class pipe_container_t;
+	friend class PIPE_CONTAINER;
 public:
 	enum pipe_state
 	{
@@ -122,16 +122,16 @@ public:
 		pipe_wait_disconnect,
 		pipe_disconnected,
 	};
-	pipe_container_t *container;
+	PIPE_CONTAINER *container;
 	pipe_state state;
-	pipe_client_t *client;
+	PIPE_CLIENT *client;
 	THREAD *thread;
 	pipe_server_element_t entry[1];
-	pipe_message_list_t received_messages;
-	pipe_message_list_t sent_messages;
+	PIPE_MESSAGE_LIST received_messages;
+	PIPE_MESSAGE_LIST sent_messages;
 public:
-	pipe_server_t( pipe_container_t *container );
-	~pipe_server_t();
+	PIPE_SERVER( PIPE_CONTAINER *container );
+	~PIPE_SERVER();
 	virtual NTSTATUS read( PVOID buffer, ULONG length, ULONG *read );
 	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written );
 	NTSTATUS open( OBJECT *&out, OPEN_INFO& info );
@@ -152,21 +152,21 @@ public:
 	bool do_connect();
 	NTSTATUS connect();
 	NTSTATUS disconnect();
-	void set_client( pipe_client_t* pipe_client );
-	void queue_message_from_client( pipe_message_t *msg );
-	void queue_message_to_client( pipe_message_t *msg );
+	void set_client( PIPE_CLIENT* pipe_client );
+	void queue_message_from_client( PIPE_MESSAGE *msg );
+	void queue_message_to_client( PIPE_MESSAGE *msg );
 };
 
 // a single client instance
-class pipe_client_t : public IO_OBJECT
+class PIPE_CLIENT : public IO_OBJECT
 {
-	friend class pipe_container_t;
+	friend class PIPE_CONTAINER;
 public:
 	pipe_client_element_t entry[1];
-	pipe_server_t *server;
+	PIPE_SERVER *server;
 	THREAD *thread;
 public:
-	pipe_client_t( pipe_container_t *container );
+	PIPE_CLIENT( PIPE_CONTAINER *container );
 	virtual NTSTATUS read( PVOID buffer, ULONG length, ULONG *read );
 	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written );
 	NTSTATUS set_pipe_info( FILE_PIPE_INFORMATION& pipe_info );
@@ -177,35 +177,35 @@ public:
 };
 
 // server factory, used by NtCreateNamedPipeFile
-class pipe_factory : public OBJECT_FACTORY
+class PIPE_FACTORY : public OBJECT_FACTORY
 {
 	ULONG MaxInstances;
 public:
-	pipe_factory( ULONG _MaxInstances );
+	PIPE_FACTORY( ULONG _MaxInstances );
 	NTSTATUS alloc_object(OBJECT** obj);
 	NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
-NTSTATUS pipe_device_t::open( OBJECT *&out, OPEN_INFO& info )
+NTSTATUS PIPE_DEVICE::open( OBJECT *&out, OPEN_INFO& info )
 {
 	if (info.path.Length == 0)
-		return object_dir_impl_t::open( out, info );
+		return OBJECT_DIR_IMPL::open( out, info );
 
 	// appears to be a flat namespace under the pipe device
 	trace("pipe = %pus\n", &info.path );
 	out = lookup( info.path, info.case_insensitive() );
 
 	// not the NtCreateNamedPipeFile case?
-	if (out && dynamic_cast<pipe_factory*>(&info) == NULL)
+	if (out && dynamic_cast<PIPE_FACTORY*>(&info) == NULL)
 		return out->open( out, info );
 
 	return info.on_open( this, out, info );
 }
 
-NTSTATUS pipe_container_t::open( OBJECT *&out, OPEN_INFO& info )
+NTSTATUS PIPE_CONTAINER::open( OBJECT *&out, OPEN_INFO& info )
 {
 	trace("allocating pipe client = %pus\n", &info.path );
-	pipe_client_t *pipe = 0;
+	PIPE_CLIENT *pipe = 0;
 	NTSTATUS r = create_client( pipe );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -213,9 +213,9 @@ NTSTATUS pipe_container_t::open( OBJECT *&out, OPEN_INFO& info )
 	return r;
 }
 
-NTSTATUS pipe_device_factory::alloc_object(OBJECT** obj)
+NTSTATUS PIPE_DEVICE_FACTORY::alloc_object(OBJECT** obj)
 {
-	*obj = new pipe_device_t;
+	*obj = new PIPE_DEVICE;
 	if (!*obj)
 		return STATUS_NO_MEMORY;
 	return STATUS_SUCCESS;
@@ -223,7 +223,7 @@ NTSTATUS pipe_device_factory::alloc_object(OBJECT** obj)
 
 void init_pipe_device()
 {
-	pipe_device_factory factory;
+	PIPE_DEVICE_FACTORY factory;
 	unicode_string_t name;
 	name.set( L"\\Device\\NamedPipe");
 
@@ -234,34 +234,34 @@ void init_pipe_device()
 		die("failed to create named pipe\n");
 }
 
-NTSTATUS pipe_device_t::read( PVOID buffer, ULONG length, ULONG *read )
+NTSTATUS PIPE_DEVICE::read( PVOID buffer, ULONG length, ULONG *read )
 {
 	return STATUS_ACCESS_DENIED;
 }
 
-NTSTATUS pipe_device_t::write( PVOID buffer, ULONG length, ULONG *written )
+NTSTATUS PIPE_DEVICE::write( PVOID buffer, ULONG length, ULONG *written )
 {
 	return STATUS_ACCESS_DENIED;
 }
 
-pipe_message_t::pipe_message_t( ULONG _Length ) :
+PIPE_MESSAGE::PIPE_MESSAGE( ULONG _Length ) :
 	Length( _Length )
 {
 }
 
-pipe_message_t *pipe_message_t::alloc_pipe_message( ULONG _Length )
+PIPE_MESSAGE *PIPE_MESSAGE::alloc_pipe_message( ULONG _Length )
 {
-	ULONG sz = _Length + sizeof (pipe_message_t);
+	ULONG sz = _Length + sizeof (PIPE_MESSAGE);
 	void *mem = (void*) new unsigned char[sz];
-	return new(mem) pipe_message_t(_Length);
+	return new(mem) PIPE_MESSAGE(_Length);
 }
 
-unsigned char *pipe_message_t::data_ptr()
+unsigned char *PIPE_MESSAGE::data_ptr()
 {
 	return (unsigned char *) (this+1);
 }
 
-class wait_server_info_t
+class WAIT_SERVER_INFO
 {
 	FILE_PIPE_WAIT_FOR_BUFFER info;
 public:
@@ -270,19 +270,19 @@ public:
 	BOOLEAN&        TimeoutSpecified;
 	unicode_string_t name;
 public:
-	wait_server_info_t();
+	WAIT_SERVER_INFO();
 	NTSTATUS copy_from_user( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG Length );
 	void dump();
 };
 
-wait_server_info_t::wait_server_info_t() :
+WAIT_SERVER_INFO::WAIT_SERVER_INFO() :
 	Timeout( info.Timeout ),
 	NameLength( info.NameLength ),
 	TimeoutSpecified( info.TimeoutSpecified )
 {
 }
 
-NTSTATUS wait_server_info_t::copy_from_user( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG Length )
+NTSTATUS WAIT_SERVER_INFO::copy_from_user( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG Length )
 {
 	NTSTATUS r;
 	ULONG sz = FIELD_OFFSET( FILE_PIPE_WAIT_FOR_BUFFER, Name );
@@ -297,14 +297,14 @@ NTSTATUS wait_server_info_t::copy_from_user( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, UL
 	return name.copy_wstr_from_user( pwfb->Name, NameLength );
 }
 
-void wait_server_info_t::dump()
+void WAIT_SERVER_INFO::dump()
 {
 	trace("pipe server wait name=%pus\n", &name );
 }
 
-NTSTATUS pipe_device_t::wait_server_available( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG Length )
+NTSTATUS PIPE_DEVICE::wait_server_available( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG Length )
 {
-	wait_server_info_t info;
+	WAIT_SERVER_INFO info;
 
 	NTSTATUS r = info.copy_from_user( pwfb, Length );
 	if (r < STATUS_SUCCESS)
@@ -319,11 +319,11 @@ NTSTATUS pipe_device_t::wait_server_available( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, 
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 	}
 
-	pipe_container_t *container = dynamic_cast<pipe_container_t*>( obj );
+	PIPE_CONTAINER *container = dynamic_cast<PIPE_CONTAINER*>( obj );
 	if (!container)
 		return STATUS_UNSUCCESSFUL;
 
-	pipe_server_t* server = container->find_idle_server();
+	PIPE_SERVER* server = container->find_idle_server();
 	if (!server)
 	{
 		//FIXME: timeout
@@ -333,7 +333,7 @@ NTSTATUS pipe_device_t::wait_server_available( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, 
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS pipe_device_t::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+NTSTATUS PIPE_DEVICE::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 									PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
 	if (FsControlCode == FSCTL_PIPE_WAIT)
@@ -344,19 +344,19 @@ NTSTATUS pipe_device_t::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG Fs
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-pipe_container_t::pipe_container_t( ULONG max ) :
+PIPE_CONTAINER::PIPE_CONTAINER( ULONG max ) :
 	num_instances(0),
 	max_instances(max)
 {
 }
 
-void pipe_container_t::unlink( pipe_server_t *pipe )
+void PIPE_CONTAINER::unlink( PIPE_SERVER *pipe )
 {
 	servers.unlink( pipe );
 	num_instances--;
 }
 
-NTSTATUS pipe_container_t::create_server( pipe_server_t *& pipe, ULONG max_inst )
+NTSTATUS PIPE_CONTAINER::create_server( PIPE_SERVER *& pipe, ULONG max_inst )
 {
 	trace("creating pipe server\n");
 	if (max_inst != max_instances)
@@ -366,7 +366,7 @@ NTSTATUS pipe_container_t::create_server( pipe_server_t *& pipe, ULONG max_inst 
 		return STATUS_ACCESS_DENIED;
 	num_instances++;
 
-	pipe = new pipe_server_t( this );
+	pipe = new PIPE_SERVER( this );
 
 	servers.append( pipe );
 	addref( this );
@@ -374,13 +374,13 @@ NTSTATUS pipe_container_t::create_server( pipe_server_t *& pipe, ULONG max_inst 
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS pipe_container_t::create_client( pipe_client_t*& client )
+NTSTATUS PIPE_CONTAINER::create_client( PIPE_CLIENT*& client )
 {
-	client = new pipe_client_t( this );
+	client = new PIPE_CLIENT( this );
 	if (!client)
 		return STATUS_NO_MEMORY;
 
-	pipe_server_t *server = find_idle_server();
+	PIPE_SERVER *server = find_idle_server();
 	if (server)
 	{
 		server->set_client( client );
@@ -392,7 +392,7 @@ NTSTATUS pipe_container_t::create_client( pipe_client_t*& client )
 	return STATUS_SUCCESS;
 }
 
-void pipe_server_t::set_client( pipe_client_t* pipe_client )
+void PIPE_SERVER::set_client( PIPE_CLIENT* pipe_client )
 {
 	assert( pipe_client );
 	client = pipe_client;
@@ -401,19 +401,19 @@ void pipe_server_t::set_client( pipe_client_t* pipe_client )
 	trace("connect server %p to client %p\n", this, client );
 }
 
-pipe_server_t* pipe_container_t::find_idle_server()
+PIPE_SERVER* PIPE_CONTAINER::find_idle_server()
 {
 	// search for an idle server
 	for (pipe_server_iter_t i(servers); i; i.next())
 	{
-		pipe_server_t *ps = i;
+		PIPE_SERVER *ps = i;
 		if (ps->is_awaiting_connect())
 			return ps;
 	}
 	return NULL;
 }
 
-pipe_server_t::pipe_server_t( pipe_container_t *_container ) :
+PIPE_SERVER::PIPE_SERVER( PIPE_CONTAINER *_container ) :
 	container( _container ),
 	state( pipe_idle ),
 	client( NULL ),
@@ -421,9 +421,9 @@ pipe_server_t::pipe_server_t( pipe_container_t *_container ) :
 {
 }
 
-pipe_server_t::~pipe_server_t()
+PIPE_SERVER::~PIPE_SERVER()
 {
-	pipe_message_t *msg;
+	PIPE_MESSAGE *msg;
 	while ((msg = received_messages.head()))
 	{
 		received_messages.unlink( msg );
@@ -433,16 +433,16 @@ pipe_server_t::~pipe_server_t()
 	release( container );
 }
 
-NTSTATUS pipe_server_t::open( OBJECT *&out, OPEN_INFO& info )
+NTSTATUS PIPE_SERVER::open( OBJECT *&out, OPEN_INFO& info )
 {
 	// should return a pointer to a pipe client
 	trace("implement\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS pipe_server_t::read( PVOID buffer, ULONG length, ULONG *read )
+NTSTATUS PIPE_SERVER::read( PVOID buffer, ULONG length, ULONG *read )
 {
-	pipe_message_t *msg;
+	PIPE_MESSAGE *msg;
 
 	// only allow reading in the correct state
 	if (state != pipe_connected)
@@ -479,9 +479,9 @@ NTSTATUS pipe_server_t::read( PVOID buffer, ULONG length, ULONG *read )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS pipe_server_t::write( PVOID buffer, ULONG length, ULONG *written )
+NTSTATUS PIPE_SERVER::write( PVOID buffer, ULONG length, ULONG *written )
 {
-	pipe_message_t *msg = pipe_message_t::alloc_pipe_message( length );
+	PIPE_MESSAGE *msg = PIPE_MESSAGE::alloc_pipe_message( length );
 
 	NTSTATUS r;
 	r = copy_from_user( msg->data_ptr(), buffer, length );
@@ -496,11 +496,11 @@ NTSTATUS pipe_server_t::write( PVOID buffer, ULONG length, ULONG *written )
 	return STATUS_SUCCESS;
 }
 
-bool pipe_server_t::do_connect()
+bool PIPE_SERVER::do_connect()
 {
 	for (pipe_client_iter_t i( container->get_clients() ); i; i.next())
 	{
-		pipe_client_t *pipe_client = i;
+		PIPE_CLIENT *pipe_client = i;
 
 		if (pipe_client->server)
 			continue;
@@ -510,7 +510,7 @@ bool pipe_server_t::do_connect()
 	return false;
 }
 
-NTSTATUS pipe_server_t::connect()
+NTSTATUS PIPE_SERVER::connect()
 {
 	if (state != pipe_idle)
 		return STATUS_PIPE_CONNECTED;
@@ -530,7 +530,7 @@ NTSTATUS pipe_server_t::connect()
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS pipe_server_t::disconnect()
+NTSTATUS PIPE_SERVER::disconnect()
 {
 	if (state != pipe_connected)
 		return STATUS_PIPE_BROKEN;
@@ -542,10 +542,10 @@ NTSTATUS pipe_server_t::disconnect()
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS pipe_server_t::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+NTSTATUS PIPE_SERVER::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 									PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
-	trace("pipe_server_t %08lx\n", FsControlCode);
+	trace("PIPE_SERVER %08lx\n", FsControlCode);
 	if (FsControlCode == FSCTL_PIPE_LISTEN)
 		return connect();
 
@@ -556,7 +556,7 @@ NTSTATUS pipe_server_t::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG Fs
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-void pipe_server_t::queue_message_from_client( pipe_message_t *msg )
+void PIPE_SERVER::queue_message_from_client( PIPE_MESSAGE *msg )
 {
 	received_messages.append( msg );
 
@@ -570,7 +570,7 @@ void pipe_server_t::queue_message_from_client( pipe_message_t *msg )
 	}
 }
 
-void pipe_server_t::queue_message_to_client( pipe_message_t *msg )
+void PIPE_SERVER::queue_message_to_client( PIPE_MESSAGE *msg )
 {
 	sent_messages.append( msg );
 	// wakeup readers
@@ -583,18 +583,18 @@ void pipe_server_t::queue_message_to_client( pipe_message_t *msg )
 	}
 }
 
-pipe_client_t::pipe_client_t( pipe_container_t *container ) :
+PIPE_CLIENT::PIPE_CLIENT( PIPE_CONTAINER *container ) :
 	server( NULL ),
 	thread( NULL )
 {
 }
 
-NTSTATUS pipe_client_t::read( PVOID buffer, ULONG length, ULONG *read )
+NTSTATUS PIPE_CLIENT::read( PVOID buffer, ULONG length, ULONG *read )
 {
-	pipe_message_t *msg;
+	PIPE_MESSAGE *msg;
 
 	// only allow reading in the correct state
-	if (server == NULL || server->state != pipe_server_t::pipe_connected)
+	if (server == NULL || server->state != PIPE_SERVER::pipe_connected)
 		return STATUS_PIPE_BROKEN;
 
 	// only allow one reader at a time
@@ -628,11 +628,11 @@ NTSTATUS pipe_client_t::read( PVOID buffer, ULONG length, ULONG *read )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS pipe_client_t::write( PVOID buffer, ULONG length, ULONG *written )
+NTSTATUS PIPE_CLIENT::write( PVOID buffer, ULONG length, ULONG *written )
 {
-	pipe_message_t *msg = pipe_message_t::alloc_pipe_message( length );
+	PIPE_MESSAGE *msg = PIPE_MESSAGE::alloc_pipe_message( length );
 
-	if (server == NULL || server->state != pipe_server_t::pipe_connected)
+	if (server == NULL || server->state != PIPE_SERVER::pipe_connected)
 		return STATUS_PIPE_BROKEN;
 
 	NTSTATUS r;
@@ -648,10 +648,10 @@ NTSTATUS pipe_client_t::write( PVOID buffer, ULONG length, ULONG *written )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS pipe_client_t::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+NTSTATUS PIPE_CLIENT::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 									PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
-	trace("pipe_client_t %08lx\n", FsControlCode);
+	trace("PIPE_CLIENT %08lx\n", FsControlCode);
 
 	if (FsControlCode == FSCTL_PIPE_TRANSCEIVE)
 		return transceive( InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength );
@@ -659,7 +659,7 @@ NTSTATUS pipe_client_t::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG Fs
 	return STATUS_INVALID_PARAMETER;
 }
 
-NTSTATUS pipe_client_t::transceive(
+NTSTATUS PIPE_CLIENT::transceive(
 	PVOID InputBuffer, ULONG InputBufferLength,
 	PVOID OutputBuffer, ULONG OutputBufferLength )
 {
@@ -676,32 +676,32 @@ NTSTATUS pipe_client_t::transceive(
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS pipe_client_t::set_pipe_info( FILE_PIPE_INFORMATION& pipe_info )
+NTSTATUS PIPE_CLIENT::set_pipe_info( FILE_PIPE_INFORMATION& pipe_info )
 {
 	trace("%ld %ld\n", pipe_info.ReadModeMessage, pipe_info.WaitModeBlocking);
 	return STATUS_SUCCESS;
 }
 
-pipe_factory::pipe_factory( ULONG _MaxInstances ) :
+PIPE_FACTORY::PIPE_FACTORY( ULONG _MaxInstances ) :
 	MaxInstances( _MaxInstances )
 {
 }
 
-NTSTATUS pipe_factory::alloc_object(OBJECT** obj)
+NTSTATUS PIPE_FACTORY::alloc_object(OBJECT** obj)
 {
 	assert(0);
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS pipe_factory::on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS PIPE_FACTORY::on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	NTSTATUS r;
 
-	trace("pipe_factory()\n");
-	pipe_container_t *container = 0;
+	trace("PIPE_FACTORY()\n");
+	PIPE_CONTAINER *container = 0;
 	if (!obj)
 	{
-		container = new pipe_container_t( MaxInstances );
+		container = new PIPE_CONTAINER( MaxInstances );
 		if (!container)
 			return STATUS_NO_MEMORY;
 
@@ -713,14 +713,14 @@ NTSTATUS pipe_factory::on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info
 	}
 	else
 	{
-		container = dynamic_cast<pipe_container_t*>( obj );
+		container = dynamic_cast<PIPE_CONTAINER*>( obj );
 		if (!container)
 			return STATUS_OBJECT_TYPE_MISMATCH;
 	}
 
 	assert( container );
 
-	pipe_server_t *pipe = 0;
+	PIPE_SERVER *pipe = 0;
 	r = container->create_server( pipe, MaxInstances );
 	if (r == STATUS_SUCCESS)
 		obj = pipe;
@@ -777,7 +777,7 @@ NTSTATUS NTAPI NtCreateNamedPipeFile(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	pipe_factory factory( MaxInstances );
+	PIPE_FACTORY factory( MaxInstances );
 
 	return factory.create( PipeHandle, AccessMask, ObjectAttributes );
 }

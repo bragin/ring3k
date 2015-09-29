@@ -294,16 +294,16 @@ bool OBJECT::access_allowed( ACCESS_MASK access, ACCESS_MASK handle_access )
 	return true;
 }
 
-sync_object_t::sync_object_t()
+SYNC_OBJECT::SYNC_OBJECT()
 {
 }
 
-sync_object_t::~sync_object_t()
+SYNC_OBJECT::~SYNC_OBJECT()
 {
 	assert( watchers.empty() );
 }
 
-void sync_object_t::notify_watchers()
+void SYNC_OBJECT::notify_watchers()
 {
 	watch_iter_t i(watchers);
 	while (i)
@@ -314,12 +314,12 @@ void sync_object_t::notify_watchers()
 	}
 }
 
-void sync_object_t::add_watch( watch_t *watch )
+void SYNC_OBJECT::add_watch( watch_t *watch )
 {
 	watchers.append( watch );
 }
 
-void sync_object_t::remove_watch( watch_t *watch )
+void SYNC_OBJECT::remove_watch( watch_t *watch )
 {
 	watchers.unlink( watch );
 }
@@ -328,7 +328,7 @@ watch_t::~watch_t()
 {
 }
 
-BOOLEAN sync_object_t::satisfy( void )
+BOOLEAN SYNC_OBJECT::satisfy( void )
 {
 	return TRUE;
 }

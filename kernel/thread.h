@@ -80,7 +80,7 @@ public:
 };
 
 class THREAD :
-	public sync_object_t,
+	public SYNC_OBJECT,
 	public FIBER,
 	public runlist_entry_t
 {
