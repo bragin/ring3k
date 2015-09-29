@@ -272,7 +272,7 @@ void *init_user_shared_memory()
 	return user_shared;
 }
 
-class ntusershm_tracer : public block_tracer
+class ntusershm_tracer : public BLOCK_TRACER
 {
 public:
 	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
@@ -350,7 +350,7 @@ void ntusershm_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 
 static ntusershm_tracer ntusershm_trace;
 
-class ntuserhandle_tracer : public block_tracer
+class ntuserhandle_tracer : public BLOCK_TRACER
 {
 public:
 	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );

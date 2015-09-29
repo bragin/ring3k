@@ -80,7 +80,7 @@ semaphore_t* semaphore_from_obj( object_t* obj )
 	return dynamic_cast<semaphore_t*>(obj);
 }
 
-class semaphore_factory : public object_factory
+class semaphore_factory : public OBJECT_FACTORY
 {
 private:
 	ULONG InitialCount;

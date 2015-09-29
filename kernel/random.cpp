@@ -53,7 +53,7 @@ NTSTATUS random_dev_t::write( PVOID Buffer, ULONG Length, ULONG *written )
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-class random_dev_factory_t: public object_factory
+class random_dev_factory_t: public OBJECT_FACTORY
 {
 public:
 	NTSTATUS alloc_object(object_t** obj);

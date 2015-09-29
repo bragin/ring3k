@@ -619,7 +619,7 @@ void *get_entry_point( process_t *p )
 	return ((BYTE*)dos) + entry;
 }
 
-class section_factory : public object_factory
+class section_factory : public OBJECT_FACTORY
 {
 private:
 	object_t *file;

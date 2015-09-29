@@ -167,7 +167,7 @@ NTSTATUS map_locale_data( address_space *vm, const char *name, void **addr )
 section_t *shared_section;
 KUSER_SHARED_DATA *shared_memory_address;
 
-class kshm_tracer : public block_tracer
+class kshm_tracer : public BLOCK_TRACER
 {
 public:
 	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
@@ -399,7 +399,7 @@ void process_t::terminate( NTSTATUS status )
 	exe = NULL;
 }
 
-class peb_tracer : public block_tracer
+class peb_tracer : public BLOCK_TRACER
 {
 public:
 	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );

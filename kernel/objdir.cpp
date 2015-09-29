@@ -102,7 +102,7 @@ object_t *object_dir_impl_t::lookup( UNICODE_STRING& name, bool ignore_case )
 	return 0;
 }
 
-class object_dir_factory : public object_factory
+class object_dir_factory : public OBJECT_FACTORY
 {
 public:
 	virtual NTSTATUS alloc_object(object_t** obj);

@@ -33,13 +33,13 @@
 #include "debug.h"
 #include "object.inl"
 
-// completion_packet_t holds the data for one I/O completion
-class completion_packet_t;
+// COMPLETION_PACKET holds the data for one I/O completion
+class COMPLETION_PACKET;
 
-typedef list_anchor<completion_packet_t,0> completion_list_t;
-typedef list_element<completion_packet_t> completion_list_element_t;
+typedef list_anchor<COMPLETION_PACKET,0> completion_list_t;
+typedef list_element<COMPLETION_PACKET> completion_list_element_t;
 
-class completion_packet_t
+class COMPLETION_PACKET
 {
 public:
 	completion_list_element_t entry[1];
@@ -47,7 +47,7 @@ public:
 	ULONG value;
 	NTSTATUS status;
 	ULONG info;
-	completion_packet_t(ULONG k, ULONG v, NTSTATUS s, ULONG i) :
+	COMPLETION_PACKET(ULONG k, ULONG v, NTSTATUS s, ULONG i) :
 		key(k),
 		value(v),
 		status(s),
@@ -56,34 +56,34 @@ public:
 	}
 };
 
-// completion_waiter_t is instantiated on the stack of a thread waiting on an I/O completion
-class completion_waiter_t;
+// COMPLETION_WAITER is instantiated on the stack of a thread waiting on an I/O completion
+class COMPLETION_WAITER;
 
-typedef list_anchor<completion_waiter_t,0> completion_waiter_list_t;
-typedef list_element<completion_waiter_t> completion_waiter_list_element_t;
+typedef list_anchor<COMPLETION_WAITER,0> completion_waiter_list_t;
+typedef list_element<COMPLETION_WAITER> completion_waiter_list_element_t;
 
-class completion_waiter_t
+class COMPLETION_WAITER
 {
 protected:
-	friend class list_anchor<completion_waiter_t,0>;
-	friend class list_element<completion_waiter_t>;
+	friend class list_anchor<COMPLETION_WAITER,0>;
+	friend class list_element<COMPLETION_WAITER>;
 	completion_waiter_list_element_t entry[1];
 	thread_t *thread;
-	completion_packet_t *packet;
+	COMPLETION_PACKET *packet;
 public:
-	completion_waiter_t(thread_t *t) : thread(t), packet(0) {}
-	~completion_waiter_t();
+	COMPLETION_WAITER(thread_t *t) : thread(t), packet(0) {}
+	~COMPLETION_WAITER();
 	void stop( completion_waiter_list_t& waiter_list, PLARGE_INTEGER timeout = 0);
 	void start();
-	completion_packet_t *get_packet();
-	void set_packet( completion_packet_t* _packet );
+	COMPLETION_PACKET *get_packet();
+	void set_packet( COMPLETION_PACKET* _packet );
 	bool is_linked()
 	{
 		return entry[0].is_linked();
 	}
 };
 
-void completion_waiter_t::stop(
+void COMPLETION_WAITER::stop(
 	completion_waiter_list_t& waiter_list,
 	PLARGE_INTEGER timeout)
 {
@@ -93,47 +93,47 @@ void completion_waiter_t::stop(
 	//thread->set_timeout( 0 );
 }
 
-void completion_waiter_t::start()
+void COMPLETION_WAITER::start()
 {
 	thread->start();
 }
 
-completion_waiter_t::~completion_waiter_t()
+COMPLETION_WAITER::~COMPLETION_WAITER()
 {
 	assert(!is_linked());
 }
 
-void completion_waiter_t::set_packet( completion_packet_t* _packet )
+void COMPLETION_WAITER::set_packet( COMPLETION_PACKET* _packet )
 {
 	assert( packet == NULL );
 	packet = _packet;
 }
 
-completion_packet_t *completion_waiter_t::get_packet()
+COMPLETION_PACKET *COMPLETION_WAITER::get_packet()
 {
 	return packet;
 }
 
-class completion_port_impl_t;
+class COMPLETION_PORT_IMPL;
 
-typedef list_anchor<completion_port_impl_t,0> completion_port_list_t;
-typedef list_element<completion_port_impl_t> completion_port_list_element_t;
+typedef list_anchor<COMPLETION_PORT_IMPL,0> COMPLETION_PORT_LIST;
+typedef list_element<COMPLETION_PORT_IMPL> completion_port_list_element_t;
 
-// completion_port_impl_t is the implementation of the I/O completion port object
-class completion_port_impl_t : public completion_port_t
+// COMPLETION_PORT_IMPL is the implementation of the I/O completion port object
+class COMPLETION_PORT_IMPL : public COMPLETION_PORT
 {
-	friend class list_anchor<completion_port_impl_t,0>;
-	friend class list_element<completion_port_impl_t>;
+	friend class list_anchor<COMPLETION_PORT_IMPL,0>;
+	friend class list_element<COMPLETION_PORT_IMPL>;
 	completion_port_list_element_t entry[1];
-	static completion_port_list_t waiting_thread_ports;
+	static COMPLETION_PORT_LIST waiting_thread_ports;
 	friend void check_completions( void );
 private:
 	ULONG num_threads;
 	completion_list_t queue;
 	completion_waiter_list_t waiter_list;
 public:
-	completion_port_impl_t( ULONG num );
-	virtual ~completion_port_impl_t();
+	COMPLETION_PORT_IMPL( ULONG num );
+	virtual ~COMPLETION_PORT_IMPL();
 	virtual BOOLEAN is_signalled( void );
 	virtual BOOLEAN satisfy( void );
 	virtual void set(ULONG key, ULONG value, NTSTATUS status, ULONG info);
@@ -145,25 +145,25 @@ public:
 	{
 		return entry[0].is_linked();
 	}
-	void start_waiter( completion_waiter_t *waiter );
+	void start_waiter( COMPLETION_WAITER *waiter );
 };
 
-completion_port_impl_t::completion_port_impl_t( ULONG num ) :
+COMPLETION_PORT_IMPL::COMPLETION_PORT_IMPL( ULONG num ) :
 	num_threads(num)
 {
 }
 
-BOOLEAN completion_port_impl_t::satisfy()
+BOOLEAN COMPLETION_PORT_IMPL::satisfy()
 {
 	return FALSE;
 }
 
-BOOLEAN completion_port_impl_t::is_signalled()
+BOOLEAN COMPLETION_PORT_IMPL::is_signalled()
 {
 	return TRUE;
 }
 
-bool completion_port_impl_t::access_allowed( ACCESS_MASK required, ACCESS_MASK handle )
+bool COMPLETION_PORT_IMPL::access_allowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
 	return check_access( required, handle,
 						 IO_COMPLETION_QUERY_STATE,
@@ -171,49 +171,49 @@ bool completion_port_impl_t::access_allowed( ACCESS_MASK required, ACCESS_MASK h
 						 IO_COMPLETION_ALL_ACCESS );
 }
 
-completion_port_impl_t::~completion_port_impl_t()
+COMPLETION_PORT_IMPL::~COMPLETION_PORT_IMPL()
 {
 	assert(!is_linked());
 }
 
-completion_port_t::~completion_port_t()
+COMPLETION_PORT::~COMPLETION_PORT()
 {
 }
 
-completion_port_list_t completion_port_impl_t::waiting_thread_ports;
+COMPLETION_PORT_LIST COMPLETION_PORT_IMPL::waiting_thread_ports;
 
 void check_completions( void )
 {
-	completion_port_impl_t *port = completion_port_impl_t::waiting_thread_ports.head();
+	COMPLETION_PORT_IMPL *port = COMPLETION_PORT_IMPL::waiting_thread_ports.head();
 	if (!port)
 		return;
 	port->check_waiters();
 }
 
-void completion_port_impl_t::check_waiters()
+void COMPLETION_PORT_IMPL::check_waiters()
 {
 	// start the first waiter
-	completion_waiter_t *waiter = waiter_list.head();
+	COMPLETION_WAITER *waiter = waiter_list.head();
 	assert( waiter );
 
 	start_waiter( waiter );
 }
 
-void completion_port_impl_t::port_wait_idle()
+void COMPLETION_PORT_IMPL::port_wait_idle()
 {
 	if (is_linked())
 		return;
 	waiting_thread_ports.append( this );
 }
 
-void completion_port_impl_t::set(ULONG key, ULONG value, NTSTATUS status, ULONG info)
+void COMPLETION_PORT_IMPL::set(ULONG key, ULONG value, NTSTATUS status, ULONG info)
 {
-	completion_packet_t *packet;
-	packet = new completion_packet_t( key, value, status, info );
+	COMPLETION_PACKET *packet;
+	packet = new COMPLETION_PACKET( key, value, status, info );
 	queue.append( packet );
 
 	// queue a packet if there's no waiting thread
-	completion_waiter_t *waiter = waiter_list.head();
+	COMPLETION_WAITER *waiter = waiter_list.head();
 	if (!waiter)
 		return;
 
@@ -230,10 +230,10 @@ void completion_port_impl_t::set(ULONG key, ULONG value, NTSTATUS status, ULONG 
 	assert( queue.empty() );
 }
 
-void completion_port_impl_t::start_waiter( completion_waiter_t *waiter )
+void COMPLETION_PORT_IMPL::start_waiter( COMPLETION_WAITER *waiter )
 {
 	// remove a packet from the queue
-	completion_packet_t *packet = queue.head();
+	COMPLETION_PACKET *packet = queue.head();
 	assert( packet );
 	queue.unlink( packet );
 
@@ -249,15 +249,15 @@ void completion_port_impl_t::start_waiter( completion_waiter_t *waiter )
 	waiter->start();
 }
 
-NTSTATUS completion_port_impl_t::remove(ULONG& key, ULONG& value, NTSTATUS& status, ULONG& info, PLARGE_INTEGER timeout)
+NTSTATUS COMPLETION_PORT_IMPL::remove(ULONG& key, ULONG& value, NTSTATUS& status, ULONG& info, PLARGE_INTEGER timeout)
 {
 
 	// try remove the completion entry first
-	completion_packet_t *packet = queue.head();
+	COMPLETION_PACKET *packet = queue.head();
 	if (!packet)
 	{
 		// queue thread here
-		completion_waiter_t waiter(current);
+		COMPLETION_WAITER waiter(current);
 		waiter.stop( waiter_list, timeout );
 		packet = waiter.get_packet();
 	}
@@ -268,7 +268,7 @@ NTSTATUS completion_port_impl_t::remove(ULONG& key, ULONG& value, NTSTATUS& stat
 		// a completion port isn't a FIFO - leave the packt alone
 		// wait for idle, then remove the packet
 		port_wait_idle();
-		completion_waiter_t waiter(current);
+		COMPLETION_WAITER waiter(current);
 		waiter.stop( waiter_list, timeout );
 		//if (queue.empty() && is_linked())
 			//waiting_thread_ports.unlink( this );
@@ -293,22 +293,22 @@ NTSTATUS completion_port_impl_t::remove(ULONG& key, ULONG& value, NTSTATUS& stat
 	return STATUS_SUCCESS;
 }
 
-class completion_factory : public object_factory
+class COMPLETION_FACTORY : public OBJECT_FACTORY
 {
 	static const int num_cpus = 1;
 private:
 	ULONG num_threads;
 public:
-	completion_factory(ULONG n) : num_threads(n) {}
+	COMPLETION_FACTORY(ULONG n) : num_threads(n) {}
 	virtual NTSTATUS alloc_object(object_t** obj);
 };
 
-NTSTATUS completion_factory::alloc_object(object_t** obj)
+NTSTATUS COMPLETION_FACTORY::alloc_object(object_t** obj)
 {
 	if (num_threads == 0)
 		num_threads = num_cpus;
 
-	*obj = new completion_port_impl_t( num_threads );
+	*obj = new COMPLETION_PORT_IMPL( num_threads );
 	if (!*obj)
 		return STATUS_NO_MEMORY;
 	return STATUS_SUCCESS;
@@ -323,7 +323,7 @@ NTSTATUS NTAPI NtCreateIoCompletion(
 {
 	trace("%p %08lx %p %ld\n", IoCompletionHandle, DesiredAccess,
 		  ObjectAttributes, NumberOfConcurrentThreads);
-	completion_factory factory( NumberOfConcurrentThreads );
+	COMPLETION_FACTORY factory( NumberOfConcurrentThreads );
 	return factory.create( IoCompletionHandle, DesiredAccess, ObjectAttributes );
 }
 
@@ -334,7 +334,7 @@ NTSTATUS NTAPI NtOpenIoCompletion(
 {
 	trace("%p %08lx %p\n", IoCompletionHandle, AccessMask,
 		  ObjectAttributes);
-	return nt_open_object<completion_port_t>( IoCompletionHandle, AccessMask, ObjectAttributes );
+	return nt_open_object<COMPLETION_PORT>( IoCompletionHandle, AccessMask, ObjectAttributes );
 }
 
 // blocking
@@ -350,7 +350,7 @@ NTSTATUS NTAPI NtRemoveIoCompletion(
 	trace("%p %p %p %p %p\n", IoCompletionHandle, IoCompletionKey,
 		  IoCompletionValue, IoStatusBlock, TimeOut);
 
-	completion_port_impl_t *port = 0;
+	COMPLETION_PORT_IMPL *port = 0;
 	r = object_from_handle( port, IoCompletionHandle, IO_COMPLETION_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -417,7 +417,7 @@ NTSTATUS NTAPI NtSetIoCompletion(
 	trace("%p %08lx %08lx %08lx %08lx\n", IoCompletionHandle, IoCompletionKey,
 		  IoCompletionValue, Status, Information);
 
-	completion_port_impl_t *port = 0;
+	COMPLETION_PORT_IMPL *port = 0;
 	r = object_from_handle( port, IoCompletionHandle, IO_COMPLETION_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;

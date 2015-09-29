@@ -412,7 +412,7 @@ NTSTATUS address_space_impl::allocate_virtual_memory( BYTE **start, int zero_bit
 	return set_block_state( mb, state, prot );
 }
 
-NTSTATUS address_space_impl::map_fd( BYTE **start, int zero_bits, size_t length, int state, int prot, backing_store_t *backing )
+NTSTATUS address_space_impl::map_fd( BYTE **start, int zero_bits, size_t length, int state, int prot, BACKING_STORE *backing )
 {
 	NTSTATUS r;
 
@@ -735,7 +735,7 @@ bool address_space_impl::set_traced( void* addr, bool traced )
 	return mb->set_traced( this, traced );
 }
 
-bool address_space_impl::set_tracer( BYTE *addr, block_tracer& tracer )
+bool address_space_impl::set_tracer( BYTE *addr, BLOCK_TRACER& tracer )
 {
 	// trace it
 	MBLOCK* mb = get_MBLOCK( addr );

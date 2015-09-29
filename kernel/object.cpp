@@ -179,7 +179,7 @@ void handle_table_t::free_all_handles()
 	}
 }
 
-NTSTATUS object_factory::on_open( object_dir_t* dir, object_t*& obj, open_info_t& info )
+NTSTATUS OBJECT_FACTORY::on_open( object_dir_t* dir, object_t*& obj, open_info_t& info )
 {
 	// object already exists?
 	if (obj)
@@ -204,13 +204,13 @@ NTSTATUS object_factory::on_open( object_dir_t* dir, object_t*& obj, open_info_t
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS object_factory::create_kernel( object_t*& obj, UNICODE_STRING& us )
+NTSTATUS OBJECT_FACTORY::create_kernel( object_t*& obj, UNICODE_STRING& us )
 {
 	path.set( us );
 	return open_root( obj, *this );
 }
 
-NTSTATUS object_factory::create(
+NTSTATUS OBJECT_FACTORY::create(
 	PHANDLE Handle,
 	ACCESS_MASK AccessMask,
 	POBJECT_ATTRIBUTES ObjectAttributes)
@@ -257,7 +257,7 @@ NTSTATUS object_factory::create(
 	return r;
 }
 
-object_factory::~object_factory()
+OBJECT_FACTORY::~OBJECT_FACTORY()
 {
 }
 

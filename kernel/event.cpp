@@ -145,7 +145,7 @@ void event_impl_t::pulse( PULONG prev )
 	reset(&dummy);
 }
 
-class event_factory : public object_factory
+class event_factory : public OBJECT_FACTORY
 {
 private:
 	EVENT_TYPE Type;
@@ -405,7 +405,7 @@ NTSTATUS event_pair_operation( HANDLE handle, NTSTATUS (event_pair_t::*op)() )
 	return (eventpair->*op)();
 }
 
-class event_pair_factory : public object_factory
+class event_pair_factory : public OBJECT_FACTORY
 {
 public:
 	virtual NTSTATUS alloc_object(object_t** obj);

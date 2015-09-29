@@ -88,7 +88,7 @@ NTSTATUS symlink_t::open( object_t *&out, open_info_t& info )
 	return open_root( out, info );
 }
 
-class symlink_factory_t : public object_factory
+class symlink_factory_t : public OBJECT_FACTORY
 {
 private:
 	const UNICODE_STRING& target;

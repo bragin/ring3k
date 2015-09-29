@@ -57,7 +57,7 @@ public:
 };
 
 // factory to create the pipe device at startup
-class pipe_device_factory : public object_factory
+class pipe_device_factory : public OBJECT_FACTORY
 {
 public:
 	NTSTATUS alloc_object(object_t** obj);
@@ -177,7 +177,7 @@ public:
 };
 
 // server factory, used by NtCreateNamedPipeFile
-class pipe_factory : public object_factory
+class pipe_factory : public OBJECT_FACTORY
 {
 	ULONG MaxInstances;
 public:

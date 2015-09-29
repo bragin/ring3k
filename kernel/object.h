@@ -31,7 +31,7 @@ typedef list_anchor<object_t, 0> object_list_t;
 typedef list_element<object_t> object_entry_t;
 typedef list_iter<object_t, 0> object_iter_t;
 
-class object_factory;
+class OBJECT_FACTORY;
 class open_info_t;
 
 class open_info_t
@@ -77,7 +77,7 @@ public:
 	virtual NTSTATUS open( object_t *&out, open_info_t& info );
 };
 
-class object_factory : public open_info_t
+class OBJECT_FACTORY : public open_info_t
 {
 protected:
 	virtual NTSTATUS alloc_object(object_t** obj) = 0;
@@ -88,7 +88,7 @@ public:
 		ACCESS_MASK AccessMask,
 		POBJECT_ATTRIBUTES ObjectAttributes);
 	NTSTATUS create_kernel( object_t*& obj, UNICODE_STRING& us );
-	virtual ~object_factory();
+	virtual ~OBJECT_FACTORY();
 };
 
 class watch_t;

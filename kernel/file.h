@@ -28,10 +28,10 @@
 #include "object.h"
 #include "event.h"
 
-class completion_port_t : public sync_object_t
+class COMPLETION_PORT : public sync_object_t
 {
 public:
-	virtual ~completion_port_t() = 0;
+	virtual ~COMPLETION_PORT() = 0;
 	virtual BOOLEAN is_signalled( void ) = 0;
 	virtual BOOLEAN satisfy( void ) = 0;
 	virtual void set(ULONG key, ULONG value, NTSTATUS status, ULONG info) = 0;
@@ -43,13 +43,13 @@ void check_completions( void );
 
 class io_object_t : virtual public object_t
 {
-	completion_port_t *completion_port;
+	COMPLETION_PORT *completion_port;
 	ULONG completion_key;
 public:
 	io_object_t();
 	virtual NTSTATUS read( PVOID buffer, ULONG length, ULONG *read ) = 0;
 	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written ) = 0;
-	void set_completion_port( completion_port_t *port, ULONG key );
+	void set_completion_port( COMPLETION_PORT *port, ULONG key );
 	virtual NTSTATUS set_position( LARGE_INTEGER& ofs );
 	virtual NTSTATUS fs_control( event_t* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 								 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );

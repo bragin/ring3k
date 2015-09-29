@@ -62,7 +62,7 @@ io_object_t::io_object_t() :
 {
 }
 
-void io_object_t::set_completion_port( completion_port_t *port, ULONG key )
+void io_object_t::set_completion_port( COMPLETION_PORT *port, ULONG key )
 {
 	if (completion_port)
 	{
@@ -264,7 +264,7 @@ public:
 						ULONG Options, ULONG CreateDisposition, bool &created, bool case_insensitive );
 };
 
-class directory_factory : public object_factory
+class directory_factory : public OBJECT_FACTORY
 {
 	int fd;
 public:
@@ -1186,7 +1186,7 @@ NTSTATUS NTAPI NtSetInformationFile(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	completion_port_t *completion_port = 0;
+	COMPLETION_PORT *completion_port = 0;
 
 	switch (FileInformationClass)
 	{

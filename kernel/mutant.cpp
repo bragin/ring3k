@@ -86,7 +86,7 @@ NTSTATUS mutant_t::release_ownership(ULONG& prev)
 	return STATUS_SUCCESS;
 }
 
-class mutant_factory : public object_factory
+class mutant_factory : public OBJECT_FACTORY
 {
 private:
 	BOOLEAN InitialOwner;

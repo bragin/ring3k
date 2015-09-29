@@ -87,7 +87,7 @@ void list_graphics_drivers()
 
 win32k_manager_t *win32k_manager;
 
-class ntgdishm_tracer : public block_tracer
+class ntgdishm_tracer : public BLOCK_TRACER
 {
 public:
 	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
@@ -450,7 +450,7 @@ HGDIOBJ alloc_gdi_object( BOOL stock, ULONG type )
 	return gdi_object_t::alloc( stock, type );
 }
 
-class gdishm_tracer : public block_tracer
+class gdishm_tracer : public BLOCK_TRACER
 {
 public:
 	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );

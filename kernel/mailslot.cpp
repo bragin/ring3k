@@ -50,7 +50,7 @@ NTSTATUS mailslot_t::write( PVOID Buffer, ULONG Length, ULONG *Written )
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-class mailslot_factory : public object_factory
+class mailslot_factory : public OBJECT_FACTORY
 {
 public:
 	mailslot_factory() {}

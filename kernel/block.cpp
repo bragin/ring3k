@@ -78,18 +78,18 @@ static inline BOOLEAN mem_protection_is_valid(ULONG protect)
 class COREPAGES : public MBLOCK
 {
 public:
-	COREPAGES( BYTE* address, size_t sz, backing_store_t* _backing );
+	COREPAGES( BYTE* address, size_t sz, BACKING_STORE* _backing );
 	//COREPAGES( BYTE* address, size_t sz );
 	virtual int local_map( int prot );
 	virtual int remote_map( address_space *vm, ULONG prot );
 	virtual MBLOCK *do_split( BYTE *address, size_t size );
 	virtual ~COREPAGES();
 private:
-	backing_store_t* backing;
+	BACKING_STORE* backing;
 	int core_ofs;
 };
 
-COREPAGES::COREPAGES( BYTE* address, size_t sz, backing_store_t* _backing ) :
+COREPAGES::COREPAGES( BYTE* address, size_t sz, BACKING_STORE* _backing ) :
 	MBLOCK( address, sz ),
 	backing( _backing ),
 	core_ofs(0)
@@ -126,45 +126,45 @@ COREPAGES::~COREPAGES()
 	backing->release();
 }
 
-class guardpages : public MBLOCK
+class GUARDPAGES : public MBLOCK
 {
 protected:
-	guardpages();
+	GUARDPAGES();
 public:
-	guardpages( BYTE* address, size_t sz );
+	GUARDPAGES( BYTE* address, size_t sz );
 	virtual int local_map( int prot );
 	virtual int remote_map( address_space *vm, ULONG prot );
 	virtual MBLOCK *do_split( BYTE *address, size_t size );
-	virtual ~guardpages();
+	virtual ~GUARDPAGES();
 };
 
-guardpages::guardpages( BYTE* address, size_t sz ) :
+GUARDPAGES::GUARDPAGES( BYTE* address, size_t sz ) :
 	MBLOCK( address, sz )
 {
 }
 
-guardpages::~guardpages()
+GUARDPAGES::~GUARDPAGES()
 {
 }
 
-int guardpages::local_map( int prot )
+int GUARDPAGES::local_map( int prot )
 {
 	return -1;
 }
 
-int guardpages::remote_map( address_space *vm, ULONG prot )
+int GUARDPAGES::remote_map( address_space *vm, ULONG prot )
 {
 	return 0;
 }
 
-MBLOCK* guardpages::do_split( BYTE *address, size_t size )
+MBLOCK* GUARDPAGES::do_split( BYTE *address, size_t size )
 {
-	return new guardpages( address, size );
+	return new GUARDPAGES( address, size );
 }
 
 MBLOCK* alloc_guard_pages(BYTE* address, ULONG size)
 {
-	return new guardpages(address, size);
+	return new GUARDPAGES(address, size);
 }
 
 int create_mapping_fd( int sz )
@@ -188,12 +188,12 @@ int create_mapping_fd( int sz )
 	return fd;
 }
 
-class anonymous_pages_t: public backing_store_t
+class ANONYMOUS_PAGES: public BACKING_STORE
 {
 	int fd;
 	int refcount;
 public:
-	anonymous_pages_t( int _fd ): fd(_fd), refcount(1) {}
+	ANONYMOUS_PAGES( int _fd ): fd(_fd), refcount(1) {}
 	virtual int get_fd()
 	{
 		return fd;
@@ -213,13 +213,13 @@ MBLOCK* alloc_core_pages(BYTE* address, ULONG size)
 	int fd = create_mapping_fd( size );
 	if (fd < 0)
 		return NULL;
-	backing_store_t* backing = new anonymous_pages_t( fd );
+	BACKING_STORE* backing = new ANONYMOUS_PAGES( fd );
 	MBLOCK *ret = new COREPAGES( address, size, backing );
 	backing->release();
 	return ret;
 }
 
-MBLOCK* alloc_fd_pages(BYTE* address, ULONG size, backing_store_t *backing )
+MBLOCK* alloc_fd_pages(BYTE* address, ULONG size, BACKING_STORE *backing )
 {
 	return new COREPAGES( address, size, backing );
 }
@@ -353,7 +353,7 @@ void MBLOCK::remote_remap( address_space *vm, bool except )
 		die("remote_map failed\n");
 }
 
-bool MBLOCK::set_tracer( address_space *vm, block_tracer *bt )
+bool MBLOCK::set_tracer( address_space *vm, BLOCK_TRACER *bt )
 {
 	if (!bt->enabled())
 		return false;
@@ -438,17 +438,17 @@ void MBLOCK::set_section( object_t *s )
 	addref( section );
 }
 
-void block_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG Eip )
+void BLOCK_TRACER::on_access( MBLOCK *mb, BYTE *address, ULONG Eip )
 {
 	fprintf(stderr, "%04lx: accessed %p from %08lx\n",
 			current->trace_id(), address, Eip );
 }
 
-bool block_tracer::enabled() const
+bool BLOCK_TRACER::enabled() const
 {
 	return option_trace;
 }
 
-block_tracer::~block_tracer()
+BLOCK_TRACER::~BLOCK_TRACER()
 {
 }

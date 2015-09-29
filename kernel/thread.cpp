@@ -1363,7 +1363,7 @@ NTSTATUS NTAPI NtDelayExecution( BOOLEAN Alertable, PLARGE_INTEGER Interval )
 	return r;
 }
 
-class teb_tracer : public block_tracer
+class teb_tracer : public BLOCK_TRACER
 {
 public:
 	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );

@@ -338,7 +338,7 @@ BOOLEAN sync_timer_t::satisfy()
 	return nttimer_t::satisfy();
 }
 
-class timer_factory : public object_factory
+class timer_factory : public OBJECT_FACTORY
 {
 private:
 	TIMER_TYPE Type;

@@ -36,21 +36,21 @@ public:
 	virtual ~execution_context_t() {};
 };
 
-class backing_store_t
+class BACKING_STORE
 {
 public:
 	virtual int get_fd() = 0;
 	virtual void addref() = 0;
 	virtual void release() = 0;
-	virtual ~backing_store_t() {};
+	virtual ~BACKING_STORE() {};
 };
 
-class block_tracer
+class BLOCK_TRACER
 {
 public:
 	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool enabled() const;
-	virtual ~block_tracer();
+	virtual ~BLOCK_TRACER();
 };
 
 class address_space
@@ -63,7 +63,7 @@ public:
 	virtual NTSTATUS copy_from_user( void *dest, const void *src, size_t len ) = 0;
 	virtual NTSTATUS verify_for_write( void *dest, size_t len ) = 0;
 	virtual NTSTATUS allocate_virtual_memory( BYTE **start, int zero_bits, size_t length, int state, int prot ) = 0;
-	virtual NTSTATUS map_fd( BYTE **start, int zero_bits, size_t length, int state, int prot, backing_store_t *backing ) = 0;
+	virtual NTSTATUS map_fd( BYTE **start, int zero_bits, size_t length, int state, int prot, BACKING_STORE *backing ) = 0;
 	virtual NTSTATUS free_virtual_memory( void *start, size_t length, ULONG state ) = 0;
 	virtual NTSTATUS unmap_view( void *start ) = 0;
 	virtual void dump() = 0;
@@ -76,7 +76,7 @@ public:
 	virtual int get_fault_info( void *& addr ) = 0;
 	virtual bool traced_access( void* address, ULONG Eip ) = 0;
 	virtual bool set_traced( void* address, bool traced ) = 0;
-	virtual bool set_tracer( BYTE* address, block_tracer& tracer) = 0;
+	virtual bool set_tracer( BYTE* address, BLOCK_TRACER& tracer) = 0;
 };
 
 unsigned int allocate_core_memory(unsigned int size);
@@ -104,7 +104,7 @@ protected:
 	BYTE *kernel_address;
 
 	// access tracing
-	block_tracer *tracer;
+	BLOCK_TRACER *tracer;
 	object_t *section;
 
 public:
@@ -164,7 +164,7 @@ public:
 	};
 	static ULONG mmap_flag_from_page_prot( ULONG prot );
 	void remote_remap( address_space *vm, bool except );
-	bool set_tracer( address_space *vm, block_tracer *tracer);
+	bool set_tracer( address_space *vm, BLOCK_TRACER *tracer);
 	bool traced_access( BYTE *address, ULONG Eip );
 	bool set_traced( address_space *vm, bool traced );
 	void set_section( object_t *section );
@@ -173,7 +173,7 @@ public:
 
 MBLOCK* alloc_guard_pages(BYTE* address, ULONG size);
 MBLOCK* alloc_core_pages(BYTE* address, ULONG size);
-MBLOCK* alloc_fd_pages(BYTE* address, ULONG size, backing_store_t* backing);
+MBLOCK* alloc_fd_pages(BYTE* address, ULONG size, BACKING_STORE* backing);
 
 int create_mapping_fd( int sz );
 
@@ -220,7 +220,7 @@ public:
 	virtual NTSTATUS copy_to_user( void *dest, const void *src, size_t len );
 	virtual NTSTATUS verify_for_write( void *dest, size_t len );
 	virtual NTSTATUS allocate_virtual_memory( BYTE **start, int zero_bits, size_t length, int state, int prot );
-	virtual NTSTATUS map_fd( BYTE **start, int zero_bits, size_t length, int state, int prot, backing_store_t *backing );
+	virtual NTSTATUS map_fd( BYTE **start, int zero_bits, size_t length, int state, int prot, BACKING_STORE *backing );
 	virtual NTSTATUS free_virtual_memory( void *start, size_t length, ULONG state );
 	virtual NTSTATUS unmap_view( void *start );
 	virtual void dump();
@@ -233,7 +233,7 @@ public:
 	virtual void init_context( CONTEXT& ctx ) = 0;
 	virtual bool traced_access( void* address, ULONG Eip );
 	virtual bool set_traced( void* address, bool traced );
-	virtual bool set_tracer( BYTE* address, block_tracer& tracer);
+	virtual bool set_tracer( BYTE* address, BLOCK_TRACER& tracer);
 };
 
 extern struct address_space_impl *(*pcreate_address_space)();
