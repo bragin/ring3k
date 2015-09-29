@@ -40,7 +40,7 @@
 #include "file.h"
 #include "queue.h"
 
-class thread_impl_t;
+class THREAD_IMPL;
 
 class thread_obj_wait_t;
 typedef list_anchor<thread_obj_wait_t, 0> thread_obj_wait_list_t;
@@ -51,9 +51,9 @@ struct thread_obj_wait_t : public watch_t
 {
 	thread_obj_wait_element_t entry[1];
 	sync_object_t *obj;
-	thread_impl_t *thread;
+	THREAD_IMPL *thread;
 public:
-	thread_obj_wait_t( thread_impl_t* t, sync_object_t* o);
+	thread_obj_wait_t( THREAD_IMPL* t, sync_object_t* o);
 	virtual void notify();
 	virtual ~thread_obj_wait_t();
 	BOOLEAN is_signalled()
@@ -76,14 +76,14 @@ class callback_frame_t
 	PVOID buffer;
 	BOOLEAN complete;
 public:
-	callback_frame_t(thread_impl_t *t);
+	callback_frame_t(THREAD_IMPL *t);
 	void do_return(NTSTATUS s, ULONG l, PVOID b);
 	void get_return(NTSTATUS& s, ULONG& l, PVOID& b);
 	BOOLEAN is_complete()
 	{
 		return complete;
 	}
-	void pop( thread_impl_t *t );
+	void pop( THREAD_IMPL *t );
 };
 
 struct thread_apc_t;
@@ -104,8 +104,8 @@ struct thread_apc_t
 	PVOID arg[3];
 };
 
-class thread_impl_t :
-	public thread_t,
+class THREAD_IMPL :
+	public THREAD,
 	public execution_context_t,
 	public timeout_t
 {
@@ -146,8 +146,8 @@ class thread_impl_t :
 	void *trace_accessed_address;
 
 public:
-	thread_impl_t( process_t *p );
-	~thread_impl_t();
+	THREAD_IMPL( PROCESS *p );
+	~THREAD_IMPL();
 	NTSTATUS create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended );
 	virtual BOOLEAN is_signalled( void );
 	void set_state( THREAD_STATE state );
@@ -234,7 +234,7 @@ ULONG runlist_entry_t::num_active_threads()
 	return num_running_threads;
 }
 
-int thread_impl_t::set_initial_regs( void *start, void *stack)
+int THREAD_IMPL::set_initial_regs( void *start, void *stack)
 {
 	process->vm->init_context( ctx );
 
@@ -246,12 +246,12 @@ int thread_impl_t::set_initial_regs( void *start, void *stack)
 	return 0;
 }
 
-BOOLEAN thread_impl_t::is_signalled( void )
+BOOLEAN THREAD_IMPL::is_signalled( void )
 {
 	return (ThreadState == StateTerminated);
 }
 
-void thread_impl_t::set_state( THREAD_STATE state )
+void THREAD_IMPL::set_state( THREAD_STATE state )
 {
 	ULONG prev_state = ThreadState;
 
@@ -282,7 +282,7 @@ void thread_impl_t::set_state( THREAD_STATE state )
 }
 
 
-NTSTATUS thread_impl_t::kernel_debugger_output_string( struct kernel_debug_string_output *hdr )
+NTSTATUS THREAD_IMPL::kernel_debugger_output_string( struct kernel_debug_string_output *hdr )
 {
 	struct kernel_debug_string_output header;
 	char *string;
@@ -318,14 +318,14 @@ NTSTATUS thread_impl_t::kernel_debugger_output_string( struct kernel_debug_strin
 	return r;
 }
 
-ULONG thread_t::trace_id()
+ULONG THREAD::trace_id()
 {
 	if (!process)
 		return id;
 	return id | (process->id<<8);
 }
 
-NTSTATUS thread_impl_t::kernel_debugger_call( ULONG func, void *arg1, void *arg2 )
+NTSTATUS THREAD_IMPL::kernel_debugger_call( ULONG func, void *arg1, void *arg2 )
 {
 	NTSTATUS r;
 
@@ -362,7 +362,7 @@ NTSTATUS thread_impl_t::kernel_debugger_call( ULONG func, void *arg1, void *arg2
 	return r;
 }
 
-BOOLEAN thread_impl_t::software_interrupt( BYTE number )
+BOOLEAN THREAD_IMPL::software_interrupt( BYTE number )
 {
 	if (number > 0x2e || number < 0x2b)
 	{
@@ -403,7 +403,7 @@ BOOLEAN thread_impl_t::software_interrupt( BYTE number )
 	return TRUE;
 }
 
-bool thread_impl_t::traced_access()
+bool THREAD_IMPL::traced_access()
 {
 	// only trace the first fault
 	if (trace_step_access)
@@ -423,7 +423,7 @@ bool thread_impl_t::traced_access()
 	return true;
 }
 
-void thread_impl_t::handle_user_segv( ULONG code )
+void THREAD_IMPL::handle_user_segv( ULONG code )
 {
 	trace("%04lx: exception at %08lx\n", trace_id(), ctx.Eip);
 	if (option_trace)
@@ -448,7 +448,7 @@ void thread_impl_t::handle_user_segv( ULONG code )
 	start_exception_handler( info );
 }
 
-void thread_impl_t::start_exception_handler(exception_stack_frame& info)
+void THREAD_IMPL::start_exception_handler(exception_stack_frame& info)
 {
 	if (0)
 	{
@@ -494,7 +494,7 @@ void thread_impl_t::start_exception_handler(exception_stack_frame& info)
 	}
 
 	// get the address of the user side handler
-	// FIXME: this should be stored in the process_t structure
+	// FIXME: this should be stored in the PROCESS structure
 	BYTE *pKiExceptionDispatcher = (BYTE*)process->pntdll +
 								   get_proc_address( ntdll_section, "KiUserExceptionDispatcher" );
 	if (!pKiExceptionDispatcher)
@@ -504,14 +504,14 @@ void thread_impl_t::start_exception_handler(exception_stack_frame& info)
 	ctx.Eip = (ULONG) pKiExceptionDispatcher;
 }
 
-callback_frame_t* thread_impl_t::set_callback( callback_frame_t *cb )
+callback_frame_t* THREAD_IMPL::set_callback( callback_frame_t *cb )
 {
 	callback_frame_t *old = callback_frame;
 	callback_frame = cb;
 	return old;
 }
 
-callback_frame_t::callback_frame_t(thread_impl_t *t) :
+callback_frame_t::callback_frame_t(THREAD_IMPL *t) :
 	status(STATUS_PENDING),
 	length(0),
 	buffer(0),
@@ -531,7 +531,7 @@ void callback_frame_t::do_return( NTSTATUS s, ULONG l, PVOID b )
 	complete = TRUE;
 }
 
-void callback_frame_t::pop( thread_impl_t *t )
+void callback_frame_t::pop( THREAD_IMPL *t )
 {
 	assert( complete );
 	t->set_callback( prev );
@@ -547,23 +547,23 @@ void callback_frame_t::get_return(NTSTATUS& s, ULONG& l, PVOID& b)
 	b = buffer;
 }
 
-void* thread_impl_t::push( ULONG count )
+void* THREAD_IMPL::push( ULONG count )
 {
 	ctx.Esp -= count;
 	return (void*) ctx.Esp;
 }
 
-void thread_impl_t::pop( ULONG count )
+void THREAD_IMPL::pop( ULONG count )
 {
 	ctx.Esp += count;
 }
 
-PTEB thread_impl_t::get_teb()
+PTEB THREAD_IMPL::get_teb()
 {
 	return teb;
 }
 
-NTSTATUS thread_impl_t::do_user_callback( ULONG index, ULONG &length, PVOID &buffer)
+NTSTATUS THREAD_IMPL::do_user_callback( ULONG index, ULONG &length, PVOID &buffer)
 {
 	struct
 	{
@@ -616,7 +616,7 @@ NTSTATUS thread_impl_t::do_user_callback( ULONG index, ULONG &length, PVOID &buf
 	return r;
 }
 
-NTSTATUS thread_impl_t::user_callback_return( PVOID Result, ULONG ResultLength, NTSTATUS Status )
+NTSTATUS THREAD_IMPL::user_callback_return( PVOID Result, ULONG ResultLength, NTSTATUS Status )
 {
 	if (!callback_frame)
 		return STATUS_UNSUCCESSFUL;
@@ -634,7 +634,7 @@ NTSTATUS thread_impl_t::user_callback_return( PVOID Result, ULONG ResultLength, 
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS thread_impl_t::queue_apc_thread(
+NTSTATUS THREAD_IMPL::queue_apc_thread(
 	PKNORMAL_ROUTINE ApcRoutine,
 	PVOID Arg1,
 	PVOID Arg2,
@@ -659,7 +659,7 @@ NTSTATUS thread_impl_t::queue_apc_thread(
 	return STATUS_SUCCESS;
 }
 
-BOOLEAN thread_impl_t::deliver_apc(NTSTATUS thread_return)
+BOOLEAN THREAD_IMPL::deliver_apc(NTSTATUS thread_return)
 {
 	// NOTE: can use this to start a thread...
 	thread_apc_t *apc = apc_list.head();
@@ -708,7 +708,7 @@ end:
 	return TRUE;
 }
 
-void thread_impl_t::copy_registers( CONTEXT& dest, CONTEXT &src, ULONG flags )
+void THREAD_IMPL::copy_registers( CONTEXT& dest, CONTEXT &src, ULONG flags )
 {
 #define SET(reg) dest.reg = src.reg
 #define SETSEG(reg) dest.reg = src.reg&0xffff
@@ -759,20 +759,20 @@ void thread_impl_t::copy_registers( CONTEXT& dest, CONTEXT &src, ULONG flags )
 #undef SETSEG
 }
 
-void thread_impl_t::get_context( CONTEXT& c )
+void THREAD_IMPL::get_context( CONTEXT& c )
 {
 	copy_registers( c, ctx, c.ContextFlags );
 }
 
 // when override_return is true, Eax will not be set on syscall return
-void thread_impl_t::set_context( CONTEXT& c, bool override_return )
+void THREAD_IMPL::set_context( CONTEXT& c, bool override_return )
 {
 	copy_registers( ctx, c, c.ContextFlags );
 	context_changed = override_return;
 	dump_regs( &ctx );
 }
 
-NTSTATUS thread_impl_t::copy_to_user( void *dest, const void *src, size_t count )
+NTSTATUS THREAD_IMPL::copy_to_user( void *dest, const void *src, size_t count )
 {
 	assert( process->is_valid() );
 	if (is_terminated())
@@ -780,7 +780,7 @@ NTSTATUS thread_impl_t::copy_to_user( void *dest, const void *src, size_t count 
 	return process->vm->copy_to_user( dest, src, count );
 }
 
-NTSTATUS thread_impl_t::copy_from_user( void *dest, const void *src, size_t count )
+NTSTATUS THREAD_IMPL::copy_from_user( void *dest, const void *src, size_t count )
 {
 	assert( process->is_valid() );
 	if (is_terminated())
@@ -788,7 +788,7 @@ NTSTATUS thread_impl_t::copy_from_user( void *dest, const void *src, size_t coun
 	return process->vm->copy_from_user( dest, src, count );
 }
 
-NTSTATUS thread_impl_t::verify_for_write( void *dest, size_t count )
+NTSTATUS THREAD_IMPL::verify_for_write( void *dest, size_t count )
 {
 	assert( process->is_valid() );
 	if (is_terminated())
@@ -796,7 +796,7 @@ NTSTATUS thread_impl_t::verify_for_write( void *dest, size_t count )
 	return process->vm->verify_for_write( dest, count );
 }
 
-NTSTATUS thread_impl_t::zero_tls_cells( ULONG index )
+NTSTATUS THREAD_IMPL::zero_tls_cells( ULONG index )
 {
 	if (index >= (sizeof teb->TlsSlots/sizeof teb->TlsSlots[0]))
 		return STATUS_INVALID_PARAMETER;
@@ -804,7 +804,7 @@ NTSTATUS thread_impl_t::zero_tls_cells( ULONG index )
 	return STATUS_SUCCESS;
 }
 
-void thread_impl_t::register_terminate_port( OBJECT *port )
+void THREAD_IMPL::register_terminate_port( OBJECT *port )
 {
 	if (terminate_port)
 		release(terminate_port);
@@ -812,7 +812,7 @@ void thread_impl_t::register_terminate_port( OBJECT *port )
 	terminate_port = port;
 }
 
-NTSTATUS thread_impl_t::terminate( NTSTATUS status )
+NTSTATUS THREAD_IMPL::terminate( NTSTATUS status )
 {
 	if (ThreadState == StateTerminated)
 		return STATUS_INVALID_PARAMETER;
@@ -845,13 +845,13 @@ NTSTATUS thread_impl_t::terminate( NTSTATUS status )
 	return STATUS_SUCCESS;
 }
 
-void thread_t::stop()
+void THREAD::stop()
 {
 	FIBER::stop();
 	current = this;
 }
 
-int thread_impl_t::run()
+int THREAD_IMPL::run()
 {
 	int i = 0;
 	while (1)
@@ -901,7 +901,7 @@ int thread_impl_t::run()
 	return 0;
 }
 
-void thread_impl_t::handle_fault()
+void THREAD_IMPL::handle_fault()
 {
 	unsigned char inst[8];
 	NTSTATUS r;
@@ -923,7 +923,7 @@ void thread_impl_t::handle_fault()
 	}
 }
 
-void thread_impl_t::handle_breakpoint()
+void THREAD_IMPL::handle_breakpoint()
 {
 	if (option_debug)
 	{
@@ -934,7 +934,7 @@ void thread_impl_t::handle_breakpoint()
 	handle_user_segv( STATUS_BREAKPOINT );
 }
 
-thread_t::thread_t(process_t *p) :
+THREAD::THREAD(PROCESS *p) :
 	FIBER( fiber_default_stack_size ),
 	process( p ),
 	MessageId(0),
@@ -946,7 +946,7 @@ thread_t::thread_t(process_t *p) :
 	process->threads.append( this );
 }
 
-thread_t::~thread_t()
+THREAD::~THREAD()
 {
 	if (queue)
 		delete queue;
@@ -954,8 +954,8 @@ thread_t::~thread_t()
 	release( process );
 }
 
-thread_impl_t::thread_impl_t( process_t *p ) :
-	thread_t( p ),
+THREAD_IMPL::THREAD_IMPL( PROCESS *p ) :
+	THREAD( p ),
 	ThreadState(StateInitialized),
 	SuspendCount(1),
 	ExitStatus(STATUS_PENDING),
@@ -981,7 +981,7 @@ thread_impl_t::thread_impl_t( process_t *p ) :
 	times.KernelTime.QuadPart = 0;
 }
 
-bool thread_impl_t::win32k_init_complete()
+bool THREAD_IMPL::win32k_init_complete()
 {
 	if (win32k_init_done)
 		return true;
@@ -989,13 +989,13 @@ bool thread_impl_t::win32k_init_complete()
 	return false;
 }
 
-void thread_t::get_client_id( CLIENT_ID *client_id )
+void THREAD::get_client_id( CLIENT_ID *client_id )
 {
 	client_id->UniqueProcess = (HANDLE) (process->id);
 	client_id->UniqueThread = (HANDLE) id;
 }
 
-void thread_impl_t::query_information( THREAD_BASIC_INFORMATION& info )
+void THREAD_IMPL::query_information( THREAD_BASIC_INFORMATION& info )
 {
 	info.ExitStatus = ExitStatus;
 	info.TebBaseAddress = TebBaseAddress;
@@ -1003,12 +1003,12 @@ void thread_impl_t::query_information( THREAD_BASIC_INFORMATION& info )
 	// FIXME: AffinityMask, Priority, BasePriority
 }
 
-void thread_impl_t::query_information( KERNEL_USER_TIMES& info )
+void THREAD_IMPL::query_information( KERNEL_USER_TIMES& info )
 {
 	info = times;
 }
 
-thread_impl_t::~thread_impl_t()
+THREAD_IMPL::~THREAD_IMPL()
 {
 	// delete outstanding APCs
 	while (apc_list.empty())
@@ -1019,7 +1019,7 @@ thread_impl_t::~thread_impl_t()
 	}
 }
 
-NTSTATUS thread_impl_t::resume( PULONG count )
+NTSTATUS THREAD_IMPL::resume( PULONG count )
 {
 	if (count)
 		*count = SuspendCount;
@@ -1037,7 +1037,7 @@ NTSTATUS NTAPI NtResumeThread(
 	HANDLE ThreadHandle,
 	PULONG PreviousSuspendCount )
 {
-	thread_t *thread;
+	THREAD *thread;
 	ULONG count = 0;
 	NTSTATUS r;
 
@@ -1063,7 +1063,7 @@ NTSTATUS NTAPI NtSuspendThread(
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-thread_obj_wait_t::thread_obj_wait_t( thread_impl_t* t, sync_object_t* o):
+thread_obj_wait_t::thread_obj_wait_t( THREAD_IMPL* t, sync_object_t* o):
 	obj(o),
 	thread(t)
 {
@@ -1077,26 +1077,26 @@ void thread_obj_wait_t::notify()
 	thread->notify();
 }
 
-void thread_impl_t::start()
+void THREAD_IMPL::start()
 {
 	// check we weren't terminated
 	if (ThreadState != StateTerminated)
 		FIBER::start();
 }
 
-void thread_t::wait()
+void THREAD::wait()
 {
 	stop();
 }
 
-void thread_impl_t::wait()
+void THREAD_IMPL::wait()
 {
 	set_state( StateWait );
-	thread_t::wait();
+	THREAD::wait();
 	set_state( StateRunning );
 }
 
-NTSTATUS thread_impl_t::check_wait()
+NTSTATUS THREAD_IMPL::check_wait()
 {
 	NTSTATUS r;
 
@@ -1113,7 +1113,7 @@ thread_obj_wait_t::~thread_obj_wait_t()
 	release(obj);
 }
 
-NTSTATUS thread_impl_t::wait_on( sync_object_t *obj )
+NTSTATUS THREAD_IMPL::wait_on( sync_object_t *obj )
 {
 	thread_obj_wait_t *wait = new thread_obj_wait_t( this, obj );
 	if (!wait)
@@ -1124,7 +1124,7 @@ NTSTATUS thread_impl_t::wait_on( sync_object_t *obj )
 	return STATUS_SUCCESS;
 }
 
-void thread_impl_t::end_wait()
+void THREAD_IMPL::end_wait()
 {
 	thread_obj_wait_iter_t i(wait_list);
 
@@ -1137,7 +1137,7 @@ void thread_impl_t::end_wait()
 	}
 }
 
-NTSTATUS thread_impl_t::check_wait_all()
+NTSTATUS THREAD_IMPL::check_wait_all()
 {
 	thread_obj_wait_iter_t i(wait_list);
 
@@ -1160,7 +1160,7 @@ NTSTATUS thread_impl_t::check_wait_all()
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS thread_impl_t::check_wait_any()
+NTSTATUS THREAD_IMPL::check_wait_any()
 {
 	thread_obj_wait_iter_t i(wait_list);
 	ULONG ret = 0; // return handle index to thread
@@ -1180,7 +1180,7 @@ NTSTATUS thread_impl_t::check_wait_any()
 	return STATUS_PENDING;
 }
 
-void thread_impl_t::notify()
+void THREAD_IMPL::notify()
 {
 	if (!in_wait)
 		return;
@@ -1188,12 +1188,12 @@ void thread_impl_t::notify()
 	start();
 }
 
-void thread_impl_t::signal_timeout()
+void THREAD_IMPL::signal_timeout()
 {
 	notify();
 }
 
-NTSTATUS thread_impl_t::wait_on_handles(
+NTSTATUS THREAD_IMPL::wait_on_handles(
 	ULONG count,
 	PHANDLE handles,
 	WAIT_TYPE type,
@@ -1271,7 +1271,7 @@ NTSTATUS thread_impl_t::wait_on_handles(
 	return r;
 }
 
-NTSTATUS thread_impl_t::alert()
+NTSTATUS THREAD_IMPL::alert()
 {
 	alerted = TRUE;
 	if (in_wait)
@@ -1306,7 +1306,7 @@ NTSTATUS NTAPI NtWaitForSingleObject(
 		Timeout = &time;
 	}
 
-	thread_impl_t *t = dynamic_cast<thread_impl_t*>( current );
+	THREAD_IMPL *t = dynamic_cast<THREAD_IMPL*>( current );
 	assert( t );
 	return t->wait_on_handles( 1, &Handle, WaitAny, Alertable, Timeout );
 }
@@ -1340,7 +1340,7 @@ NTSTATUS NTAPI NtWaitForMultipleObjects(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	thread_impl_t *thread = dynamic_cast<thread_impl_t*>( current );
+	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
 	assert( thread );
 	return thread->wait_on_handles( HandleCount, hcopy, WaitType, Alertable, Timeout );
 }
@@ -1355,7 +1355,7 @@ NTSTATUS NTAPI NtDelayExecution( BOOLEAN Alertable, PLARGE_INTEGER Interval )
 		return r;
 
 	trace("timeout = %llx\n", timeout.QuadPart);
-	thread_impl_t *thread = dynamic_cast<thread_impl_t*>( current );
+	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
 	assert( thread );
 	r = thread->wait_on_handles( 0, 0, WaitAny, Alertable, &timeout );
 	if (r == STATUS_TIMEOUT)
@@ -1384,9 +1384,9 @@ void teb_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 
 teb_tracer teb_trace;
 
-NTSTATUS create_thread( thread_t **pthread, process_t *p, PCLIENT_ID id, CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended )
+NTSTATUS create_thread( THREAD **pthread, PROCESS *p, PCLIENT_ID id, CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended )
 {
-	thread_impl_t *t = new thread_impl_t( p );
+	THREAD_IMPL *t = new THREAD_IMPL( p );
 	if (!t)
 		return STATUS_INSUFFICIENT_RESOURCES;
 	NTSTATUS r = t->create( ctx, init_teb, suspended );
@@ -1408,7 +1408,7 @@ NTSTATUS create_thread( thread_t **pthread, process_t *p, PCLIENT_ID id, CONTEXT
 	return r;
 }
 
-NTSTATUS thread_impl_t::create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended )
+NTSTATUS THREAD_IMPL::create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended )
 {
 	void *pLdrInitializeThunk;
 	void *pKiUserApcDispatcher;
@@ -1511,8 +1511,8 @@ NTSTATUS NTAPI NtCreateThread(
 	INITIAL_TEB init_teb;
 	CONTEXT ctx;
 	NTSTATUS r;
-	process_t *p;
-	thread_t *t = NULL;
+	PROCESS *p;
+	THREAD *t = NULL;
 	CLIENT_ID id;
 
 	trace("%p %08lx %p %p %p %p %p %d\n", Thread, DesiredAccess, ObjectAttributes,
@@ -1559,7 +1559,7 @@ NTSTATUS NTAPI NtContinue(
 		return r;
 
 	c.ContextFlags = CONTEXT_CONTROL | CONTEXT_INTEGER;
-	thread_impl_t *thread = dynamic_cast<thread_impl_t*>( current );
+	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
 	assert( thread );
 	thread->set_context( c );
 
@@ -1568,7 +1568,7 @@ NTSTATUS NTAPI NtContinue(
 
 NTSTATUS NTAPI NtYieldExecution( void )
 {
-	thread_t *t = current;
+	THREAD *t = current;
 	for (int i=0; i<0x10; i++)
 		FIBER::yield();
 	current = t;
@@ -1579,7 +1579,7 @@ NTSTATUS NTAPI NtTerminateThread(
 	HANDLE ThreadHandle,
 	NTSTATUS Status)
 {
-	thread_t *t;
+	THREAD *t;
 	NTSTATUS r;
 
 	trace("%p %08lx\n", ThreadHandle, Status);
@@ -1597,11 +1597,11 @@ NTSTATUS NTAPI NtTerminateThread(
 	return t->terminate( Status );
 }
 
-ULONG thread_impl_t::is_last_thread()
+ULONG THREAD_IMPL::is_last_thread()
 {
 	for ( sibling_iter_t i(process->threads); i; i.next() )
 	{
-		thread_t *t = i;
+		THREAD *t = i;
 		if (t != this && !t->is_terminated())
 			return 0;
 	}
@@ -1623,7 +1623,7 @@ NTSTATUS NTAPI NtQueryInformationThread(
 	} info;
 	ULONG sz = 0;
 	NTSTATUS r;
-	thread_impl_t *t;
+	THREAD_IMPL *t;
 
 	trace("%p %d %p %lu %p\n", ThreadHandle,
 		  ThreadInformationClass, ThreadInformation, ThreadInformationLength, ReturnLength);
@@ -1687,7 +1687,7 @@ NTSTATUS NTAPI NtAlertThread(
 	HANDLE ThreadHandle)
 {
 	NTSTATUS r;
-	thread_impl_t *t = 0;
+	THREAD_IMPL *t = 0;
 
 	trace("%p\n", ThreadHandle);
 
@@ -1708,12 +1708,12 @@ NTSTATUS NTAPI NtAlertResumeThread(
 
 NTSTATUS NTAPI NtTestAlert(void)
 {
-	thread_impl_t *thread = dynamic_cast<thread_impl_t*>( current );
+	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
 	assert( thread );
 	return thread->test_alert();
 }
 
-NTSTATUS thread_impl_t::test_alert()
+NTSTATUS THREAD_IMPL::test_alert()
 {
 	if (alerted)
 	{
@@ -1725,7 +1725,7 @@ NTSTATUS thread_impl_t::test_alert()
 	return STATUS_SUCCESS;
 }
 
-void thread_impl_t::set_token( token_t *tok )
+void THREAD_IMPL::set_token( token_t *tok )
 {
 	if (token)
 		release( token );
@@ -1733,12 +1733,12 @@ void thread_impl_t::set_token( token_t *tok )
 	token = tok;
 }
 
-token_t *thread_impl_t::get_token()
+token_t *THREAD_IMPL::get_token()
 {
 	return token;
 }
 
-PVOID& thread_impl_t::win32_start_address()
+PVOID& THREAD_IMPL::win32_start_address()
 {
 	return Win32StartAddress;
 }
@@ -1752,7 +1752,7 @@ NTSTATUS NTAPI NtSetInformationThread(
 	trace("%p %u %p %lu\n", ThreadHandle, ThreadInformationClass,
 		  ThreadInformation, ThreadInformationLength);
 
-	thread_impl_t *t = 0;
+	THREAD_IMPL *t = 0;
 	NTSTATUS r = object_from_handle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -1809,7 +1809,7 @@ NTSTATUS NTAPI NtQueueApcThread(
 {
 	trace("%p %p %p %p %p\n", ThreadHandle, ApcRoutine, Arg1, Arg2, Arg3);
 
-	thread_t *t = 0;
+	THREAD *t = 0;
 	NTSTATUS r = object_from_handle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -1865,7 +1865,7 @@ NTSTATUS NTAPI NtRaiseException( PEXCEPTION_RECORD ExceptionRecord, PCONTEXT Con
 	if (info.rec.ExceptionCode == DBG_PRINTEXCEPTION_C)
 	{
 		output_debug_string( info.rec );
-		thread_impl_t *thread = dynamic_cast<thread_impl_t*>( current );
+		THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
 		assert( thread );
 		thread->set_context( info.ctx );
 		return STATUS_SUCCESS;
@@ -1873,12 +1873,12 @@ NTSTATUS NTAPI NtRaiseException( PEXCEPTION_RECORD ExceptionRecord, PCONTEXT Con
 
 	// FIXME: perhaps we should blow away everything pushed on after the current frame
 
-	thread_impl_t *thread = dynamic_cast<thread_impl_t*>( current );
+	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
 	assert( thread );
 	return thread->raise_exception( info, SearchFrames );
 }
 
-NTSTATUS thread_impl_t::raise_exception(
+NTSTATUS THREAD_IMPL::raise_exception(
 	exception_stack_frame& info,
 	BOOLEAN SearchFrames )
 {
@@ -1901,7 +1901,7 @@ NTSTATUS NTAPI NtCallbackReturn(
 	ULONG ResultLength,
 	NTSTATUS Status)
 {
-	thread_impl_t *thread = dynamic_cast<thread_impl_t*>( current );
+	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
 	assert( thread );
 	return thread->user_callback_return(Result, ResultLength, Status);
 }
@@ -1920,7 +1920,7 @@ NTSTATUS NTAPI NtGetContextThread(
 {
 	trace("%p %p\n", ThreadHandle, Context );
 
-	thread_t *t = 0;
+	THREAD *t = 0;
 	NTSTATUS r = object_from_handle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -1942,7 +1942,7 @@ NTSTATUS NTAPI NtSetContextThread(
 {
 	trace("%p %p\n", ThreadHandle, Context );
 
-	thread_impl_t *t = 0;
+	THREAD_IMPL *t = 0;
 	NTSTATUS r = object_from_handle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -1988,12 +1988,12 @@ NTSTATUS NTAPI NtImpersonateThread(
 {
 	trace("\n");
 
-	thread_t *t = 0;
+	THREAD *t = 0;
 	NTSTATUS r = object_from_handle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	thread_t *target = 0;
+	THREAD *target = 0;
 	r = object_from_handle( target, TargetThreadHandle, THREAD_DIRECT_IMPERSONATION );
 	if (r < STATUS_SUCCESS)
 		return r;

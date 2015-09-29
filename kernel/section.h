@@ -46,7 +46,7 @@ NTSTATUS create_section( section_t **section, OBJECT *file, PLARGE_INTEGER psz, 
 NTSTATUS mapit( address_space *vm, OBJECT *obj, BYTE *&addr );
 void *virtual_addr_to_offset( IMAGE_NT_HEADERS *nt, void *base, DWORD virtual_ofs );
 DWORD get_proc_address(OBJECT *obj, const char *name);
-void *get_entry_point( process_t *p );
+void *get_entry_point( PROCESS *p );
 NTSTATUS section_from_handle( HANDLE, section_t*& section, ACCESS_MASK access );
 
 #endif

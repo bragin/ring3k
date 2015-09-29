@@ -40,16 +40,16 @@
 #include "timer.h"
 #include "file.h"
 
-class thread_impl_t;
+class THREAD_IMPL;
 
-class kernel_thread_t :
-	public thread_t
+class KERNEL_THREAD :
+	public THREAD
 {
 public:
 	bool terminated;
 public:
-	kernel_thread_t( process_t *p );
-	virtual ~kernel_thread_t();
+	KERNEL_THREAD( PROCESS *p );
+	virtual ~KERNEL_THREAD();
 	virtual void get_context( CONTEXT& c );
 	virtual bool win32k_init_complete();
 	virtual NTSTATUS do_user_callback( ULONG index, ULONG& length, PVOID& buffer);
@@ -70,39 +70,39 @@ public:
 	virtual PTEB get_teb();
 };
 
-kernel_thread_t::kernel_thread_t( process_t *p ) :
-	thread_t( p ),
+KERNEL_THREAD::KERNEL_THREAD( PROCESS *p ) :
+	THREAD( p ),
 	terminated( false )
 {
 }
 
-kernel_thread_t::~kernel_thread_t()
+KERNEL_THREAD::~KERNEL_THREAD()
 {
 }
 
-BOOLEAN kernel_thread_t::is_signalled()
+BOOLEAN KERNEL_THREAD::is_signalled()
 {
 	return terminated;
 }
 
-void kernel_thread_t::get_context( CONTEXT& c )
+void KERNEL_THREAD::get_context( CONTEXT& c )
 {
 	assert(0);
 }
 
-bool kernel_thread_t::win32k_init_complete()
-{
-	assert(0);
-	return 0;
-}
-
-NTSTATUS kernel_thread_t::do_user_callback( ULONG index, ULONG& length, PVOID& buffer)
+bool KERNEL_THREAD::win32k_init_complete()
 {
 	assert(0);
 	return 0;
 }
 
-NTSTATUS kernel_thread_t::terminate( NTSTATUS Status )
+NTSTATUS KERNEL_THREAD::do_user_callback( ULONG index, ULONG& length, PVOID& buffer)
+{
+	assert(0);
+	return 0;
+}
+
+NTSTATUS KERNEL_THREAD::terminate( NTSTATUS Status )
 {
 	if (terminated)
 		return 0;
@@ -111,40 +111,40 @@ NTSTATUS kernel_thread_t::terminate( NTSTATUS Status )
 	return 0;
 }
 
-bool kernel_thread_t::is_terminated()
+bool KERNEL_THREAD::is_terminated()
 {
 	return terminated;
 }
 
-void kernel_thread_t::register_terminate_port( OBJECT *port )
+void KERNEL_THREAD::register_terminate_port( OBJECT *port )
 {
 	assert(0);
 }
 
-/*void kernel_thread_t::wait()
+/*void KERNEL_THREAD::wait()
 {
 	assert(0);
 }*/
 
-NTSTATUS kernel_thread_t::queue_apc_thread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, PVOID Arg2, PVOID Arg3)
+NTSTATUS KERNEL_THREAD::queue_apc_thread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, PVOID Arg2, PVOID Arg3)
 {
 	assert(0);
 	return 0;
 }
 
-token_t* kernel_thread_t::get_token()
+token_t* KERNEL_THREAD::get_token()
 {
 	assert(0);
 	return 0;
 }
 
-NTSTATUS kernel_thread_t::resume( PULONG count )
+NTSTATUS KERNEL_THREAD::resume( PULONG count )
 {
 	assert(0);
 	return 0;
 }
 
-NTSTATUS kernel_thread_t::copy_to_user( void *dest, const void *src, size_t count )
+NTSTATUS KERNEL_THREAD::copy_to_user( void *dest, const void *src, size_t count )
 {
 	if (!dest)
 		return STATUS_ACCESS_VIOLATION;
@@ -152,7 +152,7 @@ NTSTATUS kernel_thread_t::copy_to_user( void *dest, const void *src, size_t coun
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS kernel_thread_t::copy_from_user( void *dest, const void *src, size_t count )
+NTSTATUS KERNEL_THREAD::copy_from_user( void *dest, const void *src, size_t count )
 {
 	if (!dest)
 		return STATUS_ACCESS_VIOLATION;
@@ -160,47 +160,47 @@ NTSTATUS kernel_thread_t::copy_from_user( void *dest, const void *src, size_t co
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS kernel_thread_t::verify_for_write( void *dest, size_t count )
+NTSTATUS KERNEL_THREAD::verify_for_write( void *dest, size_t count )
 {
 	if (!dest)
 		return STATUS_ACCESS_VIOLATION;
 	return STATUS_SUCCESS;
 }
 
-void* kernel_thread_t::push( ULONG count )
+void* KERNEL_THREAD::push( ULONG count )
 {
 	assert(0);
 	return 0;
 }
 
-void kernel_thread_t::pop( ULONG count )
+void KERNEL_THREAD::pop( ULONG count )
 {
 	assert(0);
 }
 
-PTEB kernel_thread_t::get_teb()
+PTEB KERNEL_THREAD::get_teb()
 {
 	assert(0);
 	return 0;
 }
 
-class security_reference_monitor_t : public kernel_thread_t
+class SECURITY_REFERENCE_MONITOR : public KERNEL_THREAD
 {
 public:
-	security_reference_monitor_t( process_t *p );
+	SECURITY_REFERENCE_MONITOR( PROCESS *p );
 	virtual int run();
 };
 
-security_reference_monitor_t::security_reference_monitor_t( process_t *p ) :
-	kernel_thread_t( p )
+SECURITY_REFERENCE_MONITOR::SECURITY_REFERENCE_MONITOR( PROCESS *p ) :
+	KERNEL_THREAD( p )
 {
 }
 
-int security_reference_monitor_t::run()
+int SECURITY_REFERENCE_MONITOR::run()
 {
 	const int maxlen = 0x100;
 	//trace("starting kthread %p p = %p\n", this, process);
-	current = static_cast<thread_t*>( this );
+	current = static_cast<THREAD*>( this );
 	//trace("current->process = %p\n", current->process);
 	object_attributes_t rm_oa( (PCWSTR) L"\\SeRmCommandPort" );
 	HANDLE port = 0, client = 0;
@@ -272,26 +272,26 @@ int security_reference_monitor_t::run()
 	return 0;
 }
 
-class plug_and_play_t : public kernel_thread_t
+class PLUG_AND_PLAY : public KERNEL_THREAD
 {
 public:
-	plug_and_play_t( process_t *p );
+	PLUG_AND_PLAY( PROCESS *p );
 	virtual int run();
 };
 
-plug_and_play_t::plug_and_play_t( process_t *p ) :
-	kernel_thread_t( p )
+PLUG_AND_PLAY::PLUG_AND_PLAY( PROCESS *p ) :
+	KERNEL_THREAD( p )
 {
 }
 
-int plug_and_play_t::run()
+int PLUG_AND_PLAY::run()
 {
 	OBJECT_ATTRIBUTES oa;
 	IO_STATUS_BLOCK iosb;
 	HANDLE pipe = 0;
 	NTSTATUS r;
 	LARGE_INTEGER timeout;
-	current = static_cast<thread_t*>( this );
+	current = static_cast<THREAD*>( this );
 
 	unicode_string_t pipename;
 	pipename.copy( "\\Device\\NamedPipe\\ntsvcs" );
@@ -325,16 +325,16 @@ int plug_and_play_t::run()
 	return 0;
 }
 
-static process_t *kernel_process;
-static kernel_thread_t* srm;
-static kernel_thread_t* plugnplay;
+static PROCESS *kernel_process;
+static KERNEL_THREAD* srm;
+static KERNEL_THREAD* plugnplay;
 
 void create_kthread(void)
 {
 	// process is for the handle table
-	kernel_process = new process_t;
-	srm = new security_reference_monitor_t( kernel_process );
-	plugnplay = new plug_and_play_t( kernel_process );
+	kernel_process = new PROCESS;
+	srm = new SECURITY_REFERENCE_MONITOR( kernel_process );
+	plugnplay = new PLUG_AND_PLAY( kernel_process );
 	//release( kernel_process );
 
 	srm->start();

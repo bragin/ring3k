@@ -765,7 +765,7 @@ NTSTATUS NTAPI NtAllocateVirtualMemory(
 	BYTE *addr = NULL;
 	ULONG size = 0;
 	NTSTATUS r;
-	process_t *process;
+	PROCESS *process;
 
 	//trace("%p %p %lu %p %08lx %08lx\n", ProcessHandle, BaseAddress,
 	//		ZeroBits, AllocationSize, AllocationType, Protect);
@@ -845,7 +845,7 @@ NTSTATUS NTAPI NtQueryVirtualMemory(
 	else
 		len = sizeof info;
 
-	process_t *p = 0;
+	PROCESS *p = 0;
 	r = process_from_handle( ProcessHandle, &p );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -873,7 +873,7 @@ NTSTATUS NTAPI NtProtectVirtualMemory(
 	ULONG NewAccessProtection,
 	PULONG OldAccessProtection )
 {
-	process_t *process;
+	PROCESS *process;
 	PVOID addr = NULL;
 	ULONG size = 0;
 	NTSTATUS r;
@@ -908,7 +908,7 @@ NTSTATUS NTAPI NtWriteVirtualMemory(
 	size_t len, written = 0;
 	BYTE *src, *dest;
 	NTSTATUS r = STATUS_SUCCESS;
-	process_t *p;
+	PROCESS *p;
 
 	trace("%p %p %p %08lx %p\n", ProcessHandle, BaseAddress, Buffer, NumberOfBytesToWrite, NumberOfBytesWritten );
 
@@ -955,7 +955,7 @@ NTSTATUS NTAPI NtFreeVirtualMemory(
 	PULONG RegionSize,
 	ULONG FreeType )
 {
-	process_t *process;
+	PROCESS *process;
 	BYTE *addr = NULL;
 	ULONG size = 0;
 	NTSTATUS r;

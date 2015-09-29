@@ -142,7 +142,7 @@ void init_user_handle_table()
 	}
 }
 
-ULONG alloc_user_handle( void* obj, ULONG type, process_t *owner )
+ULONG alloc_user_handle( void* obj, ULONG type, PROCESS *owner )
 {
 	assert( type != 0 );
 	ULONG ret = next_user_handle;
@@ -193,7 +193,7 @@ void delete_user_object( ULONG i )
 	}
 }
 
-void free_user32_handles( process_t *p )
+void free_user32_handles( PROCESS *p )
 {
 	ULONG i;
 	assert( p != NULL );
@@ -201,7 +201,7 @@ void free_user32_handles( process_t *p )
 		return;
 	for (i=0; i<user_shared->max_window_handle; i++)
 	{
-		if (p == (process_t*) user_handle_table[i].owner)
+		if (p == (PROCESS*) user_handle_table[i].owner)
 			delete_user_object( i );
 	}
 }
@@ -385,7 +385,7 @@ void ntuserhandle_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 }
 static ntuserhandle_tracer ntuserhandle_trace;
 
-BYTE* alloc_message_bitmap( process_t* proc, MESSAGE_MAP_SHARED_MEMORY& map, ULONG last_message )
+BYTE* alloc_message_bitmap( PROCESS* proc, MESSAGE_MAP_SHARED_MEMORY& map, ULONG last_message )
 {
 	ULONG sz = (last_message+7)/8;
 	BYTE *msg_map = user_shared_bitmap.alloc( sz );
@@ -425,7 +425,7 @@ void create_desktop_window()
 }
 
 // should be called from NtGdiInit to map the user32 shared memory
-NTSTATUS map_user_shared_memory( process_t *proc )
+NTSTATUS map_user_shared_memory( PROCESS *proc )
 {
 	NTSTATUS r;
 
@@ -491,7 +491,7 @@ NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSi
 	const ULONG version = 0x50000;
 	NTSTATUS r;
 
-	process_t *proc = 0;
+	PROCESS *proc = 0;
 	r = object_from_handle( proc, Process, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -1174,7 +1174,7 @@ PWND window_tt::get_wininfo()
 
 NTSTATUS window_tt::send( message_tt& msg )
 {
-	thread_t*& thread = get_win_thread();
+	THREAD*& thread = get_win_thread();
 	if (thread->is_terminated())
 		return STATUS_THREAD_IS_TERMINATING;
 
@@ -1370,7 +1370,7 @@ window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, 
 }
 
 
-window_tt* window_tt::find_window_to_repaint( HWND window, thread_t* thread )
+window_tt* window_tt::find_window_to_repaint( HWND window, THREAD* thread )
 {
 	window_tt *win;
 	if (window)
@@ -1385,7 +1385,7 @@ window_tt* window_tt::find_window_to_repaint( HWND window, thread_t* thread )
 	return find_window_to_repaint( win, thread );
 }
 
-window_tt* window_tt::find_window_to_repaint( window_tt* win, thread_t* thread )
+window_tt* window_tt::find_window_to_repaint( window_tt* win, THREAD* thread )
 {
 	// special case the desktop window for the moment
 	if (win->parent)

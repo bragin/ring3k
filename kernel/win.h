@@ -84,9 +84,9 @@ public:
 		return wndproc;
 	}
 	PWND get_wininfo();
-	thread_t* &get_win_thread()
+	THREAD* &get_win_thread()
 	{
-		return (thread_t*&)unk1;
+		return (THREAD*&)unk1;
 	}
 	region_tt* &get_invalid_region()
 	{
@@ -97,8 +97,8 @@ public:
 	HGDIOBJ get_dc();
 	BOOLEAN destroy();
 	void set_window_pos( UINT flags );
-	static window_tt* find_window_to_repaint( HWND window, thread_t* thread );
-	static window_tt* find_window_to_repaint( window_tt* win, thread_t* thread );
+	static window_tt* find_window_to_repaint( HWND window, THREAD* thread );
+	static window_tt* find_window_to_repaint( window_tt* win, THREAD* thread );
 	void link_window( window_tt *parent );
 	void unlink_window();
 	BOOLEAN move_window( int x, int y, int width, int height, BOOLEAN repaint );

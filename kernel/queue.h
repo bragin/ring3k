@@ -40,7 +40,7 @@ class msg_waiter_tt
 	friend class thread_message_queue_tt;
 	friend class list_anchor<msg_waiter_tt,0>;
 	msg_waiter_element_t entry[1];
-	thread_t *t;
+	THREAD *t;
 	MSG& msg;
 public:
 	msg_waiter_tt( MSG& m);
@@ -111,6 +111,6 @@ public:
 	bool get_message_timeout( HWND Window, LARGE_INTEGER& timeout );
 };
 
-HWND find_window_to_repaint( HWND Window, thread_t *thread );
+HWND find_window_to_repaint( HWND Window, THREAD *thread );
 
 #endif // __RING3K_QUEUE__

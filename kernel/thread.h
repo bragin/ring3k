@@ -30,14 +30,14 @@
 
 #define PAGE_SIZE 0x1000
 
-class thread_t;
+class THREAD;
 
-typedef list_anchor<thread_t,0> sibling_list_t;
-typedef list_iter<thread_t,0> sibling_iter_t;
-typedef list_element<thread_t> thread_element_t;
+typedef list_anchor<THREAD,0> sibling_list_t;
+typedef list_iter<THREAD,0> sibling_iter_t;
+typedef list_element<THREAD> thread_element_t;
 
 struct port_t;
-struct process_t;
+struct PROCESS;
 
 struct exception_stack_frame
 {
@@ -79,21 +79,21 @@ public:
 	void runlist_remove();
 };
 
-class thread_t :
+class THREAD :
 	public sync_object_t,
 	public FIBER,
 	public runlist_entry_t
 {
-	friend class list_anchor<thread_t,0>;
-	friend class list_element<thread_t>;
-	friend class list_iter<thread_t,0>;
+	friend class list_anchor<THREAD,0>;
+	friend class list_element<THREAD>;
+	friend class list_iter<THREAD,0>;
 	thread_element_t entry[1];
 
 protected:
 	ULONG id;
 
 public:
-	process_t *process;
+	PROCESS *process;
 
 	// LPC information
 	ULONG MessageId;
@@ -102,8 +102,8 @@ public:
 	thread_message_queue_tt* queue;
 
 public:
-	thread_t( process_t *p );
-	virtual ~thread_t();
+	THREAD( PROCESS *p );
+	virtual ~THREAD();
 	virtual ULONG trace_id();
 	ULONG get_id()
 	{
@@ -131,12 +131,12 @@ public:
 	virtual PTEB get_teb() = 0;
 };
 
-NTSTATUS create_thread( thread_t **pthread, process_t *p, PCLIENT_ID id, CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended );
+NTSTATUS create_thread( THREAD **pthread, PROCESS *p, PCLIENT_ID id, CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended );
 int run_thread(FIBER *arg);
 
-extern thread_t *current;
+extern THREAD *current;
 
-void send_terminate_message( thread_t *thread, OBJECT *port, LARGE_INTEGER& create_time );
-bool send_exception( thread_t *thread, EXCEPTION_RECORD &rec );
+void send_terminate_message( THREAD *thread, OBJECT *port, LARGE_INTEGER& create_time );
+bool send_exception( THREAD *thread, EXCEPTION_RECORD &rec );
 
 #endif // __THREAD_H__

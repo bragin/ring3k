@@ -388,7 +388,7 @@ BOOLEAN NTAPI NtUserPostMessage( HWND Window, UINT Message, WPARAM Wparam, LPARA
 	if (!win)
 		return FALSE;
 
-	thread_t*& thread = win->get_win_thread();
+	THREAD*& thread = win->get_win_thread();
 	assert(thread != NULL);
 
 	return thread->queue->post_message( Window, Message, Wparam, Lparam );
@@ -419,7 +419,7 @@ UINT NTAPI NtUserSetTimer( HWND Window, UINT Identifier, UINT Elapse, PVOID Time
 	if (!win)
 		return FALSE;
 
-	thread_t*& thread = win->get_win_thread();
+	THREAD*& thread = win->get_win_thread();
 	assert(thread != NULL);
 
 	return thread->queue->set_timer( Window, Identifier, Elapse, TimerProc );
@@ -431,7 +431,7 @@ BOOLEAN NTAPI NtUserKillTimer( HWND Window, UINT Identifier )
 	if (!win)
 		return FALSE;
 
-	thread_t*& thread = win->get_win_thread();
+	THREAD*& thread = win->get_win_thread();
 	assert(thread != NULL);
 
 	return thread->queue->kill_timer( Window, Identifier );

@@ -74,11 +74,11 @@ struct listener_t
 {
 	listener_entry_t entry[1];
 	port_t *port;
-	thread_t *thread;
+	THREAD *thread;
 	BOOLEAN want_connect;
 	ULONG message_id;
 public:
-	explicit listener_t(port_t *p, thread_t *t, BOOLEAN wc, ULONG id);
+	explicit listener_t(port_t *p, THREAD *t, BOOLEAN wc, ULONG id);
 	~listener_t();
 	bool is_linked()
 	{
@@ -103,7 +103,7 @@ struct port_t : public OBJECT
 {
 	port_queue_t *queue;
 	BOOLEAN server;
-	thread_t *thread;
+	THREAD *thread;
 	port_t *other;
 	section_t *section; // our section
 	BYTE *other_section_base;	// mapped address of other port's section
@@ -112,7 +112,7 @@ struct port_t : public OBJECT
 	ULONG identifier;
 	message_t *received_msg;
 public:
-	explicit port_t( BOOLEAN s, thread_t *t, port_queue_t *q );
+	explicit port_t( BOOLEAN s, THREAD *t, port_queue_t *q );
 	~port_t();
 	void send_message( message_t *msg );
 	void send_close_message( void );
@@ -121,7 +121,7 @@ public:
 	NTSTATUS send_request( message_t *msg );
 	void request_wait_reply( message_t *msg, message_t *&reply );
 	NTSTATUS reply_wait_receive( message_t *reply, message_t *&received );
-	NTSTATUS accept_connect( thread_t *t, message_t *reply, PLPC_SECTION_WRITE server_write_sec );
+	NTSTATUS accept_connect( THREAD *t, message_t *reply, PLPC_SECTION_WRITE server_write_sec );
 };
 
 struct exception_msg_data_t
@@ -218,7 +218,7 @@ NTSTATUS port_from_handle( HANDLE handle, port_t *& port )
 }
 
 void send_terminate_message(
-	thread_t *thread,
+	THREAD *thread,
 	OBJECT *terminate_port,
 	LARGE_INTEGER& create_time )
 {
@@ -244,7 +244,7 @@ void send_terminate_message(
 	release(terminate_port);
 }
 
-NTSTATUS set_exception_port( process_t *process, OBJECT *obj )
+NTSTATUS set_exception_port( PROCESS *process, OBJECT *obj )
 {
 	port_t *port = port_from_obj( obj );
 	if (!port)
@@ -256,7 +256,7 @@ NTSTATUS set_exception_port( process_t *process, OBJECT *obj )
 	return STATUS_SUCCESS;
 }
 
-bool send_exception( thread_t *thread, EXCEPTION_RECORD& rec )
+bool send_exception( THREAD *thread, EXCEPTION_RECORD& rec )
 {
 	if (!thread->process->exception_port)
 		return false;
@@ -310,7 +310,7 @@ bool send_exception( thread_t *thread, EXCEPTION_RECORD& rec )
 	return false;
 }
 
-listener_t::listener_t(port_t *p, thread_t *t, BOOLEAN connect, ULONG id) :
+listener_t::listener_t(port_t *p, THREAD *t, BOOLEAN connect, ULONG id) :
 	port(p),
 	thread(t),
 	want_connect(connect),
@@ -410,7 +410,7 @@ port_t::~port_t()
 	// check if this is the exception port for any processes
 	for ( process_iter_t i(processes); i; i.next() )
 	{
-		process_t *p = i;
+		PROCESS *p = i;
 		if (p->exception_port == this)
 			p->exception_port = 0;
 	}
@@ -431,7 +431,7 @@ port_t::~port_t()
 	release( thread );
 }
 
-port_t::port_t( BOOLEAN s, thread_t *t, port_queue_t *q ) :
+port_t::port_t( BOOLEAN s, THREAD *t, port_queue_t *q ) :
 	queue(q),
 	server(s),
 	thread(t),
@@ -681,7 +681,7 @@ NTSTATUS complete_connect_port( port_t *port )
 		return STATUS_INVALID_PARAMETER;
 
 	// allow starting threads where t->port is set
-	thread_t *t = port->other->thread;
+	THREAD *t = port->other->thread;
 	if (!t->port)
 		return STATUS_INVALID_PARAMETER;
 
@@ -695,7 +695,7 @@ NTSTATUS complete_connect_port( port_t *port )
 }
 
 NTSTATUS port_t::accept_connect(
-	thread_t *t,
+	THREAD *t,
 	message_t *reply,
 	PLPC_SECTION_WRITE server_write_sec )
 {
@@ -1159,7 +1159,7 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 			return r;
 	}
 
-	thread_t *t = find_thread_by_client_id( &reply->req.ClientId );
+	THREAD *t = find_thread_by_client_id( &reply->req.ClientId );
 	if (!t)
 		return STATUS_INVALID_CID;
 

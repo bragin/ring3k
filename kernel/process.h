@@ -25,7 +25,7 @@
 
 class win32k_info_t;
 
-struct process_t : public sync_object_t
+struct PROCESS : public sync_object_t
 {
 	sibling_list_t threads;
 	address_space *vm;
@@ -62,8 +62,8 @@ public:
 		LPCWSTR CurrentDirectory, LPCWSTR CommandLine, LPCWSTR WindowTitle, LPCWSTR Desktop);
 
 public:
-	process_t();
-	~process_t();
+	PROCESS();
+	~PROCESS();
 	virtual BOOLEAN is_signalled( void );
 	void terminate( NTSTATUS status );
 	bool is_valid()
@@ -74,7 +74,7 @@ public:
 
 extern process_list_t processes;
 
-NTSTATUS create_process( process_t **pprocess, OBJECT *section );
-NTSTATUS set_exception_port( process_t *process, OBJECT *obj );
+NTSTATUS create_process( PROCESS **pprocess, OBJECT *section );
+NTSTATUS set_exception_port( PROCESS *process, OBJECT *obj );
 
 #endif // __PROCESS_H__

@@ -33,7 +33,7 @@
 
 class mutant_t : public sync_object_t
 {
-	thread_t *owner;
+	THREAD *owner;
 	ULONG count;
 public:
 	mutant_t(BOOLEAN InitialOwner);

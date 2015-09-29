@@ -229,7 +229,7 @@ class nttimer_t : public sync_object_t, public timeout_t
 protected:
 	BOOLEAN expired;
 	ULONG interval;
-	thread_t *thread;
+	THREAD *thread;
 	PKNORMAL_ROUTINE apc_routine;
 	PVOID apc_context;
 public:

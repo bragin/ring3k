@@ -221,13 +221,13 @@ NTSTATUS CFILE::remove()
 	return STATUS_SUCCESS;
 }
 
-class directory_entry_t;
+class DIRECTORY_ENTRY;
 
-typedef list_anchor<directory_entry_t,0> dirlist_t;
-typedef list_iter<directory_entry_t,0> dirlist_iter_t;
-typedef list_element<directory_entry_t> dirlist_element_t;
+typedef list_anchor<DIRECTORY_ENTRY,0> dirlist_t;
+typedef list_iter<DIRECTORY_ENTRY,0> dirlist_iter_t;
+typedef list_element<DIRECTORY_ENTRY> dirlist_element_t;
 
-class directory_entry_t
+class DIRECTORY_ENTRY
 {
 public:
 	dirlist_element_t entry[1];
@@ -235,10 +235,10 @@ public:
 	struct stat st;
 };
 
-class directory_t : public CFILE
+class DIRECTORY : public CFILE
 {
 	int count;
-	directory_entry_t *ptr;
+	DIRECTORY_ENTRY *ptr;
 	dirlist_t entries;
 	unicode_string_t mask;
 protected:
@@ -247,13 +247,13 @@ protected:
 	int open_unicode_file( const char *unix_path, int flags, bool& created );
 	int open_unicode_dir( const char *unix_path, int flags, bool& created );
 public:
-	directory_t( int fd );
-	~directory_t();
+	DIRECTORY( int fd );
+	~DIRECTORY();
 	NTSTATUS query_directory_file();
 	NTSTATUS read( PVOID Buffer, ULONG Length, ULONG *bytes_read );
 	NTSTATUS write( PVOID Buffer, ULONG Length, ULONG *bytes_read );
 	virtual NTSTATUS query_information( FILE_ATTRIBUTE_TAG_INFORMATION& info );
-	directory_entry_t* get_next();
+	DIRECTORY_ENTRY* get_next();
 	bool match(unicode_string_t &name) const;
 	void scandir();
 	bool is_firstscan() const;
@@ -264,45 +264,45 @@ public:
 						ULONG Options, ULONG CreateDisposition, bool &created, bool case_insensitive );
 };
 
-class directory_factory : public OBJECT_FACTORY
+class DIRECTORY_FACTORY : public OBJECT_FACTORY
 {
 	int fd;
 public:
-	directory_factory( int _fd );
+	DIRECTORY_FACTORY( int _fd );
 	NTSTATUS alloc_object(OBJECT** obj);
 };
 
-directory_factory::directory_factory( int _fd ) :
+DIRECTORY_FACTORY::DIRECTORY_FACTORY( int _fd ) :
 	fd( _fd )
 {
 }
 
-NTSTATUS directory_factory::alloc_object(OBJECT** obj)
+NTSTATUS DIRECTORY_FACTORY::alloc_object(OBJECT** obj)
 {
-	*obj = new directory_t( fd );
+	*obj = new DIRECTORY( fd );
 	if (!*obj)
 		return STATUS_NO_MEMORY;
 	return STATUS_SUCCESS;
 }
 
 
-directory_t::directory_t( int fd ) :
+DIRECTORY::DIRECTORY( int fd ) :
 	CFILE(fd),
 	count(-1),
 	ptr(0)
 {
 }
 
-directory_t::~directory_t()
+DIRECTORY::~DIRECTORY()
 {
 }
 
-NTSTATUS directory_t::read( PVOID Buffer, ULONG Length, ULONG *bytes_read )
+NTSTATUS DIRECTORY::read( PVOID Buffer, ULONG Length, ULONG *bytes_read )
 {
 	return STATUS_OBJECT_TYPE_MISMATCH;
 }
 
-NTSTATUS directory_t::write( PVOID Buffer, ULONG Length, ULONG *bytes_read )
+NTSTATUS DIRECTORY::write( PVOID Buffer, ULONG Length, ULONG *bytes_read )
 {
 	return STATUS_OBJECT_TYPE_MISMATCH;
 }
@@ -384,20 +384,20 @@ int fstatat( int dirfd, const char *path, struct stat *buf, int flags )
 
 #endif
 
-void directory_t::reset()
+void DIRECTORY::reset()
 {
 	ptr = 0;
 	count = 0;
 
 	while (!entries.empty())
 	{
-		directory_entry_t *x = entries.head();
+		DIRECTORY_ENTRY *x = entries.head();
 		entries.unlink(x);
 		delete x;
 	}
 }
 
-bool directory_t::match(unicode_string_t &name) const
+bool DIRECTORY::match(unicode_string_t &name) const
 {
 	if (mask.Length == 0)
 		return true;
@@ -467,10 +467,10 @@ bool directory_t::match(unicode_string_t &name) const
 	return true;
 }
 
-void directory_t::add_entry(const char *name)
+void DIRECTORY::add_entry(const char *name)
 {
 	trace("adding dir entry: %s\n", name);
-	directory_entry_t *ent = new directory_entry_t;
+	DIRECTORY_ENTRY *ent = new DIRECTORY_ENTRY;
 	ent->name.copy(name);
 	/* FIXME: Should symlinks be deferenced?
 	   AT_SYMLINK_NOFOLLOW */
@@ -490,12 +490,12 @@ void directory_t::add_entry(const char *name)
 	count++;
 }
 
-int directory_t::get_num_entries() const
+int DIRECTORY::get_num_entries() const
 {
 	return count;
 }
 
-void directory_t::scandir()
+void DIRECTORY::scandir()
 {
 	unsigned char buffer[0x1000];
 	int r;
@@ -539,19 +539,19 @@ void directory_t::scandir()
 	} while (0);
 }
 
-NTSTATUS directory_t::set_mask(unicode_string_t *string)
+NTSTATUS DIRECTORY::set_mask(unicode_string_t *string)
 {
 	mask.copy(string);
 	return STATUS_SUCCESS;
 }
 
 // scan for the first time after construction
-bool directory_t::is_firstscan() const
+bool DIRECTORY::is_firstscan() const
 {
 	return (count == -1);
 }
 
-directory_entry_t* directory_t::get_next()
+DIRECTORY_ENTRY* DIRECTORY::get_next()
 {
 	if (!ptr)
 	{
@@ -567,7 +567,7 @@ directory_entry_t* directory_t::get_next()
 	return ptr;
 }
 
-NTSTATUS directory_t::query_information( FILE_ATTRIBUTE_TAG_INFORMATION& info )
+NTSTATUS DIRECTORY::query_information( FILE_ATTRIBUTE_TAG_INFORMATION& info )
 {
 	info.FileAttributes = FILE_ATTRIBUTE_DIRECTORY;
 	info.ReparseTag = 0;
@@ -658,7 +658,7 @@ char *get_unix_path( int fd, UNICODE_STRING& str, bool case_insensitive )
 	return file;
 }
 
-int directory_t::open_unicode_file( const char *unix_path, int flags, bool &created )
+int DIRECTORY::open_unicode_file( const char *unix_path, int flags, bool &created )
 {
 	int r = -1;
 
@@ -674,7 +674,7 @@ int directory_t::open_unicode_file( const char *unix_path, int flags, bool &crea
 	return r;
 }
 
-int directory_t::open_unicode_dir( const char *unix_path, int flags, bool &created )
+int DIRECTORY::open_unicode_dir( const char *unix_path, int flags, bool &created )
 {
 	int r = -1;
 
@@ -691,7 +691,7 @@ int directory_t::open_unicode_dir( const char *unix_path, int flags, bool &creat
 	return r;
 }
 
-NTSTATUS directory_t::open_file(
+NTSTATUS DIRECTORY::open_file(
 	CFILE *&file,
 	UNICODE_STRING& path,
 	ULONG Attributes,
@@ -733,7 +733,7 @@ NTSTATUS directory_t::open_file(
 			return STATUS_OBJECT_PATH_NOT_FOUND;
 
 		trace("file_fd = %d\n", file_fd );
-		file = new directory_t( file_fd );
+		file = new DIRECTORY( file_fd );
 		if (!file)
 		{
 			::close( file_fd );
@@ -758,11 +758,11 @@ NTSTATUS directory_t::open_file(
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS directory_t::open( OBJECT *&out, OPEN_INFO& info )
+NTSTATUS DIRECTORY::open( OBJECT *&out, OPEN_INFO& info )
 {
 	CFILE *file = 0;
 
-	trace("directory_t::open %pus\n", &info.path );
+	trace("DIRECTORY::open %pus\n", &info.path );
 
 	FILE_CREATE_INFO *file_info = dynamic_cast<FILE_CREATE_INFO*>( &info );
 	if (!file_info)
@@ -795,7 +795,7 @@ void init_drives()
 	int fd = open( "drive", O_RDONLY );
 	if (fd < 0)
 		die("drive does not exist");
-	directory_factory factory( fd );
+	DIRECTORY_FACTORY factory( fd );
 	unicode_string_t dirname;
 	dirname.copy( L"\\Device\\HarddiskVolume1" );
 	OBJECT *obj = 0;
@@ -1326,7 +1326,7 @@ NTSTATUS NTAPI NtQueryDirectoryFile(
 {
 	NTSTATUS r;
 
-	directory_t *dir = 0;
+	DIRECTORY *dir = 0;
 	r = object_from_handle( dir, DirectoryHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -1361,7 +1361,7 @@ NTSTATUS NTAPI NtQueryDirectoryFile(
 	if (dir->get_num_entries() == 0)
 		return STATUS_NO_SUCH_FILE;
 
-	directory_entry_t *de = dir->get_next();
+	DIRECTORY_ENTRY *de = dir->get_next();
 	if (!de)
 		return STATUS_NO_MORE_FILES;
 

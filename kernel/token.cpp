@@ -752,7 +752,7 @@ NTSTATUS NTAPI NtOpenProcessToken(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	process_t *p = 0;
+	PROCESS *p = 0;
 	r = object_from_handle( p, Process, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -781,7 +781,7 @@ NTSTATUS NTAPI NtOpenThreadToken(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	thread_t *t = 0;
+	THREAD *t = 0;
 	r = object_from_handle( t, Thread, DesiredAccess );
 	if (r < STATUS_SUCCESS)
 		return r;

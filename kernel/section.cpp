@@ -594,7 +594,7 @@ const char *get_section_symbol( OBJECT *object, ULONG address )
 	return section->get_symbol( address );
 }
 
-void *get_entry_point( process_t *p )
+void *get_entry_point( PROCESS *p )
 {
 	IMAGE_DOS_HEADER *dos = NULL;
 	IMAGE_NT_HEADERS *nt;
@@ -772,7 +772,7 @@ NTSTATUS NTAPI NtMapViewOfSection(
 	ULONG AllocationType,
 	ULONG Protect )
 {
-	process_t *p = NULL;
+	PROCESS *p = NULL;
 	BYTE *addr = NULL;
 	NTSTATUS r;
 
@@ -816,7 +816,7 @@ NTSTATUS NTAPI NtUnmapViewOfSection(
 	HANDLE ProcessHandle,
 	PVOID BaseAddress )
 {
-	process_t *p = NULL;
+	PROCESS *p = NULL;
 	NTSTATUS r;
 
 	trace("%p %p\n", ProcessHandle, BaseAddress );

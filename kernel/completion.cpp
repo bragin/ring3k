@@ -68,10 +68,10 @@ protected:
 	friend class list_anchor<COMPLETION_WAITER,0>;
 	friend class list_element<COMPLETION_WAITER>;
 	completion_waiter_list_element_t entry[1];
-	thread_t *thread;
+	THREAD *thread;
 	COMPLETION_PACKET *packet;
 public:
-	COMPLETION_WAITER(thread_t *t) : thread(t), packet(0) {}
+	COMPLETION_WAITER(THREAD *t) : thread(t), packet(0) {}
 	~COMPLETION_WAITER();
 	void stop( completion_waiter_list_t& waiter_list, PLARGE_INTEGER timeout = 0);
 	void start();

@@ -125,7 +125,7 @@ public:
 	pipe_container_t *container;
 	pipe_state state;
 	pipe_client_t *client;
-	thread_t *thread;
+	THREAD *thread;
 	pipe_server_element_t entry[1];
 	pipe_message_list_t received_messages;
 	pipe_message_list_t sent_messages;
@@ -164,7 +164,7 @@ class pipe_client_t : public IO_OBJECT
 public:
 	pipe_client_element_t entry[1];
 	pipe_server_t *server;
-	thread_t *thread;
+	THREAD *thread;
 public:
 	pipe_client_t( pipe_container_t *container );
 	virtual NTSTATUS read( PVOID buffer, ULONG length, ULONG *read );
@@ -384,7 +384,7 @@ NTSTATUS pipe_container_t::create_client( pipe_client_t*& client )
 	if (server)
 	{
 		server->set_client( client );
-		thread_t *t = server->thread;
+		THREAD *t = server->thread;
 		server->thread = NULL;
 		t->start();
 	}
@@ -564,7 +564,7 @@ void pipe_server_t::queue_message_from_client( pipe_message_t *msg )
 	assert( state == pipe_connected );
 	if (thread)
 	{
-		thread_t *t = thread;
+		THREAD *t = thread;
 		thread = 0;
 		t->start();
 	}
@@ -577,7 +577,7 @@ void pipe_server_t::queue_message_to_client( pipe_message_t *msg )
 	assert( state == pipe_connected );
 	if (client->thread)
 	{
-		thread_t *t = client->thread;
+		THREAD *t = client->thread;
 		client->thread = 0;
 		t->start();
 	}

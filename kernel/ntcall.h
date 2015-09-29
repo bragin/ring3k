@@ -42,19 +42,19 @@ NTSTATUS copy_from_user( T* dest, const T* src )
 }
 
 class address_space;
-class thread_t;
-class process_t;
+class THREAD;
+class PROCESS;
 
 #include "list.h"
 
-typedef list_anchor<process_t,0> process_list_t;
-typedef list_iter<process_t,0> process_iter_t;
-typedef list_element<process_t> process_element_t;
+typedef list_anchor<PROCESS,0> process_list_t;
+typedef list_iter<PROCESS,0> process_iter_t;
+typedef list_element<PROCESS> process_element_t;
 
 #include "thread.h"
 #include "process.h"
 
-extern thread_t *current;
+extern THREAD *current;
 extern process_list_t processes;
 ULONG allocate_id();
 extern OBJECT *ntdll_section;
@@ -63,11 +63,11 @@ NTSTATUS copy_oa_from_user( OBJECT_ATTRIBUTES *koa, UNICODE_STRING *kus, const O
 void free_oa( OBJECT_ATTRIBUTES *oa );
 void free_us( UNICODE_STRING *us );
 
-NTSTATUS process_from_handle( HANDLE handle, process_t **process );
-NTSTATUS thread_from_handle( HANDLE handle, thread_t **thread );
-thread_t *find_thread_by_client_id( CLIENT_ID *id );
+NTSTATUS process_from_handle( HANDLE handle, PROCESS **process );
+NTSTATUS thread_from_handle( HANDLE handle, THREAD **thread );
+THREAD *find_thread_by_client_id( CLIENT_ID *id );
 
-NTSTATUS process_alloc_user_handle( process_t *process, OBJECT *obj, ACCESS_MASK access, HANDLE *out, HANDLE *copy );
+NTSTATUS process_alloc_user_handle( PROCESS *process, OBJECT *obj, ACCESS_MASK access, HANDLE *out, HANDLE *copy );
 
 static inline NTSTATUS alloc_user_handle( OBJECT *obj, ACCESS_MASK access, HANDLE *out )
 {
@@ -118,8 +118,8 @@ bool set_graphics_driver( const char *driver );
 #define GDI_SHARED_HANDLE_TABLE_SIZE 0x60000
 
 // from ntgdi.cpp
-NTSTATUS win32k_process_init(process_t *p);
-NTSTATUS win32k_thread_init(thread_t *t);
+NTSTATUS win32k_process_init(PROCESS *p);
+NTSTATUS win32k_thread_init(THREAD *t);
 
 // from kthread.cpp
 void create_kthread(void);

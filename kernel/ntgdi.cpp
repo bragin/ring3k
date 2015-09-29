@@ -194,7 +194,7 @@ void win32k_manager_t::send_input(INPUT* input)
 
 	if (active_window)
 	{
-		thread_t *t = active_window->get_win_thread();
+		THREAD *t = active_window->get_win_thread();
 		assert(t != NULL);
 		queue = t->queue;
 	}
@@ -288,7 +288,7 @@ void ntgdi_fini()
 		win32k_manager->fini();
 }
 
-NTSTATUS win32k_process_init(process_t *process)
+NTSTATUS win32k_process_init(PROCESS *process)
 {
 	NTSTATUS r;
 
@@ -354,7 +354,7 @@ NTSTATUS win32k_process_init(process_t *process)
 	return r;
 }
 
-NTSTATUS win32k_thread_init(thread_t *thread)
+NTSTATUS win32k_thread_init(THREAD *thread)
 {
 	NTSTATUS r;
 

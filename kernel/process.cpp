@@ -66,7 +66,7 @@ struct INITIAL_PPB
 	WCHAR CommandLineBuffer[MAX_PATH];
 };
 
-NTSTATUS process_t::create_parameters(
+NTSTATUS PROCESS::create_parameters(
 	RTL_USER_PROCESS_PARAMETERS **pparams, LPCWSTR ImageFile, LPCWSTR DllPath,
 	LPCWSTR CurrentDirectory, LPCWSTR CommandLine, LPCWSTR WindowTitle, LPCWSTR Desktop)
 {
@@ -208,7 +208,7 @@ void kshm_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 
 kshm_tracer kshm_trace;
 
-NTSTATUS get_shared_memory_block( process_t *p )
+NTSTATUS get_shared_memory_block( PROCESS *p )
 {
 	BYTE *shm = NULL;
 	NTSTATUS r;
@@ -251,16 +251,16 @@ NTSTATUS get_shared_memory_block( process_t *p )
 	return STATUS_SUCCESS;
 }
 
-thread_t *find_thread_by_client_id( CLIENT_ID *id )
+THREAD *find_thread_by_client_id( CLIENT_ID *id )
 {
 	for ( process_iter_t i(processes); i; i.next() )
 	{
-		process_t *p = i;
+		PROCESS *p = i;
 		if (p->id == (ULONG)id->UniqueProcess)
 		{
 			for ( sibling_iter_t j(p->threads); j; j.next() )
 			{
-				thread_t *t = j;
+				THREAD *t = j;
 				if (t->get_id() == (ULONG)id->UniqueThread)
 					return t;
 			}
@@ -270,22 +270,22 @@ thread_t *find_thread_by_client_id( CLIENT_ID *id )
 	return 0;
 }
 
-process_t *find_process_by_id( HANDLE UniqueProcess )
+PROCESS *find_process_by_id( HANDLE UniqueProcess )
 {
 	for ( process_iter_t i(processes); i; i.next() )
 	{
-		process_t *p = i;
+		PROCESS *p = i;
 		if (p->id == (ULONG)UniqueProcess)
 			return p;
 	}
 	return 0;
 }
 
-BOOLEAN process_t::is_signalled( void )
+BOOLEAN PROCESS::is_signalled( void )
 {
 	for ( sibling_iter_t i(threads); i; i.next() )
 	{
-		thread_t *t = i;
+		THREAD *t = i;
 		if (!t->is_terminated())
 			return FALSE;
 	}
@@ -293,7 +293,7 @@ BOOLEAN process_t::is_signalled( void )
 	return TRUE;
 }
 
-NTSTATUS process_from_handle( HANDLE handle, process_t **process )
+NTSTATUS process_from_handle( HANDLE handle, PROCESS **process )
 {
 	return object_from_handle( *process, handle, 0 );
 }
@@ -307,7 +307,7 @@ ULONG allocate_id()
 }
 
 NTSTATUS process_alloc_user_handle(
-	process_t *p,
+	PROCESS *p,
 	OBJECT *obj,
 	ACCESS_MASK access,
 	HANDLE *out,
@@ -339,7 +339,7 @@ NTSTATUS process_alloc_user_handle(
 	return r;
 }
 
-NTSTATUS process_t::create_exe_ppb( RTL_USER_PROCESS_PARAMETERS **pparams, UNICODE_STRING& name )
+NTSTATUS PROCESS::create_exe_ppb( RTL_USER_PROCESS_PARAMETERS **pparams, UNICODE_STRING& name )
 {
 	WCHAR image[MAX_PATH], cmd[MAX_PATH];
 	NTSTATUS r;
@@ -364,7 +364,7 @@ NTSTATUS process_t::create_exe_ppb( RTL_USER_PROCESS_PARAMETERS **pparams, UNICO
 	return r;
 }
 
-process_t::process_t() :
+PROCESS::PROCESS() :
 	exception_port(0),
 	priority(0),
 	hard_error_mode(1),
@@ -377,7 +377,7 @@ process_t::process_t() :
 	processes.append( this );
 }
 
-process_t::~process_t()
+PROCESS::~PROCESS()
 {
 	if (win32k_info)
 		delete win32k_info;
@@ -385,7 +385,7 @@ process_t::~process_t()
 	exception_port = 0;
 }
 
-void process_t::terminate( NTSTATUS status )
+void PROCESS::terminate( NTSTATUS status )
 {
 	notify_watchers();
 	// now release the process...
@@ -432,12 +432,12 @@ void peb_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 
 peb_tracer peb_trace;
 
-NTSTATUS create_process( process_t **pprocess, OBJECT *section )
+NTSTATUS create_process( PROCESS **pprocess, OBJECT *section )
 {
-	process_t *p;
+	PROCESS *p;
 	NTSTATUS r;
 
-	p = new process_t();
+	p = new PROCESS();
 	if (!p)
 		return STATUS_INSUFFICIENT_RESOURCES;
 
@@ -522,7 +522,7 @@ NTSTATUS NTAPI NtCreateProcess(
 	HANDLE DebugPort,
 	HANDLE ExceptionPort )
 {
-	process_t *p = NULL;
+	PROCESS *p = NULL;
 	section_t *section = 0;
 	NTSTATUS r;
 
@@ -547,14 +547,14 @@ NTSTATUS NTAPI NtCreateProcess(
 NTSTATUS open_process( OBJECT **process, OBJECT_ATTRIBUTES *oa )
 {
 	OBJECT *obj = NULL;
-	process_t *p;
+	PROCESS *p;
 	NTSTATUS r;
 
 	r = get_named_object( &obj, oa );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	p = dynamic_cast<process_t*>( obj );
+	p = dynamic_cast<PROCESS*>( obj );
 	if (!p)
 	{
 		release( obj );
@@ -608,7 +608,7 @@ NTSTATUS NTAPI NtOpenProcess(
 		//trace("cid\n");
 		if (id.UniqueThread)
 		{
-			thread_t *t = find_thread_by_client_id( &id );
+			THREAD *t = find_thread_by_client_id( &id );
 			if (!t)
 				return STATUS_INVALID_CID;
 			process = t->process;
@@ -658,7 +658,7 @@ NTSTATUS NTAPI NtSetInformationProcess(
 	PVOID ProcessInformation,
 	ULONG ProcessInformationLength )
 {
-	process_t *p = 0;
+	PROCESS *p = 0;
 	union
 	{
 		HANDLE port_handle;
@@ -793,7 +793,7 @@ NTSTATUS NTAPI NtQueryInformationProcess(
 	} info;
 	ULONG len, sz = 0;
 	NTSTATUS r;
-	process_t *p;
+	PROCESS *p;
 
 	trace("%p %u %p %lu %p\n", Process, ProcessInformationClass,
 		  ProcessInformation, ProcessInformationLength, ReturnLength );
@@ -881,7 +881,7 @@ NTSTATUS NTAPI NtTerminateProcess(
 	HANDLE Process,
 	NTSTATUS Status)
 {
-	process_t *p;
+	PROCESS *p;
 	NTSTATUS r;
 
 	trace("%p %08lx\n", Process, Status);
@@ -899,7 +899,7 @@ NTSTATUS NTAPI NtTerminateProcess(
 	sibling_iter_t i(p->threads);
 	while ( i )
 	{
-		thread_t *t = i;
+		THREAD *t = i;
 		i.next();
 		t->terminate( Status );
 	}

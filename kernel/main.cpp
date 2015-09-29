@@ -53,7 +53,7 @@
 #include "alloc_bitmap.h"
 
 process_list_t processes;
-thread_t *current;
+THREAD *current;
 OBJECT *ntdll_section;
 int option_debug = 0;
 ULONG KiIntSystemCall = 0;
@@ -125,11 +125,11 @@ int schedule(void)
 	return 0;
 }
 
-NTSTATUS create_initial_process( thread_t **t, UNICODE_STRING& us )
+NTSTATUS create_initial_process( THREAD **t, UNICODE_STRING& us )
 {
 	BYTE *pstack;
 	const unsigned int stack_size = 0x100 * PAGE_SIZE;
-	process_t *p = NULL;
+	PROCESS *p = NULL;
 	CONTEXT ctx;
 	INITIAL_TEB init_teb;
 	CLIENT_ID id;
@@ -230,14 +230,14 @@ void do_cleanup( void )
 
 	for ( process_iter_t pi(processes); pi; pi.next() )
 	{
-		process_t *p = pi;
+		PROCESS *p = pi;
 		if (p->is_signalled())
 			continue;
 		num_processes++;
 		fprintf(stderr, "process %04lx\n", p->id);
 		for ( sibling_iter_t ti(p->threads); ti; ti.next() )
 		{
-			thread_t *t = ti;
+			THREAD *t = ti;
 			if (t->is_signalled())
 				continue;
 			fprintf(stderr, "\tthread %04lx\n", t->trace_id());
@@ -447,7 +447,7 @@ void parse_options(int argc, char **argv)
 int main(int argc, char **argv)
 {
 	unicode_string_t us;
-	thread_t *initial_thread = NULL;
+	THREAD *initial_thread = NULL;
 	const char *exename;
 
 	parse_options( argc, argv );

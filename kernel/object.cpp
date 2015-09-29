@@ -462,7 +462,7 @@ NTSTATUS NTAPI NtDuplicateObject(
 
 	NTSTATUS r;
 
-	process_t *sp = 0;
+	PROCESS *sp = 0;
 	r = process_from_handle( SourceProcessHandle, &sp );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -484,7 +484,7 @@ NTSTATUS NTAPI NtDuplicateObject(
 	}
 
 	// put the object into the target process's handle table
-	process_t *tp = 0;
+	PROCESS *tp = 0;
 	r = process_from_handle( TargetProcessHandle, &tp );
 	trace("target process %p\n", tp );
 	if (r == STATUS_SUCCESS)
