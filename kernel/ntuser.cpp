@@ -75,8 +75,10 @@ ULONG NTAPI NtUserGetThreadState( ULONG InfoClass )
 
 #define USER_HANDLE_WINDOW 1
 
-struct user_handle_entry_t {
-	union {
+struct user_handle_entry_t
+{
+	union
+	{
 		void *object;
 		USHORT next_free;
 	};
@@ -85,7 +87,8 @@ struct user_handle_entry_t {
 	USHORT highpart;
 };
 
-struct user_shared_mem_t {
+struct user_shared_mem_t
+{
 	ULONG x1;
 	ULONG x2;
 	ULONG max_window_handle;
@@ -185,7 +188,7 @@ void delete_user_object( ULONG i )
 		break;
 	default:
 		trace("object %ld (%p), type = %08x owner = %p\n",
-			i, entry->object, entry->type, entry->owner);
+			  i, entry->object, entry->type, entry->owner);
 		assert(0);
 	}
 }
@@ -253,7 +256,7 @@ void *init_user_shared_memory()
 		// setup the allocation bitmap for user objects (eg. windows)
 		void *object_area = (void*) ((BYTE*) user_shared + user_shared_mem_reserve);
 		user_shared_bitmap.set_area( object_area,
-			user_shared_mem_size - user_shared_mem_reserve );
+									 user_shared_mem_size - user_shared_mem_reserve );
 
 		// create the window stations directory too
 		create_directory_object( (PWSTR) L"\\Windows\\WindowStations" );
@@ -293,7 +296,7 @@ bool message_map_on_access( BYTE *address, ULONG eip )
 		if (ofs > message_maps[i].MaxMessage/8)
 			continue;
 		fprintf(stderr, "%04lx: accessed message map[%ld][%04lx] from %08lx\n",
-			current->trace_id(), i, ofs, eip);
+				current->trace_id(), i, ofs, eip);
 		return true;
 	}
 	return false;
@@ -305,13 +308,13 @@ bool window_on_access( BYTE *address, ULONG eip )
 	{
 		switch (user_handle_table[i].type)
 		{
-		case USER_HANDLE_WINDOW:
+			case USER_HANDLE_WINDOW:
 			{
-			// window shared memory structures are variable size
-			// have the window check itself
-			window_tt* wnd = reinterpret_cast<window_tt*>( user_handle_table[i].object);
-			if (wnd->on_access( address, eip ))
-				return true;
+				// window shared memory structures are variable size
+				// have the window check itself
+				window_tt* wnd = reinterpret_cast<window_tt*>( user_handle_table[i].object);
+				if (wnd->on_access( address, eip ))
+					return true;
 			}
 		}
 	}
@@ -331,7 +334,7 @@ void ntusershm_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
 			break;
 		}
 		fprintf(stderr, "%04lx: accessed ushm[%04lx]%s from %08lx\n",
-			current->trace_id(), ofs, name, eip);
+				current->trace_id(), ofs, name, eip);
 		return;
 	}
 
@@ -342,7 +345,7 @@ void ntusershm_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
 		return;
 
 	fprintf(stderr, "%04lx: accessed ushm[%04lx] from %08lx\n",
-		current->trace_id(), ofs, eip);
+			current->trace_id(), ofs, eip);
 }
 
 static ntusershm_tracer ntusershm_trace;
@@ -368,17 +371,17 @@ void ntuserhandle_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
 	switch (ofs % sz)
 	{
 #define f(n, x) case n: field = #x; break;
-	f( 0, owner )
-	f( 4, object )
-	f( 8, type )
-	f( 10, highpart )
+		f( 0, owner )
+		f( 4, object )
+		f( 8, type )
+		f( 10, highpart )
 #undef f
 	default:
 		field = "unknown";
 	}
 
 	fprintf(stderr, "%04lx: accessed user handle[%04lx]+%s (%ld) from %08lx\n",
-		current->trace_id(), number, field, ofs%sz, eip);
+			current->trace_id(), number, field, ofs%sz, eip);
 }
 static ntuserhandle_tracer ntuserhandle_trace;
 
@@ -439,7 +442,7 @@ NTSTATUS map_user_shared_memory( process_t *proc )
 		return STATUS_SUCCESS;
 
 	r = user_shared_section->mapit( proc->vm, user_shared_mem, 0,
-					MEM_COMMIT, PAGE_READONLY );
+									MEM_COMMIT, PAGE_READONLY );
 	if (r < STATUS_SUCCESS)
 		return STATUS_UNSUCCESSFUL;
 
@@ -451,7 +454,7 @@ NTSTATUS map_user_shared_memory( process_t *proc )
 
 	// map the shared handle table
 	r = user_handle_table_section->mapit( proc->vm, user_handles, 0,
-					MEM_COMMIT, PAGE_READONLY );
+										  MEM_COMMIT, PAGE_READONLY );
 	if (r < STATUS_SUCCESS)
 		return STATUS_UNSUCCESSFUL;
 
@@ -480,7 +483,8 @@ BOOLEAN do_gdi_init()
 
 NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSize)
 {
-	union {
+	union
+	{
 		USER_PROCESS_CONNECT_INFO win2k;
 		USER_PROCESS_CONNECT_INFO_XP winxp;
 	} info;
@@ -922,7 +926,7 @@ HANDLE NTAPI NtUserCreateWindowStation(
 	ULONG Locale)
 {
 	trace("%p %08lx %p %08lx %p %08lx\n",
-		WindowStationName, DesiredAccess, ObjectDirectory, x1, x2, Locale);
+		  WindowStationName, DesiredAccess, ObjectDirectory, x1, x2, Locale);
 
 	// print out the name
 	OBJECT_ATTRIBUTES oa;
@@ -1131,19 +1135,19 @@ bool window_tt::on_access( BYTE *address, ULONG eip )
 	switch (ofs)
 	{
 #define f(n, x) case n: field = #x; break;
-	f( 0, handle )
-	f( 0x10, self )
-	f( 0x14, dwFlags )
-	f( 0x16, dwFlags )
-	f( 0x18, exstyle )
-	f( 0x1c, style )
-	f( 0x20, hInstance )
-	f( 0x28, next )
-	f( 0x2c, parent )
-	f( 0x30, first_child )
-	f( 0x34, owner )
-	f( 0x5c, wndproc )
-	f( 0x60, wndcls )
+		f( 0, handle )
+		f( 0x10, self )
+		f( 0x14, dwFlags )
+		f( 0x16, dwFlags )
+		f( 0x18, exstyle )
+		f( 0x1c, style )
+		f( 0x20, hInstance )
+		f( 0x28, next )
+		f( 0x2c, parent )
+		f( 0x30, first_child )
+		f( 0x34, owner )
+		f( 0x5c, wndproc )
+		f( 0x60, wndcls )
 #undef f
 	}
 	fprintf(stderr, "%04lx: accessed window[%p][%04lx] %s from %08lx\n", current->trace_id(), handle, ofs, field, eip);
@@ -1460,7 +1464,7 @@ void window_tt::set_window_pos( UINT flags )
 	if (!(flags & SWP_NOSIZE))
 	{
 		sizemsg_tt size( rcWnd.right - rcWnd.left,
-				rcWnd.bottom - rcWnd.top );
+						 rcWnd.bottom - rcWnd.top );
 		send( size );
 	}
 
@@ -1510,7 +1514,7 @@ BOOLEAN window_tt::destroy()
 {
 	// set the window to zero size
 	set_window_pos( SWP_NOMOVE | SWP_NOSIZE |
-			SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW );
+					SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW );
 
 	destroymsg_tt destroy;
 	send( destroy );
@@ -1663,10 +1667,10 @@ LRESULT NTAPI NtUserDispatchMessage( PMSG Message )
 
 	switch (msg.message)
 	{
-	case WM_PAINT:
+		case WM_PAINT:
 		{
-		paintmsg_tt msg;
-		win->send( msg );
+			paintmsg_tt msg;
+			win->send( msg );
 		}
 		break;
 	default:

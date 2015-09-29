@@ -52,7 +52,7 @@ public:
 	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written );
 	virtual NTSTATUS open( object_t *&out, open_info_t& info );
 	virtual NTSTATUS fs_control( event_t* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
-		 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
+								 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
 	NTSTATUS wait_server_available( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG Length );
 };
 
@@ -75,8 +75,14 @@ public:
 	NTSTATUS create_server( pipe_server_t*& pipe, ULONG max_inst );
 	NTSTATUS create_client( pipe_client_t*& pipe );
 	void unlink( pipe_server_t *pipe );
-	pipe_server_list_t& get_servers() {return servers;}
-	pipe_client_list_t& get_clients() {return clients;}
+	pipe_server_list_t& get_servers()
+	{
+		return servers;
+	}
+	pipe_client_list_t& get_clients()
+	{
+		return clients;
+	}
 	virtual NTSTATUS open( object_t *&out, open_info_t& info );
 	pipe_server_t* find_idle_server();
 };
@@ -90,7 +96,11 @@ typedef list_iter<pipe_message_t,0> pipe_message_iter_t;
 class pipe_message_t
 {
 protected:
-	void *operator new(unsigned int count, void*&ptr) { assert( count == sizeof (pipe_message_t)); return ptr; }
+	void *operator new(unsigned int count, void*&ptr)
+	{
+		assert( count == sizeof (pipe_message_t));
+		return ptr;
+	}
 	pipe_message_t(ULONG _Length);
 public:
 	pipe_message_element_t entry[1];
@@ -104,7 +114,8 @@ class pipe_server_t : public io_object_t
 {
 	friend class pipe_container_t;
 public:
-	enum pipe_state {
+	enum pipe_state
+	{
 		pipe_idle,
 		pipe_wait_connect,
 		pipe_connected,
@@ -125,10 +136,19 @@ public:
 	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written );
 	NTSTATUS open( object_t *&out, open_info_t& info );
 	virtual NTSTATUS fs_control( event_t* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
-		 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
-	inline bool is_connected() { return state == pipe_connected; }
-	inline bool is_idle() {return state == pipe_idle; }
-	inline bool is_awaiting_connect() {return state == pipe_wait_connect; }
+								 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
+	inline bool is_connected()
+	{
+		return state == pipe_connected;
+	}
+	inline bool is_idle()
+	{
+		return state == pipe_idle;
+	}
+	inline bool is_awaiting_connect()
+	{
+		return state == pipe_wait_connect;
+	}
 	bool do_connect();
 	NTSTATUS connect();
 	NTSTATUS disconnect();
@@ -151,9 +171,9 @@ public:
 	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written );
 	NTSTATUS set_pipe_info( FILE_PIPE_INFORMATION& pipe_info );
 	virtual NTSTATUS fs_control( event_t* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
-		 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
+								 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
 	NTSTATUS transceive(
-		 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
+		PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
 };
 
 // server factory, used by NtCreateNamedPipeFile
@@ -314,7 +334,7 @@ NTSTATUS pipe_device_t::wait_server_available( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, 
 }
 
 NTSTATUS pipe_device_t::fs_control( event_t* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
-	 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
+									PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
 	if (FsControlCode == FSCTL_PIPE_WAIT)
 		return wait_server_available( (PFILE_PIPE_WAIT_FOR_BUFFER) InputBuffer, InputBufferLength );
@@ -523,7 +543,7 @@ NTSTATUS pipe_server_t::disconnect()
 }
 
 NTSTATUS pipe_server_t::fs_control( event_t* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
-		 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
+									PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
 	trace("pipe_server_t %08lx\n", FsControlCode);
 	if (FsControlCode == FSCTL_PIPE_LISTEN)
@@ -629,7 +649,7 @@ NTSTATUS pipe_client_t::write( PVOID buffer, ULONG length, ULONG *written )
 }
 
 NTSTATUS pipe_client_t::fs_control( event_t* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
-		 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
+									PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
 	trace("pipe_client_t %08lx\n", FsControlCode);
 
@@ -640,8 +660,8 @@ NTSTATUS pipe_client_t::fs_control( event_t* event, IO_STATUS_BLOCK iosb, ULONG 
 }
 
 NTSTATUS pipe_client_t::transceive(
-		PVOID InputBuffer, ULONG InputBufferLength,
-		PVOID OutputBuffer, ULONG OutputBufferLength )
+	PVOID InputBuffer, ULONG InputBufferLength,
+	PVOID OutputBuffer, ULONG OutputBufferLength )
 {
 	NTSTATUS r;
 	ULONG out = 0;

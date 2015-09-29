@@ -446,7 +446,7 @@ NTSTATUS NtSetTimer(
 	BOOLEAN prev = FALSE;
 	r = timer->set( due, (PKNORMAL_ROUTINE)TimerApcRoutine, TimerContext, Resume, Period, prev );
 	if (r == STATUS_SUCCESS && PreviousState )
-		 copy_to_user( PreviousState, &prev, sizeof prev );
+		copy_to_user( PreviousState, &prev, sizeof prev );
 
 	return r;
 }
@@ -465,7 +465,8 @@ NTSTATUS NTAPI NtQueryTimer(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	union {
+	union
+	{
 		TIMER_BASIC_INFORMATION basic;
 	} info;
 	ULONG sz = 0;

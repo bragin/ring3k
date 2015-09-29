@@ -74,7 +74,7 @@ nccreate_message_tt::nccreate_message_tt( NTCREATESTRUCT& cs, const UNICODE_STRI
 }
 
 create_message_tt::create_message_tt( NTCREATESTRUCT& cs,
-			const UNICODE_STRING& _cls, const UNICODE_STRING& _name ) :
+									  const UNICODE_STRING& _cls, const UNICODE_STRING& _name ) :
 	cls( _cls ),
 	name( _name )
 {

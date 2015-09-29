@@ -32,7 +32,8 @@
 #include "ntcall.h"
 #include "ntwin32.h"
 
-typedef struct _ntcalldesc {
+typedef struct _ntcalldesc
+{
 	const char *name;
 	void *func;
 	unsigned int numargs;
@@ -42,25 +43,29 @@ typedef struct _ntcalldesc {
 #define DEC(x,n) { #x, NULL, n }  /* no stub implemented */
 #define IMP(x,n) { #x, (void*)x, n }	 /* entry point implemented */
 
-ntcalldesc win2k_calls[] = {
+ntcalldesc win2k_calls[] =
+{
 #define SYSCALL_WIN2K
 #include "ntsyscall.h"
 #undef SYSCALL_WIN2K
 };
 
-ntcalldesc winxp_calls[] = {
+ntcalldesc winxp_calls[] =
+{
 #define SYSCALL_WINXP
 #include "ntsyscall.h"
 #undef SYSCALL_WINXP
 };
 
-ntcalldesc win2k_uicalls[] = {
+ntcalldesc win2k_uicalls[] =
+{
 #define SYSCALL_WIN2K
 #include "uisyscall.h"
 #undef SYSCALL_WIN2K
 };
 
-ntcalldesc winxp_uicalls[] = {
+ntcalldesc winxp_uicalls[] =
+{
 #define SYSCALL_WINXP
 #include "uisyscall.h"
 #undef SYSCALL_WINXP

@@ -190,9 +190,11 @@ NTSTATUS create_initial_process( thread_t **t, UNICODE_STRING& us )
 
 NTSTATUS init_ntdll( void )
 {
-	WCHAR ntdll[] = {
+	WCHAR ntdll[] =
+	{
 		'\\','?','?','\\','c',':','\\','w','i','n','n','t','\\',
-		's','y','s','t','e','m','3','2','\\','n','t','d','l','l','.','d','l','l',0 };
+		's','y','s','t','e','m','3','2','\\','n','t','d','l','l','.','d','l','l',0
+	};
 	unicode_string_t us;
 	file_t *file = 0;
 	NTSTATUS r;
@@ -281,12 +283,14 @@ static void abort_handler(int)
 bool init_skas();
 bool init_tt( const char *loader_path );
 
-struct trace_option {
+struct trace_option
+{
 	const char *name;
 	int enabled;
 };
 
-trace_option trace_option_list[] = {
+trace_option trace_option_list[] =
+{
 	{ "syscall", false },
 	{ "tebshm", false },
 	{ "pebshm", false },
@@ -335,10 +339,10 @@ void usage( void )
 void version( void )
 {
 	const char version[] = "%s\n"
-		"Copyright (C) 2008-2009 Mike McCormack\n"
-		"Licence LGPL\n"
-		"This is free software: you are free to change and redistribute it.\n"
-		"There is NO WARRANTY, to the extent permitted by law.\n\n";
+						   "Copyright (C) 2008-2009 Mike McCormack\n"
+						   "Licence LGPL\n"
+						   "This is free software: you are free to change and redistribute it.\n"
+						   "There is NO WARRANTY, to the extent permitted by law.\n\n";
 	printf( version, PACKAGE_STRING );
 	exit(0);
 }
@@ -401,7 +405,8 @@ void parse_options(int argc, char **argv)
 	while (1)
 	{
 		int option_index;
-		static struct option long_options[] = {
+		static struct option long_options[] =
+		{
 			{"debug", no_argument, NULL, 'd' },
 			{"graphics", required_argument, NULL, 'g' },
 			{"help", no_argument, NULL, 'h' },

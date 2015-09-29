@@ -38,7 +38,8 @@
 #include "unicode.h"
 #include "file.h"
 
-struct pe_section_t : public section_t {
+struct pe_section_t : public section_t
+{
 public:
 	pe_section_t( int f, BYTE *a, size_t l, ULONG attr, ULONG prot );
 	virtual ~pe_section_t();
@@ -133,7 +134,7 @@ NTSTATUS pe_section_t::query( SECTION_IMAGE_INFORMATION *image )
 
 	// FIXME: assumes fixed base address...?
 	image->EntryPoint = (BYTE*) nt->OptionalHeader.ImageBase +
-					   nt->OptionalHeader.AddressOfEntryPoint;
+						nt->OptionalHeader.AddressOfEntryPoint;
 	image->StackZeroBits = 0;
 	image->StackReserved = nt->OptionalHeader.SizeOfStackReserve;
 	image->StackCommit = nt->OptionalHeader.SizeOfStackCommit;
@@ -277,7 +278,8 @@ ASM_NAME_PREFIX "relay_code_size:\n"
 	"\t.long " ASM_NAME_PREFIX "relay_code_end - " ASM_NAME_PREFIX "relay_code\n"
 );
 
-struct __attribute__ ((packed)) relay_stub {
+struct __attribute__ ((packed)) relay_stub
+{
 	BYTE x1; //  0xe8 call target
 	ULONG common;
 	ULONG target;
@@ -412,19 +414,19 @@ NTSTATUS pe_section_t::mapit( address_space *vm, BYTE *&base, ULONG ZeroBits, UL
 	sections = (IMAGE_SECTION_HEADER*) (addr + dos->e_lfanew + sizeof (*nt));
 
 	if (option_trace)
-		 trace("read %d sections, load at %08lx\n",
-		   nt->FileHeader.NumberOfSections,
-		   nt->OptionalHeader.ImageBase);
+		trace("read %d sections, load at %08lx\n",
+			  nt->FileHeader.NumberOfSections,
+			  nt->OptionalHeader.ImageBase);
 
 	for ( i=0; i<nt->FileHeader.NumberOfSections; i++ )
 	{
 		if (option_trace)
 			trace("%-8s %08lx %08lx %08lx %08lx\n",
-			   sections[i].Name,
-			   sections[i].VirtualAddress,
-			   sections[i].PointerToRawData,
-			   sections[i].SizeOfRawData,
-			   sections[i].Misc.VirtualSize);
+				  sections[i].Name,
+				  sections[i].VirtualAddress,
+				  sections[i].PointerToRawData,
+				  sections[i].SizeOfRawData,
+				  sections[i].Misc.VirtualSize);
 		if (sections[i].VirtualAddress == 0)
 			die("virtual address was zero!\n");
 
@@ -610,7 +612,7 @@ void *get_entry_point( process_t *p )
 	nt = (IMAGE_NT_HEADERS*) ((BYTE*) dos + ofs);
 
 	r = p->vm->copy_from_user( &entry, &nt->OptionalHeader.AddressOfEntryPoint,
-						   sizeof nt->OptionalHeader.AddressOfEntryPoint );
+							   sizeof nt->OptionalHeader.AddressOfEntryPoint );
 	if (r < STATUS_SUCCESS)
 		return NULL;
 
@@ -669,7 +671,7 @@ NTSTATUS NTAPI NtCreateSection(
 	LARGE_INTEGER sz;
 
 	trace("%p %08lx %p %p %08lx %08lx %p\n", SectionHandle, DesiredAccess,
-			ObjectAttributes, SectionSize, Protect, Attributes, FileHandle );
+		  ObjectAttributes, SectionSize, Protect, Attributes, FileHandle );
 
 	// check there's no bad flags
 	if (Attributes & ~VALID_SECTION_FLAGS)
@@ -775,8 +777,8 @@ NTSTATUS NTAPI NtMapViewOfSection(
 	NTSTATUS r;
 
 	trace("%p %p %p %lu %08lx %p %p %u %08lx %08lx\n",
-			SectionHandle, ProcessHandle, BaseAddress, ZeroBits, CommitSize,
-			SectionOffset, ViewSize, InheritDisposition, AllocationType, Protect );
+		  SectionHandle, ProcessHandle, BaseAddress, ZeroBits, CommitSize,
+		  SectionOffset, ViewSize, InheritDisposition, AllocationType, Protect );
 
 	r = process_from_handle( ProcessHandle, &p );
 	if (r < STATUS_SUCCESS)
@@ -835,7 +837,8 @@ NTSTATUS NTAPI NtQuerySection(
 	ULONG SectionInformationLength,
 	PULONG ResultLength )
 {
-	union {
+	union
+	{
 		SECTION_BASIC_INFORMATION basic;
 		SECTION_IMAGE_INFORMATION image;
 	} info;
@@ -843,7 +846,7 @@ NTSTATUS NTAPI NtQuerySection(
 	ULONG len;
 
 	trace("%p %u %p %lu %p\n", SectionHandle, SectionInformationClass,
-			SectionInformation, SectionInformationLength, ResultLength );
+		  SectionInformation, SectionInformationLength, ResultLength );
 
 	section_t *section = 0;
 	r = object_from_handle( section, SectionHandle, SECTION_QUERY );

@@ -110,7 +110,7 @@ NTSTATUS NTAPI NtCreateMutant(
 	BOOLEAN InitialOwner)
 {
 	trace("%p %08lx %p %u\n", MutantHandle,
-			AccessMask, ObjectAttributes, InitialOwner);
+		  AccessMask, ObjectAttributes, InitialOwner);
 
 	mutant_factory factory( InitialOwner );
 	return factory.create( MutantHandle, AccessMask, ObjectAttributes );

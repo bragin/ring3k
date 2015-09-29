@@ -30,7 +30,8 @@ extern "C" {
 #endif
 
 /* from linux-2.6.16.11/arch/i386/kernel/ldt.c */
-struct user_desc {
+struct user_desc
+{
 	unsigned int  entry_number;
 	unsigned long base_addr;
 	unsigned int  limit;
@@ -42,34 +43,38 @@ struct user_desc {
 	unsigned int  useable:1;
 };
 
-struct user_i387_struct {
-		long	cwd;
-		long	swd;
-		long	twd;
-		long	fip;
-		long	fcs;
-		long	foo;
-		long	fos;
-		long	st_space[20];   /* 8*10 bytes for each FP-reg = 80 bytes */
+struct user_i387_struct
+{
+	long	cwd;
+	long	swd;
+	long	twd;
+	long	fip;
+	long	fcs;
+	long	foo;
+	long	fos;
+	long	st_space[20];   /* 8*10 bytes for each FP-reg = 80 bytes */
 };
 
 /**
  * Taken from arch/um/kernel/skas/include/proc_mm.h
  */
-struct ptrace_faultinfo {
+struct ptrace_faultinfo
+{
 	int is_write;
 	unsigned long addr;
 };
 
 
 /* from linux 2.6.17.7  include/asm-x86_64/ptrace.h */
-struct ptrace_ex_faultinfo {
+struct ptrace_ex_faultinfo
+{
 	int is_write;
 	unsigned long addr;
 	int trap_no;
 };
 
-struct ptrace_ldt {
+struct ptrace_ldt
+{
 	int func;
 	void *ptr;
 	unsigned long bytecount;
@@ -110,7 +115,8 @@ struct ptrace_ldt {
 #define MM_MPROTECT 56
 #define MM_COPY_SEGMENTS 57
 
-struct mm_mmap {
+struct mm_mmap
+{
 	unsigned long addr;
 	unsigned long len;
 	unsigned long prot;
@@ -119,20 +125,24 @@ struct mm_mmap {
 	unsigned long offset;
 };
 
-struct mm_munmap {
+struct mm_munmap
+{
 	unsigned long addr;
 	unsigned long len;
 };
 
-struct mm_mprotect {
+struct mm_mprotect
+{
 	unsigned long addr;
 	unsigned long len;
 	unsigned int prot;
 };
 
-struct proc_mm_op {
+struct proc_mm_op
+{
 	int op;
-	union {
+	union
+	{
 		struct mm_mmap mmap;
 		struct mm_munmap munmap;
 		struct mm_mprotect mprotect;

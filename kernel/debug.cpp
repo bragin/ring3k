@@ -303,7 +303,8 @@ void debugger_backtrace(PCONTEXT ctx)
 	}
 }
 
-typedef struct _ud_info {
+typedef struct _ud_info
+{
 	ud_t ud_obj;
 	BYTE *src;
 } ud_info;
@@ -337,7 +338,7 @@ BYTE *unassemble( BYTE *address )
 	{
 		insn_addr = (BYTE*)(ULONG) ud_insn_off(&info.ud_obj);
 		fprintf(stderr,"%p %20s %s\n", insn_addr,
-				 ud_insn_hex(&info.ud_obj), ud_insn_asm(&info.ud_obj));
+				ud_insn_hex(&info.ud_obj), ud_insn_asm(&info.ud_obj));
 		insn_addr += ud_insn_len(&info.ud_obj);
 		if (!--i)
 			break;

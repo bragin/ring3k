@@ -50,7 +50,8 @@ typedef list_iter<regkey_t,0> regkey_iter, regkey_iter_t;
 typedef list_element<regval_t> regval_element, regval_element_t;
 typedef list_element<regkey_t> regkey_element, regkey_element_t;
 
-struct regval_t {
+struct regval_t
+{
 	regval_element entry[1];
 	unicode_string_t name;
 	ULONG type;
@@ -61,7 +62,8 @@ public:
 	~regval_t();
 };
 
-struct regkey_t : public object_t {
+struct regkey_t : public object_t
+{
 	regkey_t *parent;
 	unicode_string_t name;
 	unicode_string_t cls;
@@ -142,9 +144,9 @@ regkey_t::~regkey_t()
 bool regkey_t::access_allowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
 	return check_access( required, handle,
-			 KEY_QUERY_VALUE|KEY_ENUMERATE_SUB_KEYS|KEY_NOTIFY,
-			 KEY_SET_VALUE|KEY_CREATE_SUB_KEY|KEY_CREATE_LINK,
-			 KEY_ALL_ACCESS );
+						 KEY_QUERY_VALUE|KEY_ENUMERATE_SUB_KEYS|KEY_NOTIFY,
+						 KEY_SET_VALUE|KEY_CREATE_SUB_KEY|KEY_CREATE_LINK,
+						 KEY_ALL_ACCESS );
 }
 
 ULONG regkey_t::num_values(ULONG& max_name_len, ULONG& max_data_len)
@@ -432,7 +434,8 @@ NTSTATUS reg_query_value(
 	ULONG& len )
 {
 	NTSTATUS r = STATUS_SUCCESS;
-	union {
+	union
+	{
 		KEY_VALUE_FULL_INFORMATION full;
 		KEY_VALUE_PARTIAL_INFORMATION partial;
 	} info;
@@ -517,7 +520,7 @@ NTSTATUS NTAPI NtCreateKey(
 	regkey_t *key = NULL;
 
 	trace("%p %08lx %p %lu %p %lu %p\n", KeyHandle, DesiredAccess,
-			ObjectAttributes, TitleIndex, Class, CreateOptions, Disposition );
+		  ObjectAttributes, TitleIndex, Class, CreateOptions, Disposition );
 
 	if (Disposition)
 	{
@@ -531,7 +534,7 @@ NTSTATUS NTAPI NtCreateKey(
 		return r;
 
 	trace("len %08lx root %p attr %08lx %pus\n",
-			oa.Length, oa.RootDirectory, oa.Attributes, oa.ObjectName);
+		  oa.Length, oa.RootDirectory, oa.Attributes, oa.ObjectName);
 
 	unicode_string_t cls;
 	if (Class)
@@ -583,7 +586,7 @@ NTSTATUS NTAPI NtOpenKey(
 		return STATUS_INVALID_PARAMETER;
 
 	trace("len %08lx root %p attr %08lx %pus\n",
-			oa.Length, oa.RootDirectory, oa.Attributes, oa.ObjectName);
+		  oa.Length, oa.RootDirectory, oa.Attributes, oa.ObjectName);
 
 	r = open_key( &key, &oa );
 
@@ -640,7 +643,7 @@ NTSTATUS NTAPI NtQueryValueKey(
 	regval_t *val;
 
 	trace("%p %p %d %p %lu %p\n", KeyHandle, ValueName, KeyValueInformationClass,
-			KeyValueInformation, KeyValueInformationLength, ResultLength );
+		  KeyValueInformation, KeyValueInformationLength, ResultLength );
 
 	r = check_key_value_info_class( KeyValueInformationClass );
 	if (r < STATUS_SUCCESS)
@@ -727,7 +730,7 @@ NTSTATUS NTAPI NtEnumerateValueKey(
 	NTSTATUS r = STATUS_SUCCESS;
 
 	trace("%p %lu %u %p %lu %p\n", KeyHandle, Index, KeyValueInformationClass,
-			KeyValueInformation, KeyValueInformationLength, ResultLength );
+		  KeyValueInformation, KeyValueInformationLength, ResultLength );
 
 	r = object_from_handle( key, KeyHandle, KEY_QUERY_VALUE );
 	if (r < STATUS_SUCCESS)
@@ -854,7 +857,7 @@ NTSTATUS NTAPI NtReplaceKey(
 	POBJECT_ATTRIBUTES OldFileObjectAttributes)
 {
 	trace("%p %p %p\n", NewFileObjectAttributes,
-			KeyHandle, OldFileObjectAttributes);
+		  KeyHandle, OldFileObjectAttributes);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -968,7 +971,8 @@ NTSTATUS regkey_t::query(
 	ULONG KeyInformationLength,
 	PULONG ReturnLength)
 {
-	union {
+	union
+	{
 		KEY_BASIC_INFORMATION basic;
 		KEY_FULL_INFORMATION full;
 	} info;

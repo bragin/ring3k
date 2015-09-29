@@ -75,7 +75,8 @@ static inline BOOLEAN mem_protection_is_valid(ULONG protect)
 	return 1;
 }
 
-class corepages : public mblock {
+class corepages : public mblock
+{
 public:
 	corepages( BYTE* address, size_t sz, backing_store_t* _backing );
 	//corepages( BYTE* address, size_t sz );
@@ -125,7 +126,8 @@ corepages::~corepages()
 	backing->release();
 }
 
-class guardpages : public mblock {
+class guardpages : public mblock
+{
 protected:
 	guardpages();
 public:
@@ -192,9 +194,18 @@ class anonymous_pages_t: public backing_store_t
 	int refcount;
 public:
 	anonymous_pages_t( int _fd ): fd(_fd), refcount(1) {}
-	virtual int get_fd() { return fd; }
-	virtual void addref() { refcount++; }
-	virtual void release() { if (!--refcount) delete this; }
+	virtual int get_fd()
+	{
+		return fd;
+	}
+	virtual void addref()
+	{
+		refcount++;
+	}
+	virtual void release()
+	{
+		if (!--refcount) delete this;
+	}
 };
 
 mblock* alloc_core_pages(BYTE* address, ULONG size)

@@ -133,10 +133,10 @@ COLORREF bitmap_t::get_pixel( int x, int y )
 		else
 			return RGB( 0, 0, 0 );
 	case 16:
-		{
+	{
 		USHORT val = *(USHORT*) &bits[row_size * y + x*2 ];
 		return RGB( (val & 0xf800) >> 8, (val & 0x07e0) >> 3, (val & 0x1f) << 3 );
-		}
+	}
 	default:
 		trace("%d bpp not implemented\n", bpp);
 	}

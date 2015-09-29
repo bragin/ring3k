@@ -25,7 +25,8 @@
 
 class win32k_info_t;
 
-struct process_t : public sync_object_t {
+struct process_t : public sync_object_t
+{
 	sibling_list_t threads;
 	address_space *vm;
 	object_t *exe;
@@ -65,7 +66,10 @@ public:
 	~process_t();
 	virtual BOOLEAN is_signalled( void );
 	void terminate( NTSTATUS status );
-	bool is_valid() {return id != 0; }
+	bool is_valid()
+	{
+		return id != 0;
+	}
 };
 
 extern process_list_t processes;

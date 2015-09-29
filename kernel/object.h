@@ -34,19 +34,24 @@ typedef list_iter<object_t, 0> object_iter_t;
 class object_factory;
 class open_info_t;
 
-class open_info_t {
+class open_info_t
+{
 public:
 	ULONG Attributes;
 	HANDLE root;
 	unicode_string_t path;
 public:
 	open_info_t();
-	bool case_insensitive() { return Attributes & OBJ_CASE_INSENSITIVE; }
+	bool case_insensitive()
+	{
+		return Attributes & OBJ_CASE_INSENSITIVE;
+	}
 	virtual NTSTATUS on_open( object_dir_t* dir, object_t*& obj, open_info_t& info ) = 0;
 	virtual ~open_info_t();
 };
 
-class object_t {
+class object_t
+{
 	friend class list_anchor<object_t, 0>;
 	friend class list_element<object_t>;
 	friend class list_iter<object_t, 0>;
@@ -58,7 +63,10 @@ public:
 	unicode_string_t name;
 	friend class object_dir_t;
 	void set_parent( object_dir_t *dir );
-	unicode_string_t& get_name() { return name; }
+	unicode_string_t& get_name()
+	{
+		return name;
+	}
 public:
 	object_t();
 	virtual bool access_allowed( ACCESS_MASK required, ACCESS_MASK handle );
@@ -89,14 +97,16 @@ typedef list_anchor<watch_t, 0> watch_list_t;
 typedef list_element<watch_t> watch_entry_t;
 typedef list_iter<watch_t, 0> watch_iter_t;
 
-class watch_t {
+class watch_t
+{
 public:
 	watch_entry_t entry[1];
 	virtual void notify() = 0;
 	virtual ~watch_t();
 };
 
-class sync_object_t : virtual public object_t {
+class sync_object_t : virtual public object_t
+{
 private:
 	watch_list_t watchers;
 public:
@@ -109,13 +119,15 @@ public:
 	void notify_watchers();
 };
 
-class object_info_t {
+class object_info_t
+{
 public:
 	object_t *object;
 	ACCESS_MASK access;
 };
 
-class handle_table_t {
+class handle_table_t
+{
 	static const unsigned int max_handles = 0x100;
 
 	//int num_objects;

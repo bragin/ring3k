@@ -74,7 +74,7 @@ NTSTATUS NTAPI NtRaiseHardError(
 	ULONG i;
 
 	trace("%08lx %lu %lu %p %u %p\n", Status, NumberOfArguments,
-			StringArgumentsMask, Arguments, ResponseOption, Response);
+		  StringArgumentsMask, Arguments, ResponseOption, Response);
 
 	if (NumberOfArguments>32)
 		return STATUS_INVALID_PARAMETER;
@@ -124,7 +124,8 @@ NTSTATUS NTAPI NtQuerySystemInformation(
 	PULONG ReturnLength )
 {
 	NTSTATUS r = STATUS_SUCCESS;
-	union {
+	union
+	{
 		SYSTEM_BASIC_INFORMATION basic;
 		SYSTEM_CPU_INFORMATION cpu;
 		SYSTEM_THREAD_INFORMATION thread;
@@ -138,7 +139,7 @@ NTSTATUS NTAPI NtQuerySystemInformation(
 	ULONG len = 0;
 
 	trace("%d %p %lu %p\n", SystemInformationClass, SystemInformation,
-			SystemInformationLength, ReturnLength);
+		  SystemInformationLength, ReturnLength);
 
 	if (ReturnLength)
 	{
@@ -276,7 +277,7 @@ NTSTATUS NTAPI NtCreatePagingFile(
 		return r;
 
 	trace("unimplemented - %pus %llu %llu %08lx\n",
-			 &us, init_sz.QuadPart, max_sz.QuadPart, Reserved);
+		  &us, init_sz.QuadPart, max_sz.QuadPart, Reserved);
 
 	return STATUS_SUCCESS;
 }

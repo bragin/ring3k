@@ -85,30 +85,30 @@ int do_fork_child(void *arg)
 /* from Wine */
 struct modify_ldt_s
 {
-    unsigned int  entry_number;
-    unsigned long base_addr;
-    unsigned int  limit;
-    unsigned int  seg_32bit : 1;
-    unsigned int  contents : 2;
-    unsigned int  read_exec_only : 1;
-    unsigned int  limit_in_pages : 1;
-    unsigned int  seg_not_present : 1;
-    unsigned int  usable : 1;
-    unsigned int  garbage : 25;
+	unsigned int  entry_number;
+	unsigned long base_addr;
+	unsigned int  limit;
+	unsigned int  seg_32bit : 1;
+	unsigned int  contents : 2;
+	unsigned int  read_exec_only : 1;
+	unsigned int  limit_in_pages : 1;
+	unsigned int  seg_not_present : 1;
+	unsigned int  usable : 1;
+	unsigned int  garbage : 25;
 };
 
 static inline int set_thread_area( struct modify_ldt_s *ptr )
 {
-    int res;
-    __asm__ __volatile__( "pushl %%ebx\n\t"
-                          "movl %3,%%ebx\n\t"
-                          "int $0x80\n\t"
-                          "popl %%ebx"
-                          : "=a" (res), "=m" (*ptr)
-                          : "0" (243) /* SYS_set_thread_area */, "q" (ptr), "m" (*ptr) );
-    if (res >= 0) return res;
-    errno = -res;
-    return -1;
+	int res;
+	__asm__ __volatile__( "pushl %%ebx\n\t"
+						  "movl %3,%%ebx\n\t"
+						  "int $0x80\n\t"
+						  "popl %%ebx"
+						  : "=a" (res), "=m" (*ptr)
+						  : "0" (243) /* SYS_set_thread_area */, "q" (ptr), "m" (*ptr) );
+	if (res >= 0) return res;
+	errno = -res;
+	return -1;
 }
 
 // allocate fs in the current process
@@ -147,7 +147,7 @@ pid_t skas3_address_space_impl::create_tracee(void)
 	const int stack_size = 0x1000;
 	void *stack = mmap_anon( 0, stack_size, PROT_READ | PROT_WRITE );
 	pid = clone( do_fork_child, (char*) stack + stack_size,
-		CLONE_FILES | CLONE_STOPPED | SIGCHLD, NULL );
+				 CLONE_FILES | CLONE_STOPPED | SIGCHLD, NULL );
 	if (pid == -1)
 	{
 		trace("clone failed (%d)\n", errno);

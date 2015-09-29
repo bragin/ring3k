@@ -28,8 +28,10 @@
 #ifndef __FIBER_H__
 #define __FIBER_H__
 
-class fiber_t {
-	struct fiber_stack_t {
+class fiber_t
+{
+	struct fiber_stack_t
+	{
 		long ebp;
 		long esi;
 		long edi;

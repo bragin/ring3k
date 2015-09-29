@@ -40,7 +40,8 @@ typedef list_anchor<message_t, 0> message_list_t;
 typedef list_element<message_t> message_entry_t;
 typedef list_iter<message_t, 0> message_iter_t;
 
-class message_t {
+class message_t
+{
 public:
 	ULONG destination_id;
 protected:
@@ -51,7 +52,10 @@ public:
 	void *operator new(size_t n, size_t len);
 	void operator delete(void* ptr);
 	explicit message_t();
-	bool is_linked() { return entry[0].is_linked(); }
+	bool is_linked()
+	{
+		return entry[0].is_linked();
+	}
 	~message_t();
 	void dump();
 	const char* msg_type();
@@ -66,7 +70,8 @@ typedef list_anchor<listener_t, 0> listener_list_t;
 typedef list_element<listener_t> listener_entry_t;
 typedef list_iter<listener_t, 0> listener_iter_t;
 
-struct listener_t {
+struct listener_t
+{
 	listener_entry_t entry[1];
 	port_t *port;
 	thread_t *thread;
@@ -75,10 +80,14 @@ struct listener_t {
 public:
 	explicit listener_t(port_t *p, thread_t *t, BOOLEAN wc, ULONG id);
 	~listener_t();
-	bool is_linked() { return entry[0].is_linked(); }
+	bool is_linked()
+	{
+		return entry[0].is_linked();
+	}
 };
 
-struct port_queue_t : public object_t {
+struct port_queue_t : public object_t
+{
 	ULONG refs;
 	ULONG max_connect;
 	ULONG max_data;
@@ -90,7 +99,8 @@ public:
 	message_t *find_connection_request();
 };
 
-struct port_t : public object_t {
+struct port_t : public object_t
+{
 	port_queue_t *queue;
 	BOOLEAN server;
 	thread_t *thread;
@@ -114,7 +124,8 @@ public:
 	NTSTATUS accept_connect( thread_t *t, message_t *reply, PLPC_SECTION_WRITE server_write_sec );
 };
 
-struct exception_msg_data_t {
+struct exception_msg_data_t
+{
 	ULONG EventCode;
 	ULONG Status;
 	EXCEPTION_RECORD ExceptionRecord;
@@ -164,19 +175,20 @@ const char* message_t::msg_type()
 	switch (req.MessageType)
 	{
 #define M(x) case x: return #x;
-	M(LPC_NEW_MESSAGE)
-	M(LPC_REQUEST)
-	M(LPC_REPLY)
-	M(LPC_DATAGRAM)
-	M(LPC_LOST_REPLY)
-	M(LPC_PORT_CLOSED)
-	M(LPC_CLIENT_DIED)
-	M(LPC_EXCEPTION)
-	M(LPC_DEBUG_EVENT)
-	M(LPC_ERROR_EVENT)
-	M(LPC_CONNECTION_REQUEST)
+		M(LPC_NEW_MESSAGE)
+		M(LPC_REQUEST)
+		M(LPC_REPLY)
+		M(LPC_DATAGRAM)
+		M(LPC_LOST_REPLY)
+		M(LPC_PORT_CLOSED)
+		M(LPC_CLIENT_DIED)
+		M(LPC_EXCEPTION)
+		M(LPC_DEBUG_EVENT)
+		M(LPC_ERROR_EVENT)
+		M(LPC_CONNECTION_REQUEST)
 #undef M
-	default: return "unknown";
+	default:
+		return "unknown";
 	}
 }
 
@@ -189,7 +201,7 @@ void message_t::dump()
 	trace("MessageType = %d (%s)\n", req.MessageType, msg_type());
 	trace("Offset      = %d\n", req.VirtualRangesOffset);
 	trace("ClientId    = %04x, %04x\n",
-			 (int)req.ClientId.UniqueProcess, (int)req.ClientId.UniqueThread);
+		  (int)req.ClientId.UniqueProcess, (int)req.ClientId.UniqueThread);
 	trace("MessageId   = %ld\n", req.MessageId);
 	trace("SectionSize = %08lx\n", req.SectionSize);
 	dump_mem(&req.Data, req.DataSize);
@@ -707,14 +719,14 @@ NTSTATUS port_t::accept_connect(
 		// map our section into their process
 		assert(t->port->other_section_base == 0);
 		r = section->mapit( t->process->vm, t->port->other_section_base, 0,
-						MEM_COMMIT, PAGE_READWRITE );
+							MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
 		// map our section into our process
 		assert(our_section_base == 0);
 		r = section->mapit( current->process->vm, our_section_base, 0,
-						MEM_COMMIT, PAGE_READWRITE );
+							MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
@@ -727,13 +739,13 @@ NTSTATUS port_t::accept_connect(
 		assert(other_section_base == 0);
 		// map their section into our process
 		r = other->section->mapit( current->process->vm, other_section_base, 0,
-						MEM_COMMIT, PAGE_READWRITE );
+								   MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
 		// map their section into their process
 		r = other->section->mapit( t->process->vm, t->port->our_section_base, 0,
-						MEM_COMMIT, PAGE_READWRITE );
+								   MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 		trace("theirs=%p ours=%p\n", other_section_base, t->port->our_section_base);
@@ -885,12 +897,12 @@ NTSTATUS NTAPI NtConnectPort(
 	PULONG ConnectionInfoLength )
 {
 	trace("%p %p %p %p %p %p %p %p\n", ClientPortHandle, ServerPortName,
-			SecurityQos, ClientSharedMemory, ServerSharedMemory,
-			MaximumMessageLength, ConnectionInfo, ConnectionInfoLength);
+		  SecurityQos, ClientSharedMemory, ServerSharedMemory,
+		  MaximumMessageLength, ConnectionInfo, ConnectionInfoLength);
 
 	return NtSecureConnectPort( ClientPortHandle, ServerPortName,
-			SecurityQos, ClientSharedMemory, NULL, ServerSharedMemory,
-			MaximumMessageLength, ConnectionInfo, ConnectionInfoLength);
+								SecurityQos, ClientSharedMemory, NULL, ServerSharedMemory,
+								MaximumMessageLength, ConnectionInfo, ConnectionInfoLength);
 }
 
 NTSTATUS NTAPI NtSecureConnectPort(
@@ -908,8 +920,8 @@ NTSTATUS NTAPI NtSecureConnectPort(
 	NTSTATUS r;
 
 	trace("%p %p %p %p %p %p %p %p %p\n", ClientPortHandle, ServerPortName,
-			SecurityQos, ClientSharedMemory, ServerSid, ServerSharedMemory,
-			MaximumMessageLength, ConnectionInfo, ConnectionInfoLength);
+		  SecurityQos, ClientSharedMemory, ServerSid, ServerSharedMemory,
+		  MaximumMessageLength, ConnectionInfo, ConnectionInfoLength);
 
 	r = verify_for_write( ClientPortHandle, sizeof (HANDLE) );
 	if (r < STATUS_SUCCESS)
@@ -1112,7 +1124,7 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 	NTSTATUS r;
 
 	trace("%p %lx %p %u %p %p\n", ServerPortHandle, PortIdentifier,
-			ConnectionReply, AcceptConnection, ServerSharedMemory, ClientSharedMemory );
+		  ConnectionReply, AcceptConnection, ServerSharedMemory, ClientSharedMemory );
 
 	message_t *reply = 0;
 	r = copy_msg_from_user( &reply, ConnectionReply, 0x148 );

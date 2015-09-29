@@ -48,12 +48,13 @@ struct exception_stack_frame
 };
 
 const ULONG context_all =
-		CONTEXT_FLOATING_POINT |
-		CONTEXT_DEBUG_REGISTERS |
-		CONTEXT_EXTENDED_REGISTERS |
-		CONTEXT_FULL ;
+	CONTEXT_FLOATING_POINT |
+	CONTEXT_DEBUG_REGISTERS |
+	CONTEXT_EXTENDED_REGISTERS |
+	CONTEXT_FULL ;
 
-struct kernel_debug_string_output {
+struct kernel_debug_string_output
+{
 	USHORT length;
 	USHORT pad;
 	ULONG address;
@@ -104,7 +105,10 @@ public:
 	thread_t( process_t *p );
 	virtual ~thread_t();
 	virtual ULONG trace_id();
-	ULONG get_id() { return id; }
+	ULONG get_id()
+	{
+		return id;
+	}
 	virtual void get_client_id( CLIENT_ID *id );
 	virtual void wait();
 	virtual void stop();

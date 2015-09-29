@@ -21,7 +21,8 @@
 #ifndef __SECTION_H__
 #define __SECTION_H__
 
-struct section_t : public object_t, public backing_store_t {
+struct section_t : public object_t, public backing_store_t
+{
 	int fd;
 	BYTE *addr;
 	size_t len;

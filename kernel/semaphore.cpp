@@ -29,7 +29,8 @@
 #include "ntcall.h"
 #include "object.inl"
 
-class semaphore_t : public sync_object_t {
+class semaphore_t : public sync_object_t
+{
 protected:
 	ULONG count;
 	ULONG max_count;
@@ -105,7 +106,7 @@ NTSTATUS NTAPI NtCreateSemaphore(
 	ULONG MaximumCount )
 {
 	trace("%p %08lx %p %lu %lu\n", SemaphoreHandle, DesiredAccess,
-			ObjectAttributes, InitialCount, MaximumCount);
+		  ObjectAttributes, InitialCount, MaximumCount);
 
 	semaphore_factory factory(InitialCount, MaximumCount);
 	return factory.create( SemaphoreHandle, DesiredAccess, ObjectAttributes );
@@ -155,6 +156,6 @@ NTSTATUS NTAPI NtQuerySemaphore(
 	PULONG ReturnLength)
 {
 	trace("%p %d %p %lu %p\n", SemaphoreHandle, SemaphoreInformationClass,
-			SemaphoreInformation, SemaphoreInformationLength, ReturnLength);
+		  SemaphoreInformation, SemaphoreInformationLength, ReturnLength);
 	return STATUS_NOT_IMPLEMENTED;
 }

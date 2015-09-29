@@ -46,7 +46,8 @@ public:
 	msg_waiter_tt( MSG& m);
 };
 
-class msg_tt {
+class msg_tt
+{
 public:
 	msg_element_t entry[1];
 	HWND hwnd;
@@ -64,7 +65,8 @@ typedef list_anchor<win_timer_tt,0> win_timer_list_t;
 typedef list_iter<win_timer_tt,0> win_timer_iter_t;
 typedef list_element<win_timer_tt> win_timer_element_t;
 
-class win_timer_tt {
+class win_timer_tt
+{
 public:
 	win_timer_element_t entry[1];
 	HWND hwnd;

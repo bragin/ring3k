@@ -23,12 +23,16 @@
 
 #include "object.h"
 
-class symlink_t : public object_t {
+class symlink_t : public object_t
+{
 	unicode_string_t target;
 public:
 	symlink_t( const UNICODE_STRING& us );
 	~symlink_t();
-	unicode_string_t& get_target() {return target;}
+	unicode_string_t& get_target()
+	{
+		return target;
+	}
 	virtual NTSTATUS open( object_t *&out, open_info_t& info );
 };
 

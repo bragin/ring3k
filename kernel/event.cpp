@@ -33,7 +33,8 @@
 #include "object.inl"
 #include "event.h"
 
-class event_impl_t : public event_t {
+class event_impl_t : public event_t
+{
 protected:
 	BOOLEAN state;
 public:
@@ -72,9 +73,9 @@ event_impl_t::event_impl_t( BOOLEAN _state ) :
 bool event_impl_t::access_allowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
 	return check_access( required, handle,
-			 EVENT_QUERY_STATE,
-			 EVENT_MODIFY_STATE,
-			 EVENT_ALL_ACCESS );
+						 EVENT_QUERY_STATE,
+						 EVENT_MODIFY_STATE,
+						 EVENT_ALL_ACCESS );
 }
 
 auto_event_t::auto_event_t( BOOLEAN _state) :
@@ -207,7 +208,7 @@ NTSTATUS NTAPI NtCreateEvent(
 	BOOLEAN InitialState )
 {
 	trace("%p %08lx %p %u %u\n", EventHandle, DesiredAccess,
-			ObjectAttributes, EventType, InitialState);
+		  ObjectAttributes, EventType, InitialState);
 
 	event_factory factory( EventType, InitialState );
 	return factory.create( EventHandle, DesiredAccess, ObjectAttributes );
@@ -299,7 +300,8 @@ NTSTATUS NTAPI NtQueryEvent(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	union {
+	union
+	{
 		EVENT_BASIC_INFORMATION basic;
 	} info;
 	ULONG sz = 0;

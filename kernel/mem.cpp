@@ -100,7 +100,7 @@ void address_space_impl::verify()
 	if (free_blocks || bad_xlate)
 	{
 		trace("invalid VM... %d free blocks %d bad xlate entries\n",
-				free_blocks, bad_xlate);
+			  free_blocks, bad_xlate);
 		for ( mblock_iter_t i(blocks); i; i.next() )
 		{
 			mblock *mb = i;
@@ -385,7 +385,7 @@ NTSTATUS address_space_impl::allocate_virtual_memory( BYTE **start, int zero_bit
 	{
 		r = find_free_area( zero_bits, length, state&MEM_TOP_DOWN, *start );
 		if (r < STATUS_SUCCESS)
-			 return r;
+			return r;
 	}
 
 	r = get_mem_region( *start, length, state );
@@ -424,7 +424,7 @@ NTSTATUS address_space_impl::map_fd( BYTE **start, int zero_bits, size_t length,
 	{
 		r = find_free_area( zero_bits, length, state&MEM_TOP_DOWN, *start );
 		if (r < STATUS_SUCCESS)
-			 return r;
+			return r;
 	}
 
 	r = get_mem_region( *start, length, state );
@@ -830,8 +830,8 @@ NTSTATUS NTAPI NtQueryVirtualMemory(
 	NTSTATUS r;
 
 	trace("%p %p %d %p %lu %p\n", ProcessHandle,
-			BaseAddress, MemoryInformationClass, MemoryInformation,
-			MemoryInformationLength, ReturnLength);
+		  BaseAddress, MemoryInformationClass, MemoryInformation,
+		  MemoryInformationLength, ReturnLength);
 
 	if (MemoryInformationClass != MemoryBasicInformation)
 		return STATUS_INVALID_PARAMETER;
@@ -879,7 +879,7 @@ NTSTATUS NTAPI NtProtectVirtualMemory(
 	NTSTATUS r;
 
 	trace("%p %p %p %lu %p\n", ProcessHandle, BaseAddress,
-			NumberOfBytesToProtect, NewAccessProtection, OldAccessProtection);
+		  NumberOfBytesToProtect, NewAccessProtection, OldAccessProtection);
 
 	r = process_from_handle( ProcessHandle, &process );
 	if (r < STATUS_SUCCESS)
@@ -1028,7 +1028,7 @@ NTSTATUS NTAPI NtFlushVirtualMemory(
 	PIO_STATUS_BLOCK IoStatusBlock)
 {
 	trace("%p %p %p %p\n", ProcessHandle,
-			BaseAddress, FlushSize, IoStatusBlock);
+		  BaseAddress, FlushSize, IoStatusBlock);
 	return STATUS_NOT_IMPLEMENTED;
 }
 

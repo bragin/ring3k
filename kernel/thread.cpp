@@ -56,8 +56,14 @@ public:
 	thread_obj_wait_t( thread_impl_t* t, sync_object_t* o);
 	virtual void notify();
 	virtual ~thread_obj_wait_t();
-	BOOLEAN is_signalled() { return obj->is_signalled(); }
-	BOOLEAN satisfy() { return obj->satisfy(); }
+	BOOLEAN is_signalled()
+	{
+		return obj->is_signalled();
+	}
+	BOOLEAN satisfy()
+	{
+		return obj->satisfy();
+	}
 };
 
 class callback_frame_t
@@ -73,7 +79,10 @@ public:
 	callback_frame_t(thread_impl_t *t);
 	void do_return(NTSTATUS s, ULONG l, PVOID b);
 	void get_return(NTSTATUS& s, ULONG& l, PVOID& b);
-	BOOLEAN is_complete() {return complete;}
+	BOOLEAN is_complete()
+	{
+		return complete;
+	}
 	void pop( thread_impl_t *t );
 };
 
@@ -142,7 +151,10 @@ public:
 	NTSTATUS create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended );
 	virtual BOOLEAN is_signalled( void );
 	void set_state( THREAD_STATE state );
-	bool is_terminated() { return ThreadState == StateTerminated; }
+	bool is_terminated()
+	{
+		return ThreadState == StateTerminated;
+	}
 	void query_information( THREAD_BASIC_INFORMATION& info );
 	void query_information( KERNEL_USER_TIMES& info );
 	NTSTATUS zero_tls_cells( ULONG index );
@@ -319,23 +331,23 @@ NTSTATUS thread_impl_t::kernel_debugger_call( ULONG func, void *arg1, void *arg2
 
 	switch (func)
 	{
-	case 1:
-		r = kernel_debugger_output_string( (struct kernel_debug_string_output *)arg1 );
-		break;
-	case 0x101:
+		case 1:
+			r = kernel_debugger_output_string( (struct kernel_debug_string_output *)arg1 );
+			break;
+		case 0x101:
 		{
-		const char *sym = process->vm->get_symbol( (BYTE*) arg1 );
-		if (sym)
-			fprintf(stderr, "%04lx: %s called\n", trace_id(), sym);
-		else
-			fprintf(stderr, "%04lx: %p called\n", trace_id(), arg1);
+			const char *sym = process->vm->get_symbol( (BYTE*) arg1 );
+			if (sym)
+				fprintf(stderr, "%04lx: %s called\n", trace_id(), sym);
+			else
+				fprintf(stderr, "%04lx: %p called\n", trace_id(), arg1);
 		}
 		r = 0;
 		break;
-	default:
-		dump_regs( &ctx );
-		trace("unhandled function %ld\n", func );
-		r = STATUS_NOT_IMPLEMENTED;
+		default:
+			dump_regs( &ctx );
+			trace("unhandled function %ld\n", func );
+			r = STATUS_NOT_IMPLEMENTED;
 	}
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -386,7 +398,7 @@ BOOLEAN thread_impl_t::software_interrupt( BYTE number )
 	}
 
 	if (!context_changed)
-		 ctx.Eax = r;
+		ctx.Eax = r;
 
 	return TRUE;
 }
@@ -484,7 +496,7 @@ void thread_impl_t::start_exception_handler(exception_stack_frame& info)
 	// get the address of the user side handler
 	// FIXME: this should be stored in the process_t structure
 	BYTE *pKiExceptionDispatcher = (BYTE*)process->pntdll +
-				get_proc_address( ntdll_section, "KiUserExceptionDispatcher" );
+								   get_proc_address( ntdll_section, "KiUserExceptionDispatcher" );
 	if (!pKiExceptionDispatcher)
 		die("failed to find KiExceptionDispatcher in ntdll\n");
 
@@ -553,7 +565,8 @@ PTEB thread_impl_t::get_teb()
 
 NTSTATUS thread_impl_t::do_user_callback( ULONG index, ULONG &length, PVOID &buffer)
 {
-	struct {
+	struct
+	{
 		ULONG x[4];
 	} frame;
 
@@ -582,7 +595,7 @@ NTSTATUS thread_impl_t::do_user_callback( ULONG index, ULONG &length, PVOID &buf
 
 	// setup the new execution context
 	BYTE *pKiUserCallbackDispatcher = (BYTE*)process->pntdll +
-				get_proc_address( ntdll_section, "KiUserCallbackDispatcher" );
+									  get_proc_address( ntdll_section, "KiUserCallbackDispatcher" );
 
 	context_changed = 1;
 	ctx.Eip = (ULONG) pKiUserCallbackDispatcher;
@@ -614,7 +627,7 @@ NTSTATUS thread_impl_t::user_callback_return( PVOID Result, ULONG ResultLength, 
 		if (r >= STATUS_SUCCESS)
 		{
 			trace("Result = %08lx %08lx %08lx\n",
-				retvals[0], retvals[1], retvals[2]);
+				  retvals[0], retvals[1], retvals[2]);
 		}
 	}
 	callback_frame->do_return( Status, ResultLength, Result );
@@ -897,8 +910,8 @@ void thread_impl_t::handle_fault()
 	assert( current == this );
 	r = copy_from_user( inst, (void*) ctx.Eip, 2 );
 	if (r < STATUS_SUCCESS ||
-		inst[0] != 0xcd ||
-		!software_interrupt( inst[1] ))
+			inst[0] != 0xcd ||
+			!software_interrupt( inst[1] ))
 	{
 		if (inst[0] == 0xcc)
 			trace("breakpoint (cc)!\n");
@@ -1403,7 +1416,8 @@ NTSTATUS thread_impl_t::create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN sus
 	BYTE *addr = 0;
 	void *stack;
 	NTSTATUS r;
-	struct {
+	struct
+	{
 		void *pLdrInitializeThunk;
 		void *unk1;
 		void *pntdll;  /* set to pexe if running a win32 program */
@@ -1452,7 +1466,7 @@ NTSTATUS thread_impl_t::create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN sus
 		die("failed to find KiUserApcDispatcher in ntdll\n");
 
 	trace("LdrInitializeThunk = %p pKiUserApcDispatcher = %p\n",
-		pLdrInitializeThunk, pKiUserApcDispatcher );
+		  pLdrInitializeThunk, pKiUserApcDispatcher );
 
 	// FIXME: should set initial registers then queue an APC
 
@@ -1502,7 +1516,7 @@ NTSTATUS NTAPI NtCreateThread(
 	CLIENT_ID id;
 
 	trace("%p %08lx %p %p %p %p %p %d\n", Thread, DesiredAccess, ObjectAttributes,
-			Process, ClientId, Context, InitialTeb, CreateSuspended);
+		  Process, ClientId, Context, InitialTeb, CreateSuspended);
 
 	r = copy_from_user( &ctx, Context, sizeof ctx );
 	if (r < STATUS_SUCCESS)
@@ -1601,7 +1615,8 @@ NTSTATUS NTAPI NtQueryInformationThread(
 	ULONG ThreadInformationLength,
 	PULONG ReturnLength)
 {
-	union {
+	union
+	{
 		THREAD_BASIC_INFORMATION basic;
 		KERNEL_USER_TIMES times;
 		ULONG last_thread;
@@ -1611,7 +1626,7 @@ NTSTATUS NTAPI NtQueryInformationThread(
 	thread_impl_t *t;
 
 	trace("%p %d %p %lu %p\n", ThreadHandle,
-			ThreadInformationClass, ThreadInformation, ThreadInformationLength, ReturnLength);
+		  ThreadInformationClass, ThreadInformation, ThreadInformationLength, ReturnLength);
 
 	switch( ThreadInformationClass )
 	{
@@ -1625,8 +1640,8 @@ NTSTATUS NTAPI NtQueryInformationThread(
 		sz = sizeof info.last_thread;
 		break;
 	default:
-		 trace("info class %d\n", ThreadInformationClass);
-		 return STATUS_INVALID_INFO_CLASS;
+		trace("info class %d\n", ThreadInformationClass);
+		return STATUS_INVALID_INFO_CLASS;
 	}
 
 	if (sz != ThreadInformationLength)
@@ -1735,7 +1750,7 @@ NTSTATUS NTAPI NtSetInformationThread(
 	ULONG ThreadInformationLength)
 {
 	trace("%p %u %p %lu\n", ThreadHandle, ThreadInformationClass,
-			ThreadInformation, ThreadInformationLength);
+		  ThreadInformation, ThreadInformationLength);
 
 	thread_impl_t *t = 0;
 	NTSTATUS r = object_from_handle( t, ThreadHandle, 0 );
@@ -1744,43 +1759,43 @@ NTSTATUS NTAPI NtSetInformationThread(
 
 	switch (ThreadInformationClass)
 	{
-	case ThreadPriority:
-		return STATUS_SUCCESS;
-	case ThreadBasePriority:
-		return STATUS_SUCCESS;
-	case ThreadImpersonationToken:
+		case ThreadPriority:
+			return STATUS_SUCCESS;
+		case ThreadBasePriority:
+			return STATUS_SUCCESS;
+		case ThreadImpersonationToken:
 		{
-		HANDLE TokenHandle = 0;
-		if (ThreadInformationLength != sizeof TokenHandle)
-			return STATUS_INFO_LENGTH_MISMATCH;
-		NTSTATUS r = copy_from_user( &TokenHandle, ThreadInformation, sizeof TokenHandle );
-		if (r < STATUS_SUCCESS)
-			return r;
-		token_t *token = 0;
-		r = object_from_handle(token, TokenHandle, 0);
-		if (r < STATUS_SUCCESS)
-			return r;
-		t->set_token( token );
-		return STATUS_SUCCESS;
+			HANDLE TokenHandle = 0;
+			if (ThreadInformationLength != sizeof TokenHandle)
+				return STATUS_INFO_LENGTH_MISMATCH;
+			NTSTATUS r = copy_from_user( &TokenHandle, ThreadInformation, sizeof TokenHandle );
+			if (r < STATUS_SUCCESS)
+				return r;
+			token_t *token = 0;
+			r = object_from_handle(token, TokenHandle, 0);
+			if (r < STATUS_SUCCESS)
+				return r;
+			t->set_token( token );
+			return STATUS_SUCCESS;
 		}
-	case ThreadZeroTlsCell:
+		case ThreadZeroTlsCell:
 		{
-		ULONG index = 0;
-		NTSTATUS r = copy_from_user( &index, ThreadInformation, sizeof index );
-		if (r < STATUS_SUCCESS)
-			return r;
-		return t->zero_tls_cells( index );
+			ULONG index = 0;
+			NTSTATUS r = copy_from_user( &index, ThreadInformation, sizeof index );
+			if (r < STATUS_SUCCESS)
+				return r;
+			return t->zero_tls_cells( index );
+			return STATUS_SUCCESS; // FIXME: ?????????????????????????
 		}
-		return STATUS_SUCCESS;
-	case ThreadQuerySetWin32StartAddress:
+		case ThreadQuerySetWin32StartAddress:
 		{
-		PVOID& Win32StartAddress = t->win32_start_address();
-		if (ThreadInformationLength != sizeof Win32StartAddress)
-			return STATUS_INFO_LENGTH_MISMATCH;
-		return copy_from_user( &Win32StartAddress, ThreadInformation, sizeof Win32StartAddress );
+			PVOID& Win32StartAddress = t->win32_start_address();
+			if (ThreadInformationLength != sizeof Win32StartAddress)
+				return STATUS_INFO_LENGTH_MISMATCH;
+			return copy_from_user( &Win32StartAddress, ThreadInformation, sizeof Win32StartAddress );
 		}
-	default:
-		break;
+		default:
+			break;
 	}
 	return STATUS_NOT_IMPLEMENTED;
 }
@@ -1809,7 +1824,7 @@ NTSTATUS output_debug_string( EXCEPTION_RECORD& exrec )
 	if (exrec.NumberParameters != 2)
 	{
 		trace("OutputDebugStringA with %ld args\n",
-			exrec.NumberParameters);
+			  exrec.NumberParameters);
 		return STATUS_INVALID_PARAMETER;
 	}
 

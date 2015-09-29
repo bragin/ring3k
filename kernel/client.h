@@ -21,14 +21,16 @@
 #ifndef __NTNATIVE_CLIENT_H__
 #define __NTNATIVE_CLIENT_H__
 
-enum tt_req_type {
+enum tt_req_type
+{
 	tt_req_exit,
 	tt_req_map,
 	tt_req_umap,
 	tt_req_prot,
 };
 
-struct tt_req_map {
+struct tt_req_map
+{
 	unsigned int pid;
 	unsigned int fd;
 	unsigned int addr;
@@ -37,27 +39,32 @@ struct tt_req_map {
 	unsigned int prot;
 };
 
-struct tt_req_umap {
+struct tt_req_umap
+{
 	unsigned int addr;
 	unsigned int len;
 };
 
-struct tt_req_prot {
+struct tt_req_prot
+{
 	unsigned int addr;
 	unsigned int len;
 	unsigned int prot;
 };
 
-struct tt_req {
+struct tt_req
+{
 	enum tt_req_type type;
-	union {
+	union
+	{
 		struct tt_req_map map;
 		struct tt_req_umap umap;
 		struct tt_req_prot prot;
 	} u;
 };
 
-struct tt_reply {
+struct tt_reply
+{
 	int r;
 };
 

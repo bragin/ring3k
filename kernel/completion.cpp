@@ -77,12 +77,15 @@ public:
 	void start();
 	completion_packet_t *get_packet();
 	void set_packet( completion_packet_t* _packet );
-	bool is_linked() {return entry[0].is_linked();}
+	bool is_linked()
+	{
+		return entry[0].is_linked();
+	}
 };
 
 void completion_waiter_t::stop(
-			completion_waiter_list_t& waiter_list,
-			PLARGE_INTEGER timeout)
+	completion_waiter_list_t& waiter_list,
+	PLARGE_INTEGER timeout)
 {
 	waiter_list.append(this);
 	//thread->set_timeout( timeout );
@@ -138,7 +141,10 @@ public:
 	virtual bool access_allowed( ACCESS_MASK required, ACCESS_MASK handle );
 	void check_waiters();
 	void port_wait_idle();
-	bool is_linked() {return entry[0].is_linked();}
+	bool is_linked()
+	{
+		return entry[0].is_linked();
+	}
 	void start_waiter( completion_waiter_t *waiter );
 };
 
@@ -160,9 +166,9 @@ BOOLEAN completion_port_impl_t::is_signalled()
 bool completion_port_impl_t::access_allowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
 	return check_access( required, handle,
-			 IO_COMPLETION_QUERY_STATE,
-			 IO_COMPLETION_MODIFY_STATE,
-			 IO_COMPLETION_ALL_ACCESS );
+						 IO_COMPLETION_QUERY_STATE,
+						 IO_COMPLETION_MODIFY_STATE,
+						 IO_COMPLETION_ALL_ACCESS );
 }
 
 completion_port_impl_t::~completion_port_impl_t()
@@ -316,7 +322,7 @@ NTSTATUS NTAPI NtCreateIoCompletion(
 	ULONG NumberOfConcurrentThreads)
 {
 	trace("%p %08lx %p %ld\n", IoCompletionHandle, DesiredAccess,
-			ObjectAttributes, NumberOfConcurrentThreads);
+		  ObjectAttributes, NumberOfConcurrentThreads);
 	completion_factory factory( NumberOfConcurrentThreads );
 	return factory.create( IoCompletionHandle, DesiredAccess, ObjectAttributes );
 }
@@ -327,7 +333,7 @@ NTSTATUS NTAPI NtOpenIoCompletion(
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
 	trace("%p %08lx %p\n", IoCompletionHandle, AccessMask,
-			ObjectAttributes);
+		  ObjectAttributes);
 	return nt_open_object<completion_port_t>( IoCompletionHandle, AccessMask, ObjectAttributes );
 }
 
@@ -342,7 +348,7 @@ NTSTATUS NTAPI NtRemoveIoCompletion(
 	NTSTATUS r;
 
 	trace("%p %p %p %p %p\n", IoCompletionHandle, IoCompletionKey,
-			IoCompletionValue, IoStatusBlock, TimeOut);
+		  IoCompletionValue, IoStatusBlock, TimeOut);
 
 	completion_port_impl_t *port = 0;
 	r = object_from_handle( port, IoCompletionHandle, IO_COMPLETION_MODIFY_STATE );
@@ -409,7 +415,7 @@ NTSTATUS NTAPI NtSetIoCompletion(
 	NTSTATUS r;
 
 	trace("%p %08lx %08lx %08lx %08lx\n", IoCompletionHandle, IoCompletionKey,
-			IoCompletionValue, Status, Information);
+		  IoCompletionValue, Status, Information);
 
 	completion_port_impl_t *port = 0;
 	r = object_from_handle( port, IoCompletionHandle, IO_COMPLETION_MODIFY_STATE );

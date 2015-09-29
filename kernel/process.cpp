@@ -47,7 +47,7 @@
 // constructs unicode strings suitable for the
 // PROCESS_PARAMS_FLAG_NORMALIZED flag in the PPB
 static void copy_ustring_to_block( RTL_USER_PROCESS_PARAMETERS* p,
-	UNICODE_STRING *ustr, LPWSTR buffer, LPCWSTR str, ULONG maxlen )
+								   UNICODE_STRING *ustr, LPWSTR buffer, LPCWSTR str, ULONG maxlen )
 {
 	UINT len = strlenW( str );
 	assert( len < maxlen );
@@ -57,7 +57,8 @@ static void copy_ustring_to_block( RTL_USER_PROCESS_PARAMETERS* p,
 	ustr->MaximumLength = maxlen*2;
 }
 
-struct INITIAL_PPB {
+struct INITIAL_PPB
+{
 	RTL_USER_PROCESS_PARAMETERS ppb;
 	WCHAR CurrentDirectoryBuffer[MAX_PATH];
 	WCHAR DllPathBuffer[MAX_PATH];
@@ -69,10 +70,12 @@ NTSTATUS process_t::create_parameters(
 	RTL_USER_PROCESS_PARAMETERS **pparams, LPCWSTR ImageFile, LPCWSTR DllPath,
 	LPCWSTR CurrentDirectory, LPCWSTR CommandLine, LPCWSTR WindowTitle, LPCWSTR Desktop)
 {
-	static const WCHAR initial_env[] = {
+	static const WCHAR initial_env[] =
+	{
 		'=',':',':','=',':',':','\\','\0',
 		'S','y','s','t','e','m','R','o','o','t','=','C',':','\\','W','I','N','N','T','\0',
-		'S','y','s','t','e','m','D','r','i','v','e','=','C',':','\0', 0 };
+		'S','y','s','t','e','m','D','r','i','v','e','=','C',':','\0', 0
+	};
 	INITIAL_PPB init_ppb;
 	RTL_USER_PROCESS_PARAMETERS *ppb, *p = &init_ppb.ppb;;
 	LPWSTR penv;
@@ -92,13 +95,13 @@ NTSTATUS process_t::create_parameters(
 	// See RtlNormalizeProcessParams and RtlDeNormalizeProcessParams
 
 	copy_ustring_to_block( p, &p->ImagePathName,
-		 init_ppb.ImagePathNameBuffer, ImageFile, MAX_PATH );
+						   init_ppb.ImagePathNameBuffer, ImageFile, MAX_PATH );
 	copy_ustring_to_block( p, &p->DllPath,
-		 init_ppb.DllPathBuffer, DllPath, MAX_PATH );
+						   init_ppb.DllPathBuffer, DllPath, MAX_PATH );
 	copy_ustring_to_block( p, &p->CurrentDirectory.DosPath,
-		 init_ppb.CurrentDirectoryBuffer, CurrentDirectory, MAX_PATH );
+						   init_ppb.CurrentDirectoryBuffer, CurrentDirectory, MAX_PATH );
 	copy_ustring_to_block( p, &p->CommandLine,
-		 init_ppb.CommandLineBuffer, CommandLine, MAX_PATH );
+						   init_ppb.CommandLineBuffer, CommandLine, MAX_PATH );
 
 	// process parameters block
 	ppb = NULL;
@@ -193,9 +196,9 @@ void kshm_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
 	else switch (ofs)
 	{
 #define kshmfield(ofs,x) case ofs: field = " (" #x ")"; break;
-	kshmfield(0x0264,NtProductType);
-	kshmfield(0x0268,ProductTypeIsValid);
-	kshmfield(0x02d0,KdDebuggerEnabled);
+		kshmfield(0x0264,NtProductType);
+		kshmfield(0x0268,ProductTypeIsValid);
+		kshmfield(0x02d0,KdDebuggerEnabled);
 #undef kshmfield
 	}
 
@@ -417,9 +420,9 @@ void peb_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
 	switch (ofs)
 	{
 #define pebfield(ofs,x) case ofs: field = " (" #x ")"; break;
-	pebfield(0x0c,LdrData);
-	pebfield(0x18,ProcessHeap);
-	pebfield(0x2c,KernelCallbackTable);
+		pebfield(0x0c,LdrData);
+		pebfield(0x18,ProcessHeap);
+		pebfield(0x2c,KernelCallbackTable);
 #undef pebfield
 	}
 
@@ -524,8 +527,8 @@ NTSTATUS NTAPI NtCreateProcess(
 	NTSTATUS r;
 
 	trace("%p %08lx %p %p %u %p %p %p\n", ProcessHandle, DesiredAccess,
-			ObjectAttributes, InheritFromProcessHandle, InheritHandles,
-			SectionHandle, DebugPort, ExceptionPort );
+		  ObjectAttributes, InheritFromProcessHandle, InheritHandles,
+		  SectionHandle, DebugPort, ExceptionPort );
 
 	r = object_from_handle( section, SectionHandle, SECTION_MAP_EXECUTE );
 	if (r < STATUS_SUCCESS)
@@ -656,7 +659,8 @@ NTSTATUS NTAPI NtSetInformationProcess(
 	ULONG ProcessInformationLength )
 {
 	process_t *p = 0;
-	union {
+	union
+	{
 		HANDLE port_handle;
 		KPRIORITY priority;
 		PROCESS_SESSION_INFORMATION session;
@@ -716,57 +720,57 @@ NTSTATUS NTAPI NtSetInformationProcess(
 
 	switch (ProcessInformationClass)
 	{
-	case ProcessExceptionPort:
+		case ProcessExceptionPort:
 		{
-		object_t *port = 0;
-		r = object_from_handle( port, info.port_handle, 0 );
-		if (r < STATUS_SUCCESS)
-			return r;
-		return set_exception_port( p, port );
+			object_t *port = 0;
+			r = object_from_handle( port, info.port_handle, 0 );
+			if (r < STATUS_SUCCESS)
+				return r;
+			return set_exception_port( p, port );
 		}
-	case ProcessBasePriority:
-		p->priority = info.priority;
-		break;
+		case ProcessBasePriority:
+			p->priority = info.priority;
+			break;
 
-	case ProcessSessionInformation:
+		case ProcessSessionInformation:
 		{
-		PPEB ppeb = (PPEB) p->peb_section->get_kernel_address();
-		ppeb->SessionId = info.session.SessionId;
+			PPEB ppeb = (PPEB) p->peb_section->get_kernel_address();
+			ppeb->SessionId = info.session.SessionId;
+			break;
 		}
-		break;
 
-	case ProcessForegroundInformation:
-		trace("set ProcessForegroundInformation\n");
-		break;
+		case ProcessForegroundInformation:
+			trace("set ProcessForegroundInformation\n");
+			break;
 
-	case ProcessPriorityClass:
-		trace("set ProcessPriorityClass\n");
-		break;
+		case ProcessPriorityClass:
+			trace("set ProcessPriorityClass\n");
+			break;
 
-	case ProcessDefaultHardErrorMode:
-		p->hard_error_mode = info.hard_error_mode;
-		trace("set ProcessDefaultHardErrorMode\n");
-		break;
+		case ProcessDefaultHardErrorMode:
+			p->hard_error_mode = info.hard_error_mode;
+			trace("set ProcessDefaultHardErrorMode\n");
+			break;
 
-	case ProcessUserModeIOPL:
-		trace("set ProcessUserModeIOPL\n");
-		break;
+		case ProcessUserModeIOPL:
+			trace("set ProcessUserModeIOPL\n");
+			break;
 
-	case ProcessEnableAlignmentFaultFixup:
-		trace("ProcessEnableAlignmentFaultFixup = %d\n",
-				info.enable_alignment_fault_fixup);
-		break;
+		case ProcessEnableAlignmentFaultFixup:
+			trace("ProcessEnableAlignmentFaultFixup = %d\n",
+				  info.enable_alignment_fault_fixup);
+			break;
 
-	case ProcessExecuteFlags:
-		trace("setting to %08lx (%s%s%s)\n", info.execute_flags,
-			(info.execute_flags & MEM_EXECUTE_OPTION_DISABLE) ? "disable " : "",
-			(info.execute_flags & MEM_EXECUTE_OPTION_ENABLE) ? "enable " : "",
-			(info.execute_flags & MEM_EXECUTE_OPTION_PERMANENT) ? "permanent" : "");
-		p->execute_flags = info.execute_flags;
-		break;
+		case ProcessExecuteFlags:
+			trace("setting to %08lx (%s%s%s)\n", info.execute_flags,
+				  (info.execute_flags & MEM_EXECUTE_OPTION_DISABLE) ? "disable " : "",
+				  (info.execute_flags & MEM_EXECUTE_OPTION_ENABLE) ? "enable " : "",
+				  (info.execute_flags & MEM_EXECUTE_OPTION_PERMANENT) ? "permanent" : "");
+			p->execute_flags = info.execute_flags;
+			break;
 
-	default:
-		trace("unimplemented class %d\n", ProcessInformationClass);
+		default:
+			trace("unimplemented class %d\n", ProcessInformationClass);
 	}
 
 	return STATUS_SUCCESS;
@@ -779,7 +783,8 @@ NTSTATUS NTAPI NtQueryInformationProcess(
 	ULONG ProcessInformationLength,
 	PULONG ReturnLength )
 {
-	union {
+	union
+	{
 		PROCESS_BASIC_INFORMATION basic;
 		PROCESS_DEVICEMAP_INFORMATION device_map;
 		PROCESS_SESSION_INFORMATION session;
@@ -791,36 +796,36 @@ NTSTATUS NTAPI NtQueryInformationProcess(
 	process_t *p;
 
 	trace("%p %u %p %lu %p\n", Process, ProcessInformationClass,
-			ProcessInformation, ProcessInformationLength, ReturnLength );
+		  ProcessInformation, ProcessInformationLength, ReturnLength );
 
 	switch (ProcessInformationClass)
 	{
-	case ProcessBasicInformation:
-		sz = sizeof info.basic;
-		break;
+		case ProcessBasicInformation:
+			sz = sizeof info.basic;
+			break;
 
-	case ProcessDeviceMap:
-		sz = sizeof info.device_map;
-		break;
+		case ProcessDeviceMap:
+			sz = sizeof info.device_map;
+			break;
 
-	case ProcessSessionInformation:
-		sz = sizeof info.session;
-		break;
+		case ProcessSessionInformation:
+			sz = sizeof info.session;
+			break;
 
-	case ProcessDefaultHardErrorMode:
-		sz = sizeof info.hard_error_mode;
-		break;
+		case ProcessDefaultHardErrorMode:
+			sz = sizeof info.hard_error_mode;
+			break;
 
-	case ProcessExecuteFlags:
-		sz = sizeof info.execute_flags;
-		break;
+		case ProcessExecuteFlags:
+			sz = sizeof info.execute_flags;
+			break;
 
-	case ProcessExceptionPort:
-		return STATUS_INVALID_INFO_CLASS;
+		case ProcessExceptionPort:
+			return STATUS_INVALID_INFO_CLASS;
 
-	default:
-		trace("info class %d\n", ProcessInformationClass);
-		return STATUS_INVALID_INFO_CLASS;
+		default:
+			trace("info class %d\n", ProcessInformationClass);
+			return STATUS_INVALID_INFO_CLASS;
 	}
 
 	memset( &info, 0, sizeof info );
@@ -831,39 +836,39 @@ NTSTATUS NTAPI NtQueryInformationProcess(
 
 	switch (ProcessInformationClass)
 	{
-	case ProcessBasicInformation:
-		info.basic.ExitStatus = p->ExitStatus;
-		info.basic.PebBaseAddress = (PPEB)p->PebBaseAddress;
-		info.basic.UniqueProcessId = p->id;
-		break;
+		case ProcessBasicInformation:
+			info.basic.ExitStatus = p->ExitStatus;
+			info.basic.PebBaseAddress = (PPEB)p->PebBaseAddress;
+			info.basic.UniqueProcessId = p->id;
+			break;
 
-	case ProcessDeviceMap:
-		info.device_map.Query.DriveMap = 0x00000004;
-		info.device_map.Query.DriveType[2] = DRIVE_FIXED;
-		break;
+		case ProcessDeviceMap:
+			info.device_map.Query.DriveMap = 0x00000004;
+			info.device_map.Query.DriveType[2] = DRIVE_FIXED;
+			break;
 
-	case ProcessSessionInformation:
+		case ProcessSessionInformation:
 		{
-		PPEB ppeb = (PPEB) p->peb_section->get_kernel_address();
-		info.session.SessionId = ppeb->SessionId;
+			PPEB ppeb = (PPEB) p->peb_section->get_kernel_address();
+			info.session.SessionId = ppeb->SessionId;
+			break;
 		}
-		break;
 
-	case ProcessDefaultHardErrorMode:
-		info.hard_error_mode = p->hard_error_mode;
-		break;
+		case ProcessDefaultHardErrorMode:
+			info.hard_error_mode = p->hard_error_mode;
+			break;
 
-	case ProcessExecuteFlags:
-		info.execute_flags = p->execute_flags;
-		break;
+		case ProcessExecuteFlags:
+			info.execute_flags = p->execute_flags;
+			break;
 
-	default:
-		assert(0);
+		default:
+			assert(0);
 	}
 
 	len = sz;
 	if (sz > ProcessInformationLength)
-		 sz = ProcessInformationLength;
+		sz = ProcessInformationLength;
 
 	r = copy_to_user( ProcessInformation, &info, sz );
 	if (r == STATUS_SUCCESS && ReturnLength)

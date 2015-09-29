@@ -96,11 +96,20 @@ protected:
 protected:
 	gdi_object_t();
 public:
-	HGDIOBJ get_handle() {return handle;}
+	HGDIOBJ get_handle()
+	{
+		return handle;
+	}
 	virtual ~gdi_object_t() {};
 	virtual BOOL release();
-	void select() { refcount++; }
-	void deselect() { refcount--; }
+	void select()
+	{
+		refcount++;
+	}
+	void deselect()
+	{
+		refcount--;
+	}
 	static HGDIOBJ alloc( BOOL stock, ULONG type );
 	BYTE *get_shared_mem() const;
 	template<typename T> static T* kernel_to_user( T* kernel_ptr )
@@ -116,7 +125,8 @@ public:
 	BYTE *get_user_shared_mem() const;
 };
 
-struct stretch_di_bits_args {
+struct stretch_di_bits_args
+{
 	int dest_x, dest_y, dest_width, dest_height;
 	int src_x, src_y, src_width, src_height;
 	const VOID *bits;
@@ -134,19 +144,28 @@ class brush_t : public gdi_object_t
 public:
 	brush_t( UINT style, COLORREF color, ULONG hatch );
 	static HANDLE alloc( UINT style, COLORREF color, ULONG hatch, BOOL stock = FALSE );
-	COLORREF get_color() {return color;}
+	COLORREF get_color()
+	{
+		return color;
+	}
 };
 
 class pen_t : public gdi_object_t
 {
 	ULONG style;
-        ULONG width;
+	ULONG width;
 	COLORREF color;
 public:
 	pen_t( UINT style, UINT width, COLORREF color );
 	static HANDLE alloc( UINT style, UINT width, COLORREF color, BOOL stock = FALSE );
-	COLORREF get_color() {return color;}
-	ULONG get_width() {return width;}
+	COLORREF get_color()
+	{
+		return color;
+	}
+	ULONG get_width()
+	{
+		return width;
+	}
 };
 
 class bitmap_t : public gdi_object_t
@@ -168,18 +187,27 @@ public:
 	bitmap_t( int _width, int _height, int _planes, int _bpp );
 	virtual ~bitmap_t();
 	ULONG bitmap_size();
-	int get_width() {return width;}
-	int get_height() {return height;}
+	int get_width()
+	{
+		return width;
+	}
+	int get_height()
+	{
+		return height;
+	}
 	//int get_planes() {return planes;}
 	ULONG get_rowsize();
 	virtual COLORREF get_pixel( int x, int y ) = 0;
 	virtual BOOL set_pixel( INT x, INT y, COLORREF color );
-	bool is_valid() const { return magic == magic_val; }
+	bool is_valid() const
+	{
+		return magic == magic_val;
+	}
 	NTSTATUS copy_pixels( void* pixels );
 	virtual BOOL bitblt( INT xDest, INT yDest, INT cx, INT cy,
-		bitmap_t *src, INT xSrc, INT ySrc, ULONG rop );
+						 bitmap_t *src, INT xSrc, INT ySrc, ULONG rop );
 	virtual BOOL rectangle(INT left, INT top, INT right, INT bottom, brush_t* brush);
-        virtual BOOL line( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
+	virtual BOOL line( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
 protected:
 	BOOL pen_dot( INT x, INT y, pen_t *pen );
 	virtual BOOL set_pixel_l( INT x, INT y, COLORREF color );
@@ -234,26 +262,32 @@ public:
 	virtual BOOL release();
 	virtual brush_t* get_selected_brush();
 	virtual bitmap_t* get_bitmap();
-        virtual pen_t* get_selected_pen();
+	virtual pen_t* get_selected_pen();
 	POINT& get_current_pen_pos();
 	POINT& get_window_offset();
-	void set_bounds_rect( RECT& r ) {BoundsRect = r;}
-	RECT& get_bounds_rect() {return BoundsRect;}
+	void set_bounds_rect( RECT& r )
+	{
+		BoundsRect = r;
+	}
+	RECT& get_bounds_rect()
+	{
+		return BoundsRect;
+	}
 	int save_dc();
 	BOOL restore_dc( int level );
 	virtual BOOL set_pixel( INT x, INT y, COLORREF color );
 	virtual BOOL rectangle( INT x, INT y, INT width, INT height );
 	virtual BOOL exttextout( INT x, INT y, UINT options,
-		 LPRECT rect, UNICODE_STRING& text );
+							 LPRECT rect, UNICODE_STRING& text );
 	virtual HANDLE select_bitmap( bitmap_t *bitmap );
 	virtual BOOL bitblt( INT xDest, INT yDest, INT cx, INT cy,
-		 device_context_t* src, INT xSrc, INT ySrc, ULONG rop );
+						 device_context_t* src, INT xSrc, INT ySrc, ULONG rop );
 	virtual COLORREF get_pixel( INT x, INT y );
 	virtual BOOL polypatblt( ULONG Rop, PRECT rect );
 	virtual int getcaps( int index ) = 0;
 	virtual BOOL stretch_di_bits( stretch_di_bits_args& args );
-        virtual BOOL lineto( INT xpos, INT ypos );
-        virtual BOOL moveto( INT xpos, INT ypos, POINT& pt );
+	virtual BOOL lineto( INT xpos, INT ypos );
+	virtual BOOL moveto( INT xpos, INT ypos, POINT& pt );
 };
 
 class memory_device_context_t : public device_context_t

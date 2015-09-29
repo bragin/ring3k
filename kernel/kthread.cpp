@@ -305,8 +305,8 @@ int plug_and_play_t::run()
 
 	timeout.QuadPart = -10000LL;
 	r = NtCreateNamedPipeFile( &pipe, GENERIC_READ|GENERIC_WRITE|SYNCHRONIZE,
-				&oa, &iosb, FILE_SHARE_READ|FILE_SHARE_WRITE, FILE_OPEN_IF, 0, TRUE,
-				TRUE, FALSE, -1, 0, 0, &timeout );
+							   &oa, &iosb, FILE_SHARE_READ|FILE_SHARE_WRITE, FILE_OPEN_IF, 0, TRUE,
+							   TRUE, FALSE, -1, 0, 0, &timeout );
 	if (r == STATUS_THREAD_IS_TERMINATING)
 		return 0;
 	if (r < STATUS_SUCCESS)

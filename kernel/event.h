@@ -30,7 +30,8 @@
 
 #include "object.h"
 
-class event_t : public sync_object_t {
+class event_t : public sync_object_t
+{
 public:
 	virtual ~event_t();
 	virtual BOOLEAN is_signalled( void ) = 0;

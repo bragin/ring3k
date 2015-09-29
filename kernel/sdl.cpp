@@ -53,7 +53,7 @@ public:
 	virtual BOOL set_pixel( INT x, INT y, COLORREF color );
 	virtual COLORREF get_pixel( INT x, INT y );
 	virtual BOOL bitblt( INT xDest, INT yDest, INT cx, INT cy,
-		 bitmap_t *src, INT xSrc, INT ySrc, ULONG rop );
+						 bitmap_t *src, INT xSrc, INT ySrc, ULONG rop );
 	virtual BOOL rectangle( INT x, INT y, INT width, INT height, brush_t* brush );
 	virtual BOOL line( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
 protected:
@@ -189,19 +189,19 @@ WORD sdl_sleeper_t::sdl_keysum_to_vkey( SDLKey sym )
 	switch (sym)
 	{
 #define mk(k) case SDLK_##k: return VK_##k;
-	mk(SPACE)
-	mk(UP)
-	mk(DOWN)
-	mk(LEFT)
-	mk(RIGHT)
-	//mk(ESCAPE)
-	case SDLK_ESCAPE:
-		trace("escape!\n");
-		return VK_ESCAPE;
+		mk(SPACE)
+		mk(UP)
+		mk(DOWN)
+		mk(LEFT)
+		mk(RIGHT)
+		//mk(ESCAPE)
+		case SDLK_ESCAPE:
+			trace("escape!\n");
+			return VK_ESCAPE;
 #undef mk
-	default:
-		trace("%d unhandled\n", sym);
-		return 0;
+		default:
+			trace("%d unhandled\n", sym);
+			return 0;
 	}
 }
 

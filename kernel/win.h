@@ -47,11 +47,26 @@ public:
 	void operator delete(void *p);
 	wndcls_tt( NTWNDCLASSEX& ClassInfo, const UNICODE_STRING& ClassName, const UNICODE_STRING& MenuName, ATOM a );
 	static wndcls_tt* from_name( const UNICODE_STRING& wndcls_name );
-	ATOM get_atom() const {return atomWindowType;}
-	const unicode_string_t& get_name() const {return name;}
-	void addref() {refcount++;}
-	void release() {refcount--;}
-	PVOID get_wndproc() const { return info.WndProc; }
+	ATOM get_atom() const
+	{
+		return atomWindowType;
+	}
+	const unicode_string_t& get_name() const
+	{
+		return name;
+	}
+	void addref()
+	{
+		refcount++;
+	}
+	void release()
+	{
+		refcount--;
+	}
+	PVOID get_wndproc() const
+	{
+		return info.WndProc;
+	}
 };
 
 class window_tt : public WND
@@ -64,10 +79,19 @@ public:
 	~window_tt();
 	static window_tt* do_create( unicode_string_t& name, unicode_string_t& cls, NTCREATESTRUCT& cs );
 	NTSTATUS send( message_tt& msg );
-	void *get_wndproc() { return wndproc; }
+	void *get_wndproc()
+	{
+		return wndproc;
+	}
 	PWND get_wininfo();
-	thread_t* &get_win_thread() {return (thread_t*&)unk1; }
-	region_tt* &get_invalid_region() {return (region_tt*&)unk2; }
+	thread_t* &get_win_thread()
+	{
+		return (thread_t*&)unk1;
+	}
+	region_tt* &get_invalid_region()
+	{
+		return (region_tt*&)unk2;
+	}
 	BOOLEAN show( INT Show );
 	void activate();
 	HGDIOBJ get_dc();

@@ -34,19 +34,41 @@ protected:
 	T *prev;
 	T *next;
 public:
-	void init() { this->prev = (T*)-1; this->next = (T*)-1; }
-	explicit list_element() {init();}
+	void init()
+	{
+		this->prev = (T*)-1;
+		this->next = (T*)-1;
+	}
+	explicit list_element()
+	{
+		init();
+	}
 	~list_element() {}
-	bool is_linked() { return this->prev != (T*)-1; }
-	T* get_next() {return this->next;}
-	T* get_prev() {return this->prev;}
+	bool is_linked()
+	{
+		return this->prev != (T*)-1;
+	}
+	T* get_next()
+	{
+		return this->next;
+	}
+	T* get_prev()
+	{
+		return this->prev;
+	}
 };
 
 template<class T> class list_element_accessor
 {
 protected:
-	T*& prevptr(list_element<T>& elem) {return elem.prev;}
-	T*& nextptr(list_element<T>& elem) {return elem.next;}
+	T*& prevptr(list_element<T>& elem)
+	{
+		return elem.prev;
+	}
+	T*& nextptr(list_element<T>& elem)
+	{
+		return elem.next;
+	}
 };
 
 template<class T, const int X> class list_anchor : public list_element_accessor<T>
@@ -54,11 +76,24 @@ template<class T, const int X> class list_anchor : public list_element_accessor<
 	T *_head;
 	T *_tail;
 public:
-	explicit list_anchor() { this->_head = 0; this->_tail = 0; }
+	explicit list_anchor()
+	{
+		this->_head = 0;
+		this->_tail = 0;
+	}
 	~list_anchor() {}
-	bool empty() { return !(this->_head || this->_tail); }
-	T *head() { return this->_head; }
-	T *tail() { return this->_tail; }
+	bool empty()
+	{
+		return !(this->_head || this->_tail);
+	}
+	T *head()
+	{
+		return this->_head;
+	}
+	T *tail()
+	{
+		return this->_tail;
+	}
 	void unlink(T* elem)
 	{
 		assert(elem->entry[X].is_linked());
@@ -128,11 +163,27 @@ template<class T, const int X> class list_iter : public list_element_accessor<T>
 	T* i;
 public:
 	explicit list_iter(list_anchor<T,X>& l) : list(l), i(l.head()) {}
-	T* next() { i = list_element_accessor<T>::nextptr(i->entry[X]); return i; }
-	T* cur() { return i; }
-	operator bool() { return i != 0; }
-	operator T*() { return i; }
-	void reset() {i = list.head();}
+	T* next()
+	{
+		i = list_element_accessor<T>::nextptr(i->entry[X]);
+		return i;
+	}
+	T* cur()
+	{
+		return i;
+	}
+	operator bool()
+	{
+		return i != 0;
+	}
+	operator T*()
+	{
+		return i;
+	}
+	void reset()
+	{
+		i = list.head();
+	}
 };
 
 #endif // __LIST_H__

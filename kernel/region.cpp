@@ -144,7 +144,7 @@ void rect_tt::fix()
 BOOL rect_tt::equal( const RECT& other ) const
 {
 	return (left == other.left) && (right == other.right) &&
-		(top == other.top) && (bottom == other.bottom);
+		   (top == other.top) && (bottom == other.bottom);
 }
 
 void rect_tt::offset( INT x, INT y )
@@ -158,13 +158,13 @@ void rect_tt::offset( INT x, INT y )
 BOOL rect_tt::overlaps( const RECT& other ) const
 {
 	return (right > other.left) && (left < other.right) &&
-		(bottom > other.top) && (top < other.bottom);
+		   (bottom > other.top) && (top < other.bottom);
 }
 
 BOOL rect_tt::contains_point( int x, int y ) const
 {
 	return (top <= y) && (bottom > y) &&
-		(left <= x) && (right > x);
+		   (left <= x) && (right > x);
 }
 
 void rect_tt::intersect( const RECT& other )

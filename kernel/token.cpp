@@ -192,7 +192,10 @@ public:
 protected:
 	BYTE SubAuthorityCount;
 	ULONG *subauthority;
-	inline ULONG sid_len() { return FIELD_OFFSET( SID, SubAuthority ); }
+	inline ULONG sid_len()
+	{
+		return FIELD_OFFSET( SID, SubAuthority );
+	}
 public:
 	sid_t();
 	NTSTATUS copy_from_user( PSID sid );
@@ -200,7 +203,10 @@ public:
 	virtual NTSTATUS copy_to_user( PVOID sid );
 	void set_subauth_count( BYTE count );
 	void set_subauth( ULONG n, ULONG subauth );
-	ULONG get_subauth_count() {return SubAuthorityCount;}
+	ULONG get_subauth_count()
+	{
+		return SubAuthorityCount;
+	}
 	void dump();
 };
 
@@ -215,7 +221,7 @@ void sid_t::dump()
 {
 	BYTE* b = IdentifierAuthority.Value;
 	trace("sid: %02x %02x %02x-%02x-%02x-%02x-%02x-%02x\n",
-		Revision, SubAuthorityCount, b[0], b[1], b[2], b[3], b[4], b[6]);
+		  Revision, SubAuthorityCount, b[0], b[1], b[2], b[3], b[4], b[6]);
 }
 
 void sid_t::set_subauth_count( BYTE count )
@@ -418,7 +424,8 @@ typedef list_iter<ace_t,0> ace_iter_t;
 
 class ace_t : public user_copy_t
 {
-	struct ace_common_t {
+	struct ace_common_t
+	{
 		ACE_HEADER header;
 		ULONG mask;
 		ULONG sid_start;
@@ -623,7 +630,8 @@ void privilege_set_t::set_count( ULONG n )
 
 NTSTATUS privilege_set_t::copy_from_user( PPRIVILEGE_SET ps )
 {
-	struct {
+	struct
+	{
 		ULONG count;
 		ULONG control;
 	} x;
@@ -644,7 +652,8 @@ token_t::~token_t()
 {
 }
 
-class token_impl_t : public token_t {
+class token_impl_t : public token_t
+{
 	token_privileges_t privs;
 	sid_t owner;
 	sid_t primary_group;
@@ -797,7 +806,7 @@ NTSTATUS NTAPI NtAdjustPrivilegesToken(
 	NTSTATUS r;
 
 	trace("%p %u %p %lu %p %p\n", TokenHandle, DisableAllPrivileges,
-			NewState, BufferLength, PreviousState, ReturnLength );
+		  NewState, BufferLength, PreviousState, ReturnLength );
 
 	if (ReturnLength)
 	{
@@ -879,7 +888,7 @@ NTSTATUS NTAPI NtQueryInformationToken(
 	TOKEN_STATISTICS stats;
 
 	trace("%p %u %p %lu %p\n", TokenHandle, TokenInformationClass,
-			TokenInformation, TokenInformationLength, ReturnLength );
+		  TokenInformation, TokenInformationLength, ReturnLength );
 
 	r = object_from_handle( token, TokenHandle, TOKEN_QUERY );
 	if (r < STATUS_SUCCESS)

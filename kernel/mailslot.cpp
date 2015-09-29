@@ -76,8 +76,8 @@ NTSTATUS NTAPI NtCreateMailslotFile(
 	PLARGE_INTEGER ReadTimeout)
 {
 	trace("%p %08lx %p %p %08lx %lu %lu %p\n", MailslotHandle, AccessMask,
-			ObjectAttributes, IoStatusBlock, CreateOptions,
-			InBufferSize, MaxMessageSize, ReadTimeout);
+		  ObjectAttributes, IoStatusBlock, CreateOptions,
+		  InBufferSize, MaxMessageSize, ReadTimeout);
 
 	NTSTATUS r;
 

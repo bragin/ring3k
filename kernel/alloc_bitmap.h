@@ -33,9 +33,18 @@ class allocation_bitmap_t
 	unsigned char *bitmap;
 	unsigned char *ptr;
 protected:
-	bool bit_value( size_t n ) { return bitmap[n/8] & (1 << (n%8)); }
-	void set_bit( size_t n ) { bitmap[n/8] |= (1 << (n%8)); }
-	void clear_bit( size_t n ) { bitmap[n/8] &= ~(1 << (n%8)); }
+	bool bit_value( size_t n )
+	{
+		return bitmap[n/8] & (1 << (n%8));
+	}
+	void set_bit( size_t n )
+	{
+		bitmap[n/8] |= (1 << (n%8));
+	}
+	void clear_bit( size_t n )
+	{
+		bitmap[n/8] &= ~(1 << (n%8));
+	}
 	size_t count_zero_bits( size_t start, size_t max );
 	size_t count_one_bits( size_t start, size_t max );
 	void set_bits( size_t start, size_t count );

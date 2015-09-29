@@ -82,9 +82,9 @@ void object_dir_impl_t::append( object_t *obj )
 bool object_dir_impl_t::access_allowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
 	return check_access( required, handle,
-			 DIRECTORY_QUERY | DIRECTORY_TRAVERSE,
-			 DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY,
-			 DIRECTORY_ALL_ACCESS );
+						 DIRECTORY_QUERY | DIRECTORY_TRAVERSE,
+						 DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY,
+						 DIRECTORY_ALL_ACCESS );
 }
 
 object_t *object_dir_impl_t::lookup( UNICODE_STRING& name, bool ignore_case )
@@ -224,13 +224,13 @@ public:
 NTSTATUS find_object_t::on_open( object_dir_t *dir, object_t*& obj, open_info_t& info )
 {
 	trace("find_object_t::on_open %pus %s\n", &info.path,
-		 obj ? "exists" : "doesn't exist");
+		  obj ? "exists" : "doesn't exist");
 	if (!obj)
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 
 	// hack until NtOpenSymbolicLinkObject is fixed
 	if (dynamic_cast<symlink_t*>( obj ) != NULL &&
-		 (info.Attributes & OBJ_OPENLINK))
+	   (info.Attributes & OBJ_OPENLINK))
 	{
 		return STATUS_INVALID_PARAMETER;
 	}
@@ -300,7 +300,7 @@ NTSTATUS name_object_t::on_open( object_dir_t *dir, object_t*& obj, open_info_t&
 NTSTATUS name_object( object_t *obj, const OBJECT_ATTRIBUTES *oa )
 {
 	if (!oa)
-		 return STATUS_SUCCESS;
+		return STATUS_SUCCESS;
 
 	obj->attr = oa->Attributes;
 	if (!oa->ObjectName)
@@ -376,7 +376,7 @@ NTSTATUS NTAPI NtQueryDirectoryObject(
 	PULONG ReturnLength)
 {
 	trace("%p %p %lu %u %u %p %p\n", DirectoryHandle, Buffer, BufferLength,
-			ReturnSingleEntry, RestartScan, Offset, ReturnLength);
+		  ReturnSingleEntry, RestartScan, Offset, ReturnLength);
 
 	ULONG ofs = 0;
 	NTSTATUS r = copy_from_user( &ofs, Offset, sizeof ofs );

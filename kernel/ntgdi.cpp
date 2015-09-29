@@ -48,12 +48,14 @@ static void *gdi_handle_table = 0;
 
 win32k_manager_t* (*win32k_manager_create)();
 
-struct graphics_driver_list {
+struct graphics_driver_list
+{
 	const char *name;
 	win32k_manager_t* (*create)();
 };
 
-struct graphics_driver_list graphics_drivers[] = {
+struct graphics_driver_list graphics_drivers[] =
+{
 	{ "sdl", &init_sdl_win32k_manager, },
 	{ "null", &init_null_win32k_manager, },
 	{ NULL, NULL, },
@@ -109,13 +111,13 @@ void ntgdishm_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
 		switch (ofs&15)
 		{
 #define gdifield(ofs,x) case ofs: field = #x; break;
-		gdifield(0, kernel_info)
-		gdifield(4, ProcessId)
-		gdifield(6, Count)
-		gdifield(8, Upper)
-		gdifield(10,Type)
-		gdifield(11,Type_Hi)
-		gdifield(12,user_info)
+			gdifield(0, kernel_info)
+			gdifield(4, ProcessId)
+			gdifield(6, Count)
+			gdifield(8, Upper)
+			gdifield(10,Type)
+			gdifield(11,Type_Hi)
+			gdifield(12,user_info)
 #undef gdifield
 		default:
 			field = unk;
@@ -423,7 +425,7 @@ HGDIOBJ alloc_gdi_handle( BOOL stock, ULONG type, void *user_info, gdi_object_t*
 	table[index].ProcessId = current->process->id;
 	table[index].Type = type;
 	HGDIOBJ handle = makeHGDIOBJ(0,stock,reported_type,index);
-        table[index].Count = 0;
+	table[index].Count = 0;
 	table[index].Upper = (ULONG)handle >> 16;
 	table[index].user_info = user_info;
 	table[index].kernel_info = reinterpret_cast<void*>( obj );
@@ -851,7 +853,7 @@ FT_Face win32k_manager_t::get_face()
 }
 
 BOOL device_context_t::exttextout( INT x, INT y, UINT options,
-		 LPRECT rect, UNICODE_STRING& text )
+								   LPRECT rect, UNICODE_STRING& text )
 {
 	trace("text: %pus\n", &text );
 
@@ -1053,8 +1055,8 @@ COLORREF get_di_pixel_4bpp( stretch_di_bits_args& args, int x, int y )
 	assert( val < 16);
 
 	return RGB( args.colors[val].rgbRed,
-		args.colors[val].rgbGreen,
-		args.colors[val].rgbBlue );
+				args.colors[val].rgbGreen,
+				args.colors[val].rgbBlue );
 }
 
 COLORREF get_di_pixel( stretch_di_bits_args& args, int x, int y )
@@ -1151,8 +1153,8 @@ HANDLE win32k_manager_t::get_stock_object( ULONG Index )
 		handle = alloc_gdi_object( TRUE, GDI_OBJECT_BRUSH );
 		break;
 	case WHITE_PEN:
-        handle = pen_t::alloc( PS_SOLID, 1, RGB(255, 255, 255), TRUE );
-        break;
+		handle = pen_t::alloc( PS_SOLID, 1, RGB(255, 255, 255), TRUE );
+		break;
 	case BLACK_PEN:
 	case NULL_PEN:
 	case DC_PEN: // FIXME: probably per DC
@@ -1245,11 +1247,16 @@ const char *get_object_type_name( HGDIOBJ object )
 {
 	switch (get_handle_type( object ))
 	{
-	case GDI_OBJECT_BRUSH: return "brush";
-	case GDI_OBJECT_PEN: return "pen";
-	case GDI_OBJECT_PALETTE: return "palette";
-	case GDI_OBJECT_FONT: return "font";
-	case GDI_OBJECT_BITMAP: return "bitmap";
+	case GDI_OBJECT_BRUSH:
+		return "brush";
+	case GDI_OBJECT_PEN:
+		return "pen";
+	case GDI_OBJECT_PALETTE:
+		return "palette";
+	case GDI_OBJECT_FONT:
+		return "font";
+	case GDI_OBJECT_BITMAP:
+		return "bitmap";
 	}
 	return "unknown";
 }
@@ -1271,8 +1278,8 @@ HGDIOBJ NTAPI NtGdiSelectBitmap( HGDIOBJ hdc, HGDIOBJ hbm )
 
 HGDIOBJ NTAPI NtGdiSelectPen( HGDIOBJ hdc, HGDIOBJ hbm )
 {
- 
-        return NULL;
+
+	return NULL;
 }
 
 // Info
@@ -1330,7 +1337,8 @@ ULONG NTAPI NtGdiSetDIBitsToDeviceInternal(
 
 ULONG NTAPI NtGdiExtGetObjectW(HGDIOBJ Object, ULONG Size, PVOID Buffer)
 {
-	union {
+	union
+	{
 		BITMAP bm;
 	} info;
 	ULONG len = 0;
@@ -1376,15 +1384,15 @@ BOOLEAN NTAPI NtGdiBitBlt(HGDIOBJ hdcDest, INT xDest, INT yDest, INT cx, INT cy,
 }
 
 HANDLE NTAPI NtGdiCreateDIBSection(
-		HDC DeviceContext,
-		HANDLE SectionHandle,
-		ULONG Offset,
-		PBITMAPINFO bmi,
-		ULONG Usage,
-		ULONG HeaderSize,
-		ULONG Unknown,
-		ULONG_PTR ColorSpace,
-		PVOID Bits)
+	HDC DeviceContext,
+	HANDLE SectionHandle,
+	ULONG Offset,
+	PBITMAPINFO bmi,
+	ULONG Usage,
+	ULONG HeaderSize,
+	ULONG Unknown,
+	ULONG_PTR ColorSpace,
+	PVOID Bits)
 {
 	return alloc_gdi_object( FALSE, GDI_OBJECT_BITMAP );
 }
@@ -1399,7 +1407,8 @@ HANDLE NTAPI NtGdiOpenDCW(ULONG,ULONG,ULONG,ULONG,ULONG,ULONG,PVOID)
 	return win32k_manager->alloc_screen_dc();
 }
 
-typedef struct _font_enum_entry {
+typedef struct _font_enum_entry
+{
 	ULONG size;
 	ULONG offset;
 	ULONG fonttype;
@@ -1541,7 +1550,7 @@ BOOLEAN NTAPI NtGdiRectangle( HANDLE handle, INT left, INT top, INT right, INT b
 }
 
 BOOLEAN NTAPI NtGdiExtTextOutW( HANDLE handle, INT x, INT y, UINT options,
-		 LPRECT rect, WCHAR* string, UINT length, INT *dx, UINT )
+								LPRECT rect, WCHAR* string, UINT length, INT *dx, UINT )
 {
 	device_context_t* dc = dc_from_handle( handle );
 	if (!dc)
@@ -1652,7 +1661,7 @@ int NTAPI NtGdiGetDeviceCaps( HDC handle, int index )
 
 HPEN NTAPI NtGdiCreatePen(int style, int width, COLORREF color, ULONG)
 {
-    return (HPEN) win32k_manager->create_pen( style, width, color );
+	return (HPEN) win32k_manager->create_pen( style, width, color );
 }
 
 BOOLEAN NTAPI NtGdiStretchDIBitsInternal(
@@ -1703,13 +1712,13 @@ BOOLEAN NTAPI NtGdiStretchDIBitsInternal(
 }
 
 BOOLEAN NTAPI NtGdiScaleViewportExtEx(HDC handle, int xnum, int ynum,
-			 int xdiv, int ydiv, PSIZE pSize)
+									  int xdiv, int ydiv, PSIZE pSize)
 {
 	return FALSE;
 }
 
 BOOLEAN NTAPI NtGdiScaleWindowExtEx(HDC handle, int xnum, int ynum,
-			 int xdiv, int ydiv, PSIZE pSize)
+									int xdiv, int ydiv, PSIZE pSize)
 {
 	return FALSE;
 }

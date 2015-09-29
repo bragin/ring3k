@@ -28,7 +28,8 @@
 class mblock;
 
 // pure virtual base class for things that can execution code (eg. threads)
-class execution_context_t {
+class execution_context_t
+{
 public:
 	virtual void handle_fault() = 0;
 	virtual void handle_breakpoint() = 0;
@@ -44,14 +45,16 @@ public:
 	virtual ~backing_store_t() {};
 };
 
-class block_tracer {
+class block_tracer
+{
 public:
 	virtual void on_access( mblock *mb, BYTE *address, ULONG eip );
 	virtual bool enabled() const;
 	virtual ~block_tracer();
 };
 
-class address_space {
+class address_space
+{
 public:
 	virtual ~address_space();
 	virtual NTSTATUS query( BYTE *start, MEMORY_BASIC_INFORMATION *info ) = 0;
@@ -84,7 +87,8 @@ typedef list_anchor<mblock,0> mblock_list_t;
 typedef list_iter<mblock,0> mblock_iter_t;
 typedef list_element<mblock> mblock_element_t;
 
-class mblock {
+class mblock
+{
 public:
 	mblock_element_t entry[1];
 
@@ -120,17 +124,44 @@ public:
 	void reserve( address_space *vm );
 	void uncommit( address_space *vm );
 	void unreserve( address_space *vm );
-	int is_committed() { return State == MEM_COMMIT; }
-	int is_reserved() { return State == MEM_RESERVE; }
-	int is_free() { return State == MEM_FREE; }
+	int is_committed()
+	{
+		return State == MEM_COMMIT;
+	}
+	int is_reserved()
+	{
+		return State == MEM_RESERVE;
+	}
+	int is_free()
+	{
+		return State == MEM_FREE;
+	}
 	NTSTATUS query( BYTE *address, MEMORY_BASIC_INFORMATION *info );
 	void dump();
-	int is_linked() { return entry[0].is_linked(); }
-	BYTE *get_kernel_address() { return kernel_address; };
-	BYTE *get_base_address() { return BaseAddress; };
-	ULONG get_region_size() { return RegionSize; };
-	ULONG get_prot() { return Protect; };
-	object_t* get_section() { return section; };
+	int is_linked()
+	{
+		return entry[0].is_linked();
+	}
+	BYTE *get_kernel_address()
+	{
+		return kernel_address;
+	};
+	BYTE *get_base_address()
+	{
+		return BaseAddress;
+	};
+	ULONG get_region_size()
+	{
+		return RegionSize;
+	};
+	ULONG get_prot()
+	{
+		return Protect;
+	};
+	object_t* get_section()
+	{
+		return section;
+	};
 	static ULONG mmap_flag_from_page_prot( ULONG prot );
 	void remote_remap( address_space *vm, bool except );
 	bool set_tracer( address_space *vm, block_tracer *tracer);
@@ -146,7 +177,8 @@ mblock* alloc_fd_pages(BYTE* address, ULONG size, backing_store_t* backing);
 
 int create_mapping_fd( int sz );
 
-class address_space_impl : public address_space {
+class address_space_impl : public address_space
+{
 private:
 	BYTE *const lowest_address;
 	BYTE *highest_address;

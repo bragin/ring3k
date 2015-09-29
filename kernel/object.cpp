@@ -211,9 +211,9 @@ NTSTATUS object_factory::create_kernel( object_t*& obj, UNICODE_STRING& us )
 }
 
 NTSTATUS object_factory::create(
-		PHANDLE Handle,
-		ACCESS_MASK AccessMask,
-		POBJECT_ATTRIBUTES ObjectAttributes)
+	PHANDLE Handle,
+	ACCESS_MASK AccessMask,
+	POBJECT_ATTRIBUTES ObjectAttributes)
 {
 	object_attributes_t oa;
 	object_t *obj = 0;
@@ -347,9 +347,10 @@ NTSTATUS NTAPI NtQueryObject(
 	PULONG ReturnLength)
 {
 	trace("%p %d %p %lu %p\n", Object, ObjectInformationClass,
-			ObjectInformation, ObjectInformationLength, ReturnLength);
+		  ObjectInformation, ObjectInformationLength, ReturnLength);
 
-	union {
+	union
+	{
 		OBJECT_HANDLE_ATTRIBUTE_INFORMATION handle_info;
 	} info;
 	ULONG sz = 0;
@@ -400,9 +401,10 @@ NTSTATUS NTAPI NtSetInformationObject(
 	ULONG ObjectInformationLength)
 {
 	trace("%p %d %p %lu\n", Object, ObjectInformationClass,
-			ObjectInformation, ObjectInformationLength);
+		  ObjectInformation, ObjectInformationLength);
 
-	union {
+	union
+	{
 		OBJECT_HANDLE_ATTRIBUTE_INFORMATION handle_info;
 	} info;
 	ULONG sz = 0;
@@ -455,8 +457,8 @@ NTSTATUS NTAPI NtDuplicateObject(
 	ULONG Options)
 {
 	trace("%p %p %p %p %08lx %08lx %08lx\n",
-			SourceProcessHandle, SourceHandle, TargetProcessHandle,
-			TargetHandle, DesiredAccess, Attributes, Options);
+		  SourceProcessHandle, SourceHandle, TargetProcessHandle,
+		  TargetHandle, DesiredAccess, Attributes, Options);
 
 	NTSTATUS r;
 
@@ -521,10 +523,10 @@ NTSTATUS NTAPI NtQuerySecurityObject(
 
 #define SINF(x) ((SecurityInformation & (x)) ? #x " " : "")
 	trace("%08lx = %s%s%s%s\n", SecurityInformation,
-		SINF(OWNER_SECURITY_INFORMATION),
-		SINF(GROUP_SECURITY_INFORMATION),
-		SINF(SACL_SECURITY_INFORMATION),
-		SINF(DACL_SECURITY_INFORMATION));
+		  SINF(OWNER_SECURITY_INFORMATION),
+		  SINF(GROUP_SECURITY_INFORMATION),
+		  SINF(SACL_SECURITY_INFORMATION),
+		  SINF(DACL_SECURITY_INFORMATION));
 #undef SINF
 
 	if (SecurityDescriptorLength >= sz)
