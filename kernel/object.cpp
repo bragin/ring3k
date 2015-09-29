@@ -49,13 +49,13 @@ open_info_t::~open_info_t()
 {
 }
 
-void object_t::addref( object_t *obj )
+void OBJECT::addref( OBJECT *obj )
 {
 	obj->refcount ++;
 	//trace("%p has %ld refs\n", obj, obj->refcount);
 }
 
-void object_t::release( object_t *obj )
+void OBJECT::release( OBJECT *obj )
 {
 	//trace("%p has %ld refs left\n", obj, obj->refcount - 1);
 	if (!--obj->refcount)
@@ -65,7 +65,7 @@ void object_t::release( object_t *obj )
 	}
 }
 
-NTSTATUS object_t::open( object_t *&out, open_info_t& info )
+NTSTATUS OBJECT::open( OBJECT *&out, open_info_t& info )
 {
 	if (info.path.Length != 0)
 	{
@@ -87,7 +87,7 @@ ULONG handle_table_t::handle_to_index( HANDLE handle )
 	return ((ULONG)handle)/4 - 1;
 }
 
-HANDLE handle_table_t::alloc_handle( object_t *obj, ACCESS_MASK access )
+HANDLE handle_table_t::alloc_handle( OBJECT *obj, ACCESS_MASK access )
 {
 	ULONG i;
 
@@ -106,7 +106,7 @@ HANDLE handle_table_t::alloc_handle( object_t *obj, ACCESS_MASK access )
 
 NTSTATUS handle_table_t::free_handle( HANDLE handle )
 {
-	object_t *obj;
+	OBJECT *obj;
 	ULONG n;
 
 	n = (ULONG) handle;
@@ -130,7 +130,7 @@ NTSTATUS handle_table_t::free_handle( HANDLE handle )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS handle_table_t::object_from_handle( object_t*& obj, HANDLE handle, ACCESS_MASK access )
+NTSTATUS handle_table_t::object_from_handle( OBJECT*& obj, HANDLE handle, ACCESS_MASK access )
 {
 	if (handle == NtCurrentThread())
 	{
@@ -165,7 +165,7 @@ handle_table_t::~handle_table_t()
 
 void handle_table_t::free_all_handles()
 {
-	object_t *obj;
+	OBJECT *obj;
 	ULONG i;
 
 	for ( i=0; i<max_handles; i++ )
@@ -179,7 +179,7 @@ void handle_table_t::free_all_handles()
 	}
 }
 
-NTSTATUS OBJECT_FACTORY::on_open( object_dir_t* dir, object_t*& obj, open_info_t& info )
+NTSTATUS OBJECT_FACTORY::on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info )
 {
 	// object already exists?
 	if (obj)
@@ -204,7 +204,7 @@ NTSTATUS OBJECT_FACTORY::on_open( object_dir_t* dir, object_t*& obj, open_info_t
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS OBJECT_FACTORY::create_kernel( object_t*& obj, UNICODE_STRING& us )
+NTSTATUS OBJECT_FACTORY::create_kernel( OBJECT*& obj, UNICODE_STRING& us )
 {
 	path.set( us );
 	return open_root( obj, *this );
@@ -216,7 +216,7 @@ NTSTATUS OBJECT_FACTORY::create(
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
 	object_attributes_t oa;
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 	NTSTATUS r;
 
 	r = verify_for_write( Handle, sizeof *Handle );
@@ -261,20 +261,20 @@ OBJECT_FACTORY::~OBJECT_FACTORY()
 {
 }
 
-object_t::object_t() :
+OBJECT::OBJECT() :
 	refcount( 1 ),
 	attr( 0 ),
 	parent( 0 )
 {
 }
 
-object_t::~object_t()
+OBJECT::~OBJECT()
 {
 	if (parent)
 		parent->unlink( this );
 }
 
-bool object_t::check_access( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK read, ACCESS_MASK write, ACCESS_MASK all )
+bool OBJECT::check_access( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK read, ACCESS_MASK write, ACCESS_MASK all )
 {
 	ACCESS_MASK effective = handle & 0xffffff; // all standard + specific rights
 	if (handle & MAXIMUM_ALLOWED)
@@ -288,7 +288,7 @@ bool object_t::check_access( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MA
 	return (required & ~effective) == 0;
 }
 
-bool object_t::access_allowed( ACCESS_MASK access, ACCESS_MASK handle_access )
+bool OBJECT::access_allowed( ACCESS_MASK access, ACCESS_MASK handle_access )
 {
 	trace("fixme: no access check\n");
 	return true;
@@ -372,7 +372,7 @@ NTSTATUS NTAPI NtQueryObject(
 		return STATUS_INFO_LENGTH_MISMATCH;
 
 	NTSTATUS r;
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 	r = object_from_handle( obj, Object, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -427,7 +427,7 @@ NTSTATUS NTAPI NtSetInformationObject(
 		return STATUS_INFO_LENGTH_MISMATCH;
 
 	NTSTATUS r;
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 	r = object_from_handle( obj, Object, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -469,7 +469,7 @@ NTSTATUS NTAPI NtDuplicateObject(
 
 	trace("source process %p\n", sp );
 
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 	r = sp->handle_table.object_from_handle( obj, SourceHandle, DesiredAccess );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -513,7 +513,7 @@ NTSTATUS NTAPI NtQuerySecurityObject(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 	r = object_from_handle( obj, ObjectHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;

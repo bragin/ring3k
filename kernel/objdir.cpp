@@ -44,7 +44,7 @@ object_dir_t::~object_dir_t()
 {
 }
 
-void object_dir_t::set_obj_parent( object_t *child, object_dir_t *dir )
+void object_dir_t::set_obj_parent( OBJECT *child, object_dir_t *dir )
 {
 	child->parent = dir;
 }
@@ -59,20 +59,20 @@ object_dir_impl_t::~object_dir_impl_t()
 	object_iter_t i(object_list);
 	while( i )
 	{
-		object_t *obj = i;
+		OBJECT *obj = i;
 		i.next();
 		unlink( obj );
 	}
 }
 
-void object_dir_impl_t::unlink( object_t *obj )
+void object_dir_impl_t::unlink( OBJECT *obj )
 {
 	assert( obj );
 	object_list.unlink( obj );
 	set_obj_parent( obj, 0 );
 }
 
-void object_dir_impl_t::append( object_t *obj )
+void object_dir_impl_t::append( OBJECT *obj )
 {
 	assert( obj );
 	object_list.append( obj );
@@ -87,12 +87,12 @@ bool object_dir_impl_t::access_allowed( ACCESS_MASK required, ACCESS_MASK handle
 						 DIRECTORY_ALL_ACCESS );
 }
 
-object_t *object_dir_impl_t::lookup( UNICODE_STRING& name, bool ignore_case )
+OBJECT *object_dir_impl_t::lookup( UNICODE_STRING& name, bool ignore_case )
 {
 	//trace("searching for %pus\n", &name );
 	for( object_iter_t i(object_list); i; i.next() )
 	{
-		object_t *obj = i;
+		OBJECT *obj = i;
 		unicode_string_t& entry_name  = obj->get_name();
 		//trace("checking %pus\n", &entry_name );
 		if (!entry_name.compare( &name, ignore_case ))
@@ -105,10 +105,10 @@ object_t *object_dir_impl_t::lookup( UNICODE_STRING& name, bool ignore_case )
 class object_dir_factory : public OBJECT_FACTORY
 {
 public:
-	virtual NTSTATUS alloc_object(object_t** obj);
+	virtual NTSTATUS alloc_object(OBJECT** obj);
 };
 
-NTSTATUS object_dir_factory::alloc_object(object_t** obj)
+NTSTATUS object_dir_factory::alloc_object(OBJECT** obj)
 {
 	*obj = new object_dir_impl_t;
 	if (!*obj)
@@ -116,7 +116,7 @@ NTSTATUS object_dir_factory::alloc_object(object_t** obj)
 	return STATUS_SUCCESS;
 }
 
-object_t *create_directory_object( PCWSTR name )
+OBJECT *create_directory_object( PCWSTR name )
 {
 	object_dir_impl_t *obj = new object_dir_impl_t;
 
@@ -145,7 +145,7 @@ object_t *create_directory_object( PCWSTR name )
 	return obj;
 }
 
-NTSTATUS open_root( object_t*& obj, open_info_t& info )
+NTSTATUS open_root( OBJECT*& obj, open_info_t& info )
 {
 	// look each directory in the path and make sure it exists
 	object_dir_t *dir = 0;
@@ -182,7 +182,7 @@ NTSTATUS open_root( object_t*& obj, open_info_t& info )
 	return dir->open( obj, info );
 }
 
-NTSTATUS object_dir_impl_t::open( object_t*& obj, open_info_t& info )
+NTSTATUS object_dir_impl_t::open( OBJECT*& obj, open_info_t& info )
 {
 	ULONG n = 0;
 	UNICODE_STRING& path = info.path;
@@ -218,10 +218,10 @@ NTSTATUS object_dir_impl_t::open( object_t*& obj, open_info_t& info )
 class find_object_t : public open_info_t
 {
 public:
-	virtual NTSTATUS on_open( object_dir_t *dir, object_t*& obj, open_info_t& info );
+	virtual NTSTATUS on_open( object_dir_t *dir, OBJECT*& obj, open_info_t& info );
 };
 
-NTSTATUS find_object_t::on_open( object_dir_t *dir, object_t*& obj, open_info_t& info )
+NTSTATUS find_object_t::on_open( object_dir_t *dir, OBJECT*& obj, open_info_t& info )
 {
 	trace("find_object_t::on_open %pus %s\n", &info.path,
 		  obj ? "exists" : "doesn't exist");
@@ -240,7 +240,7 @@ NTSTATUS find_object_t::on_open( object_dir_t *dir, object_t*& obj, open_info_t&
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS find_object_by_name( object_t **out, const OBJECT_ATTRIBUTES *oa )
+NTSTATUS find_object_by_name( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 {
 	// no name
 	if (!oa || !oa->ObjectName || !oa->ObjectName->Buffer)
@@ -264,18 +264,18 @@ NTSTATUS find_object_by_name( object_t **out, const OBJECT_ATTRIBUTES *oa )
 
 class name_object_t : public open_info_t
 {
-	object_t *obj_to_name;
+	OBJECT *obj_to_name;
 public:
-	name_object_t( object_t *in );
-	virtual NTSTATUS on_open( object_dir_t *dir, object_t*& obj, open_info_t& info );
+	name_object_t( OBJECT *in );
+	virtual NTSTATUS on_open( object_dir_t *dir, OBJECT*& obj, open_info_t& info );
 };
 
-name_object_t::name_object_t( object_t *in ) :
+name_object_t::name_object_t( OBJECT *in ) :
 	obj_to_name( in )
 {
 }
 
-NTSTATUS name_object_t::on_open( object_dir_t *dir, object_t*& obj, open_info_t& info )
+NTSTATUS name_object_t::on_open( object_dir_t *dir, OBJECT*& obj, open_info_t& info )
 {
 	trace("name_object_t::on_open %pus\n", &info.path);
 
@@ -297,7 +297,7 @@ NTSTATUS name_object_t::on_open( object_dir_t *dir, object_t*& obj, open_info_t&
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS name_object( object_t *obj, const OBJECT_ATTRIBUTES *oa )
+NTSTATUS name_object( OBJECT *obj, const OBJECT_ATTRIBUTES *oa )
 {
 	if (!oa)
 		return STATUS_SUCCESS;
@@ -320,9 +320,9 @@ NTSTATUS name_object( object_t *obj, const OBJECT_ATTRIBUTES *oa )
 	return open_root( obj, oi );
 }
 
-NTSTATUS get_named_object( object_t **out, const OBJECT_ATTRIBUTES *oa )
+NTSTATUS get_named_object( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 {
-	object_t *obj;
+	OBJECT *obj;
 	NTSTATUS r;
 
 	if (!oa || !oa->ObjectName || !oa->ObjectName->Buffer || !oa->ObjectName->Buffer[0])

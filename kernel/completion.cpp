@@ -300,10 +300,10 @@ private:
 	ULONG num_threads;
 public:
 	COMPLETION_FACTORY(ULONG n) : num_threads(n) {}
-	virtual NTSTATUS alloc_object(object_t** obj);
+	virtual NTSTATUS alloc_object(OBJECT** obj);
 };
 
-NTSTATUS COMPLETION_FACTORY::alloc_object(object_t** obj)
+NTSTATUS COMPLETION_FACTORY::alloc_object(OBJECT** obj)
 {
 	if (num_threads == 0)
 		num_threads = num_cpus;

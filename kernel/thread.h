@@ -119,7 +119,7 @@ public:
 	virtual NTSTATUS do_user_callback( ULONG index, ULONG& length, PVOID& buffer) = 0;
 	virtual NTSTATUS terminate( NTSTATUS Status ) = 0;
 	virtual bool is_terminated() = 0;
-	virtual void register_terminate_port( object_t *port ) = 0;
+	virtual void register_terminate_port( OBJECT *port ) = 0;
 	virtual NTSTATUS queue_apc_thread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, PVOID Arg2, PVOID Arg3) = 0;
 	virtual token_t* get_token() = 0;
 	virtual NTSTATUS resume( PULONG count ) = 0;
@@ -136,7 +136,7 @@ int run_thread(fiber_t *arg);
 
 extern thread_t *current;
 
-void send_terminate_message( thread_t *thread, object_t *port, LARGE_INTEGER& create_time );
+void send_terminate_message( thread_t *thread, OBJECT *port, LARGE_INTEGER& create_time );
 bool send_exception( thread_t *thread, EXCEPTION_RECORD &rec );
 
 #endif // __THREAD_H__

@@ -57,7 +57,7 @@ typedef list_element<process_t> process_element_t;
 extern thread_t *current;
 extern process_list_t processes;
 ULONG allocate_id();
-extern object_t *ntdll_section;
+extern OBJECT *ntdll_section;
 
 NTSTATUS copy_oa_from_user( OBJECT_ATTRIBUTES *koa, UNICODE_STRING *kus, const OBJECT_ATTRIBUTES *uoa );
 void free_oa( OBJECT_ATTRIBUTES *oa );
@@ -67,14 +67,14 @@ NTSTATUS process_from_handle( HANDLE handle, process_t **process );
 NTSTATUS thread_from_handle( HANDLE handle, thread_t **thread );
 thread_t *find_thread_by_client_id( CLIENT_ID *id );
 
-NTSTATUS process_alloc_user_handle( process_t *process, object_t *obj, ACCESS_MASK access, HANDLE *out, HANDLE *copy );
+NTSTATUS process_alloc_user_handle( process_t *process, OBJECT *obj, ACCESS_MASK access, HANDLE *out, HANDLE *copy );
 
-static inline NTSTATUS alloc_user_handle( object_t *obj, ACCESS_MASK access, HANDLE *out )
+static inline NTSTATUS alloc_user_handle( OBJECT *obj, ACCESS_MASK access, HANDLE *out )
 {
 	return process_alloc_user_handle( current->process, obj, access, out, 0 );
 }
 
-static inline NTSTATUS alloc_user_handle( object_t *obj, ACCESS_MASK access, HANDLE *out, HANDLE *copy )
+static inline NTSTATUS alloc_user_handle( OBJECT *obj, ACCESS_MASK access, HANDLE *out, HANDLE *copy )
 {
 	return process_alloc_user_handle( current->process, obj, access, out, copy );
 }
@@ -101,7 +101,7 @@ protected:
 extern sleeper_t* sleeper;
 
 // from section.cpp
-const char *get_section_symbol( object_t *section, ULONG address );
+const char *get_section_symbol( OBJECT *section, ULONG address );
 
 // from random.cpp
 void init_random();

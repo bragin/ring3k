@@ -54,7 +54,7 @@
 
 process_list_t processes;
 thread_t *current;
-object_t *ntdll_section;
+OBJECT *ntdll_section;
 int option_debug = 0;
 ULONG KiIntSystemCall = 0;
 bool forced_quit;
@@ -133,7 +133,7 @@ NTSTATUS create_initial_process( thread_t **t, UNICODE_STRING& us )
 	CONTEXT ctx;
 	INITIAL_TEB init_teb;
 	CLIENT_ID id;
-	object_t *section = NULL;
+	OBJECT *section = NULL;
 	file_t *file = 0;
 	int r;
 

@@ -62,7 +62,7 @@ public:
 	~regval_t();
 };
 
-struct regkey_t : public object_t
+struct regkey_t : public OBJECT
 {
 	regkey_t *parent;
 	unicode_string_t name;

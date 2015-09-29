@@ -29,7 +29,7 @@ struct process_t : public sync_object_t
 {
 	sibling_list_t threads;
 	address_space *vm;
-	object_t *exe;
+	OBJECT *exe;
 	BYTE *pntdll;
 	BYTE *pexe;
 
@@ -44,7 +44,7 @@ struct process_t : public sync_object_t
 	process_element_t entry[1];
 
 	// exception handling
-	object_t *exception_port;
+	OBJECT *exception_port;
 
 	KPRIORITY priority;
 	ULONG hard_error_mode;
@@ -74,7 +74,7 @@ public:
 
 extern process_list_t processes;
 
-NTSTATUS create_process( process_t **pprocess, object_t *section );
-NTSTATUS set_exception_port( process_t *process, object_t *obj );
+NTSTATUS create_process( process_t **pprocess, OBJECT *section );
+NTSTATUS set_exception_port( process_t *process, OBJECT *obj );
 
 #endif // __PROCESS_H__

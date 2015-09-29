@@ -30,10 +30,10 @@
 
 #include "object.h"
 
-class event_t : public sync_object_t
+class EVENT : public sync_object_t
 {
 public:
-	virtual ~event_t();
+	virtual ~EVENT();
 	virtual BOOLEAN is_signalled( void ) = 0;
 	virtual BOOLEAN satisfy( void ) = 0;
 	virtual void set( PULONG prev ) = 0;
@@ -43,6 +43,6 @@ public:
 	virtual bool access_allowed( ACCESS_MASK required, ACCESS_MASK handle ) = 0;
 };
 
-event_t* create_sync_event( PWSTR name, BOOL InitialState = 0 );
+EVENT* create_sync_event( PWSTR name, BOOL InitialState = 0 );
 
 #endif // __EVENT_H__

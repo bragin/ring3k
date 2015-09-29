@@ -55,7 +55,7 @@ public:
 	virtual NTSTATUS do_user_callback( ULONG index, ULONG& length, PVOID& buffer);
 	virtual NTSTATUS terminate( NTSTATUS Status );
 	virtual bool is_terminated();
-	virtual void register_terminate_port( object_t *port );
+	virtual void register_terminate_port( OBJECT *port );
 	//virtual void wait();
 	virtual NTSTATUS queue_apc_thread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, PVOID Arg2, PVOID Arg3);
 	virtual token_t* get_token();
@@ -116,7 +116,7 @@ bool kernel_thread_t::is_terminated()
 	return terminated;
 }
 
-void kernel_thread_t::register_terminate_port( object_t *port )
+void kernel_thread_t::register_terminate_port( OBJECT *port )
 {
 	assert(0);
 }

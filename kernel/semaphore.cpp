@@ -75,7 +75,7 @@ NTSTATUS semaphore_t::release( ULONG release_count, ULONG& prev )
 	return STATUS_SUCCESS;
 }
 
-semaphore_t* semaphore_from_obj( object_t* obj )
+semaphore_t* semaphore_from_obj( OBJECT* obj )
 {
 	return dynamic_cast<semaphore_t*>(obj);
 }
@@ -87,10 +87,10 @@ private:
 	ULONG MaximumCount;
 public:
 	semaphore_factory(ULONG init, ULONG max) : InitialCount(init), MaximumCount(max) {}
-	virtual NTSTATUS alloc_object(object_t** obj);
+	virtual NTSTATUS alloc_object(OBJECT** obj);
 };
 
-NTSTATUS semaphore_factory::alloc_object(object_t** obj)
+NTSTATUS semaphore_factory::alloc_object(OBJECT** obj)
 {
 	*obj = new semaphore_t( InitialCount, MaximumCount );
 	if (!*obj)

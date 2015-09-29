@@ -430,7 +430,7 @@ bool MBLOCK::set_traced( address_space *vm, bool traced )
 	return true;
 }
 
-void MBLOCK::set_section( object_t *s )
+void MBLOCK::set_section( OBJECT *s )
 {
 	if (section)
 		release( section );

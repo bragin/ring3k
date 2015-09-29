@@ -105,7 +105,7 @@ protected:
 
 	// access tracing
 	BLOCK_TRACER *tracer;
-	object_t *section;
+	OBJECT *section;
 
 public:
 	MBLOCK( BYTE *address, size_t size );
@@ -158,7 +158,7 @@ public:
 	{
 		return Protect;
 	};
-	object_t* get_section()
+	OBJECT* get_section()
 	{
 		return section;
 	};
@@ -167,7 +167,7 @@ public:
 	bool set_tracer( address_space *vm, BLOCK_TRACER *tracer);
 	bool traced_access( BYTE *address, ULONG Eip );
 	bool set_traced( address_space *vm, bool traced );
-	void set_section( object_t *section );
+	void set_section( OBJECT *section );
 	void set_prot( ULONG prot );
 };
 

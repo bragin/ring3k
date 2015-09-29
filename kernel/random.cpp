@@ -56,10 +56,10 @@ NTSTATUS random_dev_t::write( PVOID Buffer, ULONG Length, ULONG *written )
 class random_dev_factory_t: public OBJECT_FACTORY
 {
 public:
-	NTSTATUS alloc_object(object_t** obj);
+	NTSTATUS alloc_object(OBJECT** obj);
 };
 
-NTSTATUS random_dev_factory_t::alloc_object(object_t** obj)
+NTSTATUS random_dev_factory_t::alloc_object(OBJECT** obj)
 {
 	*obj = new random_dev_t;
 	return STATUS_SUCCESS;
@@ -70,7 +70,7 @@ void init_random()
 	random_dev_factory_t factory;
 	unicode_string_t rand;
 	rand.copy("\\Device\\KsecDD");
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 	NTSTATUS r;
 	r = factory.create_kernel( obj, rand );
 	if (r < STATUS_SUCCESS)

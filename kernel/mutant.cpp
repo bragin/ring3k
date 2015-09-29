@@ -43,7 +43,7 @@ public:
 	virtual BOOLEAN satisfy();
 };
 
-mutant_t *mutant_from_obj( object_t *obj )
+mutant_t *mutant_from_obj( OBJECT *obj )
 {
 	return dynamic_cast<mutant_t*>( obj );
 }
@@ -92,10 +92,10 @@ private:
 	BOOLEAN InitialOwner;
 public:
 	mutant_factory(BOOLEAN io) : InitialOwner(io) {};
-	virtual NTSTATUS alloc_object(object_t** obj);
+	virtual NTSTATUS alloc_object(OBJECT** obj);
 };
 
-NTSTATUS mutant_factory::alloc_object(object_t** obj)
+NTSTATUS mutant_factory::alloc_object(OBJECT** obj)
 {
 	*obj = new mutant_t(InitialOwner);
 	if (!*obj)

@@ -23,7 +23,7 @@
 
 #include "object.h"
 
-class symlink_t : public object_t
+class symlink_t : public OBJECT
 {
 	unicode_string_t target;
 public:
@@ -33,7 +33,7 @@ public:
 	{
 		return target;
 	}
-	virtual NTSTATUS open( object_t *&out, open_info_t& info );
+	virtual NTSTATUS open( OBJECT *&out, open_info_t& info );
 };
 
 // from symlink.cpp

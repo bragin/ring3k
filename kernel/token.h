@@ -27,7 +27,7 @@ class acl_t;
 class sid_and_attributes_t;
 class token_groups_t;
 
-class token_t : public object_t
+class token_t : public OBJECT
 {
 public:
 	virtual ~token_t() = 0;

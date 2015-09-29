@@ -21,7 +21,7 @@
 #ifndef __SECTION_H__
 #define __SECTION_H__
 
-struct section_t : public object_t, public BACKING_STORE
+struct section_t : public OBJECT, public BACKING_STORE
 {
 	int fd;
 	BYTE *addr;
@@ -41,11 +41,11 @@ public:
 	virtual void release();
 };
 
-NTSTATUS create_section( object_t **obj, object_t *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
-NTSTATUS create_section( section_t **section, object_t *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
-NTSTATUS mapit( address_space *vm, object_t *obj, BYTE *&addr );
+NTSTATUS create_section( OBJECT **obj, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
+NTSTATUS create_section( section_t **section, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
+NTSTATUS mapit( address_space *vm, OBJECT *obj, BYTE *&addr );
 void *virtual_addr_to_offset( IMAGE_NT_HEADERS *nt, void *base, DWORD virtual_ofs );
-DWORD get_proc_address(object_t *obj, const char *name);
+DWORD get_proc_address(OBJECT *obj, const char *name);
 void *get_entry_point( process_t *p );
 NTSTATUS section_from_handle( HANDLE, section_t*& section, ACCESS_MASK access );
 

@@ -149,7 +149,7 @@ NTSTATUS pe_section_t::query( SECTION_IMAGE_INFORMATION *image )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS create_section( object_t **obj, object_t *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect )
+NTSTATUS create_section( OBJECT **obj, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect )
 {
 	section_t *sec;
 	NTSTATUS r = create_section( &sec, file, psz, attribs, protect );
@@ -158,7 +158,7 @@ NTSTATUS create_section( object_t **obj, object_t *file, PLARGE_INTEGER psz, ULO
 	return r;
 }
 
-NTSTATUS create_section( section_t **section, object_t *obj, PLARGE_INTEGER psz, ULONG attribs, ULONG protect )
+NTSTATUS create_section( section_t **section, OBJECT *obj, PLARGE_INTEGER psz, ULONG attribs, ULONG protect )
 {
 	section_t *s;
 	BYTE *addr;
@@ -245,7 +245,7 @@ IMAGE_NT_HEADERS *pe_section_t::get_nt_header()
 	return nt;
 }
 
-NTSTATUS mapit( address_space *vm, object_t *obj, BYTE *&addr )
+NTSTATUS mapit( address_space *vm, OBJECT *obj, BYTE *&addr )
 {
 	section_t *sec = dynamic_cast<section_t*>( obj );
 	if (!sec)
@@ -477,7 +477,7 @@ void *pe_section_t::virtual_addr_to_offset( DWORD virtual_ofs )
 }
 
 // just to find LdrInitializeThunk
-DWORD get_proc_address( object_t *obj, const char *name )
+DWORD get_proc_address( OBJECT *obj, const char *name )
 {
 	pe_section_t *sec = dynamic_cast<pe_section_t*>( obj );
 	if (!sec)
@@ -584,7 +584,7 @@ const char *pe_section_t::get_symbol( ULONG address )
 	return 0;
 }
 
-const char *get_section_symbol( object_t *object, ULONG address )
+const char *get_section_symbol( OBJECT *object, ULONG address )
 {
 	trace("%p %08lx\n", object, address);
 	if (!object)
@@ -622,17 +622,17 @@ void *get_entry_point( process_t *p )
 class section_factory : public OBJECT_FACTORY
 {
 private:
-	object_t *file;
+	OBJECT *file;
 	PLARGE_INTEGER SectionSize;
 	ULONG Attributes;
 	ULONG Protect;
 public:
-	section_factory( object_t *_file, PLARGE_INTEGER _SectionSize, ULONG _Attributes, ULONG _Protect );
-	virtual NTSTATUS alloc_object(object_t** obj);
+	section_factory( OBJECT *_file, PLARGE_INTEGER _SectionSize, ULONG _Attributes, ULONG _Protect );
+	virtual NTSTATUS alloc_object(OBJECT** obj);
 };
 
 section_factory::section_factory(
-	object_t *_file,
+	OBJECT *_file,
 	PLARGE_INTEGER _SectionSize,
 	ULONG _Attributes,
 	ULONG _Protect ) :
@@ -643,7 +643,7 @@ section_factory::section_factory(
 {
 }
 
-NTSTATUS section_factory::alloc_object(object_t** obj)
+NTSTATUS section_factory::alloc_object(OBJECT** obj)
 {
 	NTSTATUS r = create_section( obj, file, SectionSize, Attributes, Protect );
 	if (r < STATUS_SUCCESS)
@@ -667,7 +667,7 @@ NTSTATUS NTAPI NtCreateSection(
 	HANDLE FileHandle )
 {
 	NTSTATUS r;
-	object_t *file = NULL;
+	OBJECT *file = NULL;
 	LARGE_INTEGER sz;
 
 	trace("%p %08lx %p %p %08lx %08lx %p\n", SectionHandle, DesiredAccess,

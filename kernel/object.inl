@@ -26,7 +26,7 @@ template<class T> NTSTATUS nt_open_object(
 
 	trace("object = %pus\n", oa.ObjectName );
 
-	object_t *object = NULL;
+	OBJECT *object = NULL;
 
 	r = get_named_object( &object, &oa );
 	if (r != STATUS_SUCCESS)
@@ -47,7 +47,7 @@ template<class T> NTSTATUS nt_open_object(
 template<typename T> NTSTATUS object_from_handle(T*& out, HANDLE handle, ACCESS_MASK access)
 {
 	NTSTATUS r;
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 
 	r = current->process->handle_table.object_from_handle( obj, handle, access );
 	if (r != STATUS_SUCCESS)

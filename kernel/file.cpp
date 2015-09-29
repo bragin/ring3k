@@ -78,7 +78,7 @@ NTSTATUS io_object_t::set_position( LARGE_INTEGER& ofs )
 	return STATUS_OBJECT_TYPE_MISMATCH;
 }
 
-NTSTATUS io_object_t::fs_control( event_t* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+NTSTATUS io_object_t::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 								  PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
 	return STATUS_NOT_IMPLEMENTED;
@@ -108,7 +108,7 @@ public:
 	bool created;
 public:
 	file_create_info_t( ULONG _Attributes, ULONG _CreateOptions, ULONG _CreateDisposition );
-	virtual NTSTATUS on_open( object_dir_t* dir, object_t*& obj, open_info_t& info );
+	virtual NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info );
 };
 
 file_create_info_t::file_create_info_t( ULONG _Attributes, ULONG _CreateOptions, ULONG _CreateDisposition ) :
@@ -119,7 +119,7 @@ file_create_info_t::file_create_info_t( ULONG _Attributes, ULONG _CreateOptions,
 {
 }
 
-NTSTATUS file_create_info_t::on_open( object_dir_t* dir, object_t*& obj, open_info_t& info )
+NTSTATUS file_create_info_t::on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info )
 {
 	trace("file_create_info_t::on_open()\n");
 	if (!obj)
@@ -259,7 +259,7 @@ public:
 	bool is_firstscan() const;
 	NTSTATUS set_mask(unicode_string_t *mask);
 	int get_num_entries() const;
-	virtual NTSTATUS open( object_t *&out, open_info_t& info );
+	virtual NTSTATUS open( OBJECT *&out, open_info_t& info );
 	NTSTATUS open_file( file_t *&file, UNICODE_STRING& path, ULONG Attributes,
 						ULONG Options, ULONG CreateDisposition, bool &created, bool case_insensitive );
 };
@@ -269,7 +269,7 @@ class directory_factory : public OBJECT_FACTORY
 	int fd;
 public:
 	directory_factory( int _fd );
-	NTSTATUS alloc_object(object_t** obj);
+	NTSTATUS alloc_object(OBJECT** obj);
 };
 
 directory_factory::directory_factory( int _fd ) :
@@ -277,7 +277,7 @@ directory_factory::directory_factory( int _fd ) :
 {
 }
 
-NTSTATUS directory_factory::alloc_object(object_t** obj)
+NTSTATUS directory_factory::alloc_object(OBJECT** obj)
 {
 	*obj = new directory_t( fd );
 	if (!*obj)
@@ -758,7 +758,7 @@ NTSTATUS directory_t::open_file(
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS directory_t::open( object_t *&out, open_info_t& info )
+NTSTATUS directory_t::open( OBJECT *&out, open_info_t& info )
 {
 	file_t *file = 0;
 
@@ -781,7 +781,7 @@ NTSTATUS open_file( file_t *&file, UNICODE_STRING& name )
 	file_create_info_t info( 0, 0, FILE_OPEN );
 	info.path.set( name );
 	info.Attributes = OBJ_CASE_INSENSITIVE;
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 	NTSTATUS r = open_root( obj, info );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -798,7 +798,7 @@ void init_drives()
 	directory_factory factory( fd );
 	unicode_string_t dirname;
 	dirname.copy( L"\\Device\\HarddiskVolume1" );
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 	NTSTATUS r;
 	r = factory.create_kernel( obj, dirname );
 	if (r < STATUS_SUCCESS)
@@ -860,7 +860,7 @@ NTSTATUS NTAPI NtCreateFile(
 	info.path.set( *oa.ObjectName );
 	info.Attributes = oa.Attributes;
 
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 	r = open_root( obj, info );
 	if (r >= STATUS_SUCCESS)
 	{
@@ -906,7 +906,7 @@ NTSTATUS NTAPI NtFsControlFile(
 
 	IO_STATUS_BLOCK iosb;
 	io_object_t *io = 0;
-	event_t *event = 0;
+	EVENT *event = 0;
 	NTSTATUS r;
 
 	r = object_from_handle( io, FileHandle, 0 );
@@ -1015,7 +1015,7 @@ NTSTATUS NTAPI NtQueryAttributesFile(
 		return STATUS_INVALID_PARAMETER;
 
 	// FIXME: use oa.RootDirectory
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 	file_create_info_t open_info( 0, 0, FILE_OPEN );
 	open_info.path.set( *oa.ObjectName );
 	open_info.Attributes = oa.Attributes;
@@ -1108,7 +1108,7 @@ NTSTATUS NTAPI NtDeleteFile(
 		return STATUS_INVALID_PARAMETER;
 
 	// FIXME: use oa.RootDirectory
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 	file_create_info_t open_info( 0, 0, FILE_OPEN );
 	open_info.path.set( *oa.ObjectName );
 	open_info.Attributes = oa.Attributes;

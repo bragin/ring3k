@@ -24,12 +24,12 @@
 #include "list.h"
 #include "unicode.h"
 
-class object_t;
+class OBJECT;
 class object_dir_t;
 
-typedef list_anchor<object_t, 0> object_list_t;
-typedef list_element<object_t> object_entry_t;
-typedef list_iter<object_t, 0> object_iter_t;
+typedef list_anchor<OBJECT, 0> object_list_t;
+typedef list_element<OBJECT> object_entry_t;
+typedef list_iter<OBJECT, 0> object_iter_t;
 
 class OBJECT_FACTORY;
 class open_info_t;
@@ -46,15 +46,15 @@ public:
 	{
 		return Attributes & OBJ_CASE_INSENSITIVE;
 	}
-	virtual NTSTATUS on_open( object_dir_t* dir, object_t*& obj, open_info_t& info ) = 0;
+	virtual NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info ) = 0;
 	virtual ~open_info_t();
 };
 
-class object_t
+class OBJECT
 {
-	friend class list_anchor<object_t, 0>;
-	friend class list_element<object_t>;
-	friend class list_iter<object_t, 0>;
+	friend class list_anchor<OBJECT, 0>;
+	friend class list_element<OBJECT>;
+	friend class list_iter<OBJECT, 0>;
 	object_entry_t entry[1];
 	ULONG refcount;
 public:
@@ -68,26 +68,26 @@ public:
 		return name;
 	}
 public:
-	object_t();
+	OBJECT();
 	virtual bool access_allowed( ACCESS_MASK required, ACCESS_MASK handle );
-	virtual ~object_t();
+	virtual ~OBJECT();
 	static bool check_access( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK read, ACCESS_MASK write, ACCESS_MASK all );
-	static void addref( object_t *obj );
-	static void release( object_t *obj );
-	virtual NTSTATUS open( object_t *&out, open_info_t& info );
+	static void addref( OBJECT *obj );
+	static void release( OBJECT *obj );
+	virtual NTSTATUS open( OBJECT *&out, open_info_t& info );
 };
 
 class OBJECT_FACTORY : public open_info_t
 {
 protected:
-	virtual NTSTATUS alloc_object(object_t** obj) = 0;
-	virtual NTSTATUS on_open( object_dir_t* dir, object_t*& obj, open_info_t& info );
+	virtual NTSTATUS alloc_object(OBJECT** obj) = 0;
+	virtual NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info );
 public:
 	NTSTATUS create(
 		PHANDLE Handle,
 		ACCESS_MASK AccessMask,
 		POBJECT_ATTRIBUTES ObjectAttributes);
-	NTSTATUS create_kernel( object_t*& obj, UNICODE_STRING& us );
+	NTSTATUS create_kernel( OBJECT*& obj, UNICODE_STRING& us );
 	virtual ~OBJECT_FACTORY();
 };
 
@@ -105,7 +105,7 @@ public:
 	virtual ~watch_t();
 };
 
-class sync_object_t : virtual public object_t
+class sync_object_t : virtual public OBJECT
 {
 private:
 	watch_list_t watchers;
@@ -122,7 +122,7 @@ public:
 class object_info_t
 {
 public:
-	object_t *object;
+	OBJECT *object;
 	ACCESS_MASK access;
 };
 
@@ -138,29 +138,29 @@ protected:
 public:
 	~handle_table_t();
 	void free_all_handles();
-	HANDLE alloc_handle( object_t *obj, ACCESS_MASK access );
+	HANDLE alloc_handle( OBJECT *obj, ACCESS_MASK access );
 	NTSTATUS free_handle( HANDLE handle );
-	NTSTATUS object_from_handle( object_t*& obj, HANDLE handle, ACCESS_MASK access );
+	NTSTATUS object_from_handle( OBJECT*& obj, HANDLE handle, ACCESS_MASK access );
 };
 
-static inline void addref( object_t *obj )
+static inline void addref( OBJECT *obj )
 {
-	object_t::addref( obj );
+	OBJECT::addref( obj );
 }
 
-static inline void release( object_t *obj )
+static inline void release( OBJECT *obj )
 {
-	object_t::release( obj );
+	OBJECT::release( obj );
 }
 
 void init_root();
 void free_root();
 
-NTSTATUS name_object( object_t *obj, const OBJECT_ATTRIBUTES *oa );
-NTSTATUS get_named_object( object_t **out, const OBJECT_ATTRIBUTES *oa );
-NTSTATUS find_object_by_name( object_t **out, const OBJECT_ATTRIBUTES *oa );
+NTSTATUS name_object( OBJECT *obj, const OBJECT_ATTRIBUTES *oa );
+NTSTATUS get_named_object( OBJECT **out, const OBJECT_ATTRIBUTES *oa );
+NTSTATUS find_object_by_name( OBJECT **out, const OBJECT_ATTRIBUTES *oa );
 
-NTSTATUS open_root( object_t*& obj, open_info_t& info );
+NTSTATUS open_root( OBJECT*& obj, open_info_t& info );
 
 template<typename T> NTSTATUS object_from_handle(T*& out, HANDLE handle, ACCESS_MASK access);
 

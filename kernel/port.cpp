@@ -86,7 +86,7 @@ public:
 	}
 };
 
-struct port_queue_t : public object_t
+struct port_queue_t : public OBJECT
 {
 	ULONG refs;
 	ULONG max_connect;
@@ -99,7 +99,7 @@ public:
 	message_t *find_connection_request();
 };
 
-struct port_t : public object_t
+struct port_t : public OBJECT
 {
 	port_queue_t *queue;
 	BOOLEAN server;
@@ -207,7 +207,7 @@ void message_t::dump()
 	dump_mem(&req.Data, req.DataSize);
 }
 
-port_t *port_from_obj( object_t *obj )
+port_t *port_from_obj( OBJECT *obj )
 {
 	return dynamic_cast<port_t*>( obj );
 }
@@ -219,7 +219,7 @@ NTSTATUS port_from_handle( HANDLE handle, port_t *& port )
 
 void send_terminate_message(
 	thread_t *thread,
-	object_t *terminate_port,
+	OBJECT *terminate_port,
 	LARGE_INTEGER& create_time )
 {
 	port_t *port = dynamic_cast<port_t*>( terminate_port );
@@ -244,7 +244,7 @@ void send_terminate_message(
 	release(terminate_port);
 }
 
-NTSTATUS set_exception_port( process_t *process, object_t *obj )
+NTSTATUS set_exception_port( process_t *process, OBJECT *obj )
 {
 	port_t *port = port_from_obj( obj );
 	if (!port)
@@ -455,7 +455,7 @@ port_queue_t::port_queue_t( ULONG _max_connect, ULONG _max_data ) :
 }
 
 NTSTATUS create_named_port(
-	object_t **obj,
+	OBJECT **obj,
 	OBJECT_ATTRIBUTES *oa,
 	ULONG max_connect,
 	ULONG max_data )
@@ -573,7 +573,7 @@ NTSTATUS connect_port(
 {
 	OBJECT_ATTRIBUTES oa;
 	NTSTATUS r;
-	object_t *obj = NULL;
+	OBJECT *obj = NULL;
 	port_t *port;
 
 	trace("%pus\n", name);
@@ -826,7 +826,7 @@ NTSTATUS NTAPI NtCreatePort(
 {
 	object_attributes_t oa;
 	NTSTATUS r;
-	object_t *p = NULL;
+	OBJECT *p = NULL;
 
 	trace("%p %p %lu %lu %p\n", Port, ObjectAttributes, MaxConnectInfoLength, MaxDataLength, Reserved);
 

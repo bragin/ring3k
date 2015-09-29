@@ -134,7 +134,7 @@ NTSTATUS process_t::create_parameters(
  */
 NTSTATUS map_locale_data( address_space *vm, const char *name, void **addr )
 {
-	object_t *section = 0;
+	OBJECT *section = 0;
 	file_t *file = 0;
 	NTSTATUS r;
 	BYTE *data = 0;
@@ -308,7 +308,7 @@ ULONG allocate_id()
 
 NTSTATUS process_alloc_user_handle(
 	process_t *p,
-	object_t *obj,
+	OBJECT *obj,
 	ACCESS_MASK access,
 	HANDLE *out,
 	HANDLE *copy )
@@ -432,7 +432,7 @@ void peb_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 
 peb_tracer peb_trace;
 
-NTSTATUS create_process( process_t **pprocess, object_t *section )
+NTSTATUS create_process( process_t **pprocess, OBJECT *section )
 {
 	process_t *p;
 	NTSTATUS r;
@@ -544,9 +544,9 @@ NTSTATUS NTAPI NtCreateProcess(
 	return r;
 }
 
-NTSTATUS open_process( object_t **process, OBJECT_ATTRIBUTES *oa )
+NTSTATUS open_process( OBJECT **process, OBJECT_ATTRIBUTES *oa )
 {
-	object_t *obj = NULL;
+	OBJECT *obj = NULL;
 	process_t *p;
 	NTSTATUS r;
 
@@ -574,7 +574,7 @@ NTSTATUS NTAPI NtOpenProcess(
 {
 	OBJECT_ATTRIBUTES oa;
 	unicode_string_t us;
-	object_t *process = NULL;
+	OBJECT *process = NULL;
 	CLIENT_ID id;
 	NTSTATUS r;
 
@@ -722,7 +722,7 @@ NTSTATUS NTAPI NtSetInformationProcess(
 	{
 		case ProcessExceptionPort:
 		{
-			object_t *port = 0;
+			OBJECT *port = 0;
 			r = object_from_handle( port, info.port_handle, 0 );
 			if (r < STATUS_SUCCESS)
 				return r;

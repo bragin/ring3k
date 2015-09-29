@@ -133,7 +133,7 @@ class thread_impl_t :
 	CONTEXT ctx;
 	BOOLEAN context_changed;
 
-	object_t *terminate_port;
+	OBJECT *terminate_port;
 	token_t *token;
 
 	// win32 callback stack
@@ -180,7 +180,7 @@ public:
 	token_t* get_token();
 	callback_frame_t* set_callback( callback_frame_t *cb );
 	PVOID& win32_start_address();
-	void register_terminate_port( object_t *port );
+	void register_terminate_port( OBJECT *port );
 	bool win32k_init_complete();
 
 	virtual int run();
@@ -804,7 +804,7 @@ NTSTATUS thread_impl_t::zero_tls_cells( ULONG index )
 	return STATUS_SUCCESS;
 }
 
-void thread_impl_t::register_terminate_port( object_t *port )
+void thread_impl_t::register_terminate_port( OBJECT *port )
 {
 	if (terminate_port)
 		release(terminate_port);
@@ -1209,7 +1209,7 @@ NTSTATUS thread_impl_t::wait_on_handles(
 	for (ULONG i=0; i<count; i++)
 	{
 		trace("handle[%ld] = %08lx\n", i, (ULONG) handles[i]);
-		object_t *any = 0;
+		OBJECT *any = 0;
 		r = object_from_handle( any, handles[i], SYNCHRONIZE );
 		if (r < STATUS_SUCCESS)
 		{
@@ -1288,7 +1288,7 @@ NTSTATUS NTAPI NtWaitForSingleObject(
 
 	trace("%p %d %p\n", Handle, Alertable, Timeout);
 
-	object_t *any = 0;
+	OBJECT *any = 0;
 	r = object_from_handle( any, Handle, SYNCHRONIZE );
 	if (r < STATUS_SUCCESS)
 		return r;

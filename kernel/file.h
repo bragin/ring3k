@@ -41,7 +41,7 @@ public:
 
 void check_completions( void );
 
-class io_object_t : virtual public object_t
+class io_object_t : virtual public OBJECT
 {
 	COMPLETION_PORT *completion_port;
 	ULONG completion_key;
@@ -51,7 +51,7 @@ public:
 	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written ) = 0;
 	void set_completion_port( COMPLETION_PORT *port, ULONG key );
 	virtual NTSTATUS set_position( LARGE_INTEGER& ofs );
-	virtual NTSTATUS fs_control( event_t* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+	virtual NTSTATUS fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 								 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
 	virtual NTSTATUS set_pipe_info( FILE_PIPE_INFORMATION& pipe_info );
 };

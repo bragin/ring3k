@@ -54,10 +54,10 @@ class mailslot_factory : public OBJECT_FACTORY
 {
 public:
 	mailslot_factory() {}
-	virtual NTSTATUS alloc_object(object_t** obj);
+	virtual NTSTATUS alloc_object(OBJECT** obj);
 };
 
-NTSTATUS mailslot_factory::alloc_object(object_t** obj)
+NTSTATUS mailslot_factory::alloc_object(OBJECT** obj)
 {
 	*obj = new mailslot_t;
 	if (!*obj)

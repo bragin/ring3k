@@ -46,10 +46,10 @@ symlink_t::~symlink_t()
 class symlink_opener : public open_info_t
 {
 public:
-	NTSTATUS on_open( object_dir_t* dir, object_t*& obj, open_info_t& info );
+	NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info );
 };
 
-NTSTATUS symlink_opener::on_open( object_dir_t* dir, object_t*& obj, open_info_t& info )
+NTSTATUS symlink_opener::on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info )
 {
 	if (!obj)
 		return STATUS_OBJECT_PATH_NOT_FOUND;
@@ -57,7 +57,7 @@ NTSTATUS symlink_opener::on_open( object_dir_t* dir, object_t*& obj, open_info_t
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS symlink_t::open( object_t *&out, open_info_t& info )
+NTSTATUS symlink_t::open( OBJECT *&out, open_info_t& info )
 {
 	if (info.path.Length != 0)
 	{
@@ -68,7 +68,7 @@ NTSTATUS symlink_t::open( object_t *&out, open_info_t& info )
 		target_info.path.set( target );
 		//target_info.root = parent;
 
-		object_t *target_object;
+		OBJECT *target_object;
 		NTSTATUS r;
 		r = open_root( target_object, target_info );
 		if (r < STATUS_SUCCESS)
@@ -94,7 +94,7 @@ private:
 	const UNICODE_STRING& target;
 public:
 	symlink_factory_t(const UNICODE_STRING& _target);
-	virtual NTSTATUS alloc_object(object_t** obj);
+	virtual NTSTATUS alloc_object(OBJECT** obj);
 };
 
 symlink_factory_t::symlink_factory_t(const UNICODE_STRING& _target) :
@@ -102,7 +102,7 @@ symlink_factory_t::symlink_factory_t(const UNICODE_STRING& _target) :
 {
 }
 
-NTSTATUS symlink_factory_t::alloc_object(object_t** obj)
+NTSTATUS symlink_factory_t::alloc_object(OBJECT** obj)
 {
 	trace("allocating object\n");
 	if (target.Length == 0)
@@ -136,7 +136,7 @@ NTSTATUS NTAPI NtCreateSymbolicLinkObject(
 
 NTSTATUS create_symlink( UNICODE_STRING& name, UNICODE_STRING& target )
 {
-	object_t *obj = 0;
+	OBJECT *obj = 0;
 	symlink_factory_t factory( target );
 	return factory.create_kernel( obj, name );
 }

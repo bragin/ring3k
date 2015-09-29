@@ -257,7 +257,7 @@ nttimer_t::~nttimer_t()
 		release( thread );
 }
 
-nttimer_t *nttimer_from_obj( object_t *obj )
+nttimer_t *nttimer_from_obj( OBJECT *obj )
 {
 	return dynamic_cast<nttimer_t*>( obj );
 }
@@ -344,10 +344,10 @@ private:
 	TIMER_TYPE Type;
 public:
 	timer_factory(TIMER_TYPE t) : Type(t) {}
-	virtual NTSTATUS alloc_object(object_t** obj);
+	virtual NTSTATUS alloc_object(OBJECT** obj);
 };
 
-NTSTATUS timer_factory::alloc_object(object_t** obj)
+NTSTATUS timer_factory::alloc_object(OBJECT** obj)
 {
 	switch (Type)
 	{
