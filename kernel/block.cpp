@@ -75,29 +75,29 @@ static inline BOOLEAN mem_protection_is_valid(ULONG protect)
 	return 1;
 }
 
-class corepages : public mblock
+class COREPAGES : public MBLOCK
 {
 public:
-	corepages( BYTE* address, size_t sz, backing_store_t* _backing );
-	//corepages( BYTE* address, size_t sz );
+	COREPAGES( BYTE* address, size_t sz, backing_store_t* _backing );
+	//COREPAGES( BYTE* address, size_t sz );
 	virtual int local_map( int prot );
 	virtual int remote_map( address_space *vm, ULONG prot );
-	virtual mblock *do_split( BYTE *address, size_t size );
-	virtual ~corepages();
+	virtual MBLOCK *do_split( BYTE *address, size_t size );
+	virtual ~COREPAGES();
 private:
 	backing_store_t* backing;
 	int core_ofs;
 };
 
-corepages::corepages( BYTE* address, size_t sz, backing_store_t* _backing ) :
-	mblock( address, sz ),
+COREPAGES::COREPAGES( BYTE* address, size_t sz, backing_store_t* _backing ) :
+	MBLOCK( address, sz ),
 	backing( _backing ),
 	core_ofs(0)
 {
 	backing->addref();
 }
 
-int corepages::local_map( int prot )
+int COREPAGES::local_map( int prot )
 {
 	int fd = backing->get_fd();
 	kernel_address = (BYTE*) mmap( NULL, RegionSize, prot, MAP_SHARED, fd, core_ofs );
@@ -106,27 +106,27 @@ int corepages::local_map( int prot )
 	return 0;
 }
 
-int corepages::remote_map( address_space *vm, ULONG prot )
+int COREPAGES::remote_map( address_space *vm, ULONG prot )
 {
 	int fd = backing->get_fd();
 	int mmap_flags = mmap_flag_from_page_prot( prot );
 	return vm->mmap( BaseAddress, RegionSize, mmap_flags, MAP_SHARED | MAP_FIXED, fd, core_ofs );
 }
 
-mblock *corepages::do_split( BYTE *address, size_t size )
+MBLOCK *COREPAGES::do_split( BYTE *address, size_t size )
 {
 	backing->addref();
-	corepages *rest = new corepages( address, size, backing );
+	COREPAGES *rest = new COREPAGES( address, size, backing );
 	rest->core_ofs = core_ofs + RegionSize - size;
 	return rest;
 }
 
-corepages::~corepages()
+COREPAGES::~COREPAGES()
 {
 	backing->release();
 }
 
-class guardpages : public mblock
+class guardpages : public MBLOCK
 {
 protected:
 	guardpages();
@@ -134,12 +134,12 @@ public:
 	guardpages( BYTE* address, size_t sz );
 	virtual int local_map( int prot );
 	virtual int remote_map( address_space *vm, ULONG prot );
-	virtual mblock *do_split( BYTE *address, size_t size );
+	virtual MBLOCK *do_split( BYTE *address, size_t size );
 	virtual ~guardpages();
 };
 
 guardpages::guardpages( BYTE* address, size_t sz ) :
-	mblock( address, sz )
+	MBLOCK( address, sz )
 {
 }
 
@@ -157,12 +157,12 @@ int guardpages::remote_map( address_space *vm, ULONG prot )
 	return 0;
 }
 
-mblock* guardpages::do_split( BYTE *address, size_t size )
+MBLOCK* guardpages::do_split( BYTE *address, size_t size )
 {
 	return new guardpages( address, size );
 }
 
-mblock* alloc_guard_pages(BYTE* address, ULONG size)
+MBLOCK* alloc_guard_pages(BYTE* address, ULONG size)
 {
 	return new guardpages(address, size);
 }
@@ -208,23 +208,23 @@ public:
 	}
 };
 
-mblock* alloc_core_pages(BYTE* address, ULONG size)
+MBLOCK* alloc_core_pages(BYTE* address, ULONG size)
 {
 	int fd = create_mapping_fd( size );
 	if (fd < 0)
 		return NULL;
 	backing_store_t* backing = new anonymous_pages_t( fd );
-	mblock *ret = new corepages( address, size, backing );
+	MBLOCK *ret = new COREPAGES( address, size, backing );
 	backing->release();
 	return ret;
 }
 
-mblock* alloc_fd_pages(BYTE* address, ULONG size, backing_store_t *backing )
+MBLOCK* alloc_fd_pages(BYTE* address, ULONG size, backing_store_t *backing )
 {
-	return new corepages( address, size, backing );
+	return new COREPAGES( address, size, backing );
 }
 
-mblock::mblock( BYTE *address, size_t size ) :
+MBLOCK::MBLOCK( BYTE *address, size_t size ) :
 	BaseAddress( address ),
 	RegionSize( size ),
 	State( MEM_FREE ),
@@ -234,21 +234,21 @@ mblock::mblock( BYTE *address, size_t size ) :
 {
 }
 
-mblock::~mblock()
+MBLOCK::~MBLOCK()
 {
 	if (section)
 		release( section );
 	assert( is_free() );
 }
 
-void mblock::dump()
+void MBLOCK::dump()
 {
 	trace("%p %08lx %08lx %08lx %08lx\n", BaseAddress, RegionSize, Protect, State, Type );
 }
 
-mblock *mblock::split( size_t target_length )
+MBLOCK *MBLOCK::split( size_t target_length )
 {
-	mblock *ret;
+	MBLOCK *ret;
 
 	trace("splitting block\n");
 
@@ -284,7 +284,7 @@ mblock *mblock::split( size_t target_length )
 	return ret;
 }
 
-int mblock::local_unmap()
+int MBLOCK::local_unmap()
 {
 	if (kernel_address)
 		::munmap( kernel_address, RegionSize );
@@ -292,12 +292,12 @@ int mblock::local_unmap()
 	return 0;
 }
 
-int mblock::remote_unmap( address_space *vm )
+int MBLOCK::remote_unmap( address_space *vm )
 {
 	return vm->munmap( BaseAddress, RegionSize );
 }
 
-ULONG mblock::mmap_flag_from_page_prot( ULONG prot )
+ULONG MBLOCK::mmap_flag_from_page_prot( ULONG prot )
 {
 	// calculate the right protections first
 	switch (prot)
@@ -325,12 +325,12 @@ ULONG mblock::mmap_flag_from_page_prot( ULONG prot )
 	return STATUS_INVALID_PAGE_PROTECTION;
 }
 
-void mblock::set_prot( ULONG prot )
+void MBLOCK::set_prot( ULONG prot )
 {
 	Protect = prot;
 }
 
-void mblock::commit( address_space *vm )
+void MBLOCK::commit( address_space *vm )
 {
 	if (State != MEM_COMMIT)
 	{
@@ -346,14 +346,14 @@ void mblock::commit( address_space *vm )
 	remote_remap( vm, tracer != 0 );
 }
 
-void mblock::remote_remap( address_space *vm, bool except )
+void MBLOCK::remote_remap( address_space *vm, bool except )
 {
 	int r = remote_map( vm, except ? PAGE_NOACCESS : Protect );
 	if (0 < r )
 		die("remote_map failed\n");
 }
 
-bool mblock::set_tracer( address_space *vm, block_tracer *bt )
+bool MBLOCK::set_tracer( address_space *vm, block_tracer *bt )
 {
 	if (!bt->enabled())
 		return false;
@@ -363,7 +363,7 @@ bool mblock::set_tracer( address_space *vm, block_tracer *bt )
 	return true;
 }
 
-void mblock::reserve( address_space *vm )
+void MBLOCK::reserve( address_space *vm )
 {
 	assert( State != MEM_COMMIT );
 	if (State == MEM_RESERVE)
@@ -374,7 +374,7 @@ void mblock::reserve( address_space *vm )
 	// FIXME: maybe allocate memory here
 }
 
-void mblock::uncommit( address_space *vm )
+void MBLOCK::uncommit( address_space *vm )
 {
 	if (State != MEM_COMMIT)
 		return;
@@ -384,7 +384,7 @@ void mblock::uncommit( address_space *vm )
 	kernel_address = NULL;
 }
 
-void mblock::unreserve( address_space *vm )
+void MBLOCK::unreserve( address_space *vm )
 {
 	assert( State != MEM_COMMIT );
 	if (State != MEM_RESERVE)
@@ -398,7 +398,7 @@ void mblock::unreserve( address_space *vm )
 	// FIXME: free core here?
 }
 
-NTSTATUS mblock::query( BYTE *start, MEMORY_BASIC_INFORMATION *info )
+NTSTATUS MBLOCK::query( BYTE *start, MEMORY_BASIC_INFORMATION *info )
 {
 	info->BaseAddress = (void*)((UINT)start & 0xfffff000);
 	info->AllocationBase = BaseAddress;
@@ -414,7 +414,7 @@ NTSTATUS mblock::query( BYTE *start, MEMORY_BASIC_INFORMATION *info )
 	return STATUS_SUCCESS;
 }
 
-bool mblock::traced_access( BYTE *address, ULONG Eip )
+bool MBLOCK::traced_access( BYTE *address, ULONG Eip )
 {
 	if (!tracer)
 		return false;
@@ -422,7 +422,7 @@ bool mblock::traced_access( BYTE *address, ULONG Eip )
 	return true;
 }
 
-bool mblock::set_traced( address_space *vm, bool traced )
+bool MBLOCK::set_traced( address_space *vm, bool traced )
 {
 	if (!tracer)
 		return false;
@@ -430,7 +430,7 @@ bool mblock::set_traced( address_space *vm, bool traced )
 	return true;
 }
 
-void mblock::set_section( object_t *s )
+void MBLOCK::set_section( object_t *s )
 {
 	if (section)
 		release( section );
@@ -438,7 +438,7 @@ void mblock::set_section( object_t *s )
 	addref( section );
 }
 
-void block_tracer::on_access( mblock *mb, BYTE *address, ULONG Eip )
+void block_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG Eip )
 {
 	fprintf(stderr, "%04lx: accessed %p from %08lx\n",
 			current->trace_id(), address, Eip );

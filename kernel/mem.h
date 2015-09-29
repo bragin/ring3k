@@ -25,7 +25,7 @@
 #include "list.h"
 #include "object.h"
 
-class mblock;
+class MBLOCK;
 
 // pure virtual base class for things that can execution code (eg. threads)
 class execution_context_t
@@ -48,7 +48,7 @@ public:
 class block_tracer
 {
 public:
-	virtual void on_access( mblock *mb, BYTE *address, ULONG eip );
+	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool enabled() const;
 	virtual ~block_tracer();
 };
@@ -69,7 +69,7 @@ public:
 	virtual void dump() = 0;
 	virtual int mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset ) = 0;
 	virtual int munmap( BYTE *address, size_t length ) = 0;
-	virtual mblock* find_block( BYTE *addr ) = 0;
+	virtual MBLOCK* find_block( BYTE *addr ) = 0;
 	virtual const char *get_symbol( BYTE *address ) = 0;
 	virtual void run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, execution_context_t *exec ) = 0;
 	virtual void init_context( CONTEXT& ctx ) = 0;
@@ -83,14 +83,14 @@ unsigned int allocate_core_memory(unsigned int size);
 int free_core_memory( unsigned int offset, unsigned int size );
 struct address_space *create_address_space( BYTE *high );
 
-typedef list_anchor<mblock,0> mblock_list_t;
-typedef list_iter<mblock,0> mblock_iter_t;
-typedef list_element<mblock> mblock_element_t;
+typedef list_anchor<MBLOCK,0> MBLOCK_list_t;
+typedef list_iter<MBLOCK,0> MBLOCK_iter_t;
+typedef list_element<MBLOCK> MBLOCK_element_t;
 
-class mblock
+class MBLOCK
 {
 public:
-	mblock_element_t entry[1];
+	MBLOCK_element_t entry[1];
 
 protected:
 	// windows-ish stuff
@@ -108,16 +108,16 @@ protected:
 	object_t *section;
 
 public:
-	mblock( BYTE *address, size_t size );
-	virtual ~mblock();
+	MBLOCK( BYTE *address, size_t size );
+	virtual ~MBLOCK();
 	virtual int local_map( int prot ) = 0;
 	virtual int remote_map( address_space *vm, ULONG prot ) = 0;
 
 protected:
-	virtual mblock *do_split( BYTE *address, size_t size ) = 0;
+	virtual MBLOCK *do_split( BYTE *address, size_t size ) = 0;
 
 public:
-	mblock *split( size_t length );
+	MBLOCK *split( size_t length );
 	int local_unmap();
 	int remote_unmap( address_space *vm );
 	void commit( address_space *vm );
@@ -171,9 +171,9 @@ public:
 	void set_prot( ULONG prot );
 };
 
-mblock* alloc_guard_pages(BYTE* address, ULONG size);
-mblock* alloc_core_pages(BYTE* address, ULONG size);
-mblock* alloc_fd_pages(BYTE* address, ULONG size, backing_store_t* backing);
+MBLOCK* alloc_guard_pages(BYTE* address, ULONG size);
+MBLOCK* alloc_core_pages(BYTE* address, ULONG size);
+MBLOCK* alloc_fd_pages(BYTE* address, ULONG size, backing_store_t* backing);
 
 int create_mapping_fd( int sz );
 
@@ -182,29 +182,29 @@ class address_space_impl : public address_space
 private:
 	BYTE *const lowest_address;
 	BYTE *highest_address;
-	mblock_list_t blocks;
+	MBLOCK_list_t blocks;
 	int num_pages;
-	mblock **xlate;
+	MBLOCK **xlate;
 
 protected:
-	mblock *&xlate_entry( BYTE *address )
+	MBLOCK *&xlate_entry( BYTE *address )
 	{
 		return xlate[ ((unsigned int)address)>>12 ];
 	}
 	address_space_impl();
 	bool init( BYTE *high );
 	void destroy();
-	mblock *get_mblock( BYTE *address );
+	MBLOCK *get_MBLOCK( BYTE *address );
 	NTSTATUS find_free_area( int zero_bits, size_t length, int top_down, BYTE *&address );
 	NTSTATUS check_params( BYTE *start, int zero_bits, size_t length, int state, int prot );
-	NTSTATUS set_block_state( mblock *mb, int state, int prot );
-	mblock *split_area( mblock *mb, BYTE *address, size_t length );
-	void free_shared( mblock *mb );
+	NTSTATUS set_block_state( MBLOCK *mb, int state, int prot );
+	MBLOCK *split_area( MBLOCK *mb, BYTE *address, size_t length );
+	void free_shared( MBLOCK *mb );
 	NTSTATUS get_mem_region( BYTE *start, size_t length, int state );
-	void insert_block( mblock *x );
-	void remove_block( mblock *x );
+	void insert_block( MBLOCK *x );
+	void remove_block( MBLOCK *x );
 	ULONG check_area( BYTE *address, size_t length );
-	mblock* alloc_guard_block(BYTE *address, ULONG size);
+	MBLOCK* alloc_guard_block(BYTE *address, ULONG size);
 
 public:
 	// a constructor that can fail...
@@ -226,8 +226,8 @@ public:
 	virtual void dump();
 	virtual int mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset ) = 0;
 	virtual int munmap( BYTE *address, size_t length ) = 0;
-	virtual void update_page_translation( mblock *mb );
-	virtual mblock* find_block( BYTE *addr );
+	virtual void update_page_translation( MBLOCK *mb );
+	virtual MBLOCK* find_block( BYTE *addr );
 	virtual const char *get_symbol( BYTE *address );
 	virtual void run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, execution_context_t *exec ) = 0;
 	virtual void init_context( CONTEXT& ctx ) = 0;

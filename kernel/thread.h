@@ -63,7 +63,7 @@ struct kernel_debug_string_output
 };
 
 struct section_t;
-class mblock;
+class MBLOCK;
 class thread_message_queue_tt;
 
 class runlist_entry_t

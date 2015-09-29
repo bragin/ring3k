@@ -170,7 +170,7 @@ KUSER_SHARED_DATA *shared_memory_address;
 class kshm_tracer : public block_tracer
 {
 public:
-	virtual void on_access( mblock *mb, BYTE *address, ULONG eip );
+	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool enabled() const;
 };
 
@@ -180,7 +180,7 @@ bool kshm_tracer::enabled() const
 	return false;
 }
 
-void kshm_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
+void kshm_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->get_base_address();
 	const char *field = "";
@@ -402,7 +402,7 @@ void process_t::terminate( NTSTATUS status )
 class peb_tracer : public block_tracer
 {
 public:
-	virtual void on_access( mblock *mb, BYTE *address, ULONG eip );
+	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool enabled() const;
 };
 
@@ -412,7 +412,7 @@ bool peb_tracer::enabled() const
 	return false;
 }
 
-void peb_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
+void peb_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->get_base_address();
 	const char *field = "";

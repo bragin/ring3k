@@ -478,7 +478,7 @@ int main(int argc, char **argv)
 	}
 
 	// quick sanity test
-	allocation_bitmap_t::test();
+	ALLOCATION_BITMAP::test();
 
 	// initialize boottime
 	SYSTEM_TIME_OF_DAY_INFORMATION dummy;

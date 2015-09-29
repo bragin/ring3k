@@ -24,7 +24,7 @@
 #include <stddef.h>
 
 // TODO: optimize
-class allocation_bitmap_t
+class ALLOCATION_BITMAP
 {
 	static const size_t allocation_granularity = 8;
 	size_t size;
@@ -51,7 +51,7 @@ protected:
 	void clear_bits( size_t start, size_t count );
 	size_t bits_required( size_t len );
 public:
-	allocation_bitmap_t();
+	ALLOCATION_BITMAP();
 	void set_area( void *_ptr, size_t _size );
 	unsigned char *alloc( size_t len );
 	void free( unsigned char *start );

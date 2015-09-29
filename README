@@ -89,6 +89,19 @@ Development of new code and bug fixes should be done with test cases.
 The test case should show how Windows functions, and should test the code
 that has been written as much as possible.
 
+Coding style for kernel C++
+
+```
+class CLASS_NAME
+{
+	ULONG m_Member;
+	VOID InitializeSomeData();
+}
+```
+
+In case the class name conflicts with the Win32/NT typename, then the name should be prefixed with C, like CBITMAP
+
+
 Using QEMU to run tests
 -----------------------
 

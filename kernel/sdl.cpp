@@ -53,7 +53,7 @@ public:
 	virtual BOOL set_pixel( INT x, INT y, COLORREF color );
 	virtual COLORREF get_pixel( INT x, INT y );
 	virtual BOOL bitblt( INT xDest, INT yDest, INT cx, INT cy,
-						 bitmap_t *src, INT xSrc, INT ySrc, ULONG rop );
+						 CBITMAP *src, INT xSrc, INT ySrc, ULONG rop );
 	virtual BOOL rectangle( INT x, INT y, INT width, INT height, brush_t* brush );
 	virtual BOOL line( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
 protected:
@@ -63,12 +63,12 @@ protected:
 class sdl_device_context_t : public device_context_t
 {
 public:
-	bitmap_t *sdl_bitmap;
+	CBITMAP *sdl_bitmap;
 	window_tt *win;
 public:
-	sdl_device_context_t( bitmap_t *b );
-	virtual bitmap_t* get_bitmap();
-	virtual HANDLE select_bitmap( bitmap_t *bitmap );
+	sdl_device_context_t( CBITMAP *b );
+	virtual CBITMAP* get_bitmap();
+	virtual HANDLE select_bitmap( CBITMAP *bitmap );
 	virtual int getcaps( int index );
 };
 
@@ -89,7 +89,7 @@ class win32k_sdl_t : public win32k_manager_t
 protected:
 	SDL_Surface *screen;
 	sdl_sleeper_t sdl_sleeper;
-	bitmap_t* sdl_bitmap;
+	CBITMAP* sdl_bitmap;
 public:
 	virtual BOOL init();
 	virtual void fini();
@@ -111,7 +111,7 @@ BOOL sdl_16bpp_bitmap_t::set_pixel( INT x, INT y, COLORREF color )
 {
 	BOOL r;
 	lock();
-	r = bitmap_t::set_pixel( x, y, color );
+	r = CBITMAP::set_pixel( x, y, color );
 	SDL_UpdateRect(surface, x, y, 1, 1);
 	unlock();
 	return r;
@@ -121,7 +121,7 @@ COLORREF sdl_16bpp_bitmap_t::get_pixel( INT x, INT y )
 {
 	BOOL r;
 	lock();
-	r = bitmap_t::get_pixel(x, y);
+	r = CBITMAP::get_pixel(x, y);
 	unlock();
 	return r;
 }
@@ -130,19 +130,19 @@ BOOL sdl_16bpp_bitmap_t::rectangle(INT left, INT top, INT right, INT bottom, bru
 {
 	trace("sdl_16bpp_bitmap_t::rectangle\n");
 	lock();
-	bitmap_t::rectangle( left, top, right, bottom, brush );
+	CBITMAP::rectangle( left, top, right, bottom, brush );
 	unlock();
 	SDL_UpdateRect( surface, left, top, right - left, bottom - top );
 	return TRUE;
 }
 
-BOOL sdl_16bpp_bitmap_t::bitblt( INT xDest, INT yDest, INT cx, INT cy, bitmap_t *src, INT xSrc, INT ySrc, ULONG rop )
+BOOL sdl_16bpp_bitmap_t::bitblt( INT xDest, INT yDest, INT cx, INT cy, CBITMAP *src, INT xSrc, INT ySrc, ULONG rop )
 {
 	BOOL r;
 	lock();
 	assert(cx>=0);
 	assert(cy>=0);
-	r = bitmap_t::bitblt(xDest, yDest, cx, cy, src, xSrc, ySrc, rop);
+	r = CBITMAP::bitblt(xDest, yDest, cx, cy, src, xSrc, ySrc, rop);
 	SDL_UpdateRect(surface, xDest, yDest, xDest + cx, yDest + cy);
 	unlock();
 	return r;
@@ -152,7 +152,7 @@ BOOL sdl_16bpp_bitmap_t::line( INT x1, INT y1, INT x2, INT y2, pen_t *pen )
 {
 	BOOL r;
 	lock();
-	r = bitmap_t::line(x1, y1, x2, y2, pen);
+	r = CBITMAP::line(x1, y1, x2, y2, pen);
 	// FIXME: possible optimization when updating?
 	if (x1 > x2)
 		swap(x1, x2);
@@ -417,18 +417,18 @@ win32k_manager_t* init_sdl_win32k_manager()
 	return &win32k_manager_sdl_16bpp;
 }
 
-sdl_device_context_t::sdl_device_context_t( bitmap_t *b ) :
+sdl_device_context_t::sdl_device_context_t( CBITMAP *b ) :
 	sdl_bitmap( b ),
 	win( 0 )
 {
 }
 
-bitmap_t* sdl_device_context_t::get_bitmap()
+CBITMAP* sdl_device_context_t::get_bitmap()
 {
 	return sdl_bitmap;
 }
 
-HANDLE sdl_device_context_t::select_bitmap( bitmap_t *bitmap )
+HANDLE sdl_device_context_t::select_bitmap( CBITMAP *bitmap )
 {
 	trace("trying to change device's bitmap...\n");
 	return 0;

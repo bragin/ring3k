@@ -113,7 +113,7 @@ static section_t *user_shared_section = 0;
 static user_shared_mem_t *user_shared;
 
 // bitmap of free memory
-allocation_bitmap_t user_shared_bitmap;
+ALLOCATION_BITMAP user_shared_bitmap;
 
 MESSAGE_MAP_SHARED_MEMORY message_maps[NUMBER_OF_MESSAGE_MAPS];
 
@@ -275,7 +275,7 @@ void *init_user_shared_memory()
 class ntusershm_tracer : public block_tracer
 {
 public:
-	virtual void on_access( mblock *mb, BYTE *address, ULONG eip );
+	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool enabled() const;
 };
 
@@ -321,7 +321,7 @@ bool window_on_access( BYTE *address, ULONG eip )
 	return false;
 }
 
-void ntusershm_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
+void ntusershm_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->get_base_address();
 	if (ofs < user_shared_mem_reserve)
@@ -353,7 +353,7 @@ static ntusershm_tracer ntusershm_trace;
 class ntuserhandle_tracer : public block_tracer
 {
 public:
-	virtual void on_access( mblock *mb, BYTE *address, ULONG eip );
+	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool enabled() const;
 };
 
@@ -362,7 +362,7 @@ bool ntuserhandle_tracer::enabled() const
 	return trace_is_enabled( "usershm" );
 }
 
-void ntuserhandle_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
+void ntuserhandle_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->get_base_address();
 	const int sz = sizeof (user_handle_entry_t);

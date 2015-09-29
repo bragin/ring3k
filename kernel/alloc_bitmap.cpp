@@ -29,7 +29,7 @@
 #define VALGRIND_FREELIKE_BLOCK( start, rzB )
 #endif
 
-allocation_bitmap_t::allocation_bitmap_t() :
+ALLOCATION_BITMAP::ALLOCATION_BITMAP() :
 	size(0),
 	array_size(0),
 	max_bits(0),
@@ -38,7 +38,7 @@ allocation_bitmap_t::allocation_bitmap_t() :
 {
 }
 
-void allocation_bitmap_t::set_area( void *_ptr, size_t _size )
+void ALLOCATION_BITMAP::set_area( void *_ptr, size_t _size )
 {
 	ptr = reinterpret_cast<unsigned char*>( _ptr );
 	size = _size;
@@ -48,7 +48,7 @@ void allocation_bitmap_t::set_area( void *_ptr, size_t _size )
 	memset( bitmap, 0, array_size );
 }
 
-size_t allocation_bitmap_t::count_zero_bits( size_t start, size_t max )
+size_t ALLOCATION_BITMAP::count_zero_bits( size_t start, size_t max )
 {
 	if (max > (max_bits - start))
 		max = max_bits - start;
@@ -58,7 +58,7 @@ size_t allocation_bitmap_t::count_zero_bits( size_t start, size_t max )
 	return i;
 }
 
-size_t allocation_bitmap_t::count_one_bits( size_t start, size_t max )
+size_t ALLOCATION_BITMAP::count_one_bits( size_t start, size_t max )
 {
 	if (max > (max_bits - start))
 		max = max_bits - start;
@@ -68,26 +68,26 @@ size_t allocation_bitmap_t::count_one_bits( size_t start, size_t max )
 	return i;
 }
 
-void allocation_bitmap_t::set_bits( size_t start, size_t count )
+void ALLOCATION_BITMAP::set_bits( size_t start, size_t count )
 {
 	assert( start + count < max_bits );
 	for (size_t i = 0; i<count; i++ )
 		set_bit( start + i );
 }
 
-void allocation_bitmap_t::clear_bits( size_t start, size_t count )
+void ALLOCATION_BITMAP::clear_bits( size_t start, size_t count )
 {
 	assert( start + count < max_bits );
 	for (size_t i = 0; i<count; i++ )
 		clear_bit( start + i );
 }
 
-size_t allocation_bitmap_t::bits_required( size_t len )
+size_t ALLOCATION_BITMAP::bits_required( size_t len )
 {
 	return (len + allocation_granularity - 1) / allocation_granularity;
 }
 
-unsigned char* allocation_bitmap_t::alloc( size_t len )
+unsigned char* ALLOCATION_BITMAP::alloc( size_t len )
 {
 	assert( ptr != 0 );
 	size_t i = 0;
@@ -123,7 +123,7 @@ unsigned char* allocation_bitmap_t::alloc( size_t len )
 	return NULL;
 }
 
-void allocation_bitmap_t::free( unsigned char *start )
+void ALLOCATION_BITMAP::free( unsigned char *start )
 {
 	size_t ofs = (start - sizeof (size_t) - ptr);
 	assert( ofs %allocation_granularity == 0 );
@@ -132,7 +132,7 @@ void allocation_bitmap_t::free( unsigned char *start )
 	free( start, ((size_t*)start)[-1]);
 }
 
-void allocation_bitmap_t::free( unsigned char *start, size_t len )
+void ALLOCATION_BITMAP::free( unsigned char *start, size_t len )
 {
 	assert( ptr != 0 );
 
@@ -154,7 +154,7 @@ void allocation_bitmap_t::free( unsigned char *start, size_t len )
 	VALGRIND_FREELIKE_BLOCK( start, 0 );
 }
 
-void allocation_bitmap_t::get_info( size_t& total, size_t& used, size_t& free )
+void ALLOCATION_BITMAP::get_info( size_t& total, size_t& used, size_t& free )
 {
 	size_t n;
 	used = 0;
@@ -182,20 +182,20 @@ void allocation_bitmap_t::get_info( size_t& total, size_t& used, size_t& free )
 	total = max_bits * allocation_granularity;
 }
 
-void allocation_bitmap_t::test()
+void ALLOCATION_BITMAP::test()
 {
 	size_t test_size = 0x1000;
 	size_t used, free, total;
 	unsigned char *test_buffer;
 	static const int num_pointers = 0x10;
 	unsigned char *ptr[num_pointers];
-	allocation_bitmap_t *abm;
+	ALLOCATION_BITMAP *abm;
 	int i;
 	size_t test_alloc_sz = allocation_granularity * 0x10;
 
 	// create a new buffer to manage
 	test_buffer = new unsigned char[test_size];
-	abm = new allocation_bitmap_t;
+	abm = new ALLOCATION_BITMAP;
 
 	abm->set_area( test_buffer, test_size );
 

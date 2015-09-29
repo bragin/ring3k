@@ -69,26 +69,26 @@ COLORREF bitmap_impl_t<24>::get_pixel( int x, int y )
 	return val&0xffffff;
 }
 
-bitmap_t::~bitmap_t()
+CBITMAP::~CBITMAP()
 {
 	assert( magic == magic_val );
 	delete bits;
 }
 
-ULONG bitmap_t::get_rowsize()
+ULONG CBITMAP::get_rowsize()
 {
 	assert( magic == magic_val );
 	ULONG row_size = (width*bpp)/8;
 	return (row_size + 1)& ~1;
 }
 
-ULONG bitmap_t::bitmap_size()
+ULONG CBITMAP::bitmap_size()
 {
 	assert( magic == magic_val );
 	return height * get_rowsize();
 }
 
-void bitmap_t::dump()
+void CBITMAP::dump()
 {
 	assert( magic == magic_val );
 	for (int j=0; j<height; j++)
@@ -99,7 +99,7 @@ void bitmap_t::dump()
 	}
 }
 
-bitmap_t::bitmap_t( int _width, int _height, int _planes, int _bpp ) :
+CBITMAP::CBITMAP( int _width, int _height, int _planes, int _bpp ) :
 	magic( magic_val ),
 	bits( 0 ),
 	width( _width ),
@@ -109,15 +109,15 @@ bitmap_t::bitmap_t( int _width, int _height, int _planes, int _bpp ) :
 {
 }
 
-void bitmap_t::lock()
+void CBITMAP::lock()
 {
 }
 
-void bitmap_t::unlock()
+void CBITMAP::unlock()
 {
 }
 
-COLORREF bitmap_t::get_pixel( int x, int y )
+COLORREF CBITMAP::get_pixel( int x, int y )
 {
 	assert( magic == magic_val );
 	if (x < 0 || x >= width)
@@ -143,12 +143,12 @@ COLORREF bitmap_t::get_pixel( int x, int y )
 	return 0;
 }
 
-BOOL bitmap_t::set_pixel( int x, int y, COLORREF color )
+BOOL CBITMAP::set_pixel( int x, int y, COLORREF color )
 {
 	return set_pixel_l( x, y, color );
 }
 
-BOOL bitmap_t::set_pixel_l( int x, int y, COLORREF color )
+BOOL CBITMAP::set_pixel_l( int x, int y, COLORREF color )
 {
 	assert( magic == magic_val );
 	assert( width != 0 );
@@ -181,15 +181,15 @@ BOOL bitmap_t::set_pixel_l( int x, int y, COLORREF color )
 	return TRUE;
 }
 
-NTSTATUS bitmap_t::copy_pixels( void *pixels )
+NTSTATUS CBITMAP::copy_pixels( void *pixels )
 {
 	return copy_from_user( bits, pixels, bitmap_size() );
 }
 
-BOOL bitmap_t::bitblt(
+BOOL CBITMAP::bitblt(
 	INT xDest, INT yDest,
 	INT cx, INT cy,
-	bitmap_t *src,
+	CBITMAP *src,
 	INT xSrc, INT ySrc, ULONG rop )
 {
 	trace("%d,%d %dx%d <- %d,%d\n", xDest, yDest, cx, cy, xSrc, ySrc );
@@ -209,7 +209,7 @@ BOOL bitmap_t::bitblt(
 	return TRUE;
 }
 
-void bitmap_t::draw_hline(INT x, INT y, INT right, COLORREF color)
+void CBITMAP::draw_hline(INT x, INT y, INT right, COLORREF color)
 {
 	if (x > right)
 		swap(x, right);
@@ -217,7 +217,7 @@ void bitmap_t::draw_hline(INT x, INT y, INT right, COLORREF color)
 		set_pixel_l( x, y, color );
 }
 
-void bitmap_t::draw_vline(INT x, INT y, INT bottom, COLORREF color)
+void CBITMAP::draw_vline(INT x, INT y, INT bottom, COLORREF color)
 {
 	if (y > bottom)
 		swap(y, bottom);
@@ -225,7 +225,7 @@ void bitmap_t::draw_vline(INT x, INT y, INT bottom, COLORREF color)
 		set_pixel_l( x, y, color );
 }
 
-BOOL bitmap_t::pen_dot( INT x, INT y, pen_t *pen )
+BOOL CBITMAP::pen_dot( INT x, INT y, pen_t *pen )
 {
 	ULONG width = pen->get_width();
 	COLORREF color = pen->get_color();
@@ -242,7 +242,7 @@ BOOL bitmap_t::pen_dot( INT x, INT y, pen_t *pen )
 }
 
 // http://en.wikipedia.org/wiki/Bresenham's_line_algorithm
-BOOL bitmap_t::line_bresenham( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
+BOOL CBITMAP::line_bresenham( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
 {
 	INT dx = x1 - x0;
 	INT dy = y1 - y0;
@@ -291,14 +291,14 @@ BOOL bitmap_t::line_bresenham( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
 }
 
 /* see http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html */
-INT bitmap_t::line_error(INT x0, INT y0, INT x1, INT y1, INT x, INT y)
+INT CBITMAP::line_error(INT x0, INT y0, INT x1, INT y1, INT x, INT y)
 {
 	INT top = (x1 - x0)*(y0 - y) - (x0 - x)*(y1 - y0);
 	INT bottom = (x1 - x0)*(x1 - x0) + (y1 - y0)*(y1 - y0);
 	return (top*top)/bottom;
 }
 
-BOOL bitmap_t::line_wide( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
+BOOL CBITMAP::line_wide( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
 {
 	if (x0 > x1)
 	{
@@ -352,7 +352,7 @@ BOOL bitmap_t::line_wide( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
 	return TRUE;
 }
 
-BOOL bitmap_t::line( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
+BOOL CBITMAP::line( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
 {
 	COLORREF color = pen->get_color();
 
@@ -375,7 +375,7 @@ BOOL bitmap_t::line( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
 	return line_wide( x0, y0, x1, y1, pen );
 }
 
-BOOL bitmap_t::rectangle(INT left, INT top, INT right, INT bottom, brush_t* brush)
+BOOL CBITMAP::rectangle(INT left, INT top, INT right, INT bottom, brush_t* brush)
 {
 	COLORREF brush_val, pen_val;
 
@@ -408,7 +408,7 @@ BOOL bitmap_t::rectangle(INT left, INT top, INT right, INT bottom, brush_t* brus
 	return TRUE;
 }
 
-bitmap_t* bitmap_from_handle( HANDLE handle )
+CBITMAP* bitmap_from_handle( HANDLE handle )
 {
 	gdi_handle_table_entry *entry = get_handle_table_entry( handle );
 	if (!entry)
@@ -417,12 +417,12 @@ bitmap_t* bitmap_from_handle( HANDLE handle )
 		return FALSE;
 	assert( entry->kernel_info );
 	gdi_object_t* obj = reinterpret_cast<gdi_object_t*>( entry->kernel_info );
-	return static_cast<bitmap_t*>( obj );
+	return static_cast<CBITMAP*>( obj );
 }
 
-bitmap_t* alloc_bitmap( int width, int height, int depth )
+CBITMAP* alloc_bitmap( int width, int height, int depth )
 {
-	bitmap_t *bm = NULL;
+	CBITMAP *bm = NULL;
 	switch (depth)
 	{
 	case 1:
@@ -466,7 +466,7 @@ HGDIOBJ NTAPI NtGdiCreateBitmap(int Width, int Height, UINT Planes, UINT BitsPer
 	// FIXME: handle negative heights
 	assert(Height >=0);
 	assert(Width >=0);
-	bitmap_t *bm = NULL;
+	CBITMAP *bm = NULL;
 	bm = alloc_bitmap( Width, Height, BitsPerPixel );
 	if (!bm)
 		return NULL;

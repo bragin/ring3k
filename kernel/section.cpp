@@ -385,7 +385,7 @@ NTSTATUS pe_section_t::mapit( address_space *vm, BYTE *&base, ULONG ZeroBits, UL
 	IMAGE_SECTION_HEADER *sections;
 	int r, sz, i;
 	BYTE *p;
-	mblock *mb;
+	MBLOCK *mb;
 
 	dos = (IMAGE_DOS_HEADER*) addr;
 
@@ -402,7 +402,7 @@ NTSTATUS pe_section_t::mapit( address_space *vm, BYTE *&base, ULONG ZeroBits, UL
 		goto fail;
 	}
 
-	// use of mblock here is a bit of a hack
+	// use of MBLOCK here is a bit of a hack
 	// should convert this function to create a flat file to map
 	mb = vm->find_block( p );
 	mb->set_section( this );

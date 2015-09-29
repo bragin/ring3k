@@ -50,7 +50,7 @@ public:
 
 class brush_t;
 class pen_t;
-class bitmap_t;
+class CBITMAP;
 class device_context_t;
 
 class win32k_manager_t
@@ -88,7 +88,7 @@ protected:
 
 	static section_t *g_gdi_section;
 	static BYTE *g_gdi_shared_memory;
-	static allocation_bitmap_t* g_gdi_shared_bitmap;
+	static ALLOCATION_BITMAP* g_gdi_shared_bitmap;
 
 	static void init_gdi_shared_mem();
 	static BYTE *alloc_gdi_shared_memory( size_t len, BYTE** kernel_shm = NULL );
@@ -168,9 +168,9 @@ public:
 	}
 };
 
-class bitmap_t : public gdi_object_t
+class CBITMAP : public gdi_object_t
 {
-	friend bitmap_t* alloc_bitmap( int width, int height, int depth );
+	friend CBITMAP* alloc_bitmap( int width, int height, int depth );
 	static const int magic_val = 0xbb11aa22;
 	int magic;
 protected:
@@ -184,8 +184,8 @@ protected:
 	virtual void lock();
 	virtual void unlock();
 public:
-	bitmap_t( int _width, int _height, int _planes, int _bpp );
-	virtual ~bitmap_t();
+	CBITMAP( int _width, int _height, int _planes, int _bpp );
+	virtual ~CBITMAP();
 	ULONG bitmap_size();
 	int get_width()
 	{
@@ -205,7 +205,7 @@ public:
 	}
 	NTSTATUS copy_pixels( void* pixels );
 	virtual BOOL bitblt( INT xDest, INT yDest, INT cx, INT cy,
-						 bitmap_t *src, INT xSrc, INT ySrc, ULONG rop );
+						 CBITMAP *src, INT xSrc, INT ySrc, ULONG rop );
 	virtual BOOL rectangle(INT left, INT top, INT right, INT bottom, brush_t* brush);
 	virtual BOOL line( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
 protected:
@@ -219,7 +219,7 @@ protected:
 };
 
 template<const int DEPTH>
-class bitmap_impl_t : public bitmap_t
+class bitmap_impl_t : public CBITMAP
 {
 public:
 	bitmap_impl_t( int _width, int _height );
@@ -230,7 +230,7 @@ public:
 
 template<const int DEPTH>
 bitmap_impl_t<DEPTH>::bitmap_impl_t( int _width, int _height ) :
-	bitmap_t( _width, _height, 1, DEPTH )
+	CBITMAP( _width, _height, 1, DEPTH )
 {
 }
 
@@ -248,7 +248,7 @@ public:
 
 class device_context_t : public gdi_object_t
 {
-	bitmap_t* selected_bitmap;
+	CBITMAP* selected_bitmap;
 	RECT BoundsRect;
 	dc_state_tt *saved_dc;
 	INT saveLevel;
@@ -261,7 +261,7 @@ public:
 	GDI_DEVICE_CONTEXT_SHARED* get_dc_shared_mem() const;
 	virtual BOOL release();
 	virtual brush_t* get_selected_brush();
-	virtual bitmap_t* get_bitmap();
+	virtual CBITMAP* get_bitmap();
 	virtual pen_t* get_selected_pen();
 	POINT& get_current_pen_pos();
 	POINT& get_window_offset();
@@ -279,7 +279,7 @@ public:
 	virtual BOOL rectangle( INT x, INT y, INT width, INT height );
 	virtual BOOL exttextout( INT x, INT y, UINT options,
 							 LPRECT rect, UNICODE_STRING& text );
-	virtual HANDLE select_bitmap( bitmap_t *bitmap );
+	virtual HANDLE select_bitmap( CBITMAP *bitmap );
 	virtual BOOL bitblt( INT xDest, INT yDest, INT cx, INT cy,
 						 device_context_t* src, INT xSrc, INT ySrc, ULONG rop );
 	virtual COLORREF get_pixel( INT x, INT y );
@@ -306,7 +306,7 @@ HGDIOBJ alloc_gdi_handle( BOOL stock, ULONG type, void *user_info, gdi_object_t*
 HGDIOBJ alloc_gdi_object( BOOL stock, ULONG type );
 gdi_handle_table_entry *get_handle_table_entry(HGDIOBJ handle);
 BOOLEAN do_gdi_init();
-bitmap_t* bitmap_from_handle( HANDLE handle );
-bitmap_t* alloc_bitmap( int width, int height, int depth );
+CBITMAP* bitmap_from_handle( HANDLE handle );
+CBITMAP* alloc_bitmap( int width, int height, int depth );
 
 #endif // __WIN32K_MANAGER__

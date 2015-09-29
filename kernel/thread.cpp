@@ -1366,7 +1366,7 @@ NTSTATUS NTAPI NtDelayExecution( BOOLEAN Alertable, PLARGE_INTEGER Interval )
 class teb_tracer : public block_tracer
 {
 public:
-	virtual void on_access( mblock *mb, BYTE *address, ULONG eip );
+	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool enabled() const;
 };
 
@@ -1375,7 +1375,7 @@ bool teb_tracer::enabled() const
 	return trace_is_enabled( "tebshm" );
 }
 
-void teb_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
+void teb_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->get_base_address();
 	fprintf(stderr, "%04lx: accessed teb[%04lx] from %08lx\n",

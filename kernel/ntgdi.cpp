@@ -90,7 +90,7 @@ win32k_manager_t *win32k_manager;
 class ntgdishm_tracer : public block_tracer
 {
 public:
-	virtual void on_access( mblock *mb, BYTE *address, ULONG eip );
+	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool enabled() const;
 };
 
@@ -101,7 +101,7 @@ bool ntgdishm_tracer::enabled() const
 
 #define MAX_GDI_HANDLE 0x4000
 
-void ntgdishm_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
+void ntgdishm_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->get_base_address();
 	if (ofs < MAX_GDI_HANDLE*0x10)
@@ -453,7 +453,7 @@ HGDIOBJ alloc_gdi_object( BOOL stock, ULONG type )
 class gdishm_tracer : public block_tracer
 {
 public:
-	virtual void on_access( mblock *mb, BYTE *address, ULONG eip );
+	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool enabled() const;
 };
 
@@ -485,7 +485,7 @@ ULONG object_from_memory( BYTE *address )
 	return 0;
 }
 
-void gdishm_tracer::on_access( mblock *mb, BYTE *address, ULONG eip )
+void gdishm_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG n = object_from_memory( address );
 	if (n)
@@ -512,7 +512,7 @@ static gdishm_tracer gdishm_trace;
 
 section_t *gdi_object_t::g_gdi_section;
 BYTE *gdi_object_t::g_gdi_shared_memory;
-allocation_bitmap_t* gdi_object_t::g_gdi_shared_bitmap;
+ALLOCATION_BITMAP* gdi_object_t::g_gdi_shared_bitmap;
 
 HGDIOBJ win32k_manager_t::alloc_compatible_dc()
 {
@@ -545,7 +545,7 @@ void gdi_object_t::init_gdi_shared_mem()
 		g_gdi_shared_memory = (BYTE*) g_gdi_section->get_kernel_address();
 
 		assert( g_gdi_shared_bitmap == NULL );
-		g_gdi_shared_bitmap = new allocation_bitmap_t;
+		g_gdi_shared_bitmap = new ALLOCATION_BITMAP;
 		g_gdi_shared_bitmap->set_area( g_gdi_shared_memory, dc_shared_memory_size );
 	}
 
@@ -665,10 +665,10 @@ BOOL device_context_t::release()
 	return TRUE;
 }
 
-HANDLE device_context_t::select_bitmap( bitmap_t *bitmap )
+HANDLE device_context_t::select_bitmap( CBITMAP *bitmap )
 {
 	assert( bitmap->is_valid() );
-	bitmap_t* old = selected_bitmap;
+	CBITMAP* old = selected_bitmap;
 	selected_bitmap = bitmap;
 	bitmap->select();
 	if (!old)
@@ -678,7 +678,7 @@ HANDLE device_context_t::select_bitmap( bitmap_t *bitmap )
 	return old->get_handle();
 }
 
-bitmap_t* device_context_t::get_bitmap()
+CBITMAP* device_context_t::get_bitmap()
 {
 	if (selected_bitmap)
 		assert( selected_bitmap->is_valid() );
@@ -691,11 +691,11 @@ BOOL device_context_t::bitblt(
 	device_context_t *src,
 	INT xSrc, INT ySrc, ULONG rop )
 {
-	bitmap_t* dest_bm = get_bitmap();
+	CBITMAP* dest_bm = get_bitmap();
 	if (!dest_bm)
 		return FALSE;
 
-	bitmap_t* src_bm = src->get_bitmap();
+	CBITMAP* src_bm = src->get_bitmap();
 	if (!src_bm)
 		return FALSE;
 
@@ -724,7 +724,7 @@ BOOL device_context_t::rectangle(INT left, INT top, INT right, INT bottom)
 	brush_t *brush = get_selected_brush();
 	if (!brush)
 		return FALSE;
-	bitmap_t *bm = get_bitmap();
+	CBITMAP *bm = get_bitmap();
 	if (!bm)
 		return FALSE;
 
@@ -748,7 +748,7 @@ memory_device_context_t::memory_device_context_t()
 
 BOOL device_context_t::lineto(INT x, INT y)
 {
-	bitmap_t *bm = get_bitmap();
+	CBITMAP *bm = get_bitmap();
 	if (!bm)
 		return FALSE;
 	pen_t *pen = get_selected_pen();
@@ -781,7 +781,7 @@ BOOL device_context_t::moveto(INT x, INT y, POINT& pt)
 
 BOOL device_context_t::set_pixel( INT x, INT y, COLORREF color )
 {
-	bitmap_t* bitmap = get_bitmap();
+	CBITMAP* bitmap = get_bitmap();
 	if (bitmap)
 		return bitmap->set_pixel( x, y, color );
 	return TRUE;
@@ -789,13 +789,13 @@ BOOL device_context_t::set_pixel( INT x, INT y, COLORREF color )
 
 COLORREF device_context_t::get_pixel( INT x, INT y )
 {
-	bitmap_t* bitmap = get_bitmap();
+	CBITMAP* bitmap = get_bitmap();
 	if (bitmap)
 		return bitmap->get_pixel( x, y );
 	return 0;
 }
 
-/* FIXME: derive the freetype bitmap from a bitmap_t and use bitblt here */
+/* FIXME: derive the freetype bitmap from a CBITMAP and use bitblt here */
 static COLORREF freetype_get_pixel( int x, int y, FT_Bitmap* ftbm )
 {
 	int bytes_per_row;
@@ -812,7 +812,7 @@ static COLORREF freetype_get_pixel( int x, int y, FT_Bitmap* ftbm )
 	}
 }
 
-static void freetype_bitblt( bitmap_t* bm, int x, int y, FT_Bitmap* ftbm )
+static void freetype_bitblt( CBITMAP* bm, int x, int y, FT_Bitmap* ftbm )
 {
 	INT bmpX, bmpY;
 	INT j, i;
@@ -857,7 +857,7 @@ BOOL device_context_t::exttextout( INT x, INT y, UINT options,
 {
 	trace("text: %pus\n", &text );
 
-	bitmap_t *bitmap = get_bitmap();
+	CBITMAP *bitmap = get_bitmap();
 	if (!bitmap)
 		return FALSE;
 
@@ -902,7 +902,7 @@ BOOL device_context_t::exttextout( INT x, INT y, UINT options,
 
 BOOL device_context_t::polypatblt( ULONG Rop, PRECT rect )
 {
-	bitmap_t *bm = get_bitmap();
+	CBITMAP *bm = get_bitmap();
 	if (!bm)
 		return FALSE;
 
@@ -1073,7 +1073,7 @@ COLORREF get_di_pixel( stretch_di_bits_args& args, int x, int y )
 
 BOOL device_context_t::stretch_di_bits( stretch_di_bits_args& args )
 {
-	bitmap_t* bitmap = get_bitmap();
+	CBITMAP* bitmap = get_bitmap();
 	if (!bitmap)
 		return FALSE;
 
@@ -1202,7 +1202,7 @@ HGDIOBJ NTAPI NtGdiCreateDIBitmapInternal(
 	ULONG,
 	ULONG)
 {
-	bitmap_t *bm = alloc_bitmap( Width, Height, Bpp );
+	CBITMAP *bm = alloc_bitmap( Width, Height, Bpp );
 	if (!bm)
 		return NULL;
 	return bm->get_handle();
@@ -1267,7 +1267,7 @@ HGDIOBJ NTAPI NtGdiSelectBitmap( HGDIOBJ hdc, HGDIOBJ hbm )
 	if (!dc)
 		return FALSE;
 
-	bitmap_t* bitmap = bitmap_from_handle( hbm );
+	CBITMAP* bitmap = bitmap_from_handle( hbm );
 	if (!bitmap)
 		return FALSE;
 
@@ -1586,7 +1586,7 @@ HANDLE NTAPI NtGdiCreateCompatibleBitmap( HANDLE DeviceContext, int width, int h
 	if (!bpp)
 		return FALSE;
 
-	bitmap_t *bm = alloc_bitmap( width, height, bpp );
+	CBITMAP *bm = alloc_bitmap( width, height, bpp );
 	return bm->get_handle();
 }
 
