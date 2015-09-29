@@ -27,9 +27,9 @@
 class OBJECT;
 class object_dir_t;
 
-typedef list_anchor<OBJECT, 0> object_list_t;
-typedef list_element<OBJECT> object_entry_t;
-typedef list_iter<OBJECT, 0> object_iter_t;
+typedef LIST_ANCHOR<OBJECT, 0> object_list_t;
+typedef LIST_ELEMENT<OBJECT> object_entry_t;
+typedef LIST_ITER<OBJECT, 0> object_iter_t;
 
 class OBJECT_FACTORY;
 class OPEN_INFO;
@@ -52,9 +52,9 @@ public:
 
 class OBJECT
 {
-	friend class list_anchor<OBJECT, 0>;
-	friend class list_element<OBJECT>;
-	friend class list_iter<OBJECT, 0>;
+	friend class LIST_ANCHOR<OBJECT, 0>;
+	friend class LIST_ELEMENT<OBJECT>;
+	friend class LIST_ITER<OBJECT, 0>;
 	object_entry_t entry[1];
 	ULONG refcount;
 public:
@@ -93,9 +93,9 @@ public:
 
 class watch_t;
 
-typedef list_anchor<watch_t, 0> watch_list_t;
-typedef list_element<watch_t> watch_entry_t;
-typedef list_iter<watch_t, 0> watch_iter_t;
+typedef LIST_ANCHOR<watch_t, 0> watch_list_t;
+typedef LIST_ELEMENT<watch_t> watch_entry_t;
+typedef LIST_ITER<watch_t, 0> watch_iter_t;
 
 class watch_t
 {

@@ -117,7 +117,7 @@ tt_address_space_impl::~tt_address_space_impl()
 	child_pid = -1;
 }
 
-address_space_impl* create_tt_address_space()
+ADDRESS_SPACE_IMPL* create_tt_address_space()
 {
 	//trace("create_tt_address_space\n");
 	// Set up the signal handler and unmask it first.

@@ -43,14 +43,14 @@ struct pe_section_t : public section_t
 public:
 	pe_section_t( int f, BYTE *a, size_t l, ULONG attr, ULONG prot );
 	virtual ~pe_section_t();
-	virtual NTSTATUS mapit( address_space *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG Protect );
+	virtual NTSTATUS mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG Protect );
 	virtual NTSTATUS query( SECTION_IMAGE_INFORMATION *image );
 	IMAGE_EXPORT_DIRECTORY* get_exports_table();
 	IMAGE_NT_HEADERS* get_nt_header();
 	DWORD get_proc_address( const char *name );
 	DWORD get_proc_address( ULONG ordinal );
-	void add_relay( address_space *vm );
-	bool add_relay_stub( address_space *vm, BYTE *stub_addr, ULONG func, ULONG *user_addr, ULONG thunk_ofs );
+	void add_relay( ADDRESS_SPACE *vm );
+	bool add_relay_stub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG func, ULONG *user_addr, ULONG thunk_ofs );
 	const char *get_symbol( ULONG address );
 	const char *name_of_ordinal( ULONG ordinal );
 private:
@@ -78,7 +78,7 @@ void section_t::release()
 	::release( this );
 }
 
-NTSTATUS section_t::mapit( address_space *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG prot )
+NTSTATUS section_t::mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG prot )
 {
 	trace("anonymous map\n");
 	if ((prot&0xff) > (Protect&0xff))
@@ -245,7 +245,7 @@ IMAGE_NT_HEADERS *pe_section_t::get_nt_header()
 	return nt;
 }
 
-NTSTATUS mapit( address_space *vm, OBJECT *obj, BYTE *&addr )
+NTSTATUS mapit( ADDRESS_SPACE *vm, OBJECT *obj, BYTE *&addr )
 {
 	section_t *sec = dynamic_cast<section_t*>( obj );
 	if (!sec)
@@ -285,7 +285,7 @@ struct __attribute__ ((packed)) relay_stub
 	ULONG target;
 };
 
-bool pe_section_t::add_relay_stub( address_space *vm, BYTE *stub_addr, ULONG func, ULONG *user_addr, ULONG thunk_ofs )
+bool pe_section_t::add_relay_stub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG func, ULONG *user_addr, ULONG thunk_ofs )
 {
 	IMAGE_NT_HEADERS *nt = get_nt_header();
 
@@ -323,7 +323,7 @@ bool pe_section_t::add_relay_stub( address_space *vm, BYTE *stub_addr, ULONG fun
 }
 
 // parse the exports table and generate relay code
-void pe_section_t::add_relay(address_space *vm)
+void pe_section_t::add_relay(ADDRESS_SPACE *vm)
 {
 	IMAGE_DATA_DIRECTORY *export_data_dir;
 	IMAGE_EXPORT_DIRECTORY *exp;
@@ -378,7 +378,7 @@ void pe_section_t::add_relay(address_space *vm)
 }
 
 // maybe create a temp file to remap?
-NTSTATUS pe_section_t::mapit( address_space *vm, BYTE *&base, ULONG ZeroBits, ULONG State, ULONG Protect )
+NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, ULONG State, ULONG Protect )
 {
 	IMAGE_DOS_HEADER *dos;
 	IMAGE_NT_HEADERS *nt;

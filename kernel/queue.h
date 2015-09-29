@@ -27,18 +27,18 @@ class msg_tt;
 class msg_waiter_tt;
 class thread_message_queue_tt;
 
-typedef list_anchor<msg_tt,0> msg_list_t;
-typedef list_iter<msg_tt,0> msg_iter_t;
-typedef list_element<msg_tt> msg_element_t;
+typedef LIST_ANCHOR<msg_tt,0> msg_list_t;
+typedef LIST_ITER<msg_tt,0> msg_iter_t;
+typedef LIST_ELEMENT<msg_tt> msg_element_t;
 
-typedef list_anchor<msg_waiter_tt,0> msg_waiter_list_t;
-typedef list_iter<msg_waiter_tt,0> msg_waiter_iter_t;
-typedef list_element<msg_waiter_tt> msg_waiter_element_t;
+typedef LIST_ANCHOR<msg_waiter_tt,0> msg_waiter_list_t;
+typedef LIST_ITER<msg_waiter_tt,0> msg_waiter_iter_t;
+typedef LIST_ELEMENT<msg_waiter_tt> msg_waiter_element_t;
 
 class msg_waiter_tt
 {
 	friend class thread_message_queue_tt;
-	friend class list_anchor<msg_waiter_tt,0>;
+	friend class LIST_ANCHOR<msg_waiter_tt,0>;
 	msg_waiter_element_t entry[1];
 	THREAD *t;
 	MSG& msg;
@@ -61,9 +61,9 @@ public:
 
 class win_timer_tt;
 
-typedef list_anchor<win_timer_tt,0> win_timer_list_t;
-typedef list_iter<win_timer_tt,0> win_timer_iter_t;
-typedef list_element<win_timer_tt> win_timer_element_t;
+typedef LIST_ANCHOR<win_timer_tt,0> win_timer_list_t;
+typedef LIST_ITER<win_timer_tt,0> win_timer_iter_t;
+typedef LIST_ELEMENT<win_timer_tt> win_timer_element_t;
 
 class win_timer_tt
 {

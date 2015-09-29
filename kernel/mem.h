@@ -53,10 +53,10 @@ public:
 	virtual ~BLOCK_TRACER();
 };
 
-class address_space
+class ADDRESS_SPACE
 {
 public:
-	virtual ~address_space();
+	virtual ~ADDRESS_SPACE();
 	virtual NTSTATUS query( BYTE *start, MEMORY_BASIC_INFORMATION *info ) = 0;
 	virtual NTSTATUS get_kernel_address( BYTE **address, size_t *len ) = 0;
 	virtual NTSTATUS copy_to_user( void *dest, const void *src, size_t len ) = 0;
@@ -81,11 +81,11 @@ public:
 
 unsigned int allocate_core_memory(unsigned int size);
 int free_core_memory( unsigned int offset, unsigned int size );
-struct address_space *create_address_space( BYTE *high );
+struct ADDRESS_SPACE *create_address_space( BYTE *high );
 
-typedef list_anchor<MBLOCK,0> MBLOCK_list_t;
-typedef list_iter<MBLOCK,0> MBLOCK_iter_t;
-typedef list_element<MBLOCK> MBLOCK_element_t;
+typedef LIST_ANCHOR<MBLOCK,0> MBLOCK_list_t;
+typedef LIST_ITER<MBLOCK,0> MBLOCK_iter_t;
+typedef LIST_ELEMENT<MBLOCK> MBLOCK_element_t;
 
 class MBLOCK
 {
@@ -111,7 +111,7 @@ public:
 	MBLOCK( BYTE *address, size_t size );
 	virtual ~MBLOCK();
 	virtual int local_map( int prot ) = 0;
-	virtual int remote_map( address_space *vm, ULONG prot ) = 0;
+	virtual int remote_map( ADDRESS_SPACE *vm, ULONG prot ) = 0;
 
 protected:
 	virtual MBLOCK *do_split( BYTE *address, size_t size ) = 0;
@@ -119,11 +119,11 @@ protected:
 public:
 	MBLOCK *split( size_t length );
 	int local_unmap();
-	int remote_unmap( address_space *vm );
-	void commit( address_space *vm );
-	void reserve( address_space *vm );
-	void uncommit( address_space *vm );
-	void unreserve( address_space *vm );
+	int remote_unmap( ADDRESS_SPACE *vm );
+	void commit( ADDRESS_SPACE *vm );
+	void reserve( ADDRESS_SPACE *vm );
+	void uncommit( ADDRESS_SPACE *vm );
+	void unreserve( ADDRESS_SPACE *vm );
 	int is_committed()
 	{
 		return State == MEM_COMMIT;
@@ -163,10 +163,10 @@ public:
 		return section;
 	};
 	static ULONG mmap_flag_from_page_prot( ULONG prot );
-	void remote_remap( address_space *vm, bool except );
-	bool set_tracer( address_space *vm, BLOCK_TRACER *tracer);
+	void remote_remap( ADDRESS_SPACE *vm, bool except );
+	bool set_tracer( ADDRESS_SPACE *vm, BLOCK_TRACER *tracer);
 	bool traced_access( BYTE *address, ULONG Eip );
-	bool set_traced( address_space *vm, bool traced );
+	bool set_traced( ADDRESS_SPACE *vm, bool traced );
 	void set_section( OBJECT *section );
 	void set_prot( ULONG prot );
 };
@@ -177,7 +177,7 @@ MBLOCK* alloc_fd_pages(BYTE* address, ULONG size, BACKING_STORE* backing);
 
 int create_mapping_fd( int sz );
 
-class address_space_impl : public address_space
+class ADDRESS_SPACE_IMPL : public ADDRESS_SPACE
 {
 private:
 	BYTE *const lowest_address;
@@ -191,7 +191,7 @@ protected:
 	{
 		return xlate[ ((unsigned int)address)>>12 ];
 	}
-	address_space_impl();
+	ADDRESS_SPACE_IMPL();
 	bool init( BYTE *high );
 	void destroy();
 	MBLOCK *get_MBLOCK( BYTE *address );
@@ -208,9 +208,9 @@ protected:
 
 public:
 	// a constructor that can fail...
-	friend address_space *create_address_space( BYTE *high );
+	friend ADDRESS_SPACE *create_address_space( BYTE *high );
 
-	~address_space_impl();
+	~ADDRESS_SPACE_IMPL();
 	void verify();
 	NTSTATUS query( BYTE *start, MEMORY_BASIC_INFORMATION *info );
 
@@ -236,6 +236,6 @@ public:
 	virtual bool set_tracer( BYTE* address, BLOCK_TRACER& tracer);
 };
 
-extern struct address_space_impl *(*pcreate_address_space)();
+extern struct ADDRESS_SPACE_IMPL *(*pcreate_address_space)();
 
 #endif // __MEM_H__

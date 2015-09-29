@@ -31,7 +31,7 @@ struct section_t : public OBJECT, public BACKING_STORE
 public:
 	section_t( int fd, BYTE *a, size_t l, ULONG attr, ULONG prot );
 	virtual ~section_t();
-	virtual NTSTATUS mapit( address_space *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG Prot );
+	virtual NTSTATUS mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG Prot );
 	virtual void* get_kernel_address();
 	virtual NTSTATUS query( SECTION_BASIC_INFORMATION *basic );
 	virtual NTSTATUS query( SECTION_IMAGE_INFORMATION *image );
@@ -43,7 +43,7 @@ public:
 
 NTSTATUS create_section( OBJECT **obj, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
 NTSTATUS create_section( section_t **section, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
-NTSTATUS mapit( address_space *vm, OBJECT *obj, BYTE *&addr );
+NTSTATUS mapit( ADDRESS_SPACE *vm, OBJECT *obj, BYTE *&addr );
 void *virtual_addr_to_offset( IMAGE_NT_HEADERS *nt, void *base, DWORD virtual_ofs );
 DWORD get_proc_address(OBJECT *obj, const char *name);
 void *get_entry_point( PROCESS *p );

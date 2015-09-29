@@ -31,35 +31,35 @@
 #include "file.h"
 #include "debug.h"
 
-class mailslot_t : public IO_OBJECT
+class MAILSLOT : public IO_OBJECT
 {
 public:
 	virtual NTSTATUS read( PVOID Buffer, ULONG Length, ULONG *Read );
 	virtual NTSTATUS write( PVOID Buffer, ULONG Length, ULONG *Written );
 };
 
-NTSTATUS mailslot_t::read( PVOID Buffer, ULONG Length, ULONG *Read )
+NTSTATUS MAILSLOT::read( PVOID Buffer, ULONG Length, ULONG *Read )
 {
 	trace("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS mailslot_t::write( PVOID Buffer, ULONG Length, ULONG *Written )
+NTSTATUS MAILSLOT::write( PVOID Buffer, ULONG Length, ULONG *Written )
 {
 	trace("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-class mailslot_factory : public OBJECT_FACTORY
+class MAILSLOT_FACTORY : public OBJECT_FACTORY
 {
 public:
-	mailslot_factory() {}
+	MAILSLOT_FACTORY() {}
 	virtual NTSTATUS alloc_object(OBJECT** obj);
 };
 
-NTSTATUS mailslot_factory::alloc_object(OBJECT** obj)
+NTSTATUS MAILSLOT_FACTORY::alloc_object(OBJECT** obj)
 {
-	*obj = new mailslot_t;
+	*obj = new MAILSLOT;
 	if (!*obj)
 		return STATUS_NO_MEMORY;
 	return STATUS_SUCCESS;
@@ -111,7 +111,7 @@ NTSTATUS NTAPI NtCreateMailslotFile(
 	if (us.Length < 26 || memcmp(ptr, us.Buffer, 26))
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 
-	mailslot_factory factory;
+	MAILSLOT_FACTORY factory;
 	return factory.create( MailslotHandle, AccessMask, ObjectAttributes );
 }
 

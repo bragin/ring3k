@@ -28,15 +28,15 @@ struct window_tt;
 class wndcls_tt;
 class message_tt;
 
-typedef list_anchor<wndcls_tt, 0> wndcls_list_tt;
-typedef list_element<wndcls_tt> wndcls_entry_tt;
-typedef list_iter<wndcls_tt, 0> wndcls_iter_tt;
+typedef LIST_ANCHOR<wndcls_tt, 0> wndcls_list_tt;
+typedef LIST_ELEMENT<wndcls_tt> wndcls_entry_tt;
+typedef LIST_ITER<wndcls_tt, 0> wndcls_iter_tt;
 
 class wndcls_tt : public CLASSINFO
 {
 	// FIXME: all these have to go
-	friend class list_anchor<wndcls_tt, 0>;
-	friend class list_iter<wndcls_tt, 0>;
+	friend class LIST_ANCHOR<wndcls_tt, 0>;
+	friend class LIST_ITER<wndcls_tt, 0>;
 	wndcls_entry_tt entry[1];
 	unicode_string_t name;
 	unicode_string_t menu;

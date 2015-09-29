@@ -23,7 +23,7 @@
 
 #include "config.h"
 
-class ptrace_address_space_impl: public address_space_impl
+class ptrace_address_space_impl: public ADDRESS_SPACE_IMPL
 {
 protected:
 	static ptrace_address_space_impl *sig_target;

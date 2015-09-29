@@ -48,14 +48,14 @@
 class luid_and_privileges_t;
 class token_privileges_t;
 
-typedef list_anchor<luid_and_privileges_t,0> luid_and_priv_list_t;
-typedef list_element<luid_and_privileges_t> luid_and_priv_entry_t;
-typedef list_iter<luid_and_privileges_t,0> luid_and_priv_iter_t;
+typedef LIST_ANCHOR<luid_and_privileges_t,0> luid_and_priv_list_t;
+typedef LIST_ELEMENT<luid_and_privileges_t> luid_and_priv_entry_t;
+typedef LIST_ITER<luid_and_privileges_t,0> luid_and_priv_iter_t;
 
 class luid_and_privileges_t : public LUID_AND_ATTRIBUTES
 {
-	friend class list_anchor<luid_and_privileges_t,0>;
-	friend class list_iter<luid_and_privileges_t,0>;
+	friend class LIST_ANCHOR<luid_and_privileges_t,0>;
+	friend class LIST_ITER<luid_and_privileges_t,0>;
 protected:
 	luid_and_priv_entry_t entry[1];
 public:
@@ -418,9 +418,9 @@ NTSTATUS token_groups_t::copy_to_user( TOKEN_GROUPS *tg )
 // access control entry
 class ace_t;
 
-typedef list_anchor<ace_t,0> ace_list_t;
-typedef list_element<ace_t> ace_entry_t;
-typedef list_iter<ace_t,0> ace_iter_t;
+typedef LIST_ANCHOR<ace_t,0> ace_list_t;
+typedef LIST_ELEMENT<ace_t> ace_entry_t;
+typedef LIST_ITER<ace_t,0> ace_iter_t;
 
 class ace_t : public user_copy_t
 {
@@ -430,8 +430,8 @@ class ace_t : public user_copy_t
 		ULONG mask;
 		ULONG sid_start;
 	};
-	friend class list_anchor<ace_t,0>;
-	friend class list_iter<ace_t,0>;
+	friend class LIST_ANCHOR<ace_t,0>;
+	friend class LIST_ITER<ace_t,0>;
 protected:
 	ace_entry_t entry[1];
 	BYTE type;

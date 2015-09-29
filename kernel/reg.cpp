@@ -43,12 +43,12 @@
 struct regval_t;
 struct regkey_t;
 
-typedef list_anchor<regval_t,0> regval_anchor, regval_anchor_t;
-typedef list_anchor<regkey_t,0> regkey_anchor, regkey_anchor_t;
-typedef list_iter<regval_t,0> regval_iter, regval_iter_t;
-typedef list_iter<regkey_t,0> regkey_iter, regkey_iter_t;
-typedef list_element<regval_t> regval_element, regval_element_t;
-typedef list_element<regkey_t> regkey_element, regkey_element_t;
+typedef LIST_ANCHOR<regval_t,0> regval_anchor, regval_anchor_t;
+typedef LIST_ANCHOR<regkey_t,0> regkey_anchor, regkey_anchor_t;
+typedef LIST_ITER<regval_t,0> regval_iter, regval_iter_t;
+typedef LIST_ITER<regkey_t,0> regkey_iter, regkey_iter_t;
+typedef LIST_ELEMENT<regval_t> regval_element, regval_element_t;
+typedef LIST_ELEMENT<regkey_t> regkey_element, regkey_element_t;
 
 struct regval_t
 {

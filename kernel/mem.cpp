@@ -77,7 +77,7 @@ static inline BOOLEAN mem_protection_is_valid(ULONG protect)
 	return 1;
 }
 
-void address_space_impl::verify()
+void ADDRESS_SPACE_IMPL::verify()
 {
 	ULONG total = 0, count = 0;
 	BOOLEAN free_blocks = 0, bad_xlate = 0;
@@ -114,21 +114,21 @@ void address_space_impl::verify()
 	assert( total < sz );
 }
 
-address_space_impl::address_space_impl() :
+ADDRESS_SPACE_IMPL::ADDRESS_SPACE_IMPL() :
 	lowest_address(0),
 	highest_address(0)
 {
 }
 
-address_space::~address_space()
+ADDRESS_SPACE::~ADDRESS_SPACE()
 {
 }
 
-address_space_impl::~address_space_impl()
+ADDRESS_SPACE_IMPL::~ADDRESS_SPACE_IMPL()
 {
 }
 
-void address_space_impl::destroy()
+void ADDRESS_SPACE_IMPL::destroy()
 {
 	verify();
 
@@ -139,7 +139,7 @@ void address_space_impl::destroy()
 	::munmap( xlate, num_pages * sizeof (MBLOCK*) );
 }
 
-MBLOCK* address_space_impl::alloc_guard_block(BYTE *address, ULONG size)
+MBLOCK* ADDRESS_SPACE_IMPL::alloc_guard_block(BYTE *address, ULONG size)
 {
 	MBLOCK *mb = alloc_guard_pages( address, size );
 	if (!mb)
@@ -150,11 +150,11 @@ MBLOCK* address_space_impl::alloc_guard_block(BYTE *address, ULONG size)
 	return mb;
 }
 
-struct address_space_impl *(*pcreate_address_space)();
+struct ADDRESS_SPACE_IMPL *(*pcreate_address_space)();
 
-address_space *create_address_space( BYTE *high )
+ADDRESS_SPACE *create_address_space( BYTE *high )
 {
-	address_space_impl *vm;
+	ADDRESS_SPACE_IMPL *vm;
 
 	vm = pcreate_address_space();
 	if (!vm)
@@ -168,7 +168,7 @@ address_space *create_address_space( BYTE *high )
 	return vm;
 }
 
-bool address_space_impl::init(BYTE *high)
+bool ADDRESS_SPACE_IMPL::init(BYTE *high)
 {
 	const size_t guard_size = 0x10000;
 
@@ -191,7 +191,7 @@ bool address_space_impl::init(BYTE *high)
 	return true;
 }
 
-void address_space_impl::dump()
+void ADDRESS_SPACE_IMPL::dump()
 {
 	for ( MBLOCK_iter_t i(blocks); i; i.next() )
 	{
@@ -200,7 +200,7 @@ void address_space_impl::dump()
 	}
 }
 
-NTSTATUS address_space_impl::find_free_area( int zero_bits, size_t length, int top_down, BYTE *&base )
+NTSTATUS ADDRESS_SPACE_IMPL::find_free_area( int zero_bits, size_t length, int top_down, BYTE *&base )
 {
 	ULONG free_size;
 
@@ -250,7 +250,7 @@ NTSTATUS address_space_impl::find_free_area( int zero_bits, size_t length, int t
 	return STATUS_SUCCESS;
 }
 
-MBLOCK *address_space_impl::get_MBLOCK( BYTE *address )
+MBLOCK *ADDRESS_SPACE_IMPL::get_MBLOCK( BYTE *address )
 {
 	// check requested block is within limits
 	if (address >= highest_address)
@@ -265,7 +265,7 @@ MBLOCK *address_space_impl::get_MBLOCK( BYTE *address )
 #define AREA_FREE 2
 #define AREA_CONTIGUOUS 4
 
-ULONG address_space_impl::check_area( BYTE *address, size_t length )
+ULONG ADDRESS_SPACE_IMPL::check_area( BYTE *address, size_t length )
 {
 	ULONG flags = 0;
 
@@ -292,12 +292,12 @@ ULONG address_space_impl::check_area( BYTE *address, size_t length )
 	return flags;
 }
 
-void address_space_impl::insert_block( MBLOCK *mb )
+void ADDRESS_SPACE_IMPL::insert_block( MBLOCK *mb )
 {
 	blocks.append( mb );
 }
 
-void address_space_impl::remove_block( MBLOCK *mb )
+void ADDRESS_SPACE_IMPL::remove_block( MBLOCK *mb )
 {
 	assert( mb->is_free() );
 	blocks.unlink( mb );
@@ -305,7 +305,7 @@ void address_space_impl::remove_block( MBLOCK *mb )
 
 // splits one block into three parts (before, middle, after)
 // returns the middle part
-MBLOCK *address_space_impl::split_area( MBLOCK *mb, BYTE *address, size_t length )
+MBLOCK *ADDRESS_SPACE_IMPL::split_area( MBLOCK *mb, BYTE *address, size_t length )
 {
 	MBLOCK *ret;
 
@@ -335,7 +335,7 @@ MBLOCK *address_space_impl::split_area( MBLOCK *mb, BYTE *address, size_t length
 	return ret;
 }
 
-void address_space_impl::update_page_translation( MBLOCK *mb )
+void ADDRESS_SPACE_IMPL::update_page_translation( MBLOCK *mb )
 {
 	ULONG i;
 
@@ -348,7 +348,7 @@ void address_space_impl::update_page_translation( MBLOCK *mb )
 	}
 }
 
-NTSTATUS address_space_impl::get_mem_region( BYTE *start, size_t length, int state )
+NTSTATUS ADDRESS_SPACE_IMPL::get_mem_region( BYTE *start, size_t length, int state )
 {
 	verify();
 
@@ -373,7 +373,7 @@ NTSTATUS address_space_impl::get_mem_region( BYTE *start, size_t length, int sta
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS address_space_impl::allocate_virtual_memory( BYTE **start, int zero_bits, size_t length, int state, int prot )
+NTSTATUS ADDRESS_SPACE_IMPL::allocate_virtual_memory( BYTE **start, int zero_bits, size_t length, int state, int prot )
 {
 	NTSTATUS r;
 
@@ -412,7 +412,7 @@ NTSTATUS address_space_impl::allocate_virtual_memory( BYTE **start, int zero_bit
 	return set_block_state( mb, state, prot );
 }
 
-NTSTATUS address_space_impl::map_fd( BYTE **start, int zero_bits, size_t length, int state, int prot, BACKING_STORE *backing )
+NTSTATUS ADDRESS_SPACE_IMPL::map_fd( BYTE **start, int zero_bits, size_t length, int state, int prot, BACKING_STORE *backing )
 {
 	NTSTATUS r;
 
@@ -446,7 +446,7 @@ NTSTATUS address_space_impl::map_fd( BYTE **start, int zero_bits, size_t length,
 }
 
 
-NTSTATUS address_space_impl::check_params( BYTE *start, int zero_bits, size_t length, int state, int prot )
+NTSTATUS ADDRESS_SPACE_IMPL::check_params( BYTE *start, int zero_bits, size_t length, int state, int prot )
 {
 	//trace("%p %08x %08x\n", *start, length, prot);
 
@@ -471,7 +471,7 @@ NTSTATUS address_space_impl::check_params( BYTE *start, int zero_bits, size_t le
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS address_space_impl::set_block_state( MBLOCK *mb, int state, int prot )
+NTSTATUS ADDRESS_SPACE_IMPL::set_block_state( MBLOCK *mb, int state, int prot )
 {
 	if (mb->is_free())
 	{
@@ -492,7 +492,7 @@ NTSTATUS address_space_impl::set_block_state( MBLOCK *mb, int state, int prot )
 	return STATUS_SUCCESS;
 }
 
-void address_space_impl::free_shared( MBLOCK *mb )
+void ADDRESS_SPACE_IMPL::free_shared( MBLOCK *mb )
 {
 	//mb->dump();
 	if (mb->is_committed())
@@ -504,7 +504,7 @@ void address_space_impl::free_shared( MBLOCK *mb )
 	delete mb;
 }
 
-NTSTATUS address_space_impl::free_virtual_memory( void *start, size_t length, ULONG state )
+NTSTATUS ADDRESS_SPACE_IMPL::free_virtual_memory( void *start, size_t length, ULONG state )
 {
 	BYTE *addr;
 	MBLOCK *mb;
@@ -553,7 +553,7 @@ NTSTATUS address_space_impl::free_virtual_memory( void *start, size_t length, UL
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS address_space_impl::unmap_view( void *start )
+NTSTATUS ADDRESS_SPACE_IMPL::unmap_view( void *start )
 {
 	BYTE *addr = (BYTE*)start;
 
@@ -570,7 +570,7 @@ NTSTATUS address_space_impl::unmap_view( void *start )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS address_space_impl::query( BYTE *start, MEMORY_BASIC_INFORMATION *info )
+NTSTATUS ADDRESS_SPACE_IMPL::query( BYTE *start, MEMORY_BASIC_INFORMATION *info )
 {
 	MBLOCK *mb;
 
@@ -584,7 +584,7 @@ NTSTATUS address_space_impl::query( BYTE *start, MEMORY_BASIC_INFORMATION *info 
 	return mb->query( start, info );
 }
 
-NTSTATUS address_space_impl::get_kernel_address( BYTE **address, size_t *len )
+NTSTATUS ADDRESS_SPACE_IMPL::get_kernel_address( BYTE **address, size_t *len )
 {
 	MBLOCK *mb;
 	ULONG ofs;
@@ -626,7 +626,7 @@ NTSTATUS address_space_impl::get_kernel_address( BYTE **address, size_t *len )
 	return STATUS_SUCCESS;
 }
 
-const char *address_space_impl::get_symbol( BYTE *address )
+const char *ADDRESS_SPACE_IMPL::get_symbol( BYTE *address )
 {
 	trace("%p\n", address );
 	MBLOCK *mb = get_MBLOCK( address );
@@ -640,7 +640,7 @@ const char *address_space_impl::get_symbol( BYTE *address )
 	return get_section_symbol( mb->get_section(), (ULONG) address );
 }
 
-NTSTATUS address_space_impl::copy_from_user( void *dest, const void *src, size_t len )
+NTSTATUS ADDRESS_SPACE_IMPL::copy_from_user( void *dest, const void *src, size_t len )
 {
 	NTSTATUS r = STATUS_SUCCESS;
 	size_t n;
@@ -663,7 +663,7 @@ NTSTATUS address_space_impl::copy_from_user( void *dest, const void *src, size_t
 	return r;
 }
 
-NTSTATUS address_space_impl::copy_to_user( void *dest, const void *src, size_t len )
+NTSTATUS ADDRESS_SPACE_IMPL::copy_to_user( void *dest, const void *src, size_t len )
 {
 	NTSTATUS r = STATUS_SUCCESS;
 	size_t n;
@@ -692,7 +692,7 @@ NTSTATUS address_space_impl::copy_to_user( void *dest, const void *src, size_t l
 	return r;
 }
 
-NTSTATUS address_space_impl::verify_for_write( void *dest, size_t len )
+NTSTATUS ADDRESS_SPACE_IMPL::verify_for_write( void *dest, size_t len )
 {
 	NTSTATUS r = STATUS_SUCCESS;
 	size_t n;
@@ -712,12 +712,12 @@ NTSTATUS address_space_impl::verify_for_write( void *dest, size_t len )
 	return r;
 }
 
-MBLOCK* address_space_impl::find_block( BYTE *addr )
+MBLOCK* ADDRESS_SPACE_IMPL::find_block( BYTE *addr )
 {
 	return get_MBLOCK( addr );
 }
 
-bool address_space_impl::traced_access( void* addr, ULONG Eip )
+bool ADDRESS_SPACE_IMPL::traced_access( void* addr, ULONG Eip )
 {
 	BYTE* address = (BYTE*) addr;
 	MBLOCK* mb = get_MBLOCK( address );
@@ -726,7 +726,7 @@ bool address_space_impl::traced_access( void* addr, ULONG Eip )
 	return mb->traced_access( address, Eip );
 }
 
-bool address_space_impl::set_traced( void* addr, bool traced )
+bool ADDRESS_SPACE_IMPL::set_traced( void* addr, bool traced )
 {
 	BYTE* address = (BYTE*) addr;
 	MBLOCK* mb = get_MBLOCK( address );
@@ -735,7 +735,7 @@ bool address_space_impl::set_traced( void* addr, bool traced )
 	return mb->set_traced( this, traced );
 }
 
-bool address_space_impl::set_tracer( BYTE *addr, BLOCK_TRACER& tracer )
+bool ADDRESS_SPACE_IMPL::set_tracer( BYTE *addr, BLOCK_TRACER& tracer )
 {
 	// trace it
 	MBLOCK* mb = get_MBLOCK( addr );

@@ -25,14 +25,14 @@
 
 class timeout_t;
 
-typedef list_element<timeout_t> timeout_entry_t;
-typedef list_anchor<timeout_t,0> timeout_list_t;
-typedef list_iter<timeout_t,0> timeout_iter_t;
+typedef LIST_ELEMENT<timeout_t> timeout_entry_t;
+typedef LIST_ANCHOR<timeout_t,0> timeout_list_t;
+typedef LIST_ITER<timeout_t,0> timeout_iter_t;
 
 class timeout_t
 {
-	friend class list_anchor<timeout_t,0> ;
-	friend class list_iter<timeout_t,0> ;
+	friend class LIST_ANCHOR<timeout_t,0> ;
+	friend class LIST_ITER<timeout_t,0> ;
 	timeout_entry_t entry[1];
 private:
 	static timeout_list_t g_timeouts;

@@ -43,9 +43,9 @@
 class THREAD_IMPL;
 
 class thread_obj_wait_t;
-typedef list_anchor<thread_obj_wait_t, 0> thread_obj_wait_list_t;
-typedef list_element<thread_obj_wait_t> thread_obj_wait_element_t;
-typedef list_iter<thread_obj_wait_t, 0> thread_obj_wait_iter_t;
+typedef LIST_ANCHOR<thread_obj_wait_t, 0> thread_obj_wait_list_t;
+typedef LIST_ELEMENT<thread_obj_wait_t> thread_obj_wait_element_t;
+typedef LIST_ITER<thread_obj_wait_t, 0> thread_obj_wait_iter_t;
 
 struct thread_obj_wait_t : public watch_t
 {
@@ -87,8 +87,8 @@ public:
 };
 
 struct thread_apc_t;
-typedef list_anchor<thread_apc_t,0> thread_apc_list_t;
-typedef list_element<thread_apc_t> thread_apc_element_t;
+typedef LIST_ANCHOR<thread_apc_t,0> thread_apc_list_t;
+typedef LIST_ELEMENT<thread_apc_t> thread_apc_element_t;
 
 struct thread_apc_t
 {
@@ -212,7 +212,7 @@ public:
 	virtual PTEB get_teb();
 };
 
-list_anchor<runlist_entry_t,0> runlist_entry_t::running_threads;
+LIST_ANCHOR<runlist_entry_t,0> runlist_entry_t::running_threads;
 ULONG runlist_entry_t::num_running_threads;
 
 void runlist_entry_t::runlist_add()

@@ -32,9 +32,9 @@
 
 class THREAD;
 
-typedef list_anchor<THREAD,0> sibling_list_t;
-typedef list_iter<THREAD,0> sibling_iter_t;
-typedef list_element<THREAD> thread_element_t;
+typedef LIST_ANCHOR<THREAD,0> sibling_list_t;
+typedef LIST_ITER<THREAD,0> sibling_iter_t;
+typedef LIST_ELEMENT<THREAD> thread_element_t;
 
 struct port_t;
 struct PROCESS;
@@ -68,10 +68,10 @@ class thread_message_queue_tt;
 
 class runlist_entry_t
 {
-	friend class list_anchor<runlist_entry_t,0>;
-	friend class list_element<runlist_entry_t>;
-	list_element<runlist_entry_t> entry[1];
-	static list_anchor<runlist_entry_t,0> running_threads;
+	friend class LIST_ANCHOR<runlist_entry_t,0>;
+	friend class LIST_ELEMENT<runlist_entry_t>;
+	LIST_ELEMENT<runlist_entry_t> entry[1];
+	static LIST_ANCHOR<runlist_entry_t,0> running_threads;
 	static ULONG num_running_threads;
 public:
 	static ULONG num_active_threads();
@@ -84,9 +84,9 @@ class THREAD :
 	public FIBER,
 	public runlist_entry_t
 {
-	friend class list_anchor<THREAD,0>;
-	friend class list_element<THREAD>;
-	friend class list_iter<THREAD,0>;
+	friend class LIST_ANCHOR<THREAD,0>;
+	friend class LIST_ELEMENT<THREAD>;
+	friend class LIST_ITER<THREAD,0>;
 	thread_element_t entry[1];
 
 protected:

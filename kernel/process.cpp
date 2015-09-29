@@ -132,7 +132,7 @@ NTSTATUS PROCESS::create_parameters(
 /*
  * map a file (the locale data) into a process's memory
  */
-NTSTATUS map_locale_data( address_space *vm, const char *name, void **addr )
+NTSTATUS map_locale_data( ADDRESS_SPACE *vm, const char *name, void **addr )
 {
 	OBJECT *section = 0;
 	CFILE *file = 0;

@@ -41,15 +41,15 @@ NTSTATUS copy_from_user( T* dest, const T* src )
 	return copy_from_user( dest, src, sizeof (T) );
 }
 
-class address_space;
+class ADDRESS_SPACE;
 class THREAD;
 class PROCESS;
 
 #include "list.h"
 
-typedef list_anchor<PROCESS,0> process_list_t;
-typedef list_iter<PROCESS,0> process_iter_t;
-typedef list_element<PROCESS> process_element_t;
+typedef LIST_ANCHOR<PROCESS,0> process_list_t;
+typedef LIST_ITER<PROCESS,0> process_iter_t;
+typedef LIST_ELEMENT<PROCESS> process_element_t;
 
 #include "thread.h"
 #include "process.h"
@@ -89,16 +89,16 @@ bool trace_is_enabled( const char *name );
 
 extern ULONG KiIntSystemCall;
 
-class sleeper_t
+class SLEEPER
 {
 public:
-	virtual ~sleeper_t() {};
+	virtual ~SLEEPER() {};
 	virtual bool check_events( bool wait ) = 0;
 protected:
 	int get_int_timeout( LARGE_INTEGER& timeout );
 };
 
-extern sleeper_t* sleeper;
+extern SLEEPER* sleeper;
 
 // from section.cpp
 const char *get_section_symbol( OBJECT *section, ULONG address );

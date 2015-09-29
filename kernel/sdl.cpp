@@ -72,7 +72,7 @@ public:
 	virtual int getcaps( int index );
 };
 
-class sdl_sleeper_t : public sleeper_t
+class sdl_sleeper_t : public SLEEPER
 {
 	win32k_manager_t *manager;
 public:

@@ -223,9 +223,9 @@ NTSTATUS CFILE::remove()
 
 class DIRECTORY_ENTRY;
 
-typedef list_anchor<DIRECTORY_ENTRY,0> dirlist_t;
-typedef list_iter<DIRECTORY_ENTRY,0> dirlist_iter_t;
-typedef list_element<DIRECTORY_ENTRY> dirlist_element_t;
+typedef LIST_ANCHOR<DIRECTORY_ENTRY,0> dirlist_t;
+typedef LIST_ITER<DIRECTORY_ENTRY,0> dirlist_iter_t;
+typedef LIST_ELEMENT<DIRECTORY_ENTRY> dirlist_element_t;
 
 class DIRECTORY_ENTRY
 {

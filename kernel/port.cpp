@@ -36,17 +36,17 @@
 
 class message_t;
 
-typedef list_anchor<message_t, 0> message_list_t;
-typedef list_element<message_t> message_entry_t;
-typedef list_iter<message_t, 0> message_iter_t;
+typedef LIST_ANCHOR<message_t, 0> message_list_t;
+typedef LIST_ELEMENT<message_t> message_entry_t;
+typedef LIST_ITER<message_t, 0> message_iter_t;
 
 class message_t
 {
 public:
 	ULONG destination_id;
 protected:
-	friend class list_anchor<message_t, 0>;
-	friend class list_iter<message_t, 0>;
+	friend class LIST_ANCHOR<message_t, 0>;
+	friend class LIST_ITER<message_t, 0>;
 	message_entry_t entry[1];
 public:
 	void *operator new(size_t n, size_t len);
@@ -66,9 +66,9 @@ public:
 struct listener_t;
 struct port_queue_t;
 
-typedef list_anchor<listener_t, 0> listener_list_t;
-typedef list_element<listener_t> listener_entry_t;
-typedef list_iter<listener_t, 0> listener_iter_t;
+typedef LIST_ANCHOR<listener_t, 0> listener_list_t;
+typedef LIST_ELEMENT<listener_t> listener_entry_t;
+typedef LIST_ITER<listener_t, 0> listener_iter_t;
 
 struct listener_t
 {

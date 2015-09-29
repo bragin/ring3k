@@ -81,7 +81,7 @@ public:
 	COREPAGES( BYTE* address, size_t sz, BACKING_STORE* _backing );
 	//COREPAGES( BYTE* address, size_t sz );
 	virtual int local_map( int prot );
-	virtual int remote_map( address_space *vm, ULONG prot );
+	virtual int remote_map( ADDRESS_SPACE *vm, ULONG prot );
 	virtual MBLOCK *do_split( BYTE *address, size_t size );
 	virtual ~COREPAGES();
 private:
@@ -106,7 +106,7 @@ int COREPAGES::local_map( int prot )
 	return 0;
 }
 
-int COREPAGES::remote_map( address_space *vm, ULONG prot )
+int COREPAGES::remote_map( ADDRESS_SPACE *vm, ULONG prot )
 {
 	int fd = backing->get_fd();
 	int mmap_flags = mmap_flag_from_page_prot( prot );
@@ -133,7 +133,7 @@ protected:
 public:
 	GUARDPAGES( BYTE* address, size_t sz );
 	virtual int local_map( int prot );
-	virtual int remote_map( address_space *vm, ULONG prot );
+	virtual int remote_map( ADDRESS_SPACE *vm, ULONG prot );
 	virtual MBLOCK *do_split( BYTE *address, size_t size );
 	virtual ~GUARDPAGES();
 };
@@ -152,7 +152,7 @@ int GUARDPAGES::local_map( int prot )
 	return -1;
 }
 
-int GUARDPAGES::remote_map( address_space *vm, ULONG prot )
+int GUARDPAGES::remote_map( ADDRESS_SPACE *vm, ULONG prot )
 {
 	return 0;
 }
@@ -292,7 +292,7 @@ int MBLOCK::local_unmap()
 	return 0;
 }
 
-int MBLOCK::remote_unmap( address_space *vm )
+int MBLOCK::remote_unmap( ADDRESS_SPACE *vm )
 {
 	return vm->munmap( BaseAddress, RegionSize );
 }
@@ -330,7 +330,7 @@ void MBLOCK::set_prot( ULONG prot )
 	Protect = prot;
 }
 
-void MBLOCK::commit( address_space *vm )
+void MBLOCK::commit( ADDRESS_SPACE *vm )
 {
 	if (State != MEM_COMMIT)
 	{
@@ -346,14 +346,14 @@ void MBLOCK::commit( address_space *vm )
 	remote_remap( vm, tracer != 0 );
 }
 
-void MBLOCK::remote_remap( address_space *vm, bool except )
+void MBLOCK::remote_remap( ADDRESS_SPACE *vm, bool except )
 {
 	int r = remote_map( vm, except ? PAGE_NOACCESS : Protect );
 	if (0 < r )
 		die("remote_map failed\n");
 }
 
-bool MBLOCK::set_tracer( address_space *vm, BLOCK_TRACER *bt )
+bool MBLOCK::set_tracer( ADDRESS_SPACE *vm, BLOCK_TRACER *bt )
 {
 	if (!bt->enabled())
 		return false;
@@ -363,7 +363,7 @@ bool MBLOCK::set_tracer( address_space *vm, BLOCK_TRACER *bt )
 	return true;
 }
 
-void MBLOCK::reserve( address_space *vm )
+void MBLOCK::reserve( ADDRESS_SPACE *vm )
 {
 	assert( State != MEM_COMMIT );
 	if (State == MEM_RESERVE)
@@ -374,7 +374,7 @@ void MBLOCK::reserve( address_space *vm )
 	// FIXME: maybe allocate memory here
 }
 
-void MBLOCK::uncommit( address_space *vm )
+void MBLOCK::uncommit( ADDRESS_SPACE *vm )
 {
 	if (State != MEM_COMMIT)
 		return;
@@ -384,7 +384,7 @@ void MBLOCK::uncommit( address_space *vm )
 	kernel_address = NULL;
 }
 
-void MBLOCK::unreserve( address_space *vm )
+void MBLOCK::unreserve( ADDRESS_SPACE *vm )
 {
 	assert( State != MEM_COMMIT );
 	if (State != MEM_RESERVE)
@@ -422,7 +422,7 @@ bool MBLOCK::traced_access( BYTE *address, ULONG Eip )
 	return true;
 }
 
-bool MBLOCK::set_traced( address_space *vm, bool traced )
+bool MBLOCK::set_traced( ADDRESS_SPACE *vm, bool traced )
 {
 	if (!tracer)
 		return false;

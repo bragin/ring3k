@@ -59,14 +59,14 @@ int option_debug = 0;
 ULONG KiIntSystemCall = 0;
 bool forced_quit;
 
-class default_sleeper_t : public sleeper_t
+class DEFAULT_SLEEPER : public SLEEPER
 {
 public:
 	virtual bool check_events( bool wait );
-	virtual ~default_sleeper_t() {}
+	virtual ~DEFAULT_SLEEPER() {}
 };
 
-int sleeper_t::get_int_timeout( LARGE_INTEGER& timeout )
+int SLEEPER::get_int_timeout( LARGE_INTEGER& timeout )
 {
 	timeout.QuadPart = (timeout.QuadPart+9999)/10000;
 	int t = INT_MAX;
@@ -75,7 +75,7 @@ int sleeper_t::get_int_timeout( LARGE_INTEGER& timeout )
 	return t;
 }
 
-bool default_sleeper_t::check_events( bool wait )
+bool DEFAULT_SLEEPER::check_events( bool wait )
 {
 	LARGE_INTEGER timeout;
 
@@ -99,8 +99,8 @@ bool default_sleeper_t::check_events( bool wait )
 	return false;
 }
 
-default_sleeper_t default_sleeper;
-sleeper_t* sleeper = &default_sleeper;
+DEFAULT_SLEEPER default_sleeper;
+SLEEPER* sleeper = &default_sleeper;
 
 int schedule(void)
 {

@@ -199,7 +199,7 @@ skas3_address_space_impl::~skas3_address_space_impl()
 	}
 }
 
-address_space_impl* create_skas3_address_space()
+ADDRESS_SPACE_IMPL* create_skas3_address_space()
 {
 	if (skas3_address_space_impl::child_pid == -1)
 	{

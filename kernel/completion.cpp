@@ -36,8 +36,8 @@
 // COMPLETION_PACKET holds the data for one I/O completion
 class COMPLETION_PACKET;
 
-typedef list_anchor<COMPLETION_PACKET,0> completion_list_t;
-typedef list_element<COMPLETION_PACKET> completion_list_element_t;
+typedef LIST_ANCHOR<COMPLETION_PACKET,0> completion_list_t;
+typedef LIST_ELEMENT<COMPLETION_PACKET> completion_list_element_t;
 
 class COMPLETION_PACKET
 {
@@ -59,14 +59,14 @@ public:
 // COMPLETION_WAITER is instantiated on the stack of a thread waiting on an I/O completion
 class COMPLETION_WAITER;
 
-typedef list_anchor<COMPLETION_WAITER,0> completion_waiter_list_t;
-typedef list_element<COMPLETION_WAITER> completion_waiter_list_element_t;
+typedef LIST_ANCHOR<COMPLETION_WAITER,0> completion_waiter_list_t;
+typedef LIST_ELEMENT<COMPLETION_WAITER> completion_waiter_list_element_t;
 
 class COMPLETION_WAITER
 {
 protected:
-	friend class list_anchor<COMPLETION_WAITER,0>;
-	friend class list_element<COMPLETION_WAITER>;
+	friend class LIST_ANCHOR<COMPLETION_WAITER,0>;
+	friend class LIST_ELEMENT<COMPLETION_WAITER>;
 	completion_waiter_list_element_t entry[1];
 	THREAD *thread;
 	COMPLETION_PACKET *packet;
@@ -116,14 +116,14 @@ COMPLETION_PACKET *COMPLETION_WAITER::get_packet()
 
 class COMPLETION_PORT_IMPL;
 
-typedef list_anchor<COMPLETION_PORT_IMPL,0> COMPLETION_PORT_LIST;
-typedef list_element<COMPLETION_PORT_IMPL> completion_port_list_element_t;
+typedef LIST_ANCHOR<COMPLETION_PORT_IMPL,0> COMPLETION_PORT_LIST;
+typedef LIST_ELEMENT<COMPLETION_PORT_IMPL> completion_port_list_element_t;
 
 // COMPLETION_PORT_IMPL is the implementation of the I/O completion port object
 class COMPLETION_PORT_IMPL : public COMPLETION_PORT
 {
-	friend class list_anchor<COMPLETION_PORT_IMPL,0>;
-	friend class list_element<COMPLETION_PORT_IMPL>;
+	friend class LIST_ANCHOR<COMPLETION_PORT_IMPL,0>;
+	friend class LIST_ELEMENT<COMPLETION_PORT_IMPL>;
 	completion_port_list_element_t entry[1];
 	static COMPLETION_PORT_LIST waiting_thread_ports;
 	friend void check_completions( void );

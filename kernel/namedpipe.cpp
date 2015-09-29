@@ -37,12 +37,12 @@ class pipe_server_t;
 class pipe_client_t;
 class pipe_container_t;
 
-typedef list_anchor<pipe_server_t,0> pipe_server_list_t;
-typedef list_element<pipe_server_t> pipe_server_element_t;
-typedef list_iter<pipe_server_t,0> pipe_server_iter_t;
-typedef list_anchor<pipe_client_t,0> pipe_client_list_t;
-typedef list_element<pipe_client_t> pipe_client_element_t;
-typedef list_iter<pipe_client_t,0> pipe_client_iter_t;
+typedef LIST_ANCHOR<pipe_server_t,0> pipe_server_list_t;
+typedef LIST_ELEMENT<pipe_server_t> pipe_server_element_t;
+typedef LIST_ITER<pipe_server_t,0> pipe_server_iter_t;
+typedef LIST_ANCHOR<pipe_client_t,0> pipe_client_list_t;
+typedef LIST_ELEMENT<pipe_client_t> pipe_client_element_t;
+typedef LIST_ITER<pipe_client_t,0> pipe_client_iter_t;
 
 // the pipe device \Device\NamedPipe, contains pipes of different names
 class pipe_device_t : public object_dir_impl_t, public IO_OBJECT
@@ -89,9 +89,9 @@ public:
 
 class pipe_message_t;
 
-typedef list_anchor<pipe_message_t,0> pipe_message_list_t;
-typedef list_element<pipe_message_t> pipe_message_element_t;
-typedef list_iter<pipe_message_t,0> pipe_message_iter_t;
+typedef LIST_ANCHOR<pipe_message_t,0> pipe_message_list_t;
+typedef LIST_ELEMENT<pipe_message_t> pipe_message_element_t;
+typedef LIST_ITER<pipe_message_t,0> pipe_message_iter_t;
 
 class pipe_message_t
 {
