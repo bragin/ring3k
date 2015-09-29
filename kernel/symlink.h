@@ -33,7 +33,7 @@ public:
 	{
 		return target;
 	}
-	virtual NTSTATUS open( OBJECT *&out, open_info_t& info );
+	virtual NTSTATUS open( OBJECT *&out, OPEN_INFO& info );
 };
 
 // from symlink.cpp

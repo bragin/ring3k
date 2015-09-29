@@ -31,7 +31,7 @@
 #include "file.h"
 #include "debug.h"
 
-class mailslot_t : public io_object_t
+class mailslot_t : public IO_OBJECT
 {
 public:
 	virtual NTSTATUS read( PVOID Buffer, ULONG Length, ULONG *Read );

@@ -29,7 +29,7 @@
 #include "file.h"
 #include "debug.h"
 
-class random_dev_t : public io_object_t
+class random_dev_t : public IO_OBJECT
 {
 public:
 	random_dev_t();

@@ -347,8 +347,8 @@ void shutdown_kthread(void)
 	plugnplay->terminate( 0 );
 
 	// run the threads until they complete
-	while (!fiber_t::last_fiber())
-		fiber_t::yield();
+	while (!FIBER::last_fiber())
+		FIBER::yield();
 
 	delete kernel_process;
 }

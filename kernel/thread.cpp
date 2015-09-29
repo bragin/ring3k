@@ -847,7 +847,7 @@ NTSTATUS thread_impl_t::terminate( NTSTATUS status )
 
 void thread_t::stop()
 {
-	fiber_t::stop();
+	FIBER::stop();
 	current = this;
 }
 
@@ -896,7 +896,7 @@ int thread_impl_t::run()
 		}
 
 		i = 0;
-		fiber_t::yield();
+		FIBER::yield();
 	}
 	return 0;
 }
@@ -935,7 +935,7 @@ void thread_impl_t::handle_breakpoint()
 }
 
 thread_t::thread_t(process_t *p) :
-	fiber_t( fiber_default_stack_size ),
+	FIBER( fiber_default_stack_size ),
 	process( p ),
 	MessageId(0),
 	port(0),
@@ -1081,7 +1081,7 @@ void thread_impl_t::start()
 {
 	// check we weren't terminated
 	if (ThreadState != StateTerminated)
-		fiber_t::start();
+		FIBER::start();
 }
 
 void thread_t::wait()
@@ -1570,7 +1570,7 @@ NTSTATUS NTAPI NtYieldExecution( void )
 {
 	thread_t *t = current;
 	for (int i=0; i<0x10; i++)
-		fiber_t::yield();
+		FIBER::yield();
 	current = t;
 	return STATUS_SUCCESS;
 }

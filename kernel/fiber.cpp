@@ -52,8 +52,8 @@
 #define NORET __attribute__((noreturn))
 
 // current_fiber needs visibility from asm code
-fiber_t* current_fiber;
-fiber_t* sleeping_fiber; // single linked list through prev
+FIBER* current_fiber;
+FIBER* sleeping_fiber; // single linked list through prev
 
 extern "C" void switch_fiber(void);
 __asm__ (
@@ -97,7 +97,7 @@ ASM_NAME_PREFIX "fiber_init:\n"
 	"\tcall " ASM_NAME_PREFIX "fiber_exit\n"
 );
 
-void fiber_t::yield(void)
+void FIBER::yield(void)
 {
 	if (!current_fiber->next)
 		return;
@@ -106,13 +106,13 @@ void fiber_t::yield(void)
 	switch_fiber();
 }
 
-extern "C" void NORET fiber_exit(fiber_t *t, int ret)
+extern "C" void NORET fiber_exit(FIBER *t, int ret)
 {
 	t->stop();
 	assert(0);
 }
 
-void fiber_t::remove_from_runlist()
+void FIBER::remove_from_runlist()
 {
 	assert(current_fiber->next);
 	assert(current_fiber->prev);
@@ -123,13 +123,13 @@ void fiber_t::remove_from_runlist()
 	current_fiber->prev = 0;
 }
 
-void fiber_t::stop()
+void FIBER::stop()
 {
 	remove_from_runlist();
 	yield();
 }
 
-void fiber_t::start()
+void FIBER::start()
 {
 	assert(prev == 0);
 	next = current_fiber->next;
@@ -138,17 +138,17 @@ void fiber_t::start()
 	prev->next = this;
 }
 
-int fiber_t::run()
+int FIBER::run()
 {
 	return 0;
 }
 
-int fiber_t::run_fiber( fiber_t* fiber )
+int FIBER::run_fiber( FIBER* fiber )
 {
 	return fiber->run();
 }
 
-fiber_t::fiber_t( unsigned sz ) :
+FIBER::FIBER( unsigned sz ) :
 	next(0),
 	prev(0),
 	stack_size( sz )
@@ -177,14 +177,14 @@ fiber_t::fiber_t( unsigned sz ) :
 	frame->edx = 0;
 	frame->ecx = 0;
 	frame->ebx = (long) this;
-	frame->eax = (long) &fiber_t::run_fiber;
+	frame->eax = (long) &FIBER::run_fiber;
 	frame->eip = (long) &fiber_init;
 
 	// link it in to the circular list
 	stack_pointer = frame;
 }
 
-fiber_t::fiber_t() :
+FIBER::FIBER() :
 	stack_pointer(0),
 	next(0),
 	prev(0),
@@ -193,18 +193,18 @@ fiber_t::fiber_t() :
 {
 }
 
-void fiber_t::fibers_init(void)
+void FIBER::fibers_init(void)
 {
 	assert(!current_fiber);
 
-	fiber_t *t = new fiber_t;
+	FIBER *t = new FIBER;
 
 	t->next = t;
 	t->prev = t;
 	current_fiber = t;
 }
 
-void fiber_t::fibers_finish(void)
+void FIBER::fibers_finish(void)
 {
 	assert(current_fiber);
 	assert(last_fiber());
@@ -213,14 +213,14 @@ void fiber_t::fibers_finish(void)
 	current_fiber = 0;
 }
 
-fiber_t::~fiber_t()
+FIBER::~FIBER()
 {
 	assert(prev == 0);
 	if (stack)
 		munmap( (unsigned char*) stack - guard_size, stack_size);
 }
 
-bool fiber_t::last_fiber()
+bool FIBER::last_fiber()
 {
 	return (current_fiber->next == current_fiber);
 }

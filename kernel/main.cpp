@@ -85,7 +85,7 @@ bool default_sleeper_t::check_events( bool wait )
 	// Check for a deadlock and quit.
 	//  This happens if we're the only active thread,
 	//  there's no more timers, and we're asked to wait.
-	if (!timers_left && wait && fiber_t::last_fiber())
+	if (!timers_left && wait && FIBER::last_fiber())
 		return true;
 	if (!wait)
 		return false;
@@ -111,9 +111,9 @@ int schedule(void)
 		sleeper->check_events( false );
 
 		// other fibers are active... schedule run them
-		if (!fiber_t::last_fiber())
+		if (!FIBER::last_fiber())
 		{
-			fiber_t::yield();
+			FIBER::yield();
 			continue;
 		}
 
@@ -134,7 +134,7 @@ NTSTATUS create_initial_process( thread_t **t, UNICODE_STRING& us )
 	INITIAL_TEB init_teb;
 	CLIENT_ID id;
 	OBJECT *section = NULL;
-	file_t *file = 0;
+	CFILE *file = 0;
 	int r;
 
 	r = open_file( file, us );
@@ -196,7 +196,7 @@ NTSTATUS init_ntdll( void )
 		's','y','s','t','e','m','3','2','\\','n','t','d','l','l','.','d','l','l',0
 	};
 	unicode_string_t us;
-	file_t *file = 0;
+	CFILE *file = 0;
 	NTSTATUS r;
 
 	us.set( ntdll );
@@ -485,7 +485,7 @@ int main(int argc, char **argv)
 	get_system_time_of_day( dummy );
 
 	init_registry();
-	fiber_t::fibers_init();
+	FIBER::fibers_init();
 	init_root();
 	create_directory_object( (PWSTR) L"\\" );
 	create_directory_object( (PWSTR) L"\\??" );
@@ -527,7 +527,7 @@ int main(int argc, char **argv)
 	do_cleanup();
 
 	free_root();
-	fiber_t::fibers_finish();
+	FIBER::fibers_finish();
 	free_registry();
 	free_ntdll();
 

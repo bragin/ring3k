@@ -135,7 +135,7 @@ NTSTATUS process_t::create_parameters(
 NTSTATUS map_locale_data( address_space *vm, const char *name, void **addr )
 {
 	OBJECT *section = 0;
-	file_t *file = 0;
+	CFILE *file = 0;
 	NTSTATUS r;
 	BYTE *data = 0;
 	unicode_string_t us;

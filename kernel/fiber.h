@@ -28,7 +28,7 @@
 #ifndef __FIBER_H__
 #define __FIBER_H__
 
-class fiber_t
+class FIBER
 {
 	struct fiber_stack_t
 	{
@@ -44,16 +44,16 @@ class fiber_t
 
 private:				// offset 0 = vtable pointer
 	fiber_stack_t *stack_pointer;	// offset 4
-	fiber_t *next;			// offset 8
-	fiber_t *prev;
+	FIBER *next;			// offset 8
+	FIBER *prev;
 	void *stack;
 	unsigned int stack_size;
 
 private:
 	void remove_from_runlist();
 	void add_to_runlist();
-	fiber_t();
-	static int run_fiber( fiber_t* fiber );
+	FIBER();
+	static int run_fiber( FIBER* fiber );
 
 public:
 	static const unsigned int fiber_default_stack_size = 0x10000;
@@ -62,8 +62,8 @@ public:
 public:
 	static void fibers_init();
 	static void fibers_finish();
-	fiber_t( unsigned int size );
-	virtual ~fiber_t();
+	FIBER( unsigned int size );
+	virtual ~FIBER();
 	static void yield();
 	static bool last_fiber();
 	void start();

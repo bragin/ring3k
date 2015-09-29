@@ -56,13 +56,13 @@ WCHAR lowercase(const WCHAR ch)
 	return ch;
 }
 
-io_object_t::io_object_t() :
+IO_OBJECT::IO_OBJECT() :
 	completion_port( 0 ),
 	completion_key( 0 )
 {
 }
 
-void io_object_t::set_completion_port( COMPLETION_PORT *port, ULONG key )
+void IO_OBJECT::set_completion_port( COMPLETION_PORT *port, ULONG key )
 {
 	if (completion_port)
 	{
@@ -73,33 +73,33 @@ void io_object_t::set_completion_port( COMPLETION_PORT *port, ULONG key )
 	completion_key = 0;
 }
 
-NTSTATUS io_object_t::set_position( LARGE_INTEGER& ofs )
+NTSTATUS IO_OBJECT::set_position( LARGE_INTEGER& ofs )
 {
 	return STATUS_OBJECT_TYPE_MISMATCH;
 }
 
-NTSTATUS io_object_t::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+NTSTATUS IO_OBJECT::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 								  PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS io_object_t::set_pipe_info( FILE_PIPE_INFORMATION& pipe_info )
+NTSTATUS IO_OBJECT::set_pipe_info( FILE_PIPE_INFORMATION& pipe_info )
 {
 	return STATUS_OBJECT_TYPE_MISMATCH;
 }
 
-file_t::~file_t()
+CFILE::~CFILE()
 {
 	close( fd );
 }
 
-file_t::file_t( int f ) :
+CFILE::CFILE( int f ) :
 	fd( f )
 {
 }
 
-class file_create_info_t : public open_info_t
+class FILE_CREATE_INFO : public OPEN_INFO
 {
 public:
 	ULONG FileAttributes;
@@ -107,11 +107,11 @@ public:
 	ULONG CreateDisposition;
 	bool created;
 public:
-	file_create_info_t( ULONG _Attributes, ULONG _CreateOptions, ULONG _CreateDisposition );
-	virtual NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info );
+	FILE_CREATE_INFO( ULONG _Attributes, ULONG _CreateOptions, ULONG _CreateDisposition );
+	virtual NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
-file_create_info_t::file_create_info_t( ULONG _Attributes, ULONG _CreateOptions, ULONG _CreateDisposition ) :
+FILE_CREATE_INFO::FILE_CREATE_INFO( ULONG _Attributes, ULONG _CreateOptions, ULONG _CreateDisposition ) :
 	FileAttributes( _Attributes ),
 	CreateOptions( _CreateOptions ),
 	CreateDisposition( _CreateDisposition ),
@@ -119,15 +119,15 @@ file_create_info_t::file_create_info_t( ULONG _Attributes, ULONG _CreateOptions,
 {
 }
 
-NTSTATUS file_create_info_t::on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info )
+NTSTATUS FILE_CREATE_INFO::on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info )
 {
-	trace("file_create_info_t::on_open()\n");
+	trace("FILE_CREATE_INFO::on_open()\n");
 	if (!obj)
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS file_t::read( PVOID Buffer, ULONG Length, ULONG *bytes_read )
+NTSTATUS CFILE::read( PVOID Buffer, ULONG Length, ULONG *bytes_read )
 {
 	NTSTATUS r = STATUS_SUCCESS;
 	ULONG ofs = 0;
@@ -155,7 +155,7 @@ NTSTATUS file_t::read( PVOID Buffer, ULONG Length, ULONG *bytes_read )
 	return r;
 }
 
-NTSTATUS file_t::write( PVOID Buffer, ULONG Length, ULONG *written )
+NTSTATUS CFILE::write( PVOID Buffer, ULONG Length, ULONG *written )
 {
 	NTSTATUS r = STATUS_SUCCESS;
 	ULONG ofs = 0;
@@ -183,7 +183,7 @@ NTSTATUS file_t::write( PVOID Buffer, ULONG Length, ULONG *written )
 	return r;
 }
 
-NTSTATUS file_t::set_position( LARGE_INTEGER& ofs )
+NTSTATUS CFILE::set_position( LARGE_INTEGER& ofs )
 {
 	int ret;
 
@@ -196,7 +196,7 @@ NTSTATUS file_t::set_position( LARGE_INTEGER& ofs )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS file_t::remove()
+NTSTATUS CFILE::remove()
 {
 	char name[40];
 	char path[255];
@@ -235,7 +235,7 @@ public:
 	struct stat st;
 };
 
-class directory_t : public file_t
+class directory_t : public CFILE
 {
 	int count;
 	directory_entry_t *ptr;
@@ -259,8 +259,8 @@ public:
 	bool is_firstscan() const;
 	NTSTATUS set_mask(unicode_string_t *mask);
 	int get_num_entries() const;
-	virtual NTSTATUS open( OBJECT *&out, open_info_t& info );
-	NTSTATUS open_file( file_t *&file, UNICODE_STRING& path, ULONG Attributes,
+	virtual NTSTATUS open( OBJECT *&out, OPEN_INFO& info );
+	NTSTATUS open_file( CFILE *&file, UNICODE_STRING& path, ULONG Attributes,
 						ULONG Options, ULONG CreateDisposition, bool &created, bool case_insensitive );
 };
 
@@ -287,7 +287,7 @@ NTSTATUS directory_factory::alloc_object(OBJECT** obj)
 
 
 directory_t::directory_t( int fd ) :
-	file_t(fd),
+	CFILE(fd),
 	count(-1),
 	ptr(0)
 {
@@ -574,18 +574,18 @@ NTSTATUS directory_t::query_information( FILE_ATTRIBUTE_TAG_INFORMATION& info )
 	return STATUS_SUCCESS;
 }
 
-int file_t::get_fd()
+int CFILE::get_fd()
 {
 	return fd;
 }
 
-NTSTATUS file_t::query_information( FILE_BASIC_INFORMATION& info )
+NTSTATUS CFILE::query_information( FILE_BASIC_INFORMATION& info )
 {
 	info.FileAttributes = FILE_ATTRIBUTE_ARCHIVE;
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS file_t::query_information( FILE_STANDARD_INFORMATION& info )
+NTSTATUS CFILE::query_information( FILE_STANDARD_INFORMATION& info )
 {
 	struct stat st;
 	if (0<fstat( fd, &st ))
@@ -599,7 +599,7 @@ NTSTATUS file_t::query_information( FILE_STANDARD_INFORMATION& info )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS file_t::query_information( FILE_ATTRIBUTE_TAG_INFORMATION& info )
+NTSTATUS CFILE::query_information( FILE_ATTRIBUTE_TAG_INFORMATION& info )
 {
 	info.FileAttributes = FILE_ATTRIBUTE_ARCHIVE;
 	info.ReparseTag = 0;
@@ -692,7 +692,7 @@ int directory_t::open_unicode_dir( const char *unix_path, int flags, bool &creat
 }
 
 NTSTATUS directory_t::open_file(
-	file_t *&file,
+	CFILE *&file,
 	UNICODE_STRING& path,
 	ULONG Attributes,
 	ULONG Options,
@@ -747,7 +747,7 @@ NTSTATUS directory_t::open_file(
 		if (file_fd == -1)
 			return STATUS_OBJECT_PATH_NOT_FOUND;
 
-		file = new file_t( file_fd );
+		file = new CFILE( file_fd );
 		if (!file)
 		{
 			::close( file_fd );
@@ -758,13 +758,13 @@ NTSTATUS directory_t::open_file(
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS directory_t::open( OBJECT *&out, open_info_t& info )
+NTSTATUS directory_t::open( OBJECT *&out, OPEN_INFO& info )
 {
-	file_t *file = 0;
+	CFILE *file = 0;
 
 	trace("directory_t::open %pus\n", &info.path );
 
-	file_create_info_t *file_info = dynamic_cast<file_create_info_t*>( &info );
+	FILE_CREATE_INFO *file_info = dynamic_cast<FILE_CREATE_INFO*>( &info );
 	if (!file_info)
 		return STATUS_OBJECT_TYPE_MISMATCH;
 
@@ -776,16 +776,16 @@ NTSTATUS directory_t::open( OBJECT *&out, open_info_t& info )
 	return r;
 }
 
-NTSTATUS open_file( file_t *&file, UNICODE_STRING& name )
+NTSTATUS open_file( CFILE *&file, UNICODE_STRING& name )
 {
-	file_create_info_t info( 0, 0, FILE_OPEN );
+	FILE_CREATE_INFO info( 0, 0, FILE_OPEN );
 	info.path.set( name );
 	info.Attributes = OBJ_CASE_INSENSITIVE;
 	OBJECT *obj = 0;
 	NTSTATUS r = open_root( obj, info );
 	if (r < STATUS_SUCCESS)
 		return r;
-	file = dynamic_cast<file_t*>( obj );
+	file = dynamic_cast<CFILE*>( obj );
 	assert( file != NULL );
 	return STATUS_SUCCESS;
 }
@@ -855,7 +855,7 @@ NTSTATUS NTAPI NtCreateFile(
 	if (!oa.ObjectName)
 		return STATUS_OBJECT_PATH_NOT_FOUND;
 
-	file_create_info_t info( Attributes, CreateOptions, CreateDisposition );
+	FILE_CREATE_INFO info( Attributes, CreateOptions, CreateDisposition );
 
 	info.path.set( *oa.ObjectName );
 	info.Attributes = oa.Attributes;
@@ -905,7 +905,7 @@ NTSTATUS NTAPI NtFsControlFile(
 		  InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength );
 
 	IO_STATUS_BLOCK iosb;
-	io_object_t *io = 0;
+	IO_OBJECT *io = 0;
 	EVENT *event = 0;
 	NTSTATUS r;
 
@@ -969,7 +969,7 @@ NTSTATUS NTAPI NtWriteFile(
 	trace("%p %p %p %p %p %p %lu %p %p\n", FileHandle, Event, ApcRoutine,
 		  ApcContext, IoStatusBlock, Buffer, Length, ByteOffset, Key);
 
-	io_object_t *io = 0;
+	IO_OBJECT *io = 0;
 	NTSTATUS r;
 
 	r = object_from_handle( io, FileHandle, 0 );
@@ -1016,14 +1016,14 @@ NTSTATUS NTAPI NtQueryAttributesFile(
 
 	// FIXME: use oa.RootDirectory
 	OBJECT *obj = 0;
-	file_create_info_t open_info( 0, 0, FILE_OPEN );
+	FILE_CREATE_INFO open_info( 0, 0, FILE_OPEN );
 	open_info.path.set( *oa.ObjectName );
 	open_info.Attributes = oa.Attributes;
 	r = open_root( obj, open_info );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	file_t *file = dynamic_cast<file_t*>(obj );
+	CFILE *file = dynamic_cast<CFILE*>(obj );
 	if (file)
 	{
 
@@ -1065,7 +1065,7 @@ NTSTATUS NTAPI NtReadFile(
 		  Buffer, Length, ByteOffset, Key);
 
 	NTSTATUS r;
-	io_object_t *io = 0;
+	IO_OBJECT *io = 0;
 
 	r = object_from_handle( io, FileHandle, GENERIC_READ );
 	if (r < STATUS_SUCCESS)
@@ -1109,14 +1109,14 @@ NTSTATUS NTAPI NtDeleteFile(
 
 	// FIXME: use oa.RootDirectory
 	OBJECT *obj = 0;
-	file_create_info_t open_info( 0, 0, FILE_OPEN );
+	FILE_CREATE_INFO open_info( 0, 0, FILE_OPEN );
 	open_info.path.set( *oa.ObjectName );
 	open_info.Attributes = oa.Attributes;
 	r = open_root( obj, open_info );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	file_t *file = dynamic_cast<file_t*>(obj );
+	CFILE *file = dynamic_cast<CFILE*>(obj );
 	if (file)
 		r = file->remove();
 	else
@@ -1148,7 +1148,7 @@ NTSTATUS NTAPI NtSetInformationFile(
 	ULONG FileInformationLength,
 	FILE_INFORMATION_CLASS FileInformationClass)
 {
-	io_object_t *file = 0;
+	IO_OBJECT *file = 0;
 	NTSTATUS r;
 	ULONG len = 0;
 	union
@@ -1222,7 +1222,7 @@ NTSTATUS NTAPI NtQueryInformationFile(
 	trace("%p %p %p %lu %u\n", FileHandle, IoStatusBlock,
 		  FileInformation, FileInformationLength, FileInformationClass);
 
-	file_t *file = 0;
+	CFILE *file = 0;
 	NTSTATUS r;
 
 	r = object_from_handle( file, FileHandle, 0 );

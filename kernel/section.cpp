@@ -167,8 +167,8 @@ NTSTATUS create_section( section_t **section, OBJECT *obj, PLARGE_INTEGER psz, U
 
 	if (obj)
 	{
-		// FIXME: probably better to have a file_t passed in
-		file_t *file = dynamic_cast<file_t*>( obj );
+		// FIXME: probably better to have a CFILE passed in
+		CFILE *file = dynamic_cast<CFILE*>( obj );
 		if (!file)
 			return STATUS_OBJECT_TYPE_MISMATCH;
 

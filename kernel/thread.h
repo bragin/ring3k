@@ -81,7 +81,7 @@ public:
 
 class thread_t :
 	public sync_object_t,
-	public fiber_t,
+	public FIBER,
 	public runlist_entry_t
 {
 	friend class list_anchor<thread_t,0>;
@@ -132,7 +132,7 @@ public:
 };
 
 NTSTATUS create_thread( thread_t **pthread, process_t *p, PCLIENT_ID id, CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended );
-int run_thread(fiber_t *arg);
+int run_thread(FIBER *arg);
 
 extern thread_t *current;
 

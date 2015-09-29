@@ -145,7 +145,7 @@ OBJECT *create_directory_object( PCWSTR name )
 	return obj;
 }
 
-NTSTATUS open_root( OBJECT*& obj, open_info_t& info )
+NTSTATUS open_root( OBJECT*& obj, OPEN_INFO& info )
 {
 	// look each directory in the path and make sure it exists
 	object_dir_t *dir = 0;
@@ -182,7 +182,7 @@ NTSTATUS open_root( OBJECT*& obj, open_info_t& info )
 	return dir->open( obj, info );
 }
 
-NTSTATUS object_dir_impl_t::open( OBJECT*& obj, open_info_t& info )
+NTSTATUS object_dir_impl_t::open( OBJECT*& obj, OPEN_INFO& info )
 {
 	ULONG n = 0;
 	UNICODE_STRING& path = info.path;
@@ -215,13 +215,13 @@ NTSTATUS object_dir_impl_t::open( OBJECT*& obj, open_info_t& info )
 	return obj->open( obj, info );
 }
 
-class find_object_t : public open_info_t
+class find_object_t : public OPEN_INFO
 {
 public:
-	virtual NTSTATUS on_open( object_dir_t *dir, OBJECT*& obj, open_info_t& info );
+	virtual NTSTATUS on_open( object_dir_t *dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
-NTSTATUS find_object_t::on_open( object_dir_t *dir, OBJECT*& obj, open_info_t& info )
+NTSTATUS find_object_t::on_open( object_dir_t *dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	trace("find_object_t::on_open %pus %s\n", &info.path,
 		  obj ? "exists" : "doesn't exist");
@@ -262,12 +262,12 @@ NTSTATUS find_object_by_name( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 	return open_root( *out, oi );
 }
 
-class name_object_t : public open_info_t
+class name_object_t : public OPEN_INFO
 {
 	OBJECT *obj_to_name;
 public:
 	name_object_t( OBJECT *in );
-	virtual NTSTATUS on_open( object_dir_t *dir, OBJECT*& obj, open_info_t& info );
+	virtual NTSTATUS on_open( object_dir_t *dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
 name_object_t::name_object_t( OBJECT *in ) :
@@ -275,7 +275,7 @@ name_object_t::name_object_t( OBJECT *in ) :
 {
 }
 
-NTSTATUS name_object_t::on_open( object_dir_t *dir, OBJECT*& obj, open_info_t& info )
+NTSTATUS name_object_t::on_open( object_dir_t *dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	trace("name_object_t::on_open %pus\n", &info.path);
 

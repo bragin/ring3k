@@ -45,12 +45,12 @@ typedef list_element<pipe_client_t> pipe_client_element_t;
 typedef list_iter<pipe_client_t,0> pipe_client_iter_t;
 
 // the pipe device \Device\NamedPipe, contains pipes of different names
-class pipe_device_t : public object_dir_impl_t, public io_object_t
+class pipe_device_t : public object_dir_impl_t, public IO_OBJECT
 {
 public:
 	virtual NTSTATUS read( PVOID buffer, ULONG length, ULONG *read );
 	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written );
-	virtual NTSTATUS open( OBJECT *&out, open_info_t& info );
+	virtual NTSTATUS open( OBJECT *&out, OPEN_INFO& info );
 	virtual NTSTATUS fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 								 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
 	NTSTATUS wait_server_available( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG Length );
@@ -83,7 +83,7 @@ public:
 	{
 		return clients;
 	}
-	virtual NTSTATUS open( OBJECT *&out, open_info_t& info );
+	virtual NTSTATUS open( OBJECT *&out, OPEN_INFO& info );
 	pipe_server_t* find_idle_server();
 };
 
@@ -110,7 +110,7 @@ public:
 };
 
 // a single server instance
-class pipe_server_t : public io_object_t
+class pipe_server_t : public IO_OBJECT
 {
 	friend class pipe_container_t;
 public:
@@ -134,7 +134,7 @@ public:
 	~pipe_server_t();
 	virtual NTSTATUS read( PVOID buffer, ULONG length, ULONG *read );
 	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written );
-	NTSTATUS open( OBJECT *&out, open_info_t& info );
+	NTSTATUS open( OBJECT *&out, OPEN_INFO& info );
 	virtual NTSTATUS fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 								 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
 	inline bool is_connected()
@@ -158,7 +158,7 @@ public:
 };
 
 // a single client instance
-class pipe_client_t : public io_object_t
+class pipe_client_t : public IO_OBJECT
 {
 	friend class pipe_container_t;
 public:
@@ -183,10 +183,10 @@ class pipe_factory : public OBJECT_FACTORY
 public:
 	pipe_factory( ULONG _MaxInstances );
 	NTSTATUS alloc_object(OBJECT** obj);
-	NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info );
+	NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
-NTSTATUS pipe_device_t::open( OBJECT *&out, open_info_t& info )
+NTSTATUS pipe_device_t::open( OBJECT *&out, OPEN_INFO& info )
 {
 	if (info.path.Length == 0)
 		return object_dir_impl_t::open( out, info );
@@ -202,7 +202,7 @@ NTSTATUS pipe_device_t::open( OBJECT *&out, open_info_t& info )
 	return info.on_open( this, out, info );
 }
 
-NTSTATUS pipe_container_t::open( OBJECT *&out, open_info_t& info )
+NTSTATUS pipe_container_t::open( OBJECT *&out, OPEN_INFO& info )
 {
 	trace("allocating pipe client = %pus\n", &info.path );
 	pipe_client_t *pipe = 0;
@@ -433,7 +433,7 @@ pipe_server_t::~pipe_server_t()
 	release( container );
 }
 
-NTSTATUS pipe_server_t::open( OBJECT *&out, open_info_t& info )
+NTSTATUS pipe_server_t::open( OBJECT *&out, OPEN_INFO& info )
 {
 	// should return a pointer to a pipe client
 	trace("implement\n");
@@ -693,7 +693,7 @@ NTSTATUS pipe_factory::alloc_object(OBJECT** obj)
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS pipe_factory::on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info )
+NTSTATUS pipe_factory::on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	NTSTATUS r;
 

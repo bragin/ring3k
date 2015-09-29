@@ -39,13 +39,13 @@
 #include "mem.h"
 #include "ntcall.h"
 
-open_info_t::open_info_t() :
+OPEN_INFO::OPEN_INFO() :
 	Attributes( 0 ),
 	root( 0 )
 {
 }
 
-open_info_t::~open_info_t()
+OPEN_INFO::~OPEN_INFO()
 {
 }
 
@@ -65,7 +65,7 @@ void OBJECT::release( OBJECT *obj )
 	}
 }
 
-NTSTATUS OBJECT::open( OBJECT *&out, open_info_t& info )
+NTSTATUS OBJECT::open( OBJECT *&out, OPEN_INFO& info )
 {
 	if (info.path.Length != 0)
 	{
@@ -179,7 +179,7 @@ void handle_table_t::free_all_handles()
 	}
 }
 
-NTSTATUS OBJECT_FACTORY::on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info )
+NTSTATUS OBJECT_FACTORY::on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	// object already exists?
 	if (obj)

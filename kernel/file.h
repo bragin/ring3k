@@ -41,12 +41,12 @@ public:
 
 void check_completions( void );
 
-class io_object_t : virtual public OBJECT
+class IO_OBJECT : virtual public OBJECT
 {
 	COMPLETION_PORT *completion_port;
 	ULONG completion_key;
 public:
-	io_object_t();
+	IO_OBJECT();
 	virtual NTSTATUS read( PVOID buffer, ULONG length, ULONG *read ) = 0;
 	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written ) = 0;
 	void set_completion_port( COMPLETION_PORT *port, ULONG key );
@@ -56,12 +56,12 @@ public:
 	virtual NTSTATUS set_pipe_info( FILE_PIPE_INFORMATION& pipe_info );
 };
 
-class file_t : public io_object_t
+class CFILE : public IO_OBJECT
 {
 	int fd;
 public:
-	file_t( int fd );
-	~file_t();
+	CFILE( int fd );
+	~CFILE();
 	virtual NTSTATUS query_information( FILE_STANDARD_INFORMATION& std_info );
 	virtual NTSTATUS read( PVOID Buffer, ULONG Length, ULONG *read );
 	virtual NTSTATUS write( PVOID Buffer, ULONG Length, ULONG *written );
@@ -72,7 +72,7 @@ public:
 	int get_fd();
 };
 
-NTSTATUS open_file( file_t *&file, UNICODE_STRING& us );
+NTSTATUS open_file( CFILE *&file, UNICODE_STRING& us );
 void check_completions( void );
 void init_drives();
 

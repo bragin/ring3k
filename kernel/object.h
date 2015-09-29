@@ -32,22 +32,22 @@ typedef list_element<OBJECT> object_entry_t;
 typedef list_iter<OBJECT, 0> object_iter_t;
 
 class OBJECT_FACTORY;
-class open_info_t;
+class OPEN_INFO;
 
-class open_info_t
+class OPEN_INFO
 {
 public:
 	ULONG Attributes;
 	HANDLE root;
 	unicode_string_t path;
 public:
-	open_info_t();
+	OPEN_INFO();
 	bool case_insensitive()
 	{
 		return Attributes & OBJ_CASE_INSENSITIVE;
 	}
-	virtual NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info ) = 0;
-	virtual ~open_info_t();
+	virtual NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info ) = 0;
+	virtual ~OPEN_INFO();
 };
 
 class OBJECT
@@ -74,14 +74,14 @@ public:
 	static bool check_access( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK read, ACCESS_MASK write, ACCESS_MASK all );
 	static void addref( OBJECT *obj );
 	static void release( OBJECT *obj );
-	virtual NTSTATUS open( OBJECT *&out, open_info_t& info );
+	virtual NTSTATUS open( OBJECT *&out, OPEN_INFO& info );
 };
 
-class OBJECT_FACTORY : public open_info_t
+class OBJECT_FACTORY : public OPEN_INFO
 {
 protected:
 	virtual NTSTATUS alloc_object(OBJECT** obj) = 0;
-	virtual NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, open_info_t& info );
+	virtual NTSTATUS on_open( object_dir_t* dir, OBJECT*& obj, OPEN_INFO& info );
 public:
 	NTSTATUS create(
 		PHANDLE Handle,
@@ -160,7 +160,7 @@ NTSTATUS name_object( OBJECT *obj, const OBJECT_ATTRIBUTES *oa );
 NTSTATUS get_named_object( OBJECT **out, const OBJECT_ATTRIBUTES *oa );
 NTSTATUS find_object_by_name( OBJECT **out, const OBJECT_ATTRIBUTES *oa );
 
-NTSTATUS open_root( OBJECT*& obj, open_info_t& info );
+NTSTATUS open_root( OBJECT*& obj, OPEN_INFO& info );
 
 template<typename T> NTSTATUS object_from_handle(T*& out, HANDLE handle, ACCESS_MASK access);
 
