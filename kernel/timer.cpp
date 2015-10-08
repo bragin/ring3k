@@ -39,7 +39,7 @@ static ULONG tick_count;
 
 bool timeout_t::has_expired()
 {
-	return !entry[0].is_linked();
+	return !entry[0].IsLinked();
 }
 
 bool timeout_t::queue_is_valid()
@@ -47,13 +47,13 @@ bool timeout_t::queue_is_valid()
 	timeout_iter_t i(g_timeouts);
 	timeout_t *prev = 0;
 
-	i.reset();
+	i.Reset();
 	while (i)
 	{
 		timeout_t* x = i;
 		if (prev && prev->expires.QuadPart > x->expires.QuadPart)
 			return false;
-		i.next();
+		i.Next();
 		prev = x;
 	}
 
@@ -66,13 +66,13 @@ bool timeout_t::check_timers(LARGE_INTEGER& ret)
 	LARGE_INTEGER now = current_time();
 	timeout_t *t;
 
-	if (!g_timeouts.head())
+	if (!g_timeouts.Head())
 		return false;
 
 	ret.QuadPart = 0LL;
 	while (1)
 	{
-		t = g_timeouts.head();
+		t = g_timeouts.Head();
 		if (!t)
 			return true;
 
@@ -121,7 +121,7 @@ void timeout_t::set_timeout(PLARGE_INTEGER t)
 		expires.QuadPart = 0x7fffffffffffffffLL;
 
 	add();
-	assert(!g_timeouts.empty());
+	assert(!g_timeouts.Empty());
 	assert( queue_is_valid() );
 }
 
@@ -134,20 +134,20 @@ void timeout_t::add()
 	{
 		if (x->expires.QuadPart > expires.QuadPart)
 			break;
-		i.next();
+		i.Next();
 	}
 
 	// if there's a timer before this one, no need to set the interval timer
 	if (x)
-		g_timeouts.insert_before(x, this);
+		g_timeouts.InsertBefore(x, this);
 	else
-		g_timeouts.append(this);
+		g_timeouts.Append(this);
 }
 
 void timeout_t::remove()
 {
-	if (entry[0].is_linked())
-		g_timeouts.unlink(this);
+	if (entry[0].IsLinked())
+		g_timeouts.Unlink(this);
 }
 
 extern KUSER_SHARED_DATA *shared_memory_address;

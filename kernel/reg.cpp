@@ -116,7 +116,7 @@ regkey_t::regkey_t( regkey_t *_parent, UNICODE_STRING *_name ) :
 {
 	name.copy( _name );
 	if (parent)
-		parent->children.append( this );
+		parent->children.Append( this );
 }
 
 regkey_t::~regkey_t()
@@ -125,9 +125,9 @@ regkey_t::~regkey_t()
 	while (i)
 	{
 		regkey_t *tmp = i;
-		i.next();
+		i.Next();
 		tmp->parent = NULL;
-		children.unlink( tmp );
+		children.Unlink( tmp );
 		release( tmp );
 	}
 
@@ -135,8 +135,8 @@ regkey_t::~regkey_t()
 	while (j)
 	{
 		regval_t *tmp = j;
-		j.next();
-		values.unlink( tmp );
+		j.Next();
+		values.Unlink( tmp );
 		delete tmp;
 	}
 }
@@ -160,7 +160,7 @@ ULONG regkey_t::num_values(ULONG& max_name_len, ULONG& max_data_len)
 		regval_t *val = i;
 		max_name_len = max(max_name_len, val->name.Length );
 		max_data_len = max(max_data_len, val->size );
-		i.next();
+		i.Next();
 		n++;
 	}
 	return n;
@@ -176,7 +176,7 @@ ULONG regkey_t::num_subkeys(ULONG& max_name_len, ULONG& max_class_len)
 		regkey_t *subkey = i;
 		max_name_len = max(max_name_len, subkey->name.Length );
 		max_class_len = max(max_class_len, subkey->cls.Length );
-		i.next();
+		i.Next();
 		n++;
 	}
 	return n;
@@ -209,7 +209,7 @@ void regkey_t::delkey()
 {
 	if ( parent )
 	{
-		parent->children.unlink( this );
+		parent->children.Unlink( this );
 		parent = NULL;
 		release( this );
 	}
@@ -221,7 +221,7 @@ regkey_t *regkey_t::get_child( ULONG Index )
 	regkey_t *child;
 	while ((child = i) && Index)
 	{
-		i.next();
+		i.Next();
 		Index--;
 	}
 	return child;
@@ -275,7 +275,7 @@ ULONG do_open_subkey( regkey_t *&key, UNICODE_STRING *name, bool case_insensitiv
 	if (!len)
 		return len;
 
-	for (regkey_iter i(key->children); i; i.next())
+	for (regkey_iter i(key->children); i; i.Next())
 	{
 		regkey_t *subkey = i;
 		if (len != subkey->name.Length)
@@ -399,7 +399,7 @@ NTSTATUS create_key( regkey_t **out, OBJECT_ATTRIBUTES *oa, bool& opened_existin
 regval_t *key_find_value( regkey_t *key, UNICODE_STRING *us )
 {
 
-	for (regval_iter i(key->values); i; i.next())
+	for (regval_iter i(key->values); i; i.Next())
 	{
 		regval_t *val = i;
 		if (unicode_string_equal( &val->name, us, TRUE ))
@@ -420,7 +420,7 @@ NTSTATUS delete_value( regkey_t *key, UNICODE_STRING *us )
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 
 	trace("deleting %pus\n", &val->name);
-	key->values.unlink( val );
+	key->values.Unlink( val );
 	delete val;
 	return STATUS_SUCCESS;
 }
@@ -705,7 +705,7 @@ NTSTATUS NTAPI NtSetValueKey(
 			if (r == STATUS_SUCCESS)
 			{
 				delete_value( key, &us );
-				key->values.append( val );
+				key->values.Append( val );
 			}
 			else
 				delete val;
@@ -741,7 +741,7 @@ NTSTATUS NTAPI NtEnumerateValueKey(
 		return r;
 
 	regval_iter i(key->values);
-	for ( ; i && Index; i.next())
+	for ( ; i && Index; i.Next())
 		Index--;
 
 	if (!i)
@@ -1180,7 +1180,7 @@ void load_reg_key( regkey_t *parent, xmlNode *node )
 		size = hex_to_binary( contents, 0, NULL );
 		val = new regval_t( &name, atoi(type), size );
 		hex_to_binary( contents, size, val->data );
-		parent->values.append( val );
+		parent->values.Append( val );
 		break;
 
 	case 'n': // number
@@ -1191,7 +1191,7 @@ void load_reg_key( regkey_t *parent, xmlNode *node )
 		size = sizeof (ULONG);
 		val = new regval_t( &name, atoi(type), size );
 		number_to_binary( contents, size, val->data );
-		parent->values.append( val );
+		parent->values.Append( val );
 		break;
 
 	case 's': // value stored as a string
@@ -1203,7 +1203,7 @@ void load_reg_key( regkey_t *parent, xmlNode *node )
 		val = new regval_t( &name, atoi(type), data.Length + 2 );
 		memcpy( val->data, data.Buffer, data.Length );
 		memset( val->data + data.Length, 0, 2 );
-		parent->values.append( val );
+		parent->values.Append( val );
 		break;
 
 	case 'k': // key

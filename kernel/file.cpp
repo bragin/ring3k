@@ -389,10 +389,10 @@ void DIRECTORY::Reset()
 	ptr = 0;
 	count = 0;
 
-	while (!entries.empty())
+	while (!entries.Empty())
 	{
-		DIRECTORY_ENTRY *x = entries.head();
-		entries.unlink(x);
+		DIRECTORY_ENTRY *x = entries.Head();
+		entries.Unlink(x);
 		delete x;
 	}
 }
@@ -486,7 +486,7 @@ void DIRECTORY::AddEntry(const char *name)
 	}
 	trace("matched mask %pus\n", &mask);
 	//trace("mode = %o\n", ent->st.st_mode);
-	entries.append(ent);
+	entries.Append(ent);
 	count++;
 }
 
@@ -555,14 +555,14 @@ DIRECTORY_ENTRY* DIRECTORY::GetNext()
 {
 	if (!ptr)
 	{
-		ptr = entries.head();
+		ptr = entries.Head();
 		return ptr;
 	}
 
-	if (ptr == entries.tail())
+	if (ptr == entries.Tail())
 		return 0;
 
-	ptr = ptr->entry[0].get_next();
+	ptr = ptr->entry[0].GetNext();
 
 	return ptr;
 }

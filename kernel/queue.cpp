@@ -64,9 +64,9 @@ thread_message_queue_tt::~thread_message_queue_tt()
 {
 	msg_tt *msg;
 
-	while ((msg = msg_list.head()))
+	while ((msg = msg_list.Head()))
 	{
-		msg_list.unlink( msg );
+		msg_list.Unlink( msg );
 		delete msg;
 	}
 }
@@ -110,7 +110,7 @@ void thread_message_queue_tt::post_quit_message( ULONG ret )
 BOOL thread_message_queue_tt::post_message(
 	HWND Window, UINT Message, WPARAM Wparam, LPARAM Lparam )
 {
-	msg_waiter_tt *waiter = waiter_list.head();
+	msg_waiter_tt *waiter = waiter_list.Head();
 	if (waiter)
 	{
 		MSG& msg = waiter->msg;
@@ -123,7 +123,7 @@ BOOL thread_message_queue_tt::post_message(
 		msg.pt.y = 0;
 
 		// remove from the list first
-		waiter_list.unlink( waiter );
+		waiter_list.Unlink( waiter );
 		set_timeout( 0 );
 
 		// start the thread (might reschedule here )
@@ -136,7 +136,7 @@ BOOL thread_message_queue_tt::post_message(
 	msg_tt* msg = new msg_tt( Window, Message, Wparam, Lparam );
 	if (!msg)
 		return FALSE;
-	msg_list.append( msg );
+	msg_list.Append( msg );
 
 	// FIXME: wake up a thread that is waiting
 	return TRUE;
@@ -145,11 +145,11 @@ BOOL thread_message_queue_tt::post_message(
 // return true if we copied a message
 bool thread_message_queue_tt::get_posted_message( HWND Window, MSG& Message )
 {
-	msg_tt *m = msg_list.head();
+	msg_tt *m = msg_list.Head();
 	if (!m)
 		return false;
 
-	msg_list.unlink( m );
+	msg_list.Unlink( m );
 	Message.hwnd = m->hwnd;
 	Message.message = m->message;
 	Message.wParam = m->wparam;
@@ -179,7 +179,7 @@ win_timer_tt::win_timer_tt( HWND Window, UINT Identifier ) :
 
 win_timer_tt* thread_message_queue_tt::find_timer( HWND Window, UINT Identifier )
 {
-	for (win_timer_iter_t i(timer_list); i; i.next())
+	for (win_timer_iter_t i(timer_list); i; i.Next())
 	{
 		win_timer_tt *t = i;
 		if (t->id != Identifier)
@@ -208,23 +208,23 @@ void thread_message_queue_tt::timer_add( win_timer_tt* timer )
 	win_timer_tt *t = NULL;
 
 	// maintain list in order of expiry time
-	for (win_timer_iter_t i(timer_list); i; i.next())
+	for (win_timer_iter_t i(timer_list); i; i.Next())
 	{
 		t = i;
 		if (t->expiry.QuadPart >= timer->expiry.QuadPart)
 			break;
 	}
 	if (t)
-		timer_list.insert_before( t, timer );
+		timer_list.InsertBefore( t, timer );
 	else
-		timer_list.append( timer );
+		timer_list.Append( timer );
 }
 
 bool thread_message_queue_tt::get_timer_message( HWND Window, MSG& msg )
 {
 	LARGE_INTEGER now = timeout_t::current_time();
 	win_timer_tt *t = NULL;
-	for (win_timer_iter_t i(timer_list); i; i.next())
+	for (win_timer_iter_t i(timer_list); i; i.Next())
 	{
 		t = i;
 		// stop searching after we reach a timer that has not expired
@@ -238,7 +238,7 @@ bool thread_message_queue_tt::get_timer_message( HWND Window, MSG& msg )
 		return false;
 
 	// remove from the front of the queue
-	timer_list.unlink( t );
+	timer_list.Unlink( t );
 
 	msg.hwnd = t->hwnd;
 	msg.message = WM_TIMER;
@@ -259,7 +259,7 @@ BOOLEAN thread_message_queue_tt::set_timer( HWND Window, UINT Identifier, UINT E
 {
 	win_timer_tt* timer = find_timer( Window, Identifier );
 	if (timer)
-		timer_list.unlink( timer );
+		timer_list.Unlink( timer );
 	else
 		timer = new win_timer_tt( Window, Identifier );
 	trace("adding timer %p hwnd %p id %d\n", timer, Window, Identifier );
@@ -275,14 +275,14 @@ BOOLEAN thread_message_queue_tt::kill_timer( HWND Window, UINT Identifier )
 	if (!timer)
 		return FALSE;
 	trace("deleting timer %p hwnd %p id %d\n", timer, Window, Identifier );
-	timer_list.unlink( timer );
+	timer_list.Unlink( timer );
 	delete timer;
 	return TRUE;
 }
 
 bool thread_message_queue_tt::get_message_timeout( HWND Window, LARGE_INTEGER& timeout )
 {
-	for (win_timer_iter_t i(timer_list); i; i.next())
+	for (win_timer_iter_t i(timer_list); i; i.Next())
 	{
 		win_timer_tt *t = i;
 		if (Window != NULL && t->hwnd != Window)
@@ -318,10 +318,10 @@ BOOLEAN thread_message_queue_tt::get_message_no_wait(
 
 void thread_message_queue_tt::signal_timeout()
 {
-	msg_waiter_tt *waiter = waiter_list.head();
+	msg_waiter_tt *waiter = waiter_list.Head();
 	if (waiter)
 	{
-		waiter_list.unlink( waiter );
+		waiter_list.Unlink( waiter );
 		set_timeout( 0 );
 
 		// start the thread (might reschedule here )
@@ -345,7 +345,7 @@ BOOLEAN thread_message_queue_tt::get_message(
 	// wait for a message
 	// a thread sending a message will restart us
 	msg_waiter_tt wait( Message );
-	waiter_list.append( &wait );
+	waiter_list.Append( &wait );
 	current->Stop();
 
 	return !current->IsTerminated();

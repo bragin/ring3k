@@ -217,16 +217,16 @@ ULONG runlist_entry_t::num_running_threads;
 
 void runlist_entry_t::runlist_add()
 {
-	assert( (num_running_threads == 0) ^ !running_threads.empty() );
-	running_threads.prepend( this );
+	assert( (num_running_threads == 0) ^ !running_threads.Empty() );
+	running_threads.Prepend( this );
 	num_running_threads++;
 }
 
 void runlist_entry_t::runlist_remove()
 {
-	running_threads.unlink( this );
+	running_threads.Unlink( this );
 	num_running_threads--;
-	assert( (num_running_threads == 0) ^ !running_threads.empty() );
+	assert( (num_running_threads == 0) ^ !running_threads.Empty() );
 }
 
 ULONG runlist_entry_t::num_active_threads()
@@ -652,7 +652,7 @@ NTSTATUS THREAD_IMPL::QueueApcThread(
 	if (!apc)
 		return STATUS_NO_MEMORY;
 
-	apc_list.append( apc );
+	apc_list.Append( apc );
 	if (in_wait)
 		notify();
 
@@ -662,11 +662,11 @@ NTSTATUS THREAD_IMPL::QueueApcThread(
 BOOLEAN THREAD_IMPL::deliver_apc(NTSTATUS thread_return)
 {
 	// NOTE: can use this to start a thread...
-	thread_apc_t *apc = apc_list.head();
+	thread_apc_t *apc = apc_list.Head();
 	if (!apc)
 		return FALSE;
 
-	apc_list.unlink( apc );
+	apc_list.Unlink( apc );
 
 	// set the return code in Eax
 	ctx.Eax = thread_return;
@@ -943,14 +943,14 @@ THREAD::THREAD(PROCESS *p) :
 {
 	id = allocate_id();
 	addref( process );
-	process->threads.append( this );
+	process->threads.Append( this );
 }
 
 THREAD::~THREAD()
 {
 	if (queue)
 		delete queue;
-	process->threads.unlink( this );
+	process->threads.Unlink( this );
 	release( process );
 }
 
@@ -1011,10 +1011,10 @@ void THREAD_IMPL::query_information( KERNEL_USER_TIMES& info )
 THREAD_IMPL::~THREAD_IMPL()
 {
 	// delete outstanding APCs
-	while (apc_list.empty())
+	while (apc_list.Empty())
 	{
-		thread_apc_t *apc = apc_list.head();
-		apc_list.unlink( apc );
+		thread_apc_t *apc = apc_list.Head();
+		apc_list.Unlink( apc );
 		delete apc;
 	}
 }
@@ -1120,7 +1120,7 @@ NTSTATUS THREAD_IMPL::wait_on( SYNC_OBJECT *obj )
 		return STATUS_NO_MEMORY;
 
 	// Append to list so value in check_wait_any() is right.
-	wait_list.append( wait );
+	wait_list.Append( wait );
 	return STATUS_SUCCESS;
 }
 
@@ -1131,8 +1131,8 @@ void THREAD_IMPL::end_wait()
 	while (i)
 	{
 		thread_obj_wait_t *wait = i;
-		i.next();
-		wait_list.unlink( wait );
+		i.Next();
+		wait_list.Unlink( wait );
 		delete wait;
 	}
 }
@@ -1147,15 +1147,15 @@ NTSTATUS THREAD_IMPL::check_wait_all()
 
 		if (!wait->obj->IsSignalled())
 			return STATUS_PENDING;
-		i.next();
+		i.Next();
 	}
 
-	i.reset();
+	i.Reset();
 	while (i)
 	{
 		thread_obj_wait_t *wait = i;
 		wait->obj->Satisfy();
-		i.next();
+		i.Next();
 	}
 	return STATUS_SUCCESS;
 }
@@ -1169,7 +1169,7 @@ NTSTATUS THREAD_IMPL::check_wait_any()
 	{
 		thread_obj_wait_t *wait = i;
 
-		i.next();
+		i.Next();
 		if (wait->IsSignalled())
 		{
 			wait->Satisfy();
@@ -1599,7 +1599,7 @@ NTSTATUS NTAPI NtTerminateThread(
 
 ULONG THREAD_IMPL::is_last_thread()
 {
-	for ( sibling_iter_t i(process->threads); i; i.next() )
+	for ( sibling_iter_t i(process->threads); i; i.Next() )
 	{
 		THREAD *t = i;
 		if (t != this && !t->IsTerminated())

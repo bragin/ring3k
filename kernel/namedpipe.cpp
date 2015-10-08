@@ -352,7 +352,7 @@ PIPE_CONTAINER::PIPE_CONTAINER( ULONG max ) :
 
 void PIPE_CONTAINER::unlink( PIPE_SERVER *pipe )
 {
-	servers.unlink( pipe );
+	servers.Unlink( pipe );
 	num_instances--;
 }
 
@@ -368,7 +368,7 @@ NTSTATUS PIPE_CONTAINER::create_server( PIPE_SERVER *& pipe, ULONG max_inst )
 
 	pipe = new PIPE_SERVER( this );
 
-	servers.append( pipe );
+	servers.Append( pipe );
 	addref( this );
 
 	return STATUS_SUCCESS;
@@ -404,7 +404,7 @@ void PIPE_SERVER::set_client( PIPE_CLIENT* pipe_client )
 PIPE_SERVER* PIPE_CONTAINER::find_idle_server()
 {
 	// search for an idle server
-	for (pipe_server_iter_t i(servers); i; i.next())
+	for (pipe_server_iter_t i(servers); i; i.Next())
 	{
 		PIPE_SERVER *ps = i;
 		if (ps->is_awaiting_connect())
@@ -424,9 +424,9 @@ PIPE_SERVER::PIPE_SERVER( PIPE_CONTAINER *_container ) :
 PIPE_SERVER::~PIPE_SERVER()
 {
 	PIPE_MESSAGE *msg;
-	while ((msg = received_messages.head()))
+	while ((msg = received_messages.Head()))
 	{
-		received_messages.unlink( msg );
+		received_messages.Unlink( msg );
 		delete msg;
 	}
 	container->unlink( this );
@@ -453,7 +453,7 @@ NTSTATUS PIPE_SERVER::Read( PVOID buffer, ULONG length, ULONG *read )
 		return STATUS_PIPE_BUSY;
 
 	// get a message
-	msg = received_messages.head();
+	msg = received_messages.Head();
 	if (!msg)
 	{
 		// wait for a message
@@ -462,7 +462,7 @@ NTSTATUS PIPE_SERVER::Read( PVOID buffer, ULONG length, ULONG *read )
 		if (current->IsTerminated())
 			return STATUS_THREAD_IS_TERMINATING;
 		assert( thread == NULL );
-		msg = received_messages.head();
+		msg = received_messages.Head();
 	}
 
 	ULONG len = 0;
@@ -472,7 +472,7 @@ NTSTATUS PIPE_SERVER::Read( PVOID buffer, ULONG length, ULONG *read )
 		NTSTATUS r = copy_to_user( buffer, msg->data_ptr(), len );
 		if (r < STATUS_SUCCESS)
 			return r;
-		received_messages.unlink( msg );
+		received_messages.Unlink( msg );
 		delete msg;
 	}
 	*read = len;
@@ -498,7 +498,7 @@ NTSTATUS PIPE_SERVER::Write( PVOID buffer, ULONG length, ULONG *written )
 
 bool PIPE_SERVER::do_connect()
 {
-	for (pipe_client_iter_t i( container->get_clients() ); i; i.next())
+	for (pipe_client_iter_t i( container->get_clients() ); i; i.Next())
 	{
 		PIPE_CLIENT *pipe_client = i;
 
@@ -558,7 +558,7 @@ NTSTATUS PIPE_SERVER::FSControl( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsCon
 
 void PIPE_SERVER::queue_message_from_client( PIPE_MESSAGE *msg )
 {
-	received_messages.append( msg );
+	received_messages.Append( msg );
 
 	// wakeup readers
 	assert( state == pipe_connected );
@@ -572,7 +572,7 @@ void PIPE_SERVER::queue_message_from_client( PIPE_MESSAGE *msg )
 
 void PIPE_SERVER::queue_message_to_client( PIPE_MESSAGE *msg )
 {
-	sent_messages.append( msg );
+	sent_messages.Append( msg );
 	// wakeup readers
 	assert( state == pipe_connected );
 	if (client->thread)
@@ -602,7 +602,7 @@ NTSTATUS PIPE_CLIENT::Read( PVOID buffer, ULONG length, ULONG *read )
 		return STATUS_PIPE_BUSY;
 
 	// get a message
-	msg = server->sent_messages.head();
+	msg = server->sent_messages.Head();
 	if (!msg)
 	{
 		// wait for a message
@@ -611,7 +611,7 @@ NTSTATUS PIPE_CLIENT::Read( PVOID buffer, ULONG length, ULONG *read )
 		if (current->IsTerminated())
 			return STATUS_THREAD_IS_TERMINATING;
 		assert( thread == NULL );
-		msg = server->sent_messages.head();
+		msg = server->sent_messages.Head();
 	}
 
 	ULONG len = 0;
@@ -621,7 +621,7 @@ NTSTATUS PIPE_CLIENT::Read( PVOID buffer, ULONG length, ULONG *read )
 		NTSTATUS r = copy_to_user( buffer, msg->data_ptr(), len );
 		if (r < STATUS_SUCCESS)
 			return r;
-		server->sent_messages.unlink( msg );
+		server->sent_messages.Unlink( msg );
 		delete msg;
 	}
 	*read = len;

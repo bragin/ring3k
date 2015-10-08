@@ -253,12 +253,12 @@ NTSTATUS get_shared_memory_block( PROCESS *p )
 
 THREAD *find_thread_by_client_id( CLIENT_ID *id )
 {
-	for ( process_iter_t i(processes); i; i.next() )
+	for ( process_iter_t i(processes); i; i.Next() )
 	{
 		PROCESS *p = i;
 		if (p->id == (ULONG)id->UniqueProcess)
 		{
-			for ( sibling_iter_t j(p->threads); j; j.next() )
+			for ( sibling_iter_t j(p->threads); j; j.Next() )
 			{
 				THREAD *t = j;
 				if (t->GetID() == (ULONG)id->UniqueThread)
@@ -272,7 +272,7 @@ THREAD *find_thread_by_client_id( CLIENT_ID *id )
 
 PROCESS *find_process_by_id( HANDLE UniqueProcess )
 {
-	for ( process_iter_t i(processes); i; i.next() )
+	for ( process_iter_t i(processes); i; i.Next() )
 	{
 		PROCESS *p = i;
 		if (p->id == (ULONG)UniqueProcess)
@@ -283,7 +283,7 @@ PROCESS *find_process_by_id( HANDLE UniqueProcess )
 
 BOOLEAN PROCESS::IsSignalled( void )
 {
-	for ( sibling_iter_t i(threads); i; i.next() )
+	for ( sibling_iter_t i(threads); i; i.Next() )
 	{
 		THREAD *t = i;
 		if (!t->IsTerminated())
@@ -374,14 +374,14 @@ PROCESS::PROCESS() :
 	ExitStatus = STATUS_PENDING;
 	id = allocate_id();
 	memset( &handle_table, 0, sizeof handle_table );
-	processes.append( this );
+	processes.Append( this );
 }
 
 PROCESS::~PROCESS()
 {
 	if (win32k_info)
 		delete win32k_info;
-	processes.unlink( this );
+	processes.Unlink( this );
 	exception_port = 0;
 }
 
@@ -900,7 +900,7 @@ NTSTATUS NTAPI NtTerminateProcess(
 	while ( i )
 	{
 		THREAD *t = i;
-		i.next();
+		i.Next();
 		t->Terminate( Status );
 	}
 

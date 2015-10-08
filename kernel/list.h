@@ -31,144 +31,144 @@ template<class T> class LIST_ELEMENT
 {
 	friend class LIST_ELEMENT_ACCESSOR<T>;
 protected:
-	T *prev;
-	T *next;
+	T *Prev;
+	T *Next;
 public:
-	void init()
+	void Init()
 	{
-		this->prev = (T*)-1;
-		this->next = (T*)-1;
+		this->Prev = (T*)-1;
+		this->Next = (T*)-1;
 	}
 	explicit LIST_ELEMENT()
 	{
-		init();
+		Init();
 	}
 	~LIST_ELEMENT() {}
-	bool is_linked()
+	bool IsLinked()
 	{
-		return this->prev != (T*)-1;
+		return this->Prev != (T*)-1;
 	}
-	T* get_next()
+	T* GetNext()
 	{
-		return this->next;
+		return this->Next;
 	}
-	T* get_prev()
+	T* GetPrev()
 	{
-		return this->prev;
+		return this->Prev;
 	}
 };
 
 template<class T> class LIST_ELEMENT_ACCESSOR
 {
 protected:
-	T*& prevptr(LIST_ELEMENT<T>& elem)
+	T*& PrevPtr(LIST_ELEMENT<T>& elem)
 	{
-		return elem.prev;
+		return elem.Prev;
 	}
-	T*& nextptr(LIST_ELEMENT<T>& elem)
+	T*& NextPtr(LIST_ELEMENT<T>& elem)
 	{
-		return elem.next;
+		return elem.Next;
 	}
 };
 
 template<class T, const int X> class LIST_ANCHOR : public LIST_ELEMENT_ACCESSOR<T>
 {
-	T *_head;
-	T *_tail;
+	T *_Head;
+	T *_Tail;
 public:
 	explicit LIST_ANCHOR()
 	{
-		this->_head = 0;
-		this->_tail = 0;
+		this->_Head = 0;
+		this->_Tail = 0;
 	}
 	~LIST_ANCHOR() {}
-	bool empty()
+	bool Empty()
 	{
-		return !(this->_head || this->_tail);
+		return !(this->_Head || this->_Tail);
 	}
-	T *head()
+	T *Head()
 	{
-		return this->_head;
+		return this->_Head;
 	}
-	T *tail()
+	T *Tail()
 	{
-		return this->_tail;
+		return this->_Tail;
 	}
-	void unlink(T* elem)
+	void Unlink(T* elem)
 	{
-		assert(elem->entry[X].is_linked());
-		if (this->_head == elem)
-			this->_head = LIST_ELEMENT_ACCESSOR<T>::nextptr(elem->entry[X]);
+		assert(elem->entry[X].IsLinked());
+		if (this->_Head == elem)
+			this->_Head = LIST_ELEMENT_ACCESSOR<T>::NextPtr(elem->entry[X]);
 		else
-			LIST_ELEMENT_ACCESSOR<T>::nextptr(LIST_ELEMENT_ACCESSOR<T>::prevptr(elem->entry[X])->entry[X]) = LIST_ELEMENT_ACCESSOR<T>::nextptr(elem->entry[X]);
-		if (this->_tail == elem)
-			this->_tail = LIST_ELEMENT_ACCESSOR<T>::prevptr(elem->entry[X]);
+			LIST_ELEMENT_ACCESSOR<T>::NextPtr(LIST_ELEMENT_ACCESSOR<T>::PrevPtr(elem->entry[X])->entry[X]) = LIST_ELEMENT_ACCESSOR<T>::NextPtr(elem->entry[X]);
+		if (this->_Tail == elem)
+			this->_Tail = LIST_ELEMENT_ACCESSOR<T>::PrevPtr(elem->entry[X]);
 		else
-			LIST_ELEMENT_ACCESSOR<T>::prevptr(LIST_ELEMENT_ACCESSOR<T>::nextptr(elem->entry[X])->entry[X]) = LIST_ELEMENT_ACCESSOR<T>::prevptr(elem->entry[X]);
-		elem->entry[X].init();
+			LIST_ELEMENT_ACCESSOR<T>::PrevPtr(LIST_ELEMENT_ACCESSOR<T>::NextPtr(elem->entry[X])->entry[X]) = LIST_ELEMENT_ACCESSOR<T>::PrevPtr(elem->entry[X]);
+		elem->entry[X].Init();
 	}
 
-	void append( T* elem )
+	void Append( T* elem )
 	{
-		assert(!elem->entry[X].is_linked());
-		if (this->_tail)
-			LIST_ELEMENT_ACCESSOR<T>::nextptr(this->_tail->entry[X]) = elem;
+		assert(!elem->entry[X].IsLinked());
+		if (this->_Tail)
+			LIST_ELEMENT_ACCESSOR<T>::NextPtr(this->_Tail->entry[X]) = elem;
 		else
-			this->_head = elem;
-		LIST_ELEMENT_ACCESSOR<T>::prevptr(elem->entry[X]) = this->_tail;
-		LIST_ELEMENT_ACCESSOR<T>::nextptr(elem->entry[X]) = 0;
-		this->_tail = elem;
+			this->_Head = elem;
+		LIST_ELEMENT_ACCESSOR<T>::PrevPtr(elem->entry[X]) = this->_Tail;
+		LIST_ELEMENT_ACCESSOR<T>::NextPtr(elem->entry[X]) = 0;
+		this->_Tail = elem;
 	}
 
-	void prepend( T* elem )
+	void Prepend( T* elem )
 	{
-		assert(!elem->entry[X].is_linked());
-		if (this->_head)
-			LIST_ELEMENT_ACCESSOR<T>::prevptr(this->_head->entry[X]) = elem;
+		assert(!elem->entry[X].IsLinked());
+		if (this->_Head)
+			LIST_ELEMENT_ACCESSOR<T>::PrevPtr(this->_Head->entry[X]) = elem;
 		else
-			this->_tail = elem;
-		LIST_ELEMENT_ACCESSOR<T>::nextptr(elem->entry[X]) = this->_head;
-		LIST_ELEMENT_ACCESSOR<T>::prevptr(elem->entry[X]) = 0;
-		this->_head = elem;
+			this->_Tail = elem;
+		LIST_ELEMENT_ACCESSOR<T>::NextPtr(elem->entry[X]) = this->_Head;
+		LIST_ELEMENT_ACCESSOR<T>::PrevPtr(elem->entry[X]) = 0;
+		this->_Head = elem;
 	}
 
-	void insert_after( T* point, T* elem )
+	void InsertAfter( T* point, T* elem )
 	{
-		assert(!elem->entry[X].is_linked());
-		if (LIST_ELEMENT_ACCESSOR<T>::nextptr(point->entry[X]))
-			LIST_ELEMENT_ACCESSOR<T>::prevptr(LIST_ELEMENT_ACCESSOR<T>::nextptr(point->entry[X])->entry[X]) = elem;
+		assert(!elem->entry[X].IsLinked());
+		if (LIST_ELEMENT_ACCESSOR<T>::NextPtr(point->entry[X]))
+			LIST_ELEMENT_ACCESSOR<T>::PrevPtr(LIST_ELEMENT_ACCESSOR<T>::NextPtr(point->entry[X])->entry[X]) = elem;
 		else
-			this->_tail = elem;
-		LIST_ELEMENT_ACCESSOR<T>::nextptr(elem->entry[X]) = LIST_ELEMENT_ACCESSOR<T>::nextptr(point->entry[X]);
-		LIST_ELEMENT_ACCESSOR<T>::nextptr(point->entry[X]) = elem;
-		LIST_ELEMENT_ACCESSOR<T>::prevptr(elem->entry[X]) = point;
+			this->_Tail = elem;
+		LIST_ELEMENT_ACCESSOR<T>::NextPtr(elem->entry[X]) = LIST_ELEMENT_ACCESSOR<T>::NextPtr(point->entry[X]);
+		LIST_ELEMENT_ACCESSOR<T>::NextPtr(point->entry[X]) = elem;
+		LIST_ELEMENT_ACCESSOR<T>::PrevPtr(elem->entry[X]) = point;
 	}
 
-	void insert_before( T* point, T* elem )
+	void InsertBefore( T* point, T* elem )
 	{
-		assert(!elem->entry[X].is_linked());
-		if (LIST_ELEMENT_ACCESSOR<T>::prevptr(point->entry[X]))
-			LIST_ELEMENT_ACCESSOR<T>::nextptr(LIST_ELEMENT_ACCESSOR<T>::prevptr(point->entry[X])->entry[X]) = elem;
+		assert(!elem->entry[X].IsLinked());
+		if (LIST_ELEMENT_ACCESSOR<T>::PrevPtr(point->entry[X]))
+			LIST_ELEMENT_ACCESSOR<T>::NextPtr(LIST_ELEMENT_ACCESSOR<T>::PrevPtr(point->entry[X])->entry[X]) = elem;
 		else
-			this->_head = elem;
-		LIST_ELEMENT_ACCESSOR<T>::prevptr(elem->entry[X]) = LIST_ELEMENT_ACCESSOR<T>::prevptr(point->entry[X]);
-		LIST_ELEMENT_ACCESSOR<T>::prevptr(point->entry[X]) = elem;
-		LIST_ELEMENT_ACCESSOR<T>::nextptr(elem->entry[X]) = point;
+			this->_Head = elem;
+		LIST_ELEMENT_ACCESSOR<T>::PrevPtr(elem->entry[X]) = LIST_ELEMENT_ACCESSOR<T>::PrevPtr(point->entry[X]);
+		LIST_ELEMENT_ACCESSOR<T>::PrevPtr(point->entry[X]) = elem;
+		LIST_ELEMENT_ACCESSOR<T>::NextPtr(elem->entry[X]) = point;
 	}
 };
 
 template<class T, const int X> class LIST_ITER : public LIST_ELEMENT_ACCESSOR<T>
 {
-	LIST_ANCHOR<T,X>& list;
+	LIST_ANCHOR<T,X>& List;
 	T* i;
 public:
-	explicit LIST_ITER(LIST_ANCHOR<T,X>& l) : list(l), i(l.head()) {}
-	T* next()
+	explicit LIST_ITER(LIST_ANCHOR<T,X>& l) : List(l), i(l.Head()) {}
+	T* Next()
 	{
-		i = LIST_ELEMENT_ACCESSOR<T>::nextptr(i->entry[X]);
+		i = LIST_ELEMENT_ACCESSOR<T>::NextPtr(i->entry[X]);
 		return i;
 	}
-	T* cur()
+	T* Current()
 	{
 		return i;
 	}
@@ -180,9 +180,9 @@ public:
 	{
 		return i;
 	}
-	void reset()
+	void Reset()
 	{
-		i = list.head();
+		i = List.Head();
 	}
 };
 

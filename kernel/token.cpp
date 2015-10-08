@@ -89,9 +89,9 @@ token_privileges_t::token_privileges_t() :
 token_privileges_t::~token_privileges_t()
 {
 	luid_and_privileges_t *priv;
-	while ((priv = priv_list.head()))
+	while ((priv = priv_list.Head()))
 	{
-		priv_list.unlink( priv );
+		priv_list.Unlink( priv );
 		delete priv;
 	}
 	priv_count = 0;
@@ -104,7 +104,7 @@ void token_privileges_t::dump()
 	{
 		luid_and_privileges_t *priv = i;
 		priv->dump();
-		i.next();
+		i.Next();
 	}
 }
 
@@ -115,7 +115,7 @@ NTSTATUS token_privileges_t::add( LUID_AND_ATTRIBUTES& la )
 		return STATUS_NO_MEMORY;
 	priv->Luid = la.Luid;
 	priv->Attributes = la.Attributes;
-	priv_list.append( priv );
+	priv_list.Append( priv );
 	priv_count++;
 	return STATUS_SUCCESS;
 }
@@ -165,7 +165,7 @@ NTSTATUS token_privileges_t::copy_to_user( PTOKEN_PRIVILEGES tp )
 		r = ::copy_to_user( &tp->Privileges[n], la, sizeof *la );
 		if (r < STATUS_SUCCESS)
 			break;
-		i.next();
+		i.Next();
 		n++;
 	}
 
@@ -544,9 +544,9 @@ public:
 acl_t::~acl_t()
 {
 	ace_t *ace;
-	while ((ace = ace_list.head()))
+	while ((ace = ace_list.Head()))
 	{
-		ace_list.unlink( ace );
+		ace_list.Unlink( ace );
 		delete ace;
 	}
 }
@@ -559,7 +559,7 @@ ULONG acl_t::get_length()
 	{
 		ace_t *ace = i;
 		len += ace->get_length();
-		i.next();
+		i.Next();
 	}
 	return len;
 }
@@ -576,14 +576,14 @@ NTSTATUS acl_t::copy_to_user( PVOID pacl )
 		ace_t *ace = i;
 		r = ace->copy_to_user( (PVOID) ((BYTE*) pacl + ofs) );
 		ofs += ace->get_length();
-		i.next();
+		i.Next();
 	}
 	return r;
 }
 
 void acl_t::add( ace_t *ace )
 {
-	ace_list.append( ace );
+	ace_list.Append( ace );
 }
 
 class privilege_set_t

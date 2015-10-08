@@ -300,7 +300,7 @@ SYNC_OBJECT::SYNC_OBJECT()
 
 SYNC_OBJECT::~SYNC_OBJECT()
 {
-	assert( watchers.empty() );
+	assert( watchers.Empty() );
 }
 
 void SYNC_OBJECT::notify_watchers()
@@ -309,19 +309,19 @@ void SYNC_OBJECT::notify_watchers()
 	while (i)
 	{
 		watch_t *w = i;
-		i.next();
+		i.Next();
 		w->notify();
 	}
 }
 
 void SYNC_OBJECT::add_watch( watch_t *watch )
 {
-	watchers.append( watch );
+	watchers.Append( watch );
 }
 
 void SYNC_OBJECT::remove_watch( watch_t *watch )
 {
-	watchers.unlink( watch );
+	watchers.Unlink( watch );
 }
 
 watch_t::~watch_t()

@@ -844,7 +844,7 @@ wndcls_tt::wndcls_tt( NTWNDCLASSEX& ClassInfo, const UNICODE_STRING& ClassName, 
 
 wndcls_tt* wndcls_tt::from_name( const UNICODE_STRING& wndcls_name )
 {
-	for (wndcls_iter_tt i(wndcls_list); i; i.next())
+	for (wndcls_iter_tt i(wndcls_list); i; i.Next())
 	{
 		wndcls_tt *cls = i;
 		if (cls->get_name().is_equal( wndcls_name ))
@@ -894,7 +894,7 @@ ATOM NTAPI NtUserRegisterClassExWOW(
 	if (!cls)
 		return 0;
 
-	wndcls_list.append( cls );
+	wndcls_list.Append( cls );
 
 	return cls->get_atom();
 }

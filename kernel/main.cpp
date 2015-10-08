@@ -105,7 +105,7 @@ SLEEPER* sleeper = &default_sleeper;
 int schedule(void)
 {
 	/* while there's still a thread running */
-	while (processes.head())
+	while (processes.Head())
 	{
 		// check if any thing interesting has happened
 		sleeper->check_events( false );
@@ -228,14 +228,14 @@ void do_cleanup( void )
 {
 	int num_threads = 0, num_processes = 0;
 
-	for ( process_iter_t pi(processes); pi; pi.next() )
+	for ( process_iter_t pi(processes); pi; pi.Next() )
 	{
 		PROCESS *p = pi;
 		if (p->IsSignalled())
 			continue;
 		num_processes++;
 		fprintf(stderr, "process %04lx\n", p->id);
-		for ( sibling_iter_t ti(p->threads); ti; ti.next() )
+		for ( sibling_iter_t ti(p->threads); ti; ti.Next() )
 		{
 			THREAD *t = ti;
 			if (t->IsSignalled())

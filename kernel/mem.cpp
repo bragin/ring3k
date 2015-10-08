@@ -82,7 +82,7 @@ void ADDRESS_SPACE_IMPL::verify()
 	ULONG total = 0, count = 0;
 	BOOLEAN free_blocks = 0, bad_xlate = 0;
 
-	for ( MBLOCK_iter_t i(blocks); i; i.next() )
+	for ( MBLOCK_iter_t i(blocks); i; i.Next() )
 	{
 		MBLOCK *mb = i;
 
@@ -101,7 +101,7 @@ void ADDRESS_SPACE_IMPL::verify()
 	{
 		trace("invalid VM... %d free blocks %d bad xlate entries\n",
 			  free_blocks, bad_xlate);
-		for ( MBLOCK_iter_t i(blocks); i; i.next() )
+		for ( MBLOCK_iter_t i(blocks); i; i.Next() )
 		{
 			MBLOCK *mb = i;
 			mb->Dump();
@@ -133,8 +133,8 @@ void ADDRESS_SPACE_IMPL::destroy()
 	verify();
 
 	// free all the non-free allocations
-	while (blocks.head())
-		free_shared( blocks.head() );
+	while (blocks.Head())
+		free_shared( blocks.Head() );
 
 	::munmap( xlate, num_pages * sizeof (MBLOCK*) );
 }
@@ -193,7 +193,7 @@ bool ADDRESS_SPACE_IMPL::init(BYTE *high)
 
 void ADDRESS_SPACE_IMPL::dump()
 {
-	for ( MBLOCK_iter_t i(blocks); i; i.next() )
+	for ( MBLOCK_iter_t i(blocks); i; i.Next() )
 	{
 		MBLOCK *mb = i;
 		mb->Dump();
@@ -294,13 +294,13 @@ ULONG ADDRESS_SPACE_IMPL::check_area( BYTE *address, size_t length )
 
 void ADDRESS_SPACE_IMPL::insert_block( MBLOCK *mb )
 {
-	blocks.append( mb );
+	blocks.Append( mb );
 }
 
 void ADDRESS_SPACE_IMPL::remove_block( MBLOCK *mb )
 {
 	assert( mb->IsFree() );
-	blocks.unlink( mb );
+	blocks.Unlink( mb );
 }
 
 // splits one block into three parts (before, middle, after)

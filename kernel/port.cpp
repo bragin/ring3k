@@ -52,9 +52,9 @@ public:
 	void *operator new(size_t n, size_t len);
 	void operator delete(void* ptr);
 	explicit MESSAGE();
-	bool is_linked()
+	bool IsLinked()
 	{
-		return entry[0].is_linked();
+		return entry[0].IsLinked();
 	}
 	~MESSAGE();
 	void dump();
@@ -80,9 +80,9 @@ struct listener_t
 public:
 	explicit listener_t(port_t *p, THREAD *t, BOOLEAN wc, ULONG id);
 	~listener_t();
-	bool is_linked()
+	bool IsLinked()
 	{
-		return entry[0].is_linked();
+		return entry[0].IsLinked();
 	}
 };
 
@@ -151,13 +151,13 @@ MESSAGE::MESSAGE() :
 
 MESSAGE::~MESSAGE()
 {
-	assert( !is_linked() );
+	assert( !IsLinked() );
 }
 
 void unlink_and_free_message( MESSAGE_LIST *list, MESSAGE *msg )
 {
-	assert( msg->is_linked() );
-	list->unlink( msg );
+	assert( msg->IsLinked() );
+	list->Unlink( msg );
 	delete msg;
 }
 
@@ -165,7 +165,7 @@ void msg_free_unlinked( MESSAGE *msg )
 {
 	if (!msg)
 		return;
-	if (msg->is_linked())
+	if (msg->IsLinked())
 		return;
 	delete msg;
 }
@@ -317,14 +317,14 @@ listener_t::listener_t(port_t *p, THREAD *t, BOOLEAN connect, ULONG id) :
 	message_id(id)
 {
 	addref( t );
-	port->queue->listeners.append( this );
+	port->queue->listeners.Append( this );
 }
 
 listener_t::~listener_t()
 {
 	// maybe still linked if the thread was terminated
-	if (is_linked())
-		port->queue->listeners.unlink( this );
+	if (IsLinked())
+		port->queue->listeners.Unlink( this );
 	release( thread );
 }
 
@@ -375,10 +375,10 @@ port_queue_t::~port_queue_t()
 
 	//trace("%p\n", this);
 
-	while ((m = messages.head() ))
+	while ((m = messages.Head() ))
 		unlink_and_free_message( &messages, m );
 
-	assert( listeners.empty() );
+	assert( listeners.Empty() );
 }
 
 void port_t::send_close_message( void )
@@ -408,7 +408,7 @@ void port_t::send_close_message( void )
 port_t::~port_t()
 {
 	// check if this is the exception port for any processes
-	for ( process_iter_t i(processes); i; i.next() )
+	for ( process_iter_t i(processes); i; i.Next() )
 	{
 		PROCESS *p = i;
 		if (p->exception_port == this)
@@ -487,7 +487,7 @@ NTSTATUS create_named_port(
 MESSAGE *port_queue_t::find_connection_request()
 {
 	// check for existing connect requests
-	for ( MESSAGE_ITER i(messages); i ; i.next() )
+	for ( MESSAGE_ITER i(messages); i ; i.Next() )
 	{
 		MESSAGE *msg = i;
 		if (msg->req.MessageType == LPC_CONNECTION_REQUEST)
@@ -503,7 +503,7 @@ NTSTATUS port_t::send_reply( MESSAGE *reply )
 
 	reply->dump();
 
-	for (listener_iter_t i(queue->listeners); i; i.next())
+	for (listener_iter_t i(queue->listeners); i; i.Next())
 	{
 		listener_t *l = i;
 
@@ -513,7 +513,7 @@ NTSTATUS port_t::send_reply( MESSAGE *reply )
 		if (l->message_id == reply->req.MessageId)
 		{
 			l->port->received_msg = reply;
-			queue->listeners.unlink( l );
+			queue->listeners.Unlink( l );
 			l->thread->Start();
 			return STATUS_SUCCESS;
 		}
@@ -527,9 +527,9 @@ void port_t::send_message( MESSAGE *msg )
 	msg->dump();
 
 	msg->destination_id = identifier;
-	queue->messages.append( msg );
+	queue->messages.Append( msg );
 
-	for (listener_iter_t i(queue->listeners); i; i.next())
+	for (listener_iter_t i(queue->listeners); i; i.Next())
 	{
 		listener_t *l = i;
 		if (l->message_id)
@@ -537,7 +537,7 @@ void port_t::send_message( MESSAGE *msg )
 		if (!l->want_connect || msg->req.MessageType == LPC_CONNECTION_REQUEST)
 		{
 			//trace("queue %p has listener %p\n", queue, l->thread);
-			queue->listeners.unlink( l );
+			queue->listeners.Unlink( l );
 			l->thread->Start();
 			return;
 		}
@@ -559,7 +559,7 @@ void port_t::listen( MESSAGE *&msg )
 		msg = queue->find_connection_request();
 		assert(msg);
 	}
-	queue->messages.unlink(msg);
+	queue->messages.Unlink(msg);
 }
 
 NTSTATUS connect_port(
@@ -785,7 +785,7 @@ void port_t::request_wait_reply( MESSAGE *msg, MESSAGE *&reply )
 	current->Wait();
 	reply = received_msg;
 	received_msg = 0;
-	assert( !reply->is_linked() );
+	assert( !reply->IsLinked() );
 }
 
 NTSTATUS port_t::reply_wait_receive( MESSAGE *reply, MESSAGE *& received )
@@ -799,20 +799,20 @@ NTSTATUS port_t::reply_wait_receive( MESSAGE *reply, MESSAGE *& received )
 			return r;
 	}
 
-	received = queue->messages.head();
+	received = queue->messages.Head();
 	if (!received)
 	{
 		listener_t l( this, current, FALSE, 0 );
 
 		current->Wait();
-		received = queue->messages.head();
+		received = queue->messages.Head();
 	}
 	if (!received)
 		return STATUS_THREAD_IS_TERMINATING;
 	if (current->IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
-	queue->messages.unlink(received);
-	assert( !received->is_linked() );
+	queue->messages.Unlink(received);
+	assert( !received->IsLinked() );
 
 	return STATUS_SUCCESS;
 }

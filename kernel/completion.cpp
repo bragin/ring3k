@@ -79,7 +79,7 @@ public:
 	void SetPacket( COMPLETION_PACKET* _packet );
 	bool IsLinked()
 	{
-		return entry[0].is_linked();
+		return entry[0].IsLinked();
 	}
 };
 
@@ -87,7 +87,7 @@ void COMPLETION_WAITER::Stop(
 	COMPLETION_WAITER_LIST& waiter_list,
 	PLARGE_INTEGER timeout)
 {
-	waiter_list.append(this);
+	waiter_list.Append(this);
 	//thread->set_timeout( timeout );
 	thread->Wait();
 	//thread->set_timeout( 0 );
@@ -143,7 +143,7 @@ public:
 	void PortWaitIdle();
 	bool IsLinked()
 	{
-		return entry[0].is_linked();
+		return entry[0].IsLinked();
 	}
 	void StartWaiter( COMPLETION_WAITER *waiter );
 };
@@ -184,7 +184,7 @@ COMPLETION_PORT_LIST COMPLETION_PORT_IMPL::waiting_thread_ports;
 
 void CheckCompletions( void )
 {
-	COMPLETION_PORT_IMPL *port = COMPLETION_PORT_IMPL::waiting_thread_ports.head();
+	COMPLETION_PORT_IMPL *port = COMPLETION_PORT_IMPL::waiting_thread_ports.Head();
 	if (!port)
 		return;
 	port->CheckWaiters();
@@ -193,7 +193,7 @@ void CheckCompletions( void )
 void COMPLETION_PORT_IMPL::CheckWaiters()
 {
 	// start the first waiter
-	COMPLETION_WAITER *waiter = waiter_list.head();
+	COMPLETION_WAITER *waiter = waiter_list.Head();
 	assert( waiter );
 
 	StartWaiter( waiter );
@@ -203,17 +203,17 @@ void COMPLETION_PORT_IMPL::PortWaitIdle()
 {
 	if (IsLinked())
 		return;
-	waiting_thread_ports.append( this );
+	waiting_thread_ports.Append( this );
 }
 
 void COMPLETION_PORT_IMPL::Set(ULONG key, ULONG value, NTSTATUS status, ULONG info)
 {
 	COMPLETION_PACKET *packet;
 	packet = new COMPLETION_PACKET( key, value, status, info );
-	queue.append( packet );
+	queue.Append( packet );
 
 	// queue a packet if there's no waiting thread
-	COMPLETION_WAITER *waiter = waiter_list.head();
+	COMPLETION_WAITER *waiter = waiter_list.Head();
 	if (!waiter)
 		return;
 
@@ -227,23 +227,23 @@ void COMPLETION_PORT_IMPL::Set(ULONG key, ULONG value, NTSTATUS status, ULONG in
 
 	// there should only be one packet in the queue here
 	StartWaiter( waiter );
-	assert( queue.empty() );
+	assert( queue.Empty() );
 }
 
 void COMPLETION_PORT_IMPL::StartWaiter( COMPLETION_WAITER *waiter )
 {
 	// remove a packet from the queue
-	COMPLETION_PACKET *packet = queue.head();
+	COMPLETION_PACKET *packet = queue.Head();
 	assert( packet );
-	queue.unlink( packet );
+	queue.Unlink( packet );
 
 	// pass the packet to the waiting thread
 	waiter->SetPacket( packet );
 
 	// unlink the waiter, and possibly unlink this port
-	waiter_list.unlink( waiter );
-	if (waiter_list.empty() && IsLinked())
-		waiting_thread_ports.unlink( this );
+	waiter_list.Unlink( waiter );
+	if (waiter_list.Empty() && IsLinked())
+		waiting_thread_ports.Unlink( this );
 
 	// restart the waiter last
 	waiter->Start();
@@ -253,7 +253,7 @@ NTSTATUS COMPLETION_PORT_IMPL::Remove(ULONG& key, ULONG& value, NTSTATUS& status
 {
 
 	// try remove the completion entry first
-	COMPLETION_PACKET *packet = queue.head();
+	COMPLETION_PACKET *packet = queue.Head();
 	if (!packet)
 	{
 		// queue thread here
@@ -270,7 +270,7 @@ NTSTATUS COMPLETION_PORT_IMPL::Remove(ULONG& key, ULONG& value, NTSTATUS& status
 		PortWaitIdle();
 		COMPLETION_WAITER waiter(current);
 		waiter.Stop( waiter_list, timeout );
-		//if (queue.empty() && is_linked())
+		//if (queue.empty() && IsLinked())
 			//waiting_thread_ports.unlink( this );
 		packet = waiter.GetPacket();
 	}
@@ -278,7 +278,7 @@ NTSTATUS COMPLETION_PORT_IMPL::Remove(ULONG& key, ULONG& value, NTSTATUS& status
 	{
 		// there's enough free threads to run, and there's a packet waiting
 		// we're ready to go
-		queue.unlink( packet );
+		queue.Unlink( packet );
 	}
 	if (!packet)
 		return STATUS_TIMEOUT;

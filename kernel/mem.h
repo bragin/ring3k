@@ -140,7 +140,7 @@ public:
 	void Dump();
 	int IsLinked()
 	{
-		return entry[0].is_linked();
+		return entry[0].IsLinked();
 	}
 	BYTE *GetKernelAddress()
 	{

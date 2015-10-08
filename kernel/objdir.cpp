@@ -60,7 +60,7 @@ OBJECT_DIR_IMPL::~OBJECT_DIR_IMPL()
 	while( i )
 	{
 		OBJECT *obj = i;
-		i.next();
+		i.Next();
 		unlink( obj );
 	}
 }
@@ -68,14 +68,14 @@ OBJECT_DIR_IMPL::~OBJECT_DIR_IMPL()
 void OBJECT_DIR_IMPL::unlink( OBJECT *obj )
 {
 	assert( obj );
-	object_list.unlink( obj );
+	object_list.Unlink( obj );
 	set_obj_parent( obj, 0 );
 }
 
 void OBJECT_DIR_IMPL::append( OBJECT *obj )
 {
 	assert( obj );
-	object_list.append( obj );
+	object_list.Append( obj );
 	set_obj_parent( obj, this );
 }
 
@@ -90,7 +90,7 @@ bool OBJECT_DIR_IMPL::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 OBJECT *OBJECT_DIR_IMPL::lookup( UNICODE_STRING& name, bool ignore_case )
 {
 	//trace("searching for %pus\n", &name );
-	for( object_iter_t i(object_list); i; i.next() )
+	for( object_iter_t i(object_list); i; i.Next() )
 	{
 		OBJECT *obj = i;
 		unicode_string_t& entry_name  = obj->get_name();
