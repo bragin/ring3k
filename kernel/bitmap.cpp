@@ -225,7 +225,7 @@ void CBITMAP::DrawVLine(INT x, INT y, INT bottom, COLORREF color)
 		SetPixelL( x, y, color );
 }
 
-BOOL CBITMAP::PenDot( INT x, INT y, pen_t *pen )
+BOOL CBITMAP::PenDot( INT x, INT y, PEN *pen )
 {
 	ULONG width = pen->get_width();
 	COLORREF color = pen->get_color();
@@ -242,7 +242,7 @@ BOOL CBITMAP::PenDot( INT x, INT y, pen_t *pen )
 }
 
 // http://en.wikipedia.org/wiki/Bresenham's_line_algorithm
-BOOL CBITMAP::LineBresenham( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
+BOOL CBITMAP::LineBresenham( INT x0, INT y0, INT x1, INT y1, PEN *pen )
 {
 	INT dx = x1 - x0;
 	INT dy = y1 - y0;
@@ -298,7 +298,7 @@ INT CBITMAP::LineError(INT x0, INT y0, INT x1, INT y1, INT x, INT y)
 	return (top*top)/bottom;
 }
 
-BOOL CBITMAP::LineWide( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
+BOOL CBITMAP::LineWide( INT x0, INT y0, INT x1, INT y1, PEN *pen )
 {
 	if (x0 > x1)
 	{
@@ -352,7 +352,7 @@ BOOL CBITMAP::LineWide( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
 	return TRUE;
 }
 
-BOOL CBITMAP::Line( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
+BOOL CBITMAP::Line( INT x0, INT y0, INT x1, INT y1, PEN *pen )
 {
 	COLORREF color = pen->get_color();
 
@@ -375,14 +375,14 @@ BOOL CBITMAP::Line( INT x0, INT y0, INT x1, INT y1, pen_t *pen )
 	return LineWide( x0, y0, x1, y1, pen );
 }
 
-BOOL CBITMAP::Rectangle(INT left, INT top, INT right, INT bottom, brush_t* brush)
+BOOL CBITMAP::Rectangle(INT left, INT top, INT right, INT bottom, BRUSH* brush)
 {
 	COLORREF brush_val, pen_val;
 
 	// FIXME: use correct pen color
 	pen_val = RGB( 0, 0, 0 );
-	brush_val = brush->get_color();
-	trace("brush color = %08lx\n", brush->get_color());
+	brush_val = brush->GetColor();
+	trace("brush color = %08lx\n", brush->GetColor());
 
 	// top line
 	DrawHLine(left, top, right, pen_val);
@@ -410,7 +410,7 @@ BOOL CBITMAP::Rectangle(INT left, INT top, INT right, INT bottom, brush_t* brush
 
 CBITMAP* BitmapFromHandle( HANDLE handle )
 {
-	gdi_handle_table_entry *entry = get_handle_table_entry( handle );
+	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
 	if (!entry)
 		return FALSE;
 	if (entry->Type != GDI_OBJECT_BITMAP)
@@ -453,7 +453,7 @@ CBITMAP* AllocBitmap( int width, int height, int depth )
 	bm->bits = new unsigned char [bm->BitmapSize()];
 	if (!bm->bits)
 		throw;
-	bm->handle = alloc_gdi_handle( FALSE, GDI_OBJECT_BITMAP, 0, bm );
+	bm->handle = AllocGdiHandle( FALSE, GDI_OBJECT_BITMAP, 0, bm );
 	if (!bm->handle)
 		throw;
 

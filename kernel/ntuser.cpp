@@ -614,7 +614,7 @@ ULONG NTAPI NtUserCallNoParam(ULONG Index)
 BOOLEAN NtReleaseDC( HANDLE hdc )
 {
 	trace("%p\n", hdc );
-	return win32k_manager->release_dc( hdc );
+	return Win32kManager->ReleaseDC( hdc );
 }
 
 BOOLEAN NtPostQuitMessage( ULONG ret )
@@ -785,7 +785,7 @@ HANDLE NTAPI NtUserFindExistingCursorIcon(PUNICODE_STRING Library, PUNICODE_STRI
 HANDLE NTAPI NtUserGetDC(HANDLE Window)
 {
 	if (!Window)
-		return win32k_manager->alloc_screen_dc();
+		return Win32kManager->AllocScreenDC();
 
 	window_tt *win = window_from_handle( Window );
 	if (!win)
@@ -796,7 +796,7 @@ HANDLE NTAPI NtUserGetDC(HANDLE Window)
 
 HGDIOBJ NtUserSelectPalette(HGDIOBJ hdc, HPALETTE palette, BOOLEAN force_bg)
 {
-	return alloc_gdi_object( FALSE, GDI_OBJECT_PALETTE );
+	return AllocGdiObject( FALSE, GDI_OBJECT_PALETTE );
 }
 
 BOOLEAN NTAPI NtUserSetCursorIconData(
@@ -1477,7 +1477,7 @@ void window_tt::set_window_pos( UINT flags )
 
 HGDIOBJ window_tt::get_dc()
 {
-	DEVICE_CONTEXT *dc = win32k_manager->alloc_screen_dc_ptr();
+	DEVICE_CONTEXT *dc = Win32kManager->alloc_screen_dc_ptr();
 	if (!dc)
 		return 0;
 
@@ -1650,7 +1650,7 @@ BOOLEAN NTAPI NtUserRedrawWindow( HWND Window, RECT *Update, HANDLE Region, UINT
 
 ULONG NTAPI NtUserGetAsyncKeyState( ULONG Key )
 {
-	return win32k_manager->get_async_key_state( Key );
+	return Win32kManager->GetAsyncKeyState( Key );
 }
 
 LRESULT NTAPI NtUserDispatchMessage( PMSG Message )

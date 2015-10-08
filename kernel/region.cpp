@@ -188,7 +188,7 @@ region_tt::region_tt()
 
 region_tt::~region_tt()
 {
-	free_gdi_shared_memory( (BYTE*) rgn );
+	FreeGdiSharedMemory( (BYTE*) rgn );
 	delete[] rects;
 }
 
@@ -202,7 +202,7 @@ void region_tt::empty_region()
 region_tt* region_tt::alloc()
 {
 	size_t len = sizeof (gdi_region_shared_tt);
-	BYTE *shm = alloc_gdi_shared_memory( len );
+	BYTE *shm = AllocGdiSharedMemory( len );
 	if (!shm)
 		return NULL;
 	BYTE *user_shm = kernel_to_user( shm );
@@ -210,7 +210,7 @@ region_tt* region_tt::alloc()
 	region_tt* region = new region_tt;
 	if (!region)
 		return NULL;
-	region->handle = alloc_gdi_handle( FALSE, GDI_OBJECT_REGION, user_shm, region );
+	region->handle = AllocGdiHandle( FALSE, GDI_OBJECT_REGION, user_shm, region );
 	if (!region->handle)
 	{
 		delete region;
@@ -249,7 +249,7 @@ bool region_tt::validate()
 
 region_tt* region_from_handle( HGDIOBJ handle )
 {
-	gdi_handle_table_entry *entry = get_handle_table_entry( handle );
+	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
 	if (!entry)
 		return NULL;
 	if (entry->Type != GDI_OBJECT_REGION)

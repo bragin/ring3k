@@ -54,8 +54,8 @@ public:
 	virtual COLORREF GetPixel( INT x, INT y );
 	virtual BOOL BitBlt( INT xDest, INT yDest, INT cx, INT cy,
 						 CBITMAP *src, INT xSrc, INT ySrc, ULONG rop );
-	virtual BOOL Rectangle( INT x, INT y, INT width, INT height, brush_t* brush );
-	virtual BOOL Line( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
+	virtual BOOL Rectangle( INT x, INT y, INT width, INT height, BRUSH* brush );
+	virtual BOOL Line( INT x1, INT y1, INT x2, INT y2, PEN *pen );
 protected:
 	virtual ULONG MapColorref( COLORREF color );
 };
@@ -67,9 +67,9 @@ public:
 	window_tt *win;
 public:
 	sdl_device_context_t( CBITMAP *b );
-	virtual CBITMAP* get_bitmap();
-	virtual HANDLE select_bitmap( CBITMAP *bitmap );
-	virtual int getcaps( int index );
+	virtual CBITMAP* GetBitmap();
+	virtual HANDLE SelectBitmap( CBITMAP *bitmap );
+	virtual int GetCaps( int index );
 };
 
 class sdl_sleeper_t : public SLEEPER
@@ -126,7 +126,7 @@ COLORREF sdl_16bpp_bitmap_t::GetPixel( INT x, INT y )
 	return r;
 }
 
-BOOL sdl_16bpp_bitmap_t::Rectangle(INT left, INT top, INT right, INT bottom, brush_t* brush )
+BOOL sdl_16bpp_bitmap_t::Rectangle(INT left, INT top, INT right, INT bottom, BRUSH* brush )
 {
 	trace("sdl_16bpp_bitmap_t::rectangle\n");
 	lock();
@@ -148,7 +148,7 @@ BOOL sdl_16bpp_bitmap_t::BitBlt( INT xDest, INT yDest, INT cx, INT cy, CBITMAP *
 	return r;
 }
 
-BOOL sdl_16bpp_bitmap_t::Line( INT x1, INT y1, INT x2, INT y2, pen_t *pen )
+BOOL sdl_16bpp_bitmap_t::Line( INT x1, INT y1, INT x2, INT y2, PEN *pen )
 {
 	BOOL r;
 	lock();
@@ -239,7 +239,7 @@ bool sdl_sleeper_t::handle_sdl_event( SDL_Event& event )
 		input.ki.wScan = event.key.keysym.scancode;
 		input.ki.dwFlags = (event.type == SDL_KEYUP) ? KEYEVENTF_KEYUP : 0;
 		input.ki.dwExtraInfo = 0;
-		manager->send_input( &input );
+		manager->SendInput( &input );
 		break;
 
 	case SDL_MOUSEBUTTONDOWN:
@@ -252,7 +252,7 @@ bool sdl_sleeper_t::handle_sdl_event( SDL_Event& event )
 		input.mi.dwFlags = get_mouse_button( event.button.button, event.type == SDL_MOUSEBUTTONUP );
 		input.mi.time = timeout_t::get_tick_count();
 		input.mi.dwExtraInfo = 0;
-		manager->send_input( &input );
+		manager->SendInput( &input );
 		break;
 
 	case SDL_MOUSEMOTION:
@@ -264,7 +264,7 @@ bool sdl_sleeper_t::handle_sdl_event( SDL_Event& event )
 		input.mi.dwFlags = MOUSEEVENTF_MOVE;
 		input.mi.time = timeout_t::get_tick_count();
 		input.mi.dwExtraInfo = 0;
-		manager->send_input( &input );
+		manager->SendInput( &input );
 		break;
 	}
 
@@ -354,7 +354,7 @@ BOOL win32k_sdl_t::init()
 	sdl_bitmap = new sdl_16bpp_bitmap_t( screen );
 
 	// FIXME: move this to caller
-	brush_t light_blue(0, RGB(0x3b, 0x72, 0xa9), 0);
+	BRUSH light_blue(0, RGB(0x3b, 0x72, 0xa9), 0);
 	sdl_bitmap->Rectangle( 0, 0, screen->w, screen->h, &light_blue );
 
 	::Sleeper = &sdl_sleeper;
@@ -423,21 +423,21 @@ sdl_device_context_t::sdl_device_context_t( CBITMAP *b ) :
 {
 }
 
-CBITMAP* sdl_device_context_t::get_bitmap()
+CBITMAP* sdl_device_context_t::GetBitmap()
 {
 	return sdl_bitmap;
 }
 
-HANDLE sdl_device_context_t::select_bitmap( CBITMAP *bitmap )
+HANDLE sdl_device_context_t::SelectBitmap( CBITMAP *bitmap )
 {
 	trace("trying to change device's bitmap...\n");
 	return 0;
 }
 
 
-int sdl_device_context_t::getcaps( int index )
+int sdl_device_context_t::GetCaps( int index )
 {
-	return win32k_manager->getcaps( index );
+	return Win32kManager->getcaps( index );
 }
 
 DEVICE_CONTEXT* win32k_sdl_t::alloc_screen_dc_ptr()

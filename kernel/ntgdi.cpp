@@ -46,7 +46,7 @@
 static section_t *gdi_ht_section;
 static void *gdi_handle_table = 0;
 
-WIN32K_MANAGER* (*win32k_manager_create)();
+WIN32K_MANAGER* (*Win32kManagerCreate)();
 
 struct graphics_driver_list
 {
@@ -69,7 +69,7 @@ bool SetGraphicsDriver( const char *driver )
 	{
 		if (!strcmp(graphics_drivers[i].name, driver))
 		{
-			win32k_manager_create = graphics_drivers[i].create;
+			Win32kManagerCreate = graphics_drivers[i].create;
 			return true;
 		}
 	}
@@ -85,7 +85,7 @@ void ListGraphicsDrivers()
 		printf("%s ", graphics_drivers[i].name);
 }
 
-WIN32K_MANAGER *win32k_manager;
+WIN32K_MANAGER *Win32kManager;
 
 class NTGDISHM_TRACER : public BLOCK_TRACER
 {
@@ -139,11 +139,11 @@ GDI_OBJECT::GDI_OBJECT() :
 {
 }
 
-BOOL GDI_OBJECT::release()
+BOOL GDI_OBJECT::Release()
 {
 	if (refcount)
 		return FALSE;
-	gdi_handle_table_entry *entry = get_handle_table_entry( handle );
+	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
 	assert( entry );
 	assert( reinterpret_cast<GDI_OBJECT*>( entry->kernel_info ) == this );
 	memset( entry, 0, sizeof *entry );
@@ -182,12 +182,12 @@ WIN32K_INFO::~WIN32K_INFO()
 {
 }
 
-WIN32K_INFO *WIN32K_MANAGER::alloc_win32k_info()
+WIN32K_INFO *WIN32K_MANAGER::AllocWin32kInfo()
 {
 	return new WIN32K_INFO;
 }
 
-void WIN32K_MANAGER::send_input(INPUT* input)
+void WIN32K_MANAGER::SendInput(INPUT* input)
 {
 	thread_message_queue_tt *queue = 0;
 	ULONG pos;
@@ -275,7 +275,7 @@ void WIN32K_MANAGER::send_input(INPUT* input)
 
 }
 
-ULONG WIN32K_MANAGER::get_async_key_state( ULONG Key )
+ULONG WIN32K_MANAGER::GetAsyncKeyState( ULONG Key )
 {
 	if (Key > 254)
 		return 0;
@@ -284,8 +284,8 @@ ULONG WIN32K_MANAGER::get_async_key_state( ULONG Key )
 
 void NtGdiFini()
 {
-	if (win32k_manager)
-		win32k_manager->fini();
+	if (Win32kManager)
+		Win32kManager->fini();
 }
 
 NTSTATUS Win32kProcessInit(PROCESS *process)
@@ -297,21 +297,21 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 
 	trace("\n");
 
-	if (!win32k_manager)
+	if (!Win32kManager)
 	{
-		if (win32k_manager_create)
-			win32k_manager = win32k_manager_create();
+		if (Win32kManagerCreate)
+			Win32kManager = Win32kManagerCreate();
 		else
 		{
-			for (int i=0; graphics_drivers[i].name && !win32k_manager; i++)
-				win32k_manager = graphics_drivers[i].create();
+			for (int i=0; graphics_drivers[i].name && !Win32kManager; i++)
+				Win32kManager = graphics_drivers[i].create();
 		}
 	}
 
-	if (!win32k_manager)
+	if (!Win32kManager)
 		Die("failed to allocate graphics driver\n");
 
-	process->win32k_info = win32k_manager->alloc_win32k_info();
+	process->win32k_info = Win32kManager->AllocWin32kInfo();
 
 	PPEB ppeb = (PPEB) process->peb_section->get_kernel_address();
 
@@ -346,7 +346,7 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 
 	ppeb->GdiSharedHandleTable = (void*) p;
 
-	if (!win32k_manager->init())
+	if (!Win32kManager->init())
 		Die("unable to allocate screen\n");
 
 	process->vm->SetTracer( p, ntgdishm_trace );
@@ -410,7 +410,7 @@ int find_free_gdi_handle(void)
 	return -1;
 }
 
-HGDIOBJ alloc_gdi_handle( BOOL stock, ULONG type, void *user_info, GDI_OBJECT* obj )
+HGDIOBJ AllocGdiHandle( BOOL stock, ULONG type, void *user_info, GDI_OBJECT* obj )
 {
 	int index = find_free_gdi_handle();
 	if (index < 0)
@@ -434,10 +434,10 @@ HGDIOBJ alloc_gdi_handle( BOOL stock, ULONG type, void *user_info, GDI_OBJECT* o
 }
 
 
-HGDIOBJ GDI_OBJECT::alloc( BOOL stock, ULONG type )
+HGDIOBJ GDI_OBJECT::Alloc( BOOL stock, ULONG type )
 {
 	GDI_OBJECT *obj = new GDI_OBJECT();
-	HGDIOBJ handle = alloc_gdi_handle( stock, type, 0, obj );
+	HGDIOBJ handle = AllocGdiHandle( stock, type, 0, obj );
 	if (handle)
 		obj->handle = handle;
 	else
@@ -445,9 +445,9 @@ HGDIOBJ GDI_OBJECT::alloc( BOOL stock, ULONG type )
 	return obj->handle;
 }
 
-HGDIOBJ alloc_gdi_object( BOOL stock, ULONG type )
+HGDIOBJ AllocGdiObject( BOOL stock, ULONG type )
 {
-	return GDI_OBJECT::alloc( stock, type );
+	return GDI_OBJECT::Alloc( stock, type );
 }
 
 class gdishm_tracer : public BLOCK_TRACER
@@ -508,21 +508,21 @@ bool gdishm_tracer::Enabled() const
 	return TraceIsEnabled( "gdishm" );
 }
 
-static gdishm_tracer gdishm_trace;
+static gdishm_tracer GdishmTrace;
 
 section_t *GDI_OBJECT::g_gdi_section;
 BYTE *GDI_OBJECT::g_gdi_shared_memory;
 ALLOCATION_BITMAP* GDI_OBJECT::g_gdi_shared_bitmap;
 
-HGDIOBJ WIN32K_MANAGER::alloc_compatible_dc()
+HGDIOBJ WIN32K_MANAGER::AllocCompatibleDc()
 {
-	DEVICE_CONTEXT* dc = new memory_device_context_t;
+	DEVICE_CONTEXT* dc = new MEMORY_DEVICE_CONTEXT;
 	if (!dc)
 		return NULL;
 	return dc->get_handle();
 }
 
-HGDIOBJ WIN32K_MANAGER::alloc_screen_dc()
+HGDIOBJ WIN32K_MANAGER::AllocScreenDC()
 {
 	DEVICE_CONTEXT* dc = alloc_screen_dc_ptr();
 	if (!dc)
@@ -530,7 +530,7 @@ HGDIOBJ WIN32K_MANAGER::alloc_screen_dc()
 	return dc->get_handle();
 }
 
-void GDI_OBJECT::init_gdi_shared_mem()
+void GDI_OBJECT::InitGdiSharedMem()
 {
 	NTSTATUS r;
 	int dc_shared_memory_size = 0x10000;
@@ -559,12 +559,12 @@ void GDI_OBJECT::init_gdi_shared_mem()
 			assert( 0 );
 		}
 
-		Current->process->vm->SetTracer( dc_shared_mem, gdishm_trace );
+		Current->process->vm->SetTracer( dc_shared_mem, GdishmTrace );
 	}
 }
 
 // see SaveDC in wine/dlls/gdi32/dc.c
-int DEVICE_CONTEXT::save_dc()
+int DEVICE_CONTEXT::SaveDC()
 {
 	dc_state_tt *dcs = new dc_state_tt;
 	dcs->next = saved_dc;
@@ -576,7 +576,7 @@ int DEVICE_CONTEXT::save_dc()
 }
 
 // see RestoreDC in wine/dlls/gdi32/dc.c
-BOOL DEVICE_CONTEXT::restore_dc( int level )
+BOOL DEVICE_CONTEXT::RestoreDC( int level )
 {
 	if (level == 0)
 		return FALSE;
@@ -603,30 +603,30 @@ BOOL DEVICE_CONTEXT::restore_dc( int level )
 	return success;
 }
 
-BYTE* GDI_OBJECT::get_shared_mem() const
+BYTE* GDI_OBJECT::GetSharedMem() const
 {
-	return user_to_kernel( get_user_shared_mem() );
+	return user_to_kernel( GetUserSharedMem() );
 }
 
-BYTE* GDI_OBJECT::get_user_shared_mem() const
+BYTE* GDI_OBJECT::GetUserSharedMem() const
 {
-	gdi_handle_table_entry *entry = get_handle_table_entry( handle );
+	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
 	assert( entry != NULL );
 	return (BYTE*) entry->user_info;
 }
 
-GDI_DEVICE_CONTEXT_SHARED* DEVICE_CONTEXT::get_dc_shared_mem() const
+GDI_DEVICE_CONTEXT_SHARED* DEVICE_CONTEXT::GetDcSharedMem() const
 {
-	return (GDI_DEVICE_CONTEXT_SHARED*) get_shared_mem();
+	return (GDI_DEVICE_CONTEXT_SHARED*) GetSharedMem();
 }
 
-BYTE *GDI_OBJECT::alloc_gdi_shared_memory( size_t len, BYTE** kernel_shm )
+BYTE *GDI_OBJECT::AllocGdiSharedMemory( size_t len, BYTE** kernel_shm )
 {
-	init_gdi_shared_mem();
+	InitGdiSharedMem();
 	return g_gdi_shared_bitmap->Alloc( len );
 }
 
-void GDI_OBJECT::free_gdi_shared_memory( BYTE *shm )
+void GDI_OBJECT::FreeGdiSharedMemory( BYTE *shm )
 {
 	g_gdi_shared_bitmap->Free( shm );
 }
@@ -637,35 +637,35 @@ DEVICE_CONTEXT::DEVICE_CONTEXT() :
 	saveLevel( 0 )
 {
 	// calculate user side pointer to the chunk
-	BYTE *shm = alloc_gdi_shared_memory( sizeof (GDI_DEVICE_CONTEXT_SHARED) );
+	BYTE *shm = AllocGdiSharedMemory( sizeof (GDI_DEVICE_CONTEXT_SHARED) );
 	if (!shm)
 		throw;
 
 	trace("dc offset %08x\n", shm - g_gdi_shared_memory );
 	BYTE *user_shm = GDI_OBJECT::kernel_to_user( shm );
 
-	handle = alloc_gdi_handle( FALSE, GDI_OBJECT_DC, user_shm, this );
+	handle = AllocGdiHandle( FALSE, GDI_OBJECT_DC, user_shm, this );
 	if (!handle)
 		throw;
 
-	GDI_DEVICE_CONTEXT_SHARED *dcshm = get_dc_shared_mem();
-	dcshm->Brush = (HBRUSH) win32k_manager->get_stock_object( WHITE_BRUSH );
-	dcshm->Pen = (HPEN) win32k_manager->get_stock_object( WHITE_PEN );
+	GDI_DEVICE_CONTEXT_SHARED *dcshm = GetDcSharedMem();
+	dcshm->Brush = (HBRUSH) Win32kManager->GetStockObject( WHITE_BRUSH );
+	dcshm->Pen = (HPEN) Win32kManager->GetStockObject( WHITE_PEN );
 	dcshm->TextColor = RGB( 0, 0, 0 );
 	dcshm->BackgroundColor = RGB( 255, 255, 255 );
 	dcshm->CurrentPenPos.x = 0;
 	dcshm->CurrentPenPos.y = 0;
 }
 
-BOOL DEVICE_CONTEXT::release()
+BOOL DEVICE_CONTEXT::Release()
 {
-	GDI_DEVICE_CONTEXT_SHARED *shm = get_dc_shared_mem();
+	GDI_DEVICE_CONTEXT_SHARED *shm = GetDcSharedMem();
 	g_gdi_shared_bitmap->Free( (unsigned char*) shm, sizeof *shm );
-	GDI_OBJECT::release();
+	GDI_OBJECT::Release();
 	return TRUE;
 }
 
-HANDLE DEVICE_CONTEXT::select_bitmap( CBITMAP *bitmap )
+HANDLE DEVICE_CONTEXT::SelectBitmap( CBITMAP *bitmap )
 {
 	assert( bitmap->is_valid() );
 	CBITMAP* old = selected_bitmap;
@@ -678,24 +678,24 @@ HANDLE DEVICE_CONTEXT::select_bitmap( CBITMAP *bitmap )
 	return old->get_handle();
 }
 
-CBITMAP* DEVICE_CONTEXT::get_bitmap()
+CBITMAP* DEVICE_CONTEXT::GetBitmap()
 {
 	if (selected_bitmap)
 		assert( selected_bitmap->is_valid() );
 	return selected_bitmap;
 }
 
-BOOL DEVICE_CONTEXT::bitblt(
+BOOL DEVICE_CONTEXT::BitBlt(
 	INT xDest, INT yDest,
 	INT cx, INT cy,
 	DEVICE_CONTEXT *src,
 	INT xSrc, INT ySrc, ULONG rop )
 {
-	CBITMAP* dest_bm = get_bitmap();
+	CBITMAP* dest_bm = GetBitmap();
 	if (!dest_bm)
 		return FALSE;
 
-	CBITMAP* src_bm = src->get_bitmap();
+	CBITMAP* src_bm = src->GetBitmap();
 	if (!src_bm)
 		return FALSE;
 
@@ -719,12 +719,12 @@ BOOL DEVICE_CONTEXT::bitblt(
 	return dest_bm->BitBlt( xDest, yDest, cx, cy, src_bm, xSrc, ySrc, rop );
 }
 
-BOOL DEVICE_CONTEXT::rectangle(INT left, INT top, INT right, INT bottom)
+BOOL DEVICE_CONTEXT::Rectangle(INT left, INT top, INT right, INT bottom)
 {
-	brush_t *brush = get_selected_brush();
+	BRUSH *brush = GetSelectedBrush();
 	if (!brush)
 		return FALSE;
-	CBITMAP *bm = get_bitmap();
+	CBITMAP *bm = GetBitmap();
 	if (!bm)
 		return FALSE;
 
@@ -742,21 +742,21 @@ BOOL DEVICE_CONTEXT::rectangle(INT left, INT top, INT right, INT bottom)
 	return bm->Rectangle( left, top, right, bottom, brush );
 }
 
-memory_device_context_t::memory_device_context_t()
+MEMORY_DEVICE_CONTEXT::MEMORY_DEVICE_CONTEXT()
 {
 }
 
-BOOL DEVICE_CONTEXT::lineto(INT x, INT y)
+BOOL DEVICE_CONTEXT::LineTo(INT x, INT y)
 {
-	CBITMAP *bm = get_bitmap();
+	CBITMAP *bm = GetBitmap();
 	if (!bm)
 		return FALSE;
-	pen_t *pen = get_selected_pen();
+	PEN *pen = GetSelectedPen();
 	if (!pen)
 		return FALSE;
 
-	POINT& cur = get_current_pen_pos();
-	POINT& winofs = get_window_offset();
+	POINT& cur = GetCurrentPenPos();
+	POINT& winofs = GetWindowOffset();
 
 	bm->Line(cur.x + winofs.x, cur.y + winofs.y, x + winofs.x, y + winofs.y, pen);
 
@@ -767,9 +767,9 @@ BOOL DEVICE_CONTEXT::lineto(INT x, INT y)
 	return TRUE;
 }
 
-BOOL DEVICE_CONTEXT::moveto(INT x, INT y, POINT& pt)
+BOOL DEVICE_CONTEXT::MoveTo(INT x, INT y, POINT& pt)
 {
-	POINT& cur = get_current_pen_pos();
+	POINT& cur = GetCurrentPenPos();
 	pt = cur;
 
 	// update the position
@@ -779,9 +779,9 @@ BOOL DEVICE_CONTEXT::moveto(INT x, INT y, POINT& pt)
 	return TRUE;
 }
 
-BOOL DEVICE_CONTEXT::set_pixel( INT x, INT y, COLORREF color )
+BOOL DEVICE_CONTEXT::SetPixel( INT x, INT y, COLORREF color )
 {
-	CBITMAP* bitmap = get_bitmap();
+	CBITMAP* bitmap = GetBitmap();
 	if (bitmap)
 		return bitmap->SetPixel( x, y, color );
 	return TRUE;
@@ -789,14 +789,14 @@ BOOL DEVICE_CONTEXT::set_pixel( INT x, INT y, COLORREF color )
 
 COLORREF DEVICE_CONTEXT::GetPixel( INT x, INT y )
 {
-	CBITMAP* bitmap = get_bitmap();
+	CBITMAP* bitmap = GetBitmap();
 	if (bitmap)
 		return bitmap->GetPixel( x, y );
 	return 0;
 }
 
 /* FIXME: derive the freetype bitmap from a CBITMAP and use bitblt here */
-static COLORREF freetype_get_pixel( int x, int y, FT_Bitmap* ftbm )
+static COLORREF FreetypeGetPixel( int x, int y, FT_Bitmap* ftbm )
 {
 	int bytes_per_row;
 	int val;
@@ -828,13 +828,13 @@ static void freetype_bitblt( CBITMAP* bm, int x, int y, FT_Bitmap* ftbm )
 		for (bmpX = 0, j = x; bmpX < ftbm->width; bmpX++, j++)
 		{
 			// FIXME: assumes text color is black
-			COLORREF color = freetype_get_pixel( bmpX, bmpY, ftbm );
+			COLORREF color = FreetypeGetPixel( bmpX, bmpY, ftbm );
 			bm->SetPixel( j, i, color );
 		}
 	}
 }
 
-FT_Face WIN32K_MANAGER::get_face()
+FT_Face WIN32K_MANAGER::GetFace()
 {
 	static char vgasys[] = "drive/winnt/system32/vgasys.fon";
 
@@ -852,16 +852,16 @@ FT_Face WIN32K_MANAGER::get_face()
 	return face;
 }
 
-BOOL DEVICE_CONTEXT::exttextout( INT x, INT y, UINT options,
+BOOL DEVICE_CONTEXT::ExtTextOut( INT x, INT y, UINT options,
 								   LPRECT rect, UNICODE_STRING& text )
 {
 	trace("text: %pus\n", &text );
 
-	CBITMAP *bitmap = get_bitmap();
+	CBITMAP *bitmap = GetBitmap();
 	if (!bitmap)
 		return FALSE;
 
-	FT_Face face = win32k_manager->get_face();
+	FT_Face face = Win32kManager->GetFace();
 	//if (SDL_MUSTLOCK(screen) && SDL_LockSurface(screen) < 0)
 		//return FALSE;
 
@@ -900,13 +900,13 @@ BOOL DEVICE_CONTEXT::exttextout( INT x, INT y, UINT options,
 	return TRUE;
 }
 
-BOOL DEVICE_CONTEXT::polypatblt( ULONG Rop, PRECT rect )
+BOOL DEVICE_CONTEXT::PolypatBlt( ULONG Rop, PRECT rect )
 {
-	CBITMAP *bm = get_bitmap();
+	CBITMAP *bm = GetBitmap();
 	if (!bm)
 		return FALSE;
 
-	brush_t black(0,0,0);
+	BRUSH black(0,0,0);
 
 	LONG &left = rect->left;
 	LONG &right = rect->right;
@@ -927,62 +927,62 @@ BOOL DEVICE_CONTEXT::polypatblt( ULONG Rop, PRECT rect )
 	return bm->Rectangle( left, top, right, bottom, &black );
 }
 
-int memory_device_context_t::getcaps( int index )
+int MEMORY_DEVICE_CONTEXT::GetCaps( int index )
 {
 	trace("%d\n", index );
 	return 0;
 }
 
-brush_t::brush_t( UINT _style, COLORREF _color, ULONG _hatch ) :
+BRUSH::BRUSH( UINT _style, COLORREF _color, ULONG _hatch ) :
 	style( _style ),
 	color( _color ),
 	hatch( _hatch )
 {
 }
 
-HANDLE brush_t::alloc( UINT style, COLORREF color, ULONG hatch, BOOL stock )
+HANDLE BRUSH::Alloc( UINT style, COLORREF color, ULONG hatch, BOOL stock )
 {
-	brush_t* brush = new brush_t( style, color, hatch );
+	BRUSH* brush = new BRUSH( style, color, hatch );
 	if (!brush)
 		return NULL;
-	brush->handle = alloc_gdi_handle( stock, GDI_OBJECT_BRUSH, NULL, brush );
+	brush->handle = AllocGdiHandle( stock, GDI_OBJECT_BRUSH, NULL, brush );
 	trace("created brush %p with color %08lx\n", brush->handle, color );
 	return brush->handle;
 }
 
-brush_t* brush_from_handle( HGDIOBJ handle )
+BRUSH* BrushFromHandle( HGDIOBJ handle )
 {
-	gdi_handle_table_entry *entry = get_handle_table_entry( handle );
+	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
 	if (!entry)
 		return FALSE;
 	if (entry->Type != GDI_OBJECT_BRUSH)
 		return FALSE;
 	GDI_OBJECT* obj = reinterpret_cast<GDI_OBJECT*>( entry->kernel_info );
-	return static_cast<brush_t*>( obj );
+	return static_cast<BRUSH*>( obj );
 }
 
-pen_t::pen_t( UINT _style, UINT _width, COLORREF _color ) :
+PEN::PEN( UINT _style, UINT _width, COLORREF _color ) :
 	style( _style ),
 	width( _width ),
 	color( _color )
 {
 }
 
-HANDLE pen_t::alloc( UINT style, UINT width, COLORREF color, BOOL stock )
+HANDLE PEN::Alloc( UINT style, UINT width, COLORREF color, BOOL stock )
 {
-	pen_t* pen = new pen_t( style, width, color );
+	PEN* pen = new PEN( style, width, color );
 	if (!pen)
 		return NULL;
 
 	// strangeness: handle indicates pen, but it's a brush in the table
-	pen->handle = alloc_gdi_handle( stock, GDI_OBJECT_PEN, NULL, pen );
+	pen->handle = AllocGdiHandle( stock, GDI_OBJECT_PEN, NULL, pen );
 	trace("created pen %p with color %08lx\n", pen->handle, color );
 	return pen->handle;
 }
 
-pen_t* pen_from_handle( HGDIOBJ handle )
+PEN* PenFromHandle( HGDIOBJ handle )
 {
-	gdi_handle_table_entry *entry = get_handle_table_entry( handle );
+	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
 	if (!entry)
 		return NULL;
 
@@ -990,43 +990,43 @@ pen_t* pen_from_handle( HGDIOBJ handle )
 		return NULL;
 
 	GDI_OBJECT* obj = reinterpret_cast<GDI_OBJECT*>( entry->kernel_info );
-	return static_cast<pen_t*>( obj );
+	return static_cast<PEN*>( obj );
 }
 
-brush_t* DEVICE_CONTEXT::get_selected_brush()
+BRUSH* DEVICE_CONTEXT::GetSelectedBrush()
 {
-	GDI_DEVICE_CONTEXT_SHARED *dcshm = get_dc_shared_mem();
+	GDI_DEVICE_CONTEXT_SHARED *dcshm = GetDcSharedMem();
 	if (!dcshm)
 		return NULL;
-	return brush_from_handle( dcshm->Brush );
+	return BrushFromHandle( dcshm->Brush );
 }
 
-pen_t* DEVICE_CONTEXT::get_selected_pen()
+PEN* DEVICE_CONTEXT::GetSelectedPen()
 {
-	GDI_DEVICE_CONTEXT_SHARED *dcshm = get_dc_shared_mem();
+	GDI_DEVICE_CONTEXT_SHARED *dcshm = GetDcSharedMem();
 	if (!dcshm)
 		return NULL;
 
-	return pen_from_handle( dcshm->Pen );;
+	return PenFromHandle( dcshm->Pen );;
 }
 
-POINT& DEVICE_CONTEXT::get_current_pen_pos()
+POINT& DEVICE_CONTEXT::GetCurrentPenPos()
 {
-	GDI_DEVICE_CONTEXT_SHARED *dcshm = get_dc_shared_mem();
+	GDI_DEVICE_CONTEXT_SHARED *dcshm = GetDcSharedMem();
 	assert(dcshm != NULL);
 	return dcshm->CurrentPenPos;
 }
 
-POINT& DEVICE_CONTEXT::get_window_offset()
+POINT& DEVICE_CONTEXT::GetWindowOffset()
 {
-	GDI_DEVICE_CONTEXT_SHARED *dcshm = get_dc_shared_mem();
+	GDI_DEVICE_CONTEXT_SHARED *dcshm = GetDcSharedMem();
 	assert(dcshm != NULL);
 	return dcshm->WindowOriginOffset;
 }
 
 DEVICE_CONTEXT* dc_from_handle( HGDIOBJ handle )
 {
-	gdi_handle_table_entry *entry = get_handle_table_entry( handle );
+	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
 	if (!entry)
 		return FALSE;
 	if (entry->Type != GDI_OBJECT_DC)
@@ -1071,9 +1071,9 @@ COLORREF get_di_pixel( stretch_di_bits_args& args, int x, int y )
 	return 0;
 }
 
-BOOL DEVICE_CONTEXT::stretch_di_bits( stretch_di_bits_args& args )
+BOOL DEVICE_CONTEXT::StretchDiBits( stretch_di_bits_args& args )
 {
-	CBITMAP* bitmap = get_bitmap();
+	CBITMAP* bitmap = GetBitmap();
 	if (!bitmap)
 		return FALSE;
 
@@ -1099,37 +1099,37 @@ BOOL DEVICE_CONTEXT::stretch_di_bits( stretch_di_bits_args& args )
 		for (int j=0; j<args.src_width; j++)
 		{
 			pixel = get_di_pixel( args, args.src_x+j, args.src_y+i );
-			set_pixel( args.dest_x+j, args.dest_y+i, pixel );
+			SetPixel( args.dest_x+j, args.dest_y+i, pixel );
 		}
 	}
 
 	return TRUE;
 }
 
-BOOL WIN32K_MANAGER::release_dc( HGDIOBJ handle )
+BOOL WIN32K_MANAGER::ReleaseDC( HGDIOBJ handle )
 {
 	DEVICE_CONTEXT* dc = dc_from_handle( handle );
 	if (!dc)
 		return FALSE;
-	return dc->release();
+	return dc->Release();
 }
 
 HGDIOBJ NTAPI NtGdiGetStockObject(ULONG Index)
 {
-	return win32k_manager->get_stock_object( Index );
+	return Win32kManager->GetStockObject( Index );
 }
 
-HANDLE WIN32K_MANAGER::create_solid_brush( COLORREF color )
+HANDLE WIN32K_MANAGER::CreateSolidBrush( COLORREF color )
 {
-	return brush_t::alloc( BS_SOLID, color, 0 );
+	return BRUSH::Alloc( BS_SOLID, color, 0 );
 }
 
-HANDLE WIN32K_MANAGER::create_pen( UINT style, UINT width, COLORREF color )
+HANDLE WIN32K_MANAGER::CreatePen( UINT style, UINT width, COLORREF color )
 {
-	return pen_t::alloc( style, width, color );
+	return PEN::Alloc( style, width, color );
 }
 
-HANDLE WIN32K_MANAGER::get_stock_object( ULONG Index )
+HANDLE WIN32K_MANAGER::GetStockObject( ULONG Index )
 {
 	if (Index > STOCK_LAST)
 		return 0;
@@ -1140,25 +1140,25 @@ HANDLE WIN32K_MANAGER::get_stock_object( ULONG Index )
 	switch (Index)
 	{
 	case WHITE_BRUSH:
-		handle = brush_t::alloc( 0, RGB(255,255,255), 0, TRUE);
+		handle = BRUSH::Alloc( 0, RGB(255,255,255), 0, TRUE);
 		break;
 	case BLACK_BRUSH:
-		handle = brush_t::alloc( 0, RGB(0,0,0), 0, TRUE);
+		handle = BRUSH::Alloc( 0, RGB(0,0,0), 0, TRUE);
 		break;
 	case LTGRAY_BRUSH:
 	case GRAY_BRUSH:
 	case DKGRAY_BRUSH:
 	case NULL_BRUSH: //case HOLLOW_BRUSH:
 	case DC_BRUSH: // FIXME: probably per DC
-		handle = alloc_gdi_object( TRUE, GDI_OBJECT_BRUSH );
+		handle = AllocGdiObject( TRUE, GDI_OBJECT_BRUSH );
 		break;
 	case WHITE_PEN:
-		handle = pen_t::alloc( PS_SOLID, 1, RGB(255, 255, 255), TRUE );
+		handle = PEN::Alloc( PS_SOLID, 1, RGB(255, 255, 255), TRUE );
 		break;
 	case BLACK_PEN:
 	case NULL_PEN:
 	case DC_PEN: // FIXME: probably per DC
-		handle = alloc_gdi_object( TRUE, GDI_OBJECT_PEN );
+		handle = AllocGdiObject( TRUE, GDI_OBJECT_PEN );
 		break;
 	case OEM_FIXED_FONT:
 	case ANSI_FIXED_FONT:
@@ -1167,10 +1167,10 @@ HANDLE WIN32K_MANAGER::get_stock_object( ULONG Index )
 	case DEVICE_DEFAULT_FONT:
 	case SYSTEM_FIXED_FONT:
 	case DEFAULT_GUI_FONT:
-		handle = alloc_gdi_object( TRUE, GDI_OBJECT_FONT );
+		handle = AllocGdiObject( TRUE, GDI_OBJECT_FONT );
 		break;
 	case DEFAULT_PALETTE:
-		handle = alloc_gdi_object( TRUE, GDI_OBJECT_PALETTE );
+		handle = AllocGdiObject( TRUE, GDI_OBJECT_PALETTE );
 		break;
 	}
 	return handle;
@@ -1179,13 +1179,13 @@ HANDLE WIN32K_MANAGER::get_stock_object( ULONG Index )
 // gdi32.CreateComptabibleDC
 HGDIOBJ NTAPI NtGdiCreateCompatibleDC(HGDIOBJ hdc)
 {
-	return win32k_manager->alloc_compatible_dc();
+	return Win32kManager->AllocCompatibleDc();
 }
 
 // has one more parameter than gdi32.CreateSolidBrush
 HGDIOBJ NTAPI NtGdiCreateSolidBrush(COLORREF Color, ULONG u_arg2)
 {
-	return win32k_manager->create_solid_brush( Color );
+	return Win32kManager->CreateSolidBrush( Color );
 }
 
 // looks like CreateDIBitmap, with BITMAPINFO unpacked
@@ -1210,10 +1210,10 @@ HGDIOBJ NTAPI NtGdiCreateDIBitmapInternal(
 
 HGDIOBJ NTAPI NtGdiGetDCforBitmap(HGDIOBJ Bitmap)
 {
-	return win32k_manager->alloc_screen_dc();
+	return Win32kManager->AllocScreenDC();
 }
 
-gdi_handle_table_entry *get_handle_table_entry(HGDIOBJ handle)
+gdi_handle_table_entry *GetHandleTableEntry(HGDIOBJ handle)
 {
 	gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
 	ULONG index = (ULONG)handle&0xffff;
@@ -1228,7 +1228,7 @@ gdi_handle_table_entry *get_handle_table_entry(HGDIOBJ handle)
 
 BOOLEAN NTAPI NtGdiDeleteObjectApp(HGDIOBJ Object)
 {
-	gdi_handle_table_entry *entry = get_handle_table_entry(Object);
+	gdi_handle_table_entry *entry = GetHandleTableEntry(Object);
 	if (!entry)
 		return FALSE;
 	if (entry->ProcessId != Current->process->id)
@@ -1240,10 +1240,10 @@ BOOLEAN NTAPI NtGdiDeleteObjectApp(HGDIOBJ Object)
 	GDI_OBJECT *obj = reinterpret_cast<GDI_OBJECT*>( entry->kernel_info );
 	assert( obj );
 
-	return obj->release();
+	return obj->Release();
 }
 
-const char *get_object_type_name( HGDIOBJ object )
+const char *GetObjectTypeName( HGDIOBJ object )
 {
 	switch (get_handle_type( object ))
 	{
@@ -1273,7 +1273,7 @@ HGDIOBJ NTAPI NtGdiSelectBitmap( HGDIOBJ hdc, HGDIOBJ hbm )
 
 	assert( bitmap->is_valid() );
 
-	return dc->select_bitmap( bitmap );
+	return dc->SelectBitmap( bitmap );
 }
 
 HGDIOBJ NTAPI NtGdiSelectPen( HGDIOBJ hdc, HGDIOBJ hbm )
@@ -1309,7 +1309,7 @@ int NTAPI NtGdiSaveDC(HGDIOBJ hdc)
 	if (!dc)
 		return 0;
 
-	return dc->save_dc();
+	return dc->SaveDC();
 }
 
 BOOLEAN NTAPI NtGdiRestoreDC( HGDIOBJ hdc, int level )
@@ -1318,12 +1318,12 @@ BOOLEAN NTAPI NtGdiRestoreDC( HGDIOBJ hdc, int level )
 	if (!dc)
 		return FALSE;
 
-	return dc->restore_dc( level );
+	return dc->RestoreDC( level );
 }
 
 HGDIOBJ NTAPI NtGdiGetDCObject(HGDIOBJ hdc, ULONG object_type)
 {
-	return win32k_manager->alloc_screen_dc();
+	return Win32kManager->AllocScreenDC();
 }
 
 // fun...
@@ -1380,7 +1380,7 @@ BOOLEAN NTAPI NtGdiBitBlt(HGDIOBJ hdcDest, INT xDest, INT yDest, INT cx, INT cy,
 	if (!src)
 		return FALSE;
 
-	return dest->bitblt( xDest, yDest, cx, cy, src, xSrc, ySrc, rop );
+	return dest->BitBlt( xDest, yDest, cx, cy, src, xSrc, ySrc, rop );
 }
 
 HANDLE NTAPI NtGdiCreateDIBSection(
@@ -1394,7 +1394,7 @@ HANDLE NTAPI NtGdiCreateDIBSection(
 	ULONG_PTR ColorSpace,
 	PVOID Bits)
 {
-	return alloc_gdi_object( FALSE, GDI_OBJECT_BITMAP );
+	return AllocGdiObject( FALSE, GDI_OBJECT_BITMAP );
 }
 
 ULONG NTAPI NtGdiSetFontEnumeration(ULONG Unknown)
@@ -1404,7 +1404,7 @@ ULONG NTAPI NtGdiSetFontEnumeration(ULONG Unknown)
 
 HANDLE NTAPI NtGdiOpenDCW(ULONG,ULONG,ULONG,ULONG,ULONG,ULONG,PVOID)
 {
-	return win32k_manager->alloc_screen_dc();
+	return Win32kManager->AllocScreenDC();
 }
 
 typedef struct _font_enum_entry
@@ -1420,7 +1420,7 @@ typedef struct _font_enum_entry
 	ULONG pad3[2];
 } font_enum_entry;
 
-void fill_font( font_enum_entry* fee, LPWSTR name, ULONG height, ULONG width, ULONG paf, ULONG weight, ULONG flags, ULONG charset )
+void FillFont( font_enum_entry* fee, LPWSTR name, ULONG height, ULONG width, ULONG paf, ULONG weight, ULONG flags, ULONG charset )
 {
 	memset( fee, 0, sizeof *fee );
 	fee->size = sizeof *fee;
@@ -1442,16 +1442,16 @@ void fill_font( font_enum_entry* fee, LPWSTR name, ULONG height, ULONG width, UL
 	fee->ntme.ntmTm.tmCharSet = charset;
 }
 
-void fill_system( font_enum_entry* fee )
+void FillSystem( font_enum_entry* fee )
 {
 	WCHAR sys[] = { 'S','y','s','t','e','m',0 };
-	fill_font( fee, sys, 16, 7, FF_SWISS | VARIABLE_PITCH, FW_BOLD, 0x2080ff20, ANSI_CHARSET );
+	FillFont( fee, sys, 16, 7, FF_SWISS | VARIABLE_PITCH, FW_BOLD, 0x2080ff20, ANSI_CHARSET );
 }
 
-void fill_terminal( font_enum_entry* fee )
+void FillTerminal( font_enum_entry* fee )
 {
 	WCHAR trm[] = { 'T','e','r','m','i','n','a','l',0 };
-	fill_font( fee, trm, 12, 8, FF_MODERN | FIXED_PITCH, FW_REGULAR, 0x2020fe01, OEM_CHARSET );
+	FillFont( fee, trm, 12, 8, FF_MODERN | FIXED_PITCH, FW_REGULAR, 0x2020fe01, OEM_CHARSET );
 }
 
 HANDLE NTAPI NtGdiEnumFontOpen(
@@ -1468,7 +1468,7 @@ HANDLE NTAPI NtGdiEnumFontOpen(
 	if (r < STATUS_SUCCESS)
 		return 0;
 
-	return alloc_gdi_object( FALSE, 0x3f );
+	return AllocGdiObject( FALSE, 0x3f );
 }
 
 BOOLEAN NTAPI NtGdiEnumFontChunk(
@@ -1484,8 +1484,8 @@ BOOLEAN NTAPI NtGdiEnumFontChunk(
 	if (BufferLength < len)
 		return FALSE;
 
-	fill_system( &fee[0] );
-	fill_terminal( &fee[1] );
+	FillSystem( &fee[0] );
+	FillTerminal( &fee[1] );
 
 	NTSTATUS r = CopyToUser( Buffer, &fee, len );
 	if (r < STATUS_SUCCESS)
@@ -1508,7 +1508,7 @@ BOOLEAN NTAPI NtGdiGetTextMetricsW(HANDLE DeviceContext, PVOID Buffer, ULONG Len
 	font_enum_entry fee;
 	NTSTATUS r;
 
-	fill_system( &fee );
+	FillSystem( &fee );
 
 	if (Length < sizeof (TEXTMETRICW))
 		return FALSE;
@@ -1537,7 +1537,7 @@ BOOLEAN NTAPI NtGdiSetPixel( HANDLE handle, INT x, INT y, COLORREF color )
 	DEVICE_CONTEXT* dc = dc_from_handle( handle );
 	if (!dc)
 		return FALSE;
-	return dc->set_pixel( x, y, color );
+	return dc->SetPixel( x, y, color );
 }
 
 BOOLEAN NTAPI NtGdiRectangle( HANDLE handle, INT left, INT top, INT right, INT bottom )
@@ -1546,7 +1546,7 @@ BOOLEAN NTAPI NtGdiRectangle( HANDLE handle, INT left, INT top, INT right, INT b
 	if (!dc)
 		return FALSE;
 
-	return dc->rectangle( left, top, right, bottom );
+	return dc->Rectangle( left, top, right, bottom );
 }
 
 BOOLEAN NTAPI NtGdiExtTextOutW( HANDLE handle, INT x, INT y, UINT options,
@@ -1573,7 +1573,7 @@ BOOLEAN NTAPI NtGdiExtTextOutW( HANDLE handle, INT x, INT y, UINT options,
 	if (dx)
 		trace("character spacing provided but ignored\n");
 
-	return dc->exttextout( x, y, options, rect, text );
+	return dc->ExtTextOut( x, y, options, rect, text );
 }
 
 HANDLE NTAPI NtGdiCreateCompatibleBitmap( HANDLE DeviceContext, int width, int height )
@@ -1582,7 +1582,7 @@ HANDLE NTAPI NtGdiCreateCompatibleBitmap( HANDLE DeviceContext, int width, int h
 	if (!dc)
 		return FALSE;
 
-	int bpp = dc->getcaps( BITSPIXEL );
+	int bpp = dc->GetCaps( BITSPIXEL );
 	if (!bpp)
 		return FALSE;
 
@@ -1616,7 +1616,7 @@ BOOLEAN NTAPI NtGdiPolyPatBlt( HANDLE handle, ULONG Rop, PRECT Rectangle, ULONG,
 	if (r < STATUS_SUCCESS)
 		return FALSE;
 
-	return dc->polypatblt( Rop, &rect );
+	return dc->PolypatBlt( Rop, &rect );
 }
 
 BOOLEAN NTAPI NtGdiMoveTo( HDC handle, int xpos, int ypos, LPPOINT pptOut)
@@ -1626,7 +1626,7 @@ BOOLEAN NTAPI NtGdiMoveTo( HDC handle, int xpos, int ypos, LPPOINT pptOut)
 		return FALSE;
 
 	POINT pt;
-	BOOL ret = dc->moveto( xpos, ypos, pt );
+	BOOL ret = dc->MoveTo( xpos, ypos, pt );
 	if (!ret)
 		return FALSE;
 
@@ -1647,7 +1647,7 @@ BOOLEAN NTAPI NtGdiLineTo( HDC handle, int xpos, int ypos )
 	if (!dc)
 		return FALSE;
 
-	return dc->lineto( xpos, ypos );
+	return dc->LineTo( xpos, ypos );
 }
 
 int NTAPI NtGdiGetDeviceCaps( HDC handle, int index )
@@ -1656,12 +1656,12 @@ int NTAPI NtGdiGetDeviceCaps( HDC handle, int index )
 	if (!dc)
 		return FALSE;
 
-	return dc->getcaps( index );
+	return dc->GetCaps( index );
 }
 
 HPEN NTAPI NtGdiCreatePen(int style, int width, COLORREF color, ULONG)
 {
-	return (HPEN) win32k_manager->create_pen( style, width, color );
+	return (HPEN) Win32kManager->CreatePen( style, width, color );
 }
 
 BOOLEAN NTAPI NtGdiStretchDIBitsInternal(
@@ -1708,7 +1708,7 @@ BOOLEAN NTAPI NtGdiStretchDIBitsInternal(
 	else
 		args.colors = NULL;
 
-	return dc->stretch_di_bits( args );
+	return dc->StretchDiBits( args );
 }
 
 BOOLEAN NTAPI NtGdiScaleViewportExtEx(HDC handle, int xnum, int ynum,
