@@ -48,10 +48,10 @@ typedef LIST_ITER<PIPE_CLIENT,0> pipe_client_iter_t;
 class PIPE_DEVICE : public OBJECT_DIR_IMPL, public IO_OBJECT
 {
 public:
-	virtual NTSTATUS read( PVOID buffer, ULONG length, ULONG *read );
-	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written );
-	virtual NTSTATUS open( OBJECT *&out, OPEN_INFO& info );
-	virtual NTSTATUS fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+	virtual NTSTATUS Read( PVOID buffer, ULONG length, ULONG *read );
+	virtual NTSTATUS Write( PVOID buffer, ULONG length, ULONG *written );
+	virtual NTSTATUS Open( OBJECT *&out, OPEN_INFO& info );
+	virtual NTSTATUS FSControl( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 								 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
 	NTSTATUS wait_server_available( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG Length );
 };
@@ -83,7 +83,7 @@ public:
 	{
 		return clients;
 	}
-	virtual NTSTATUS open( OBJECT *&out, OPEN_INFO& info );
+	virtual NTSTATUS Open( OBJECT *&out, OPEN_INFO& info );
 	PIPE_SERVER* find_idle_server();
 };
 
@@ -132,10 +132,10 @@ public:
 public:
 	PIPE_SERVER( PIPE_CONTAINER *container );
 	~PIPE_SERVER();
-	virtual NTSTATUS read( PVOID buffer, ULONG length, ULONG *read );
-	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written );
-	NTSTATUS open( OBJECT *&out, OPEN_INFO& info );
-	virtual NTSTATUS fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+	virtual NTSTATUS Read( PVOID buffer, ULONG length, ULONG *read );
+	virtual NTSTATUS Write( PVOID buffer, ULONG length, ULONG *written );
+	NTSTATUS Open( OBJECT *&out, OPEN_INFO& info );
+	virtual NTSTATUS FSControl( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 								 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
 	inline bool is_connected()
 	{
@@ -167,10 +167,10 @@ public:
 	THREAD *thread;
 public:
 	PIPE_CLIENT( PIPE_CONTAINER *container );
-	virtual NTSTATUS read( PVOID buffer, ULONG length, ULONG *read );
-	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written );
-	NTSTATUS set_pipe_info( FILE_PIPE_INFORMATION& pipe_info );
-	virtual NTSTATUS fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+	virtual NTSTATUS Read( PVOID buffer, ULONG length, ULONG *read );
+	virtual NTSTATUS Write( PVOID buffer, ULONG length, ULONG *written );
+	NTSTATUS SetPipeInfo( FILE_PIPE_INFORMATION& pipe_info );
+	virtual NTSTATUS FSControl( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 								 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
 	NTSTATUS transceive(
 		PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
@@ -183,13 +183,13 @@ class PIPE_FACTORY : public OBJECT_FACTORY
 public:
 	PIPE_FACTORY( ULONG _MaxInstances );
 	NTSTATUS AllocObject(OBJECT** obj);
-	NTSTATUS on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
+	NTSTATUS OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
-NTSTATUS PIPE_DEVICE::open( OBJECT *&out, OPEN_INFO& info )
+NTSTATUS PIPE_DEVICE::Open( OBJECT *&out, OPEN_INFO& info )
 {
 	if (info.path.Length == 0)
-		return OBJECT_DIR_IMPL::open( out, info );
+		return OBJECT_DIR_IMPL::Open( out, info );
 
 	// appears to be a flat namespace under the pipe device
 	trace("pipe = %pus\n", &info.path );
@@ -197,12 +197,12 @@ NTSTATUS PIPE_DEVICE::open( OBJECT *&out, OPEN_INFO& info )
 
 	// not the NtCreateNamedPipeFile case?
 	if (out && dynamic_cast<PIPE_FACTORY*>(&info) == NULL)
-		return out->open( out, info );
+		return out->Open( out, info );
 
-	return info.on_open( this, out, info );
+	return info.OnOpen( this, out, info );
 }
 
-NTSTATUS PIPE_CONTAINER::open( OBJECT *&out, OPEN_INFO& info )
+NTSTATUS PIPE_CONTAINER::Open( OBJECT *&out, OPEN_INFO& info )
 {
 	trace("allocating pipe client = %pus\n", &info.path );
 	PIPE_CLIENT *pipe = 0;
@@ -234,12 +234,12 @@ void init_pipe_device()
 		Die("failed to create named pipe\n");
 }
 
-NTSTATUS PIPE_DEVICE::read( PVOID buffer, ULONG length, ULONG *read )
+NTSTATUS PIPE_DEVICE::Read( PVOID buffer, ULONG length, ULONG *read )
 {
 	return STATUS_ACCESS_DENIED;
 }
 
-NTSTATUS PIPE_DEVICE::write( PVOID buffer, ULONG length, ULONG *written )
+NTSTATUS PIPE_DEVICE::Write( PVOID buffer, ULONG length, ULONG *written )
 {
 	return STATUS_ACCESS_DENIED;
 }
@@ -333,7 +333,7 @@ NTSTATUS PIPE_DEVICE::wait_server_available( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, UL
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS PIPE_DEVICE::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+NTSTATUS PIPE_DEVICE::FSControl( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 									PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
 	if (FsControlCode == FSCTL_PIPE_WAIT)
@@ -433,14 +433,14 @@ PIPE_SERVER::~PIPE_SERVER()
 	release( container );
 }
 
-NTSTATUS PIPE_SERVER::open( OBJECT *&out, OPEN_INFO& info )
+NTSTATUS PIPE_SERVER::Open( OBJECT *&out, OPEN_INFO& info )
 {
 	// should return a pointer to a pipe client
 	trace("implement\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS PIPE_SERVER::read( PVOID buffer, ULONG length, ULONG *read )
+NTSTATUS PIPE_SERVER::Read( PVOID buffer, ULONG length, ULONG *read )
 {
 	PIPE_MESSAGE *msg;
 
@@ -479,7 +479,7 @@ NTSTATUS PIPE_SERVER::read( PVOID buffer, ULONG length, ULONG *read )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS PIPE_SERVER::write( PVOID buffer, ULONG length, ULONG *written )
+NTSTATUS PIPE_SERVER::Write( PVOID buffer, ULONG length, ULONG *written )
 {
 	PIPE_MESSAGE *msg = PIPE_MESSAGE::alloc_pipe_message( length );
 
@@ -542,7 +542,7 @@ NTSTATUS PIPE_SERVER::disconnect()
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS PIPE_SERVER::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+NTSTATUS PIPE_SERVER::FSControl( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 									PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
 	trace("PIPE_SERVER %08lx\n", FsControlCode);
@@ -589,7 +589,7 @@ PIPE_CLIENT::PIPE_CLIENT( PIPE_CONTAINER *container ) :
 {
 }
 
-NTSTATUS PIPE_CLIENT::read( PVOID buffer, ULONG length, ULONG *read )
+NTSTATUS PIPE_CLIENT::Read( PVOID buffer, ULONG length, ULONG *read )
 {
 	PIPE_MESSAGE *msg;
 
@@ -628,7 +628,7 @@ NTSTATUS PIPE_CLIENT::read( PVOID buffer, ULONG length, ULONG *read )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS PIPE_CLIENT::write( PVOID buffer, ULONG length, ULONG *written )
+NTSTATUS PIPE_CLIENT::Write( PVOID buffer, ULONG length, ULONG *written )
 {
 	PIPE_MESSAGE *msg = PIPE_MESSAGE::alloc_pipe_message( length );
 
@@ -648,7 +648,7 @@ NTSTATUS PIPE_CLIENT::write( PVOID buffer, ULONG length, ULONG *written )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS PIPE_CLIENT::fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+NTSTATUS PIPE_CLIENT::FSControl( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 									PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
 	trace("PIPE_CLIENT %08lx\n", FsControlCode);
@@ -665,18 +665,18 @@ NTSTATUS PIPE_CLIENT::transceive(
 {
 	NTSTATUS r;
 	ULONG out = 0;
-	r = write( InputBuffer, InputBufferLength, &out );
+	r = Write( InputBuffer, InputBufferLength, &out );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = read( OutputBuffer, OutputBufferLength, &out );
+	r = Read( OutputBuffer, OutputBufferLength, &out );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS PIPE_CLIENT::set_pipe_info( FILE_PIPE_INFORMATION& pipe_info )
+NTSTATUS PIPE_CLIENT::SetPipeInfo( FILE_PIPE_INFORMATION& pipe_info )
 {
 	trace("%ld %ld\n", pipe_info.ReadModeMessage, pipe_info.WaitModeBlocking);
 	return STATUS_SUCCESS;
@@ -693,7 +693,7 @@ NTSTATUS PIPE_FACTORY::AllocObject(OBJECT** obj)
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS PIPE_FACTORY::on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS PIPE_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	NTSTATUS r;
 

@@ -137,7 +137,7 @@ NTSTATUS create_initial_process( THREAD **t, UNICODE_STRING& us )
 	CFILE *file = 0;
 	int r;
 
-	r = open_file( file, us );
+	r = OpenFile( file, us );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -201,7 +201,7 @@ NTSTATUS init_ntdll( void )
 
 	us.set( ntdll );
 
-	r = open_file( file, us );
+	r = OpenFile( file, us );
 	if (r < STATUS_SUCCESS)
 		Die("failed to open ntdll\n");
 
@@ -505,7 +505,7 @@ int main(int argc, char **argv)
 	// XP
 	create_directory_object( (PWSTR) L"\\KernelObjects" );
 	CreateSyncEvent( (PWSTR) L"\\KernelObjects\\CritSecOutOfMemoryEvent" );
-	init_drives();
+	InitDrives();
 	init_ntdll();
 	create_kthread();
 

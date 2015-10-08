@@ -33,21 +33,21 @@ class random_dev_t : public IO_OBJECT
 {
 public:
 	random_dev_t();
-	virtual NTSTATUS read( PVOID Buffer, ULONG Length, ULONG *read );
-	virtual NTSTATUS write( PVOID Buffer, ULONG Length, ULONG *written );
+	virtual NTSTATUS Read( PVOID Buffer, ULONG Length, ULONG *read );
+	virtual NTSTATUS Write( PVOID Buffer, ULONG Length, ULONG *written );
 };
 
 random_dev_t::random_dev_t()
 {
 }
 
-NTSTATUS random_dev_t::read( PVOID Buffer, ULONG Length, ULONG *read )
+NTSTATUS random_dev_t::Read( PVOID Buffer, ULONG Length, ULONG *read )
 {
 	trace("random_dev_t\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS random_dev_t::write( PVOID Buffer, ULONG Length, ULONG *written )
+NTSTATUS random_dev_t::Write( PVOID Buffer, ULONG Length, ULONG *written )
 {
 	trace("random_dev_t\n");
 	return STATUS_NOT_IMPLEMENTED;

@@ -126,7 +126,7 @@ class COMPLETION_PORT_IMPL : public COMPLETION_PORT
 	friend class LIST_ELEMENT<COMPLETION_PORT_IMPL>;
 	COMPLETION_PORT_LIST_ELEMENT entry[1];
 	static COMPLETION_PORT_LIST waiting_thread_ports;
-	friend void check_completions( void );
+	friend void CheckCompletions( void );
 private:
 	ULONG num_threads;
 	COMPLETION_LIST queue;
@@ -182,7 +182,7 @@ COMPLETION_PORT::~COMPLETION_PORT()
 
 COMPLETION_PORT_LIST COMPLETION_PORT_IMPL::waiting_thread_ports;
 
-void check_completions( void )
+void CheckCompletions( void )
 {
 	COMPLETION_PORT_IMPL *port = COMPLETION_PORT_IMPL::waiting_thread_ports.head();
 	if (!port)

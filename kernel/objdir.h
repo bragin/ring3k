@@ -49,7 +49,7 @@ public:
 public:
 	OBJECT *lookup( UNICODE_STRING& name, bool ignore_case );
 	NTSTATUS add( OBJECT *obj, UNICODE_STRING& name, bool ignore_case );
-	virtual NTSTATUS open( OBJECT*& obj, OPEN_INFO& info );
+	virtual NTSTATUS Open( OBJECT*& obj, OPEN_INFO& info );
 };
 
 OBJECT *create_directory_object( PCWSTR name );

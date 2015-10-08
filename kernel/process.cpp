@@ -145,7 +145,7 @@ NTSTATUS map_locale_data( ADDRESS_SPACE *vm, const char *name, void **addr )
 	strcat( path, name );
 	us.copy( path );
 
-	r = open_file( file, us );
+	r = OpenFile( file, us );
 	if (r < STATUS_SUCCESS)
 		Die("locale data %s missing from system directory (%08lx)\n", name, r);
 

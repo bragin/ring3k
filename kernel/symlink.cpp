@@ -46,10 +46,10 @@ symlink_t::~symlink_t()
 class symlink_opener : public OPEN_INFO
 {
 public:
-	NTSTATUS on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
+	NTSTATUS OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
-NTSTATUS symlink_opener::on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS symlink_opener::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	if (!obj)
 		return STATUS_OBJECT_PATH_NOT_FOUND;
@@ -57,7 +57,7 @@ NTSTATUS symlink_opener::on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS symlink_t::open( OBJECT *&out, OPEN_INFO& info )
+NTSTATUS symlink_t::Open( OBJECT *&out, OPEN_INFO& info )
 {
 	if (info.path.Length != 0)
 	{
@@ -74,7 +74,7 @@ NTSTATUS symlink_t::open( OBJECT *&out, OPEN_INFO& info )
 		if (r < STATUS_SUCCESS)
 			return r;
 
-		return target_object->open( out, info );
+		return target_object->Open( out, info );
 	}
 
 	trace("opening symlinks oa.Attributes = %08lx\n", info.Attributes);

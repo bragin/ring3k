@@ -172,7 +172,7 @@ NTSTATUS create_section( section_t **section, OBJECT *obj, PLARGE_INTEGER psz, U
 		if (!file)
 			return STATUS_OBJECT_TYPE_MISMATCH;
 
-		fd = file->get_fd();
+		fd = file->GetFD();
 		if (fd<0)
 			return STATUS_OBJECT_TYPE_MISMATCH;
 		fd = dup(fd);

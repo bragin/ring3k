@@ -65,7 +65,7 @@ void OBJECT::release( OBJECT *obj )
 	}
 }
 
-NTSTATUS OBJECT::open( OBJECT *&out, OPEN_INFO& info )
+NTSTATUS OBJECT::Open( OBJECT *&out, OPEN_INFO& info )
 {
 	if (info.path.Length != 0)
 	{
@@ -179,7 +179,7 @@ void HANDLE_TABLE::free_all_handles()
 	}
 }
 
-NTSTATUS OBJECT_FACTORY::on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS OBJECT_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	// object already exists?
 	if (obj)

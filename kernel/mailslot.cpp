@@ -34,17 +34,17 @@
 class MAILSLOT : public IO_OBJECT
 {
 public:
-	virtual NTSTATUS read( PVOID Buffer, ULONG Length, ULONG *Read );
-	virtual NTSTATUS write( PVOID Buffer, ULONG Length, ULONG *Written );
+	virtual NTSTATUS Read( PVOID Buffer, ULONG Length, ULONG *Read );
+	virtual NTSTATUS Write( PVOID Buffer, ULONG Length, ULONG *Written );
 };
 
-NTSTATUS MAILSLOT::read( PVOID Buffer, ULONG Length, ULONG *Read )
+NTSTATUS MAILSLOT::Read( PVOID Buffer, ULONG Length, ULONG *Read )
 {
 	trace("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS MAILSLOT::write( PVOID Buffer, ULONG Length, ULONG *Written )
+NTSTATUS MAILSLOT::Write( PVOID Buffer, ULONG Length, ULONG *Written )
 {
 	trace("\n");
 	return STATUS_NOT_IMPLEMENTED;

@@ -176,13 +176,13 @@ NTSTATUS open_root( OBJECT*& obj, OPEN_INFO& info )
 	if (info.path.Length == 0)
 	{
 		obj = dir;
-		return info.on_open( 0, obj, info );
+		return info.OnOpen( 0, obj, info );
 	}
 
-	return dir->open( obj, info );
+	return dir->Open( obj, info );
 }
 
-NTSTATUS OBJECT_DIR_IMPL::open( OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS OBJECT_DIR_IMPL::Open( OBJECT*& obj, OPEN_INFO& info )
 {
 	ULONG n = 0;
 	UNICODE_STRING& path = info.path;
@@ -203,7 +203,7 @@ NTSTATUS OBJECT_DIR_IMPL::open( OBJECT*& obj, OPEN_INFO& info )
 	obj = lookup( segment, info.case_insensitive() );
 
 	if (n == path.Length/2)
-		return info.on_open( this, obj, info );
+		return info.OnOpen( this, obj, info );
 
 	if (!obj)
 		return STATUS_OBJECT_PATH_NOT_FOUND;
@@ -212,16 +212,16 @@ NTSTATUS OBJECT_DIR_IMPL::open( OBJECT*& obj, OPEN_INFO& info )
 	path.Length -= (n + 1) * 2;
 	path.MaximumLength -= (n + 1) * 2;
 
-	return obj->open( obj, info );
+	return obj->Open( obj, info );
 }
 
 class FIND_OBJECT : public OPEN_INFO
 {
 public:
-	virtual NTSTATUS on_open( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info );
+	virtual NTSTATUS OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
-NTSTATUS FIND_OBJECT::on_open( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS FIND_OBJECT::OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	trace("FIND_OBJECT::on_open %pus %s\n", &info.path,
 		  obj ? "exists" : "doesn't exist");
@@ -267,7 +267,7 @@ class NAME_OBJECT : public OPEN_INFO
 	OBJECT *obj_to_name;
 public:
 	NAME_OBJECT( OBJECT *in );
-	virtual NTSTATUS on_open( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info );
+	virtual NTSTATUS OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
 NAME_OBJECT::NAME_OBJECT( OBJECT *in ) :
@@ -275,7 +275,7 @@ NAME_OBJECT::NAME_OBJECT( OBJECT *in ) :
 {
 }
 
-NTSTATUS NAME_OBJECT::on_open( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS NAME_OBJECT::OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	trace("NAME_OBJECT::on_open %pus\n", &info.path);
 

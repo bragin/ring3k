@@ -278,7 +278,7 @@ void THREAD_IMPL::set_state( THREAD_STATE state )
 
 	// ready to complete some I/O?
 	if (num_active_threads() == 0)
-		check_completions();
+		CheckCompletions();
 }
 
 

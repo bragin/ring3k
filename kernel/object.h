@@ -46,7 +46,7 @@ public:
 	{
 		return Attributes & OBJ_CASE_INSENSITIVE;
 	}
-	virtual NTSTATUS on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info ) = 0;
+	virtual NTSTATUS OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info ) = 0;
 	virtual ~OPEN_INFO();
 };
 
@@ -74,14 +74,14 @@ public:
 	static bool check_access( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK read, ACCESS_MASK write, ACCESS_MASK all );
 	static void addref( OBJECT *obj );
 	static void release( OBJECT *obj );
-	virtual NTSTATUS open( OBJECT *&out, OPEN_INFO& info );
+	virtual NTSTATUS Open( OBJECT *&out, OPEN_INFO& info );
 };
 
 class OBJECT_FACTORY : public OPEN_INFO
 {
 protected:
 	virtual NTSTATUS AllocObject(OBJECT** obj) = 0;
-	virtual NTSTATUS on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
+	virtual NTSTATUS OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
 public:
 	NTSTATUS create(
 		PHANDLE Handle,

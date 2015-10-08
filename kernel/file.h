@@ -39,7 +39,7 @@ public:
 	virtual bool AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle ) = 0;
 };
 
-void check_completions( void );
+void CheckCompletions( void );
 
 class IO_OBJECT : virtual public OBJECT
 {
@@ -47,13 +47,13 @@ class IO_OBJECT : virtual public OBJECT
 	ULONG completion_key;
 public:
 	IO_OBJECT();
-	virtual NTSTATUS read( PVOID buffer, ULONG length, ULONG *read ) = 0;
-	virtual NTSTATUS write( PVOID buffer, ULONG length, ULONG *written ) = 0;
-	void set_completion_port( COMPLETION_PORT *port, ULONG key );
-	virtual NTSTATUS set_position( LARGE_INTEGER& ofs );
-	virtual NTSTATUS fs_control( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
+	virtual NTSTATUS Read( PVOID buffer, ULONG length, ULONG *read ) = 0;
+	virtual NTSTATUS Write( PVOID buffer, ULONG length, ULONG *written ) = 0;
+	void SetCompletionPort( COMPLETION_PORT *port, ULONG key );
+	virtual NTSTATUS SetPosition( LARGE_INTEGER& ofs );
+	virtual NTSTATUS FSControl( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 								 PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength );
-	virtual NTSTATUS set_pipe_info( FILE_PIPE_INFORMATION& pipe_info );
+	virtual NTSTATUS SetPipeInfo( FILE_PIPE_INFORMATION& pipe_info );
 };
 
 class CFILE : public IO_OBJECT
@@ -62,18 +62,18 @@ class CFILE : public IO_OBJECT
 public:
 	CFILE( int fd );
 	~CFILE();
-	virtual NTSTATUS query_information( FILE_STANDARD_INFORMATION& std_info );
-	virtual NTSTATUS read( PVOID Buffer, ULONG Length, ULONG *read );
-	virtual NTSTATUS write( PVOID Buffer, ULONG Length, ULONG *written );
-	virtual NTSTATUS query_information( FILE_BASIC_INFORMATION& info );
-	virtual NTSTATUS query_information( FILE_ATTRIBUTE_TAG_INFORMATION& info );
-	virtual NTSTATUS set_position( LARGE_INTEGER& ofs );
-	virtual NTSTATUS remove();
-	int get_fd();
+	virtual NTSTATUS QueryInformation( FILE_STANDARD_INFORMATION& std_info );
+	virtual NTSTATUS Read( PVOID Buffer, ULONG Length, ULONG *read );
+	virtual NTSTATUS Write( PVOID Buffer, ULONG Length, ULONG *written );
+	virtual NTSTATUS QueryInformation( FILE_BASIC_INFORMATION& info );
+	virtual NTSTATUS QueryInformation( FILE_ATTRIBUTE_TAG_INFORMATION& info );
+	virtual NTSTATUS SetPosition( LARGE_INTEGER& ofs );
+	virtual NTSTATUS Remove();
+	int GetFD();
 };
 
-NTSTATUS open_file( CFILE *&file, UNICODE_STRING& us );
-void check_completions( void );
-void init_drives();
+NTSTATUS OpenFile( CFILE *&file, UNICODE_STRING& us );
+void CheckCompletions( void );
+void InitDrives();
 
 #endif // __NTNATIVE_FILE_H__
