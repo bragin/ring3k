@@ -1366,18 +1366,18 @@ NTSTATUS NTAPI NtDelayExecution( BOOLEAN Alertable, PLARGE_INTEGER Interval )
 class teb_tracer : public BLOCK_TRACER
 {
 public:
-	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
-	virtual bool enabled() const;
+	virtual void OnAccess( MBLOCK *mb, BYTE *address, ULONG eip );
+	virtual bool Enabled() const;
 };
 
-bool teb_tracer::enabled() const
+bool teb_tracer::Enabled() const
 {
 	return trace_is_enabled( "tebshm" );
 }
 
-void teb_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
+void teb_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 {
-	ULONG ofs = address - mb->get_base_address();
+	ULONG ofs = address - mb->GetBaseAddress();
 	fprintf(stderr, "%04lx: accessed teb[%04lx] from %08lx\n",
 			current->trace_id(), ofs, eip);
 }

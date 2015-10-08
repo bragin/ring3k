@@ -86,13 +86,13 @@ void ADDRESS_SPACE_IMPL::verify()
 	{
 		MBLOCK *mb = i;
 
-		if ( mb->is_free() )
+		if ( mb->IsFree() )
 			free_blocks++;
 		// check xlate entries
-		for ( ULONG i=0; i<mb->get_region_size(); i+=0x1000 )
-			if ( xlate_entry(mb->get_base_address() + i ) != mb )
+		for ( ULONG i=0; i<mb->GetRegionSize(); i+=0x1000 )
+			if ( xlate_entry(mb->GetBaseAddress() + i ) != mb )
 				bad_xlate++;
-		total += mb->get_region_size();
+		total += mb->GetRegionSize();
 		count++;
 	}
 
@@ -104,7 +104,7 @@ void ADDRESS_SPACE_IMPL::verify()
 		for ( MBLOCK_iter_t i(blocks); i; i.next() )
 		{
 			MBLOCK *mb = i;
-			mb->dump();
+			mb->Dump();
 		}
 		trace("total %08lx in %ld allocations, %08lx\n", total, count, sz);
 	}
@@ -141,10 +141,10 @@ void ADDRESS_SPACE_IMPL::destroy()
 
 MBLOCK* ADDRESS_SPACE_IMPL::alloc_guard_block(BYTE *address, ULONG size)
 {
-	MBLOCK *mb = alloc_guard_pages( address, size );
+	MBLOCK *mb = AllocGuardPages( address, size );
 	if (!mb)
 		return NULL;
-	mb->reserve( this );
+	mb->Reserve( this );
 	update_page_translation( mb );
 	insert_block( mb );
 	return mb;
@@ -196,7 +196,7 @@ void ADDRESS_SPACE_IMPL::dump()
 	for ( MBLOCK_iter_t i(blocks); i; i.next() )
 	{
 		MBLOCK *mb = i;
-		mb->dump();
+		mb->Dump();
 	}
 }
 
@@ -219,7 +219,7 @@ NTSTATUS ADDRESS_SPACE_IMPL::find_free_area( int zero_bits, size_t length, int t
 			if (xlate_entry( base+free_size ))
 			{
 				MBLOCK *mb = xlate_entry( base+free_size );
-				base = mb->get_base_address() + mb->get_region_size();
+				base = mb->GetBaseAddress() + mb->GetRegionSize();
 				free_size = 0;
 			}
 			else if (((ULONG)base)&0xffff)
@@ -238,7 +238,7 @@ NTSTATUS ADDRESS_SPACE_IMPL::find_free_area( int zero_bits, size_t length, int t
 			if (xlate_entry( base+free_size ))
 			{
 				MBLOCK *mb = xlate_entry( base+free_size );
-				base = mb->get_base_address() - length;
+				base = mb->GetBaseAddress() - length;
 				free_size = 0;
 			}
 			else if (((ULONG)base)&0xffff)
@@ -299,7 +299,7 @@ void ADDRESS_SPACE_IMPL::insert_block( MBLOCK *mb )
 
 void ADDRESS_SPACE_IMPL::remove_block( MBLOCK *mb )
 {
-	assert( mb->is_free() );
+	assert( mb->IsFree() );
 	blocks.unlink( mb );
 }
 
@@ -313,21 +313,21 @@ MBLOCK *ADDRESS_SPACE_IMPL::split_area( MBLOCK *mb, BYTE *address, size_t length
 	assert( !(length&0xfff) );
 	assert( !(((int)address)&0xfff) );
 
-	assert( mb->get_base_address() <= address );
-	assert( (mb->get_base_address() + mb->get_region_size()) >= address );
+	assert( mb->GetBaseAddress() <= address );
+	assert( (mb->GetBaseAddress() + mb->GetRegionSize()) >= address );
 
-	if (mb->get_base_address() != address)
+	if (mb->GetBaseAddress() != address)
 	{
-		ret = mb->split( address - mb->get_base_address() );
+		ret = mb->Split( address - mb->GetBaseAddress() );
 		update_page_translation( ret );
 		insert_block( ret );
 	}
 	else
 		ret = mb;
 
-	if (ret->get_region_size() != length)
+	if (ret->GetRegionSize() != length)
 	{
-		MBLOCK *extra = ret->split( length );
+		MBLOCK *extra = ret->Split( length );
 		update_page_translation( extra );
 		insert_block( extra );
 	}
@@ -339,12 +339,12 @@ void ADDRESS_SPACE_IMPL::update_page_translation( MBLOCK *mb )
 {
 	ULONG i;
 
-	for ( i = 0; i<mb->get_region_size(); i += 0x1000 )
+	for ( i = 0; i<mb->GetRegionSize(); i += 0x1000 )
 	{
-		if (!mb->is_free())
-			xlate_entry( mb->get_base_address() + i ) = mb;
+		if (!mb->IsFree())
+			xlate_entry( mb->GetBaseAddress() + i ) = mb;
 		else
-			xlate_entry( mb->get_base_address() + i ) = NULL;
+			xlate_entry( mb->GetBaseAddress() + i ) = NULL;
 	}
 }
 
@@ -395,7 +395,7 @@ NTSTATUS ADDRESS_SPACE_IMPL::allocate_virtual_memory( BYTE **start, int zero_bit
 	MBLOCK *mb = xlate_entry( *start );
 	if (!mb)
 	{
-		mb = alloc_core_pages( *start, length );
+		mb = AllocCorePages( *start, length );
 		insert_block( mb );
 		//xlate_entry( start ) = mb;
 	}
@@ -404,10 +404,10 @@ NTSTATUS ADDRESS_SPACE_IMPL::allocate_virtual_memory( BYTE **start, int zero_bit
 		mb = split_area( mb, *start, length );
 	}
 
-	assert( mb->is_linked() );
+	assert( mb->IsLinked() );
 
-	assert( *start == mb->get_base_address());
-	assert( length == mb->get_region_size());
+	assert( *start == mb->GetBaseAddress());
+	assert( length == mb->GetRegionSize());
 
 	return set_block_state( mb, state, prot );
 }
@@ -435,12 +435,12 @@ NTSTATUS ADDRESS_SPACE_IMPL::map_fd( BYTE **start, int zero_bits, size_t length,
 	if (mb)
 		return STATUS_CONFLICTING_ADDRESSES;
 
-	mb = alloc_fd_pages( *start, length, backing );
+	mb = AllocFDPages( *start, length, backing );
 	insert_block( mb );
-	assert( mb->is_linked() );
+	assert( mb->IsLinked() );
 
-	assert( *start == mb->get_base_address());
-	assert( length == mb->get_region_size());
+	assert( *start == mb->GetBaseAddress());
+	assert( length == mb->GetRegionSize());
 
 	return set_block_state( mb, state, prot );
 }
@@ -473,19 +473,19 @@ NTSTATUS ADDRESS_SPACE_IMPL::check_params( BYTE *start, int zero_bits, size_t le
 
 NTSTATUS ADDRESS_SPACE_IMPL::set_block_state( MBLOCK *mb, int state, int prot )
 {
-	if (mb->is_free())
+	if (mb->IsFree())
 	{
-		mb->reserve( this );
+		mb->Reserve( this );
 		update_page_translation( mb );
 	}
 
 	if (state & MEM_COMMIT)
 	{
-		mb->set_prot( prot );
-		mb->commit( this );
+		mb->SetProt( prot );
+		mb->Commit( this );
 	}
 
-	assert( !mb->is_free() );
+	assert( !mb->IsFree() );
 	verify();
 	//mb->dump();
 
@@ -495,10 +495,10 @@ NTSTATUS ADDRESS_SPACE_IMPL::set_block_state( MBLOCK *mb, int state, int prot )
 void ADDRESS_SPACE_IMPL::free_shared( MBLOCK *mb )
 {
 	//mb->dump();
-	if (mb->is_committed())
-		mb->uncommit( this );
+	if (mb->IsCommitted())
+		mb->Uncommit( this );
 
-	mb->unreserve( this );
+	mb->Unreserve( this );
 	update_page_translation( mb );
 	remove_block( mb );
 	delete mb;
@@ -536,7 +536,7 @@ NTSTATUS ADDRESS_SPACE_IMPL::free_virtual_memory( void *start, size_t length, UL
 		return STATUS_NO_MEMORY;
 	}
 
-	if (mb->get_region_size()<length)
+	if (mb->GetRegionSize()<length)
 		return STATUS_UNABLE_TO_FREE_VM;
 
 	mb = split_area( mb, addr, length );
@@ -581,7 +581,7 @@ NTSTATUS ADDRESS_SPACE_IMPL::query( BYTE *start, MEMORY_BASIC_INFORMATION *info 
 		return STATUS_INVALID_PARAMETER;
 	}
 
-	return mb->query( start, info );
+	return mb->Query( start, info );
 }
 
 NTSTATUS ADDRESS_SPACE_IMPL::get_kernel_address( BYTE **address, size_t *len )
@@ -606,22 +606,22 @@ NTSTATUS ADDRESS_SPACE_IMPL::get_kernel_address( BYTE **address, size_t *len )
 
 	//trace("%p\n", mb);
 
-	assert (mb->get_base_address() <= (*address));
-	assert ((mb->get_base_address() + mb->get_region_size()) > (*address));
+	assert (mb->GetBaseAddress() <= (*address));
+	assert ((mb->GetBaseAddress() + mb->GetRegionSize()) > (*address));
 
-	if (!mb->is_committed())
+	if (!mb->IsCommitted())
 		return STATUS_ACCESS_VIOLATION;
 
-	assert(mb->get_kernel_address() != NULL);
+	assert(mb->GetKernelAddress() != NULL);
 
-	ofs = (*address - mb->get_base_address());
-	*address = mb->get_kernel_address() + ofs;
+	ofs = (*address - mb->GetBaseAddress());
+	*address = mb->GetKernelAddress() + ofs;
 
-	if ((ofs + *len) > mb->get_region_size())
-		*len = mb->get_region_size() - ofs;
+	if ((ofs + *len) > mb->GetRegionSize())
+		*len = mb->GetRegionSize() - ofs;
 
 	//trace("copying %04x bytes to %p (size %04lx)\n", *len, *address, mb->get_region_size());
-	assert( *len <= mb->get_region_size() );
+	assert( *len <= mb->GetRegionSize() );
 
 	return STATUS_SUCCESS;
 }
@@ -637,7 +637,7 @@ const char *ADDRESS_SPACE_IMPL::get_symbol( BYTE *address )
 	//  when pe_section_t::mapit is fixed, fix here too
 	//return get_section_symbol( mb->get_section(), address - mb->get_base_address() );
 
-	return get_section_symbol( mb->get_section(), (ULONG) address );
+	return get_section_symbol( mb->GetSection(), (ULONG) address );
 }
 
 NTSTATUS ADDRESS_SPACE_IMPL::copy_from_user( void *dest, const void *src, size_t len )
@@ -723,7 +723,7 @@ bool ADDRESS_SPACE_IMPL::traced_access( void* addr, ULONG Eip )
 	MBLOCK* mb = get_MBLOCK( address );
 	if (!mb)
 		return false;
-	return mb->traced_access( address, Eip );
+	return mb->TracedAccess( address, Eip );
 }
 
 bool ADDRESS_SPACE_IMPL::set_traced( void* addr, bool traced )
@@ -732,7 +732,7 @@ bool ADDRESS_SPACE_IMPL::set_traced( void* addr, bool traced )
 	MBLOCK* mb = get_MBLOCK( address );
 	if (!mb)
 		return false;
-	return mb->set_traced( this, traced );
+	return mb->SetTraced( this, traced );
 }
 
 bool ADDRESS_SPACE_IMPL::set_tracer( BYTE *addr, BLOCK_TRACER& tracer )
@@ -741,7 +741,7 @@ bool ADDRESS_SPACE_IMPL::set_tracer( BYTE *addr, BLOCK_TRACER& tracer )
 	MBLOCK* mb = get_MBLOCK( addr );
 	if (!mb)
 		return false;
-	return mb->set_tracer( this, &tracer );
+	return mb->SetTracer( this, &tracer );
 }
 
 static inline ULONG mem_round_size(ULONG size)

@@ -170,19 +170,19 @@ KUSER_SHARED_DATA *shared_memory_address;
 class kshm_tracer : public BLOCK_TRACER
 {
 public:
-	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
-	virtual bool enabled() const;
+	virtual void OnAccess( MBLOCK *mb, BYTE *address, ULONG eip );
+	virtual bool Enabled() const;
 };
 
-bool kshm_tracer::enabled() const
+bool kshm_tracer::Enabled() const
 {
 	// disable this, as it's noisy
 	return false;
 }
 
-void kshm_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
+void kshm_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 {
-	ULONG ofs = address - mb->get_base_address();
+	ULONG ofs = address - mb->GetBaseAddress();
 	const char *field = "";
 
 	if (ofs >= 0x30 && ofs <= 0x130)
@@ -402,19 +402,19 @@ void PROCESS::terminate( NTSTATUS status )
 class peb_tracer : public BLOCK_TRACER
 {
 public:
-	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
-	virtual bool enabled() const;
+	virtual void OnAccess( MBLOCK *mb, BYTE *address, ULONG eip );
+	virtual bool Enabled() const;
 };
 
-bool peb_tracer::enabled() const
+bool peb_tracer::Enabled() const
 {
 	// disable this, as it's noisy
 	return false;
 }
 
-void peb_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
+void peb_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 {
-	ULONG ofs = address - mb->get_base_address();
+	ULONG ofs = address - mb->GetBaseAddress();
 	const char *field = "";
 
 	switch (ofs)

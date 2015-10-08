@@ -36,9 +36,9 @@ public:
 	virtual NTSTATUS query( SECTION_BASIC_INFORMATION *basic );
 	virtual NTSTATUS query( SECTION_IMAGE_INFORMATION *image );
 	virtual const char *get_symbol( ULONG address );
-	virtual int get_fd();
-	virtual void addref();
-	virtual void release();
+	virtual int GetFD();
+	virtual void AddRef();
+	virtual void Release();
 };
 
 NTSTATUS create_section( OBJECT **obj, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );

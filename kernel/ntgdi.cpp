@@ -90,20 +90,20 @@ WIN32K_MANAGER *win32k_manager;
 class NTGDISHM_TRACER : public BLOCK_TRACER
 {
 public:
-	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
-	virtual bool enabled() const;
+	virtual void OnAccess( MBLOCK *mb, BYTE *address, ULONG eip );
+	virtual bool Enabled() const;
 };
 
-bool NTGDISHM_TRACER::enabled() const
+bool NTGDISHM_TRACER::Enabled() const
 {
 	return trace_is_enabled( "gdishm" );
 }
 
 #define MAX_GDI_HANDLE 0x4000
 
-void NTGDISHM_TRACER::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
+void NTGDISHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 {
-	ULONG ofs = address - mb->get_base_address();
+	ULONG ofs = address - mb->GetBaseAddress();
 	if (ofs < MAX_GDI_HANDLE*0x10)
 	{
 		char unk[16];
@@ -453,8 +453,8 @@ HGDIOBJ alloc_gdi_object( BOOL stock, ULONG type )
 class gdishm_tracer : public BLOCK_TRACER
 {
 public:
-	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
-	virtual bool enabled() const;
+	virtual void OnAccess( MBLOCK *mb, BYTE *address, ULONG eip );
+	virtual bool Enabled() const;
 };
 
 static inline ULONG get_gdi_type_size( ULONG type )
@@ -485,7 +485,7 @@ ULONG object_from_memory( BYTE *address )
 	return 0;
 }
 
-void gdishm_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
+void gdishm_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG n = object_from_memory( address );
 	if (n)
@@ -497,13 +497,13 @@ void gdishm_tracer::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
 	}
 	else
 	{
-		ULONG ofs = address - mb->get_base_address();
+		ULONG ofs = address - mb->GetBaseAddress();
 		fprintf(stderr, "%04lx: accessed gdishm[%04lx] from %08lx\n",
 				current->trace_id(), ofs, eip);
 	}
 }
 
-bool gdishm_tracer::enabled() const
+bool gdishm_tracer::Enabled() const
 {
 	return trace_is_enabled( "gdishm" );
 }

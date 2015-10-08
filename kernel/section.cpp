@@ -63,17 +63,17 @@ section_t::~section_t()
 	close(fd);
 }
 
-int section_t::get_fd()
+int section_t::GetFD()
 {
 	return fd;
 }
 
-void section_t::addref()
+void section_t::AddRef()
 {
 	::addref( this );
 }
 
-void section_t::release()
+void section_t::Release()
 {
 	::release( this );
 }
@@ -192,7 +192,7 @@ NTSTATUS create_section( section_t **section, OBJECT *obj, PLARGE_INTEGER psz, U
 		if (!psz)
 			return STATUS_INVALID_PARAMETER;
 		len = psz->QuadPart;
-		fd = create_mapping_fd( len );
+		fd = CreateMappingFD( len );
 		ofs = 0;
 	}
 
@@ -405,7 +405,7 @@ NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, UL
 	// use of MBLOCK here is a bit of a hack
 	// should convert this function to create a flat file to map
 	mb = vm->find_block( p );
-	mb->set_section( this );
+	mb->SetSection( this );
 
 	r = vm->copy_to_user( p, addr, 0x1000 );
 	if (r < STATUS_SUCCESS)
@@ -440,7 +440,7 @@ NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, UL
 		if (r < STATUS_SUCCESS)
 			die("anonymous map failed %08x\n", r);
 		mb = vm->find_block( p );
-		mb->set_section( this );
+		mb->SetSection( this );
 
 		if (sections[i].SizeOfRawData)
 		{

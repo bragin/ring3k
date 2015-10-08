@@ -39,17 +39,17 @@ public:
 class BACKING_STORE
 {
 public:
-	virtual int get_fd() = 0;
-	virtual void addref() = 0;
-	virtual void release() = 0;
+	virtual int GetFD() = 0;
+	virtual void AddRef() = 0;
+	virtual void Release() = 0;
 	virtual ~BACKING_STORE() {};
 };
 
 class BLOCK_TRACER
 {
 public:
-	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
-	virtual bool enabled() const;
+	virtual void OnAccess( MBLOCK *mb, BYTE *address, ULONG eip );
+	virtual bool Enabled() const;
 	virtual ~BLOCK_TRACER();
 };
 
@@ -110,72 +110,72 @@ protected:
 public:
 	MBLOCK( BYTE *address, size_t size );
 	virtual ~MBLOCK();
-	virtual int local_map( int prot ) = 0;
-	virtual int remote_map( ADDRESS_SPACE *vm, ULONG prot ) = 0;
+	virtual int LocalMap( int prot ) = 0;
+	virtual int RemoteMap( ADDRESS_SPACE *vm, ULONG prot ) = 0;
 
 protected:
-	virtual MBLOCK *do_split( BYTE *address, size_t size ) = 0;
+	virtual MBLOCK *DoSplit( BYTE *address, size_t size ) = 0;
 
 public:
-	MBLOCK *split( size_t length );
-	int local_unmap();
-	int remote_unmap( ADDRESS_SPACE *vm );
-	void commit( ADDRESS_SPACE *vm );
-	void reserve( ADDRESS_SPACE *vm );
-	void uncommit( ADDRESS_SPACE *vm );
-	void unreserve( ADDRESS_SPACE *vm );
-	int is_committed()
+	MBLOCK *Split( size_t length );
+	int LocalUnmap();
+	int RemoteUnmap( ADDRESS_SPACE *vm );
+	void Commit( ADDRESS_SPACE *vm );
+	void Reserve( ADDRESS_SPACE *vm );
+	void Uncommit( ADDRESS_SPACE *vm );
+	void Unreserve( ADDRESS_SPACE *vm );
+	int IsCommitted()
 	{
 		return State == MEM_COMMIT;
 	}
-	int is_reserved()
+	int IsReserved()
 	{
 		return State == MEM_RESERVE;
 	}
-	int is_free()
+	int IsFree()
 	{
 		return State == MEM_FREE;
 	}
-	NTSTATUS query( BYTE *address, MEMORY_BASIC_INFORMATION *info );
-	void dump();
-	int is_linked()
+	NTSTATUS Query( BYTE *address, MEMORY_BASIC_INFORMATION *info );
+	void Dump();
+	int IsLinked()
 	{
 		return entry[0].is_linked();
 	}
-	BYTE *get_kernel_address()
+	BYTE *GetKernelAddress()
 	{
 		return kernel_address;
 	};
-	BYTE *get_base_address()
+	BYTE *GetBaseAddress()
 	{
 		return BaseAddress;
 	};
-	ULONG get_region_size()
+	ULONG GetRegionSize()
 	{
 		return RegionSize;
 	};
-	ULONG get_prot()
+	ULONG GetProt()
 	{
 		return Protect;
 	};
-	OBJECT* get_section()
+	OBJECT* GetSection()
 	{
 		return section;
 	};
-	static ULONG mmap_flag_from_page_prot( ULONG prot );
-	void remote_remap( ADDRESS_SPACE *vm, bool except );
-	bool set_tracer( ADDRESS_SPACE *vm, BLOCK_TRACER *tracer);
-	bool traced_access( BYTE *address, ULONG Eip );
-	bool set_traced( ADDRESS_SPACE *vm, bool traced );
-	void set_section( OBJECT *section );
-	void set_prot( ULONG prot );
+	static ULONG MmapFlagFromPageProt( ULONG prot );
+	void RemoteRemap( ADDRESS_SPACE *vm, bool except );
+	bool SetTracer( ADDRESS_SPACE *vm, BLOCK_TRACER *tracer);
+	bool TracedAccess( BYTE *address, ULONG Eip );
+	bool SetTraced( ADDRESS_SPACE *vm, bool traced );
+	void SetSection( OBJECT *section );
+	void SetProt( ULONG prot );
 };
 
-MBLOCK* alloc_guard_pages(BYTE* address, ULONG size);
-MBLOCK* alloc_core_pages(BYTE* address, ULONG size);
-MBLOCK* alloc_fd_pages(BYTE* address, ULONG size, BACKING_STORE* backing);
+MBLOCK* AllocGuardPages(BYTE* address, ULONG size);
+MBLOCK* AllocCorePages(BYTE* address, ULONG size);
+MBLOCK* AllocFDPages(BYTE* address, ULONG size, BACKING_STORE* backing);
 
-int create_mapping_fd( int sz );
+int CreateMappingFD( int sz );
 
 class ADDRESS_SPACE_IMPL : public ADDRESS_SPACE
 {

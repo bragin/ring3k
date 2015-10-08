@@ -275,11 +275,11 @@ void *init_user_shared_memory()
 class NTUSERSHM_TRACER : public BLOCK_TRACER
 {
 public:
-	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
-	virtual bool enabled() const;
+	virtual void OnAccess( MBLOCK *mb, BYTE *address, ULONG eip );
+	virtual bool Enabled() const;
 };
 
-bool NTUSERSHM_TRACER::enabled() const
+bool NTUSERSHM_TRACER::Enabled() const
 {
 	return trace_is_enabled( "usershm" );
 }
@@ -321,9 +321,9 @@ bool window_on_access( BYTE *address, ULONG eip )
 	return false;
 }
 
-void NTUSERSHM_TRACER::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
+void NTUSERSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 {
-	ULONG ofs = address - mb->get_base_address();
+	ULONG ofs = address - mb->GetBaseAddress();
 	if (ofs < user_shared_mem_reserve)
 	{
 		const char *name = "";
@@ -353,18 +353,18 @@ static NTUSERSHM_TRACER ntusershm_trace;
 class NTUSERHANDLE_TRACER : public BLOCK_TRACER
 {
 public:
-	virtual void on_access( MBLOCK *mb, BYTE *address, ULONG eip );
-	virtual bool enabled() const;
+	virtual void OnAccess( MBLOCK *mb, BYTE *address, ULONG eip );
+	virtual bool Enabled() const;
 };
 
-bool NTUSERHANDLE_TRACER::enabled() const
+bool NTUSERHANDLE_TRACER::Enabled() const
 {
 	return trace_is_enabled( "usershm" );
 }
 
-void NTUSERHANDLE_TRACER::on_access( MBLOCK *mb, BYTE *address, ULONG eip )
+void NTUSERHANDLE_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 {
-	ULONG ofs = address - mb->get_base_address();
+	ULONG ofs = address - mb->GetBaseAddress();
 	const int sz = sizeof (USER_HANDLE_ENTRY);
 	ULONG number = ofs/sz;
 	const char *field = "unknown";
