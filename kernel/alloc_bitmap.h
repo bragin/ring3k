@@ -45,19 +45,19 @@ protected:
 	{
 		bitmap[n/8] &= ~(1 << (n%8));
 	}
-	size_t count_zero_bits( size_t start, size_t max );
-	size_t count_one_bits( size_t start, size_t max );
-	void set_bits( size_t start, size_t count );
-	void clear_bits( size_t start, size_t count );
-	size_t bits_required( size_t len );
+	size_t CountZeroBits( size_t start, size_t max );
+	size_t CountOneBits( size_t start, size_t max );
+	void SetBits( size_t start, size_t count );
+	void ClearBits( size_t start, size_t count );
+	size_t BitsRequired( size_t len );
 public:
 	ALLOCATION_BITMAP();
-	void set_area( void *_ptr, size_t _size );
-	unsigned char *alloc( size_t len );
-	void free( unsigned char *start );
-	void free( unsigned char *mem, size_t len );
-	void get_info( size_t& total, size_t& used, size_t& free );
-	static void test(); // unit test for validating the code
+	void SetArea( void *_ptr, size_t _size );
+	unsigned char *Alloc( size_t len );
+	void Free( unsigned char *start );
+	void Free( unsigned char *mem, size_t len );
+	void GetInfo( size_t& total, size_t& used, size_t& free );
+	static void Test(); // unit test for validating the code
 };
 
 #endif // __ALLOC_BITMAP__

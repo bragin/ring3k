@@ -255,7 +255,7 @@ void *init_user_shared_memory()
 
 		// setup the allocation bitmap for user objects (eg. windows)
 		void *object_area = (void*) ((BYTE*) user_shared + user_shared_mem_reserve);
-		user_shared_bitmap.set_area( object_area,
+		user_shared_bitmap.SetArea( object_area,
 									 user_shared_mem_size - user_shared_mem_reserve );
 
 		// create the window stations directory too
@@ -388,7 +388,7 @@ static NTUSERHANDLE_TRACER ntuserhandle_trace;
 BYTE* alloc_message_bitmap( PROCESS* proc, MESSAGE_MAP_SHARED_MEMORY& map, ULONG last_message )
 {
 	ULONG sz = (last_message+7)/8;
-	BYTE *msg_map = user_shared_bitmap.alloc( sz );
+	BYTE *msg_map = user_shared_bitmap.Alloc( sz );
 	memset( msg_map, 0, sz );
 	ULONG ofs = (BYTE*)msg_map - (BYTE*)user_shared;
 	map.Bitmap = (BYTE*) (proc->win32k_info->user_shared_mem + ofs);
@@ -399,7 +399,7 @@ BYTE* alloc_message_bitmap( PROCESS* proc, MESSAGE_MAP_SHARED_MEMORY& map, ULONG
 
 NTUSERINFO *alloc_user_info()
 {
-	NTUSERINFO *info = (NTUSERINFO*) user_shared_bitmap.alloc( sizeof (NTUSERINFO) );
+	NTUSERINFO *info = (NTUSERINFO*) user_shared_bitmap.Alloc( sizeof (NTUSERINFO) );
 	info->DesktopWindow = desktop_window;
 	ULONG ofs = (BYTE*)info - (BYTE*)user_shared;
 	return (NTUSERINFO*) (current->process->win32k_info->user_shared_mem + ofs);
@@ -823,12 +823,12 @@ void* wndcls_tt::operator new(size_t sz)
 {
 	trace("allocating window\n");
 	assert( sz == sizeof (wndcls_tt));
-	return user_shared_bitmap.alloc( sz );
+	return user_shared_bitmap.Alloc( sz );
 }
 
 void wndcls_tt::operator delete(void *p)
 {
-	user_shared_bitmap.free( (unsigned char*) p, sizeof (wndcls_tt) );
+	user_shared_bitmap.Free( (unsigned char*) p, sizeof (wndcls_tt) );
 }
 
 wndcls_tt::wndcls_tt( NTWNDCLASSEX& ClassInfo, const UNICODE_STRING& ClassName, const UNICODE_STRING& MenuName, ATOM a ) :
@@ -1112,12 +1112,12 @@ void* window_tt::operator new(size_t sz)
 {
 	trace("allocating window\n");
 	assert( sz == sizeof (window_tt));
-	return user_shared_bitmap.alloc( sz );
+	return user_shared_bitmap.Alloc( sz );
 }
 
 void window_tt::operator delete(void *p)
 {
-	user_shared_bitmap.free( (unsigned char*) p, sizeof (window_tt) );
+	user_shared_bitmap.Free( (unsigned char*) p, sizeof (window_tt) );
 }
 
 // return true if address is in this window's shared memory

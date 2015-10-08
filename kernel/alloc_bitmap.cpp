@@ -38,7 +38,7 @@ ALLOCATION_BITMAP::ALLOCATION_BITMAP() :
 {
 }
 
-void ALLOCATION_BITMAP::set_area( void *_ptr, size_t _size )
+void ALLOCATION_BITMAP::SetArea( void *_ptr, size_t _size )
 {
 	ptr = reinterpret_cast<unsigned char*>( _ptr );
 	size = _size;
@@ -48,7 +48,7 @@ void ALLOCATION_BITMAP::set_area( void *_ptr, size_t _size )
 	memset( bitmap, 0, array_size );
 }
 
-size_t ALLOCATION_BITMAP::count_zero_bits( size_t start, size_t max )
+size_t ALLOCATION_BITMAP::CountZeroBits( size_t start, size_t max )
 {
 	if (max > (max_bits - start))
 		max = max_bits - start;
@@ -58,7 +58,7 @@ size_t ALLOCATION_BITMAP::count_zero_bits( size_t start, size_t max )
 	return i;
 }
 
-size_t ALLOCATION_BITMAP::count_one_bits( size_t start, size_t max )
+size_t ALLOCATION_BITMAP::CountOneBits( size_t start, size_t max )
 {
 	if (max > (max_bits - start))
 		max = max_bits - start;
@@ -68,44 +68,44 @@ size_t ALLOCATION_BITMAP::count_one_bits( size_t start, size_t max )
 	return i;
 }
 
-void ALLOCATION_BITMAP::set_bits( size_t start, size_t count )
+void ALLOCATION_BITMAP::SetBits( size_t start, size_t count )
 {
 	assert( start + count < max_bits );
 	for (size_t i = 0; i<count; i++ )
 		set_bit( start + i );
 }
 
-void ALLOCATION_BITMAP::clear_bits( size_t start, size_t count )
+void ALLOCATION_BITMAP::ClearBits( size_t start, size_t count )
 {
 	assert( start + count < max_bits );
 	for (size_t i = 0; i<count; i++ )
 		clear_bit( start + i );
 }
 
-size_t ALLOCATION_BITMAP::bits_required( size_t len )
+size_t ALLOCATION_BITMAP::BitsRequired( size_t len )
 {
 	return (len + allocation_granularity - 1) / allocation_granularity;
 }
 
-unsigned char* ALLOCATION_BITMAP::alloc( size_t len )
+unsigned char* ALLOCATION_BITMAP::Alloc( size_t len )
 {
 	assert( ptr != 0 );
 	size_t i = 0;
 
-	size_t required = bits_required( len + sizeof len );
+	size_t required = BitsRequired( len + sizeof len );
 
 	while (i < max_bits )
 	{
 		size_t free, used;
-		free = count_zero_bits( i, required );
+		free = CountZeroBits( i, required );
 		assert( free <= required );
 		if (free == required)
 		{
 			// mark as allocated
-			set_bits( i, required );
+			SetBits( i, required );
 
 			// check that we allocated the bits correctly
-			assert( required == count_one_bits( i, required ) );
+			assert( required == CountOneBits( i, required ) );
 			size_t *ret = (size_t*) &ptr[ i * allocation_granularity ];
 			*ret++ = len;
 			VALGRIND_MALLOCLIKE_BLOCK( ret, len, 0, 0 );
@@ -116,23 +116,23 @@ unsigned char* ALLOCATION_BITMAP::alloc( size_t len )
 		if (i == max_bits)
 			break;
 
-		used = count_one_bits( i, max_bits - i );
+		used = CountOneBits( i, max_bits - i );
 		assert( used > 0 );
 		i += used;
 	}
 	return NULL;
 }
 
-void ALLOCATION_BITMAP::free( unsigned char *start )
+void ALLOCATION_BITMAP::Free( unsigned char *start )
 {
 	size_t ofs = (start - sizeof (size_t) - ptr);
 	assert( ofs %allocation_granularity == 0 );
 	ofs /= allocation_granularity;
 	assert( ofs < max_bits );
-	free( start, ((size_t*)start)[-1]);
+	Free( start, ((size_t*)start)[-1]);
 }
 
-void ALLOCATION_BITMAP::free( unsigned char *start, size_t len )
+void ALLOCATION_BITMAP::Free( unsigned char *start, size_t len )
 {
 	assert( ptr != 0 );
 
@@ -144,17 +144,17 @@ void ALLOCATION_BITMAP::free( unsigned char *start, size_t len )
 	assert( len == ((size_t*) start)[-1] );
 
 	// assert the memory is allocated
-	size_t required = bits_required( len + sizeof len );
-	size_t n = count_one_bits( ofs, required );
+	size_t required = BitsRequired( len + sizeof len );
+	size_t n = CountOneBits( ofs, required );
 	assert( required == n );
 
 	// mark the memory as being clear
-	clear_bits( ofs, required );
+	ClearBits( ofs, required );
 
 	VALGRIND_FREELIKE_BLOCK( start, 0 );
 }
 
-void ALLOCATION_BITMAP::get_info( size_t& total, size_t& used, size_t& free )
+void ALLOCATION_BITMAP::GetInfo( size_t& total, size_t& used, size_t& free )
 {
 	size_t n;
 	used = 0;
@@ -165,12 +165,12 @@ void ALLOCATION_BITMAP::get_info( size_t& total, size_t& used, size_t& free )
 	{
 		if (!ones)
 		{
-			n = count_zero_bits( i, max_bits );
+			n = CountZeroBits( i, max_bits );
 			free += n;
 		}
 		else
 		{
-			n = count_one_bits( i, max_bits );
+			n = CountOneBits( i, max_bits );
 			used += n;
 		}
 		i += n;
@@ -182,7 +182,7 @@ void ALLOCATION_BITMAP::get_info( size_t& total, size_t& used, size_t& free )
 	total = max_bits * allocation_granularity;
 }
 
-void ALLOCATION_BITMAP::test()
+void ALLOCATION_BITMAP::Test()
 {
 	size_t test_size = 0x1000;
 	size_t used, free, total;
@@ -197,30 +197,30 @@ void ALLOCATION_BITMAP::test()
 	test_buffer = new unsigned char[test_size];
 	abm = new ALLOCATION_BITMAP;
 
-	abm->set_area( test_buffer, test_size );
+	abm->SetArea( test_buffer, test_size );
 
 	// check everything is free
-	abm->get_info( total, used, free );
+	abm->GetInfo( total, used, free );
 	assert( used == 0 );
 	assert( free == total );
 
 	// allocate a number of blocks
 	for (i=0; i<num_pointers; i++)
-		ptr[i] = abm->alloc( test_alloc_sz );
+		ptr[i] = abm->Alloc( test_alloc_sz );
 
 	// check the blocks are as big as we asked for
 	for (i=0; i<(num_pointers-1); i++)
 		assert( (size_t)(ptr[i+1] - ptr[i]) >= test_alloc_sz );
 
 	// check there's some used memory
-	abm->get_info( total, used, free );
+	abm->GetInfo( total, used, free );
 	assert( used != 0 );
 
 	for (i=0; i<num_pointers; i++)
-		abm->free( ptr[i], test_alloc_sz );
+		abm->Free( ptr[i], test_alloc_sz );
 
 	// check everything is free again
-	abm->get_info( total, used, free );
+	abm->GetInfo( total, used, free );
 	assert( used == 0 );
 	assert( free == total );
 

@@ -546,7 +546,7 @@ void GDI_OBJECT::init_gdi_shared_mem()
 
 		assert( g_gdi_shared_bitmap == NULL );
 		g_gdi_shared_bitmap = new ALLOCATION_BITMAP;
-		g_gdi_shared_bitmap->set_area( g_gdi_shared_memory, dc_shared_memory_size );
+		g_gdi_shared_bitmap->SetArea( g_gdi_shared_memory, dc_shared_memory_size );
 	}
 
 	BYTE*& dc_shared_mem = current->process->win32k_info->dc_shared_mem;
@@ -623,12 +623,12 @@ GDI_DEVICE_CONTEXT_SHARED* DEVICE_CONTEXT::get_dc_shared_mem() const
 BYTE *GDI_OBJECT::alloc_gdi_shared_memory( size_t len, BYTE** kernel_shm )
 {
 	init_gdi_shared_mem();
-	return g_gdi_shared_bitmap->alloc( len );
+	return g_gdi_shared_bitmap->Alloc( len );
 }
 
 void GDI_OBJECT::free_gdi_shared_memory( BYTE *shm )
 {
-	g_gdi_shared_bitmap->free( shm );
+	g_gdi_shared_bitmap->Free( shm );
 }
 
 DEVICE_CONTEXT::DEVICE_CONTEXT() :
@@ -660,7 +660,7 @@ DEVICE_CONTEXT::DEVICE_CONTEXT() :
 BOOL DEVICE_CONTEXT::release()
 {
 	GDI_DEVICE_CONTEXT_SHARED *shm = get_dc_shared_mem();
-	g_gdi_shared_bitmap->free( (unsigned char*) shm, sizeof *shm );
+	g_gdi_shared_bitmap->Free( (unsigned char*) shm, sizeof *shm );
 	GDI_OBJECT::release();
 	return TRUE;
 }
