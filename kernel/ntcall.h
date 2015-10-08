@@ -107,7 +107,7 @@ const char *get_section_symbol( OBJECT *section, ULONG address );
 void init_random();
 
 // from pipe.cpp
-void init_pipe_device();
+void InitPipeDevice();
 
 // from ntgdi.cpp
 void ntgdi_fini();

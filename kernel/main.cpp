@@ -501,7 +501,7 @@ int main(int argc, char **argv)
 	CreateSyncEvent( (PWSTR) L"\\Security\\LSA_AUTHENTICATION_INITIALIZED" );
 	CreateSyncEvent( (PWSTR) L"\\SeLsaInitEvent" );
 	init_random();
-	init_pipe_device();
+	InitPipeDevice();
 	// XP
 	create_directory_object( (PWSTR) L"\\KernelObjects" );
 	CreateSyncEvent( (PWSTR) L"\\KernelObjects\\CritSecOutOfMemoryEvent" );
