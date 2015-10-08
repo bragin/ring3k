@@ -38,7 +38,7 @@ void __bb_init_func(void) { return; }
 void *__stack_chk_guard = 0;
 void __stack_chk_fail(void) { return; }
 
-static int sys_open( const char *path, int flags )
+static int SysOpen( const char *path, int flags )
 {
 	int r;
 	__asm__ __volatile__(
@@ -47,7 +47,7 @@ static int sys_open( const char *path, int flags )
 	return r;
 }
 
-static int sys_write( int fd, const void *buf, size_t count )
+static int SysWrite( int fd, const void *buf, size_t count )
 {
 	int r;
 	__asm__ __volatile__(
@@ -56,7 +56,7 @@ static int sys_write( int fd, const void *buf, size_t count )
 	return r;
 }
 
-static int sys_close( int fd )
+static int SysClose( int fd )
 {
 	int r;
 	__asm__ __volatile__(
@@ -65,7 +65,7 @@ static int sys_close( int fd )
 	return r;
 }
 
-static int sys_exit( int ret )
+static int SysExit( int ret )
 {
 	int r;
 	__asm__ __volatile__(
@@ -74,7 +74,7 @@ static int sys_exit( int ret )
 	return r;
 }
 
-static void *sys_mmap( void *start, size_t len, int prot, int flags, int fd, off_t offset )
+static void *SysMmap( void *start, size_t len, int prot, int flags, int fd, off_t offset )
 {
     void *r;
 
@@ -99,7 +99,7 @@ static void *sys_mmap( void *start, size_t len, int prot, int flags, int fd, off
     return r;
 }
 
-static int sys_munmap( void *start, size_t length )
+static int SysMunmap( void *start, size_t length )
 {
 	int r;
 	__asm__ __volatile__(
@@ -108,7 +108,7 @@ static int sys_munmap( void *start, size_t length )
 	return r;
 }
 
-static int sys_mprotect( const void *start, size_t len, int prot )
+static int SysMprotect( const void *start, size_t len, int prot )
 {
 	int r;
 	__asm__ __volatile__(
@@ -208,11 +208,11 @@ static __attribute__((format(printf,1,2))) void dprintf(const char *fmt, ... )
     va_start( args, fmt );
     len = wld_vsprintf(buffer, fmt, args );
     va_end( args );
-    sys_write(2, buffer, len);
+    SysWrite(2, buffer, len);
 }
 
 // allocate fs in the current process
-void init_fs(void)
+void InitFS(void)
 {
 	unsigned short fs;
 
@@ -247,14 +247,14 @@ void init_fs(void)
 	__asm__ __volatile__ ( "\n\tmovw %0, %%fs\n" : : "r"( fs ) );
 }
 
-char *append_string( char *target, const char *source )
+char *AppendString( char *target, const char *source )
 {
 	while ((*target = *source))
 		source++, target++;
 	return target;
 }
 
-char *append_number( char *target, int num )
+char *AppendNumber( char *target, int num )
 {
 	int n = 0, i = 0;
 	// write out the number backwards
@@ -274,46 +274,46 @@ char *append_number( char *target, int num )
 	return target + i + n;
 }
 
-static int do_mmap( struct tt_req_map *req )
+static int DoMmap( struct tt_req_map *req )
 {
 	char str[32], *s;
 	void *p;
 	int r, fd;
 
 	//sprintf( str, "/proc/%d/fd/%d", req->pid, req->fd );
-	s = append_string( str, "/proc/" );
-	s = append_number( s, req->pid );
-	s = append_string( s, "/fd/" );
-	s = append_number( s, req->fd );
+	s = AppendString( str, "/proc/" );
+	s = AppendNumber( s, req->pid );
+	s = AppendString( s, "/fd/" );
+	s = AppendNumber( s, req->fd );
 
-	fd = sys_open( str, (req->prot & PROT_WRITE) ? O_RDWR : O_RDONLY );
+	fd = SysOpen( str, (req->prot & PROT_WRITE) ? O_RDWR : O_RDONLY );
 	if (fd < 0)
 	{
 		dprintf("sys_open failed\n");
 		return fd;
 	}
-	p = sys_mmap( (void*) req->addr, req->len, req->prot, MAP_SHARED | MAP_FIXED, fd, req->ofs );
+	p = SysMmap( (void*) req->addr, req->len, req->prot, MAP_SHARED | MAP_FIXED, fd, req->ofs );
 	r = (p == (void*) req->addr) ? 0 : -1;
-	sys_close( fd );
+	SysClose( fd );
 	return r;
 }
 
-static int do_umap( struct tt_req_umap *req )
+static int DoUmap( struct tt_req_umap *req )
 {
-	return sys_munmap( (void*) req->addr, req->len );
+	return SysMunmap( (void*) req->addr, req->len );
 }
 
-static int do_prot( struct tt_req_prot *req )
+static int DoProt( struct tt_req_prot *req )
 {
-	return sys_mprotect( (void*) req->addr, req->len, req->prot );
+	return SysMprotect( (void*) req->addr, req->len, req->prot );
 }
 
-void client_main( void )
+void ClientMain( void )
 {
 	struct tt_req req;
 	int r = 0, finished = 0;
 
-	init_fs();
+	InitFS();
 
 	while (!finished)
 	{
@@ -326,20 +326,20 @@ void client_main( void )
 		switch (req.type)
 		{
 		case tt_req_map:
-			r = do_mmap( &req.u.map );
+			r = DoMmap( &req.u.map );
 			break;
 		case tt_req_umap:
-			r = do_umap( &req.u.umap );
+			r = DoUmap( &req.u.umap );
 			break;
 		case tt_req_prot:
-			r = do_prot( &req.u.prot );
+			r = DoProt( &req.u.prot );
 			break;
 		case tt_req_exit:
 			r = 0;
 			finished = 1;
 		default:
 			dprintf("protocol error\n");
-			sys_exit(1);
+			SysExit(1);
 		}
 
 		// exit on the next iteration if something goes wrong
@@ -347,7 +347,7 @@ void client_main( void )
 	}
 
 	dprintf("exit!\n");
-	sys_exit(1);
+	SysExit(1);
 }
 
 /* set %gs and %fs - from the wine preloader */
@@ -383,5 +383,5 @@ __asm__ (
 	"\tmov %ax,%gs\n"
 	"\tmov %ax,%fs\n"           /* set %fs too so libwine can retrieve it later on */
 "1:\n"
-	"\tjmp client_main\n"
+	"\tjmp ClientMain\n"
 );
