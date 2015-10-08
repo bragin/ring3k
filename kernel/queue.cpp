@@ -127,7 +127,7 @@ BOOL thread_message_queue_tt::post_message(
 		set_timeout( 0 );
 
 		// start the thread (might reschedule here )
-		waiter->t->start();
+		waiter->t->Start();
 
 		return TRUE;
 	}
@@ -325,7 +325,7 @@ void thread_message_queue_tt::signal_timeout()
 		set_timeout( 0 );
 
 		// start the thread (might reschedule here )
-		waiter->t->start();
+		waiter->t->Start();
 	}
 }
 

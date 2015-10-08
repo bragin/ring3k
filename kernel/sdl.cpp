@@ -288,7 +288,7 @@ bool sdl_sleeper_t::check_events( bool wait )
 	// Check for a deadlock and quit.
 	//  This happens if we're the only active thread,
 	//  there's no more timers, nobody listening for input and we're asked to wait.
-	if (!timers_left && !active_window && wait && FIBER::last_fiber())
+	if (!timers_left && !active_window && wait && FIBER::LastFiber())
 		return true;
 
 	// only wait if asked to

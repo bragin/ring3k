@@ -514,7 +514,7 @@ NTSTATUS port_t::send_reply( MESSAGE *reply )
 		{
 			l->port->received_msg = reply;
 			queue->listeners.unlink( l );
-			l->thread->start();
+			l->thread->Start();
 			return STATUS_SUCCESS;
 		}
 	}
@@ -538,7 +538,7 @@ void port_t::send_message( MESSAGE *msg )
 		{
 			//trace("queue %p has listener %p\n", queue, l->thread);
 			queue->listeners.unlink( l );
-			l->thread->start();
+			l->thread->Start();
 			return;
 		}
 	}
@@ -689,7 +689,7 @@ NTSTATUS complete_connect_port( port_t *port )
 	t->port = 0;
 
 	// restart the thread that was blocked on connect
-	t->start();
+	t->Start();
 
 	return STATUS_SUCCESS;
 }
@@ -1180,7 +1180,7 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 	{
 		// restart the thread that was blocked on connect
 		t->port = 0;
-		t->start();
+		t->Start();
 		return STATUS_SUCCESS;
 	}
 

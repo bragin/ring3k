@@ -386,7 +386,7 @@ NTSTATUS PIPE_CONTAINER::create_client( PIPE_CLIENT*& client )
 		server->set_client( client );
 		THREAD *t = server->thread;
 		server->thread = NULL;
-		t->start();
+		t->Start();
 	}
 
 	return STATUS_SUCCESS;
@@ -566,7 +566,7 @@ void PIPE_SERVER::queue_message_from_client( PIPE_MESSAGE *msg )
 	{
 		THREAD *t = thread;
 		thread = 0;
-		t->start();
+		t->Start();
 	}
 }
 
@@ -579,7 +579,7 @@ void PIPE_SERVER::queue_message_to_client( PIPE_MESSAGE *msg )
 	{
 		THREAD *t = client->thread;
 		client->thread = 0;
-		t->start();
+		t->Start();
 	}
 }
 

@@ -50,25 +50,25 @@ private:				// offset 0 = vtable pointer
 	unsigned int stack_size;
 
 private:
-	void remove_from_runlist();
-	void add_to_runlist();
+	void RemoveFromRunlist();
+	void AddToRunlist();
 	FIBER();
-	static int run_fiber( FIBER* fiber );
+	static int RunFiber( FIBER* fiber );
 
 public:
 	static const unsigned int fiber_default_stack_size = 0x10000;
 	static const unsigned int guard_size = 0x1000;
 
 public:
-	static void fibers_init();
-	static void fibers_finish();
+	static void FibersInit();
+	static void FibersFinish();
 	FIBER( unsigned int size );
 	virtual ~FIBER();
-	static void yield();
-	static bool last_fiber();
-	void start();
-	void stop();
-	virtual int run();
+	static void Yield();
+	static bool LastFiber();
+	void Start();
+	void Stop();
+	virtual int Run();
 };
 
 #endif // __FIBER_H__

@@ -95,7 +95,7 @@ void COMPLETION_WAITER::Stop(
 
 void COMPLETION_WAITER::Start()
 {
-	thread->start();
+	thread->Start();
 }
 
 COMPLETION_WAITER::~COMPLETION_WAITER()

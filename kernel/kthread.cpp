@@ -63,7 +63,7 @@ public:
 	virtual NTSTATUS copy_to_user( void *dest, const void *src, size_t count );
 	virtual NTSTATUS copy_from_user( void *dest, const void *src, size_t count );
 	virtual NTSTATUS verify_for_write( void *dest, size_t count );
-	virtual int run() = 0;
+	virtual int Run() = 0;
 	virtual BOOLEAN IsSignalled( void );
 	virtual void* push( ULONG count );
 	virtual void pop( ULONG count );
@@ -107,7 +107,7 @@ NTSTATUS KERNEL_THREAD::terminate( NTSTATUS Status )
 	if (terminated)
 		return 0;
 	terminated = true;
-	start();
+	Start();
 	return 0;
 }
 
@@ -188,7 +188,7 @@ class SECURITY_REFERENCE_MONITOR : public KERNEL_THREAD
 {
 public:
 	SECURITY_REFERENCE_MONITOR( PROCESS *p );
-	virtual int run();
+	virtual int Run();
 };
 
 SECURITY_REFERENCE_MONITOR::SECURITY_REFERENCE_MONITOR( PROCESS *p ) :
@@ -196,7 +196,7 @@ SECURITY_REFERENCE_MONITOR::SECURITY_REFERENCE_MONITOR( PROCESS *p ) :
 {
 }
 
-int SECURITY_REFERENCE_MONITOR::run()
+int SECURITY_REFERENCE_MONITOR::Run()
 {
 	const int maxlen = 0x100;
 	//trace("starting kthread %p p = %p\n", this, process);
@@ -276,7 +276,7 @@ class PLUG_AND_PLAY : public KERNEL_THREAD
 {
 public:
 	PLUG_AND_PLAY( PROCESS *p );
-	virtual int run();
+	virtual int Run();
 };
 
 PLUG_AND_PLAY::PLUG_AND_PLAY( PROCESS *p ) :
@@ -284,7 +284,7 @@ PLUG_AND_PLAY::PLUG_AND_PLAY( PROCESS *p ) :
 {
 }
 
-int PLUG_AND_PLAY::run()
+int PLUG_AND_PLAY::Run()
 {
 	OBJECT_ATTRIBUTES oa;
 	IO_STATUS_BLOCK iosb;
@@ -337,8 +337,8 @@ void create_kthread(void)
 	plugnplay = new PLUG_AND_PLAY( kernel_process );
 	//release( kernel_process );
 
-	srm->start();
-	plugnplay->start();
+	srm->Start();
+	plugnplay->Start();
 }
 
 void shutdown_kthread(void)
@@ -347,8 +347,8 @@ void shutdown_kthread(void)
 	plugnplay->terminate( 0 );
 
 	// run the threads until they complete
-	while (!FIBER::last_fiber())
-		FIBER::yield();
+	while (!FIBER::LastFiber())
+		FIBER::Yield();
 
 	delete kernel_process;
 }

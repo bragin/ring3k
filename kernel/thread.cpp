@@ -183,7 +183,7 @@ public:
 	void register_terminate_port( OBJECT *port );
 	bool win32k_init_complete();
 
-	virtual int run();
+	virtual int Run();
 
 	// wait related functions
 	NTSTATUS wait_on_handles( ULONG count, PHANDLE handles, WAIT_TYPE type, BOOLEAN alert, PLARGE_INTEGER timeout );
@@ -603,7 +603,7 @@ NTSTATUS THREAD_IMPL::do_user_callback( ULONG index, ULONG &length, PVOID &buffe
 
 	// recurse, resume user execution here
 	trace("continuing execution at %08lx\n", ctx.Eip);
-	run();
+	Run();
 
 	if (is_terminated())
 		return STATUS_THREAD_IS_TERMINATING;
@@ -847,11 +847,11 @@ NTSTATUS THREAD_IMPL::terminate( NTSTATUS status )
 
 void THREAD::stop()
 {
-	FIBER::stop();
+	FIBER::Stop();
 	current = this;
 }
 
-int THREAD_IMPL::run()
+int THREAD_IMPL::Run()
 {
 	int i = 0;
 	while (1)
@@ -896,7 +896,7 @@ int THREAD_IMPL::run()
 		}
 
 		i = 0;
-		FIBER::yield();
+		FIBER::Yield();
 	}
 	return 0;
 }
@@ -1081,7 +1081,7 @@ void THREAD_IMPL::start()
 {
 	// check we weren't terminated
 	if (ThreadState != StateTerminated)
-		FIBER::start();
+		FIBER::Start();
 }
 
 void THREAD::wait()
@@ -1570,7 +1570,7 @@ NTSTATUS NTAPI NtYieldExecution( void )
 {
 	THREAD *t = current;
 	for (int i=0; i<0x10; i++)
-		FIBER::yield();
+		FIBER::Yield();
 	current = t;
 	return STATUS_SUCCESS;
 }

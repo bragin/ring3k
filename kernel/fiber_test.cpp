@@ -21,28 +21,28 @@
 #include <stdio.h>
 #include "fiber.h"
 
-class fiber_test_t: public FIBER
+class FIBER_TEST: public FIBER
 {
 	int num;
 public:
-	fiber_test_t(int n);
-	virtual int run();
+	FIBER_TEST(int n);
+	virtual int Run();
 };
 
-fiber_test_t::fiber_test_t(int n) :
+FIBER_TEST::FIBER_TEST(int n) :
 	FIBER( fiber_default_stack_size ),
 	num(n)
 {
 }
 
-int fiber_test_t::run()
+int FIBER_TEST::Run()
 {
 	int i;
 
 	for (i=0; i<10; i++)
 	{
 		printf("fiber%d i=%d\n", num, i);
-		FIBER::yield();
+		FIBER::Yield();
 	}
 	printf("fiber%d finished\n", num );
 	return 0;
@@ -50,17 +50,17 @@ int fiber_test_t::run()
 
 int main(int argc, char **argv)
 {
-	FIBER::fibers_init();
-	FIBER* t1 = new fiber_test_t(1);
-	FIBER* t2 = new fiber_test_t(2);
+	FIBER::FibersInit();
+	FIBER* t1 = new FIBER_TEST(1);
+	FIBER* t2 = new FIBER_TEST(2);
 	printf("scheduling...\n");
-	t1->start();
-	t2->start();
-	while (!FIBER::last_fiber())
-		FIBER::yield();
+	t1->Start();
+	t2->Start();
+	while (!FIBER::LastFiber())
+		FIBER::Yield();
 	delete t1;
 	delete t2;
-	FIBER::fibers_finish();
+	FIBER::FibersFinish();
 	printf("done\n");
 	return 0;
 }

@@ -97,7 +97,7 @@ ASM_NAME_PREFIX "fiber_init:\n"
 	"\tcall " ASM_NAME_PREFIX "fiber_exit\n"
 );
 
-void FIBER::yield(void)
+void FIBER::Yield(void)
 {
 	if (!current_fiber->next)
 		return;
@@ -108,11 +108,11 @@ void FIBER::yield(void)
 
 extern "C" void NORET fiber_exit(FIBER *t, int ret)
 {
-	t->stop();
+	t->Stop();
 	assert(0);
 }
 
-void FIBER::remove_from_runlist()
+void FIBER::RemoveFromRunlist()
 {
 	assert(current_fiber->next);
 	assert(current_fiber->prev);
@@ -123,13 +123,13 @@ void FIBER::remove_from_runlist()
 	current_fiber->prev = 0;
 }
 
-void FIBER::stop()
+void FIBER::Stop()
 {
-	remove_from_runlist();
-	yield();
+	RemoveFromRunlist();
+	Yield();
 }
 
-void FIBER::start()
+void FIBER::Start()
 {
 	assert(prev == 0);
 	next = current_fiber->next;
@@ -138,14 +138,14 @@ void FIBER::start()
 	prev->next = this;
 }
 
-int FIBER::run()
+int FIBER::Run()
 {
 	return 0;
 }
 
-int FIBER::run_fiber( FIBER* fiber )
+int FIBER::RunFiber( FIBER* fiber )
 {
-	return fiber->run();
+	return fiber->Run();
 }
 
 FIBER::FIBER( unsigned sz ) :
@@ -177,7 +177,7 @@ FIBER::FIBER( unsigned sz ) :
 	frame->edx = 0;
 	frame->ecx = 0;
 	frame->ebx = (long) this;
-	frame->eax = (long) &FIBER::run_fiber;
+	frame->eax = (long) &FIBER::RunFiber;
 	frame->eip = (long) &fiber_init;
 
 	// link it in to the circular list
@@ -193,7 +193,7 @@ FIBER::FIBER() :
 {
 }
 
-void FIBER::fibers_init(void)
+void FIBER::FibersInit(void)
 {
 	assert(!current_fiber);
 
@@ -204,10 +204,10 @@ void FIBER::fibers_init(void)
 	current_fiber = t;
 }
 
-void FIBER::fibers_finish(void)
+void FIBER::FibersFinish(void)
 {
 	assert(current_fiber);
-	assert(last_fiber());
+	assert(LastFiber());
 	current_fiber->prev = 0;
 	delete current_fiber;
 	current_fiber = 0;
@@ -220,7 +220,7 @@ FIBER::~FIBER()
 		munmap( (unsigned char*) stack - guard_size, stack_size);
 }
 
-bool FIBER::last_fiber()
+bool FIBER::LastFiber()
 {
 	return (current_fiber->next == current_fiber);
 }

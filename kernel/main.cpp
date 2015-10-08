@@ -85,7 +85,7 @@ bool DEFAULT_SLEEPER::check_events( bool wait )
 	// Check for a deadlock and quit.
 	//  This happens if we're the only active thread,
 	//  there's no more timers, and we're asked to wait.
-	if (!timers_left && wait && FIBER::last_fiber())
+	if (!timers_left && wait && FIBER::LastFiber())
 		return true;
 	if (!wait)
 		return false;
@@ -111,9 +111,9 @@ int schedule(void)
 		sleeper->check_events( false );
 
 		// other fibers are active... schedule run them
-		if (!FIBER::last_fiber())
+		if (!FIBER::LastFiber())
 		{
-			FIBER::yield();
+			FIBER::Yield();
 			continue;
 		}
 
@@ -485,7 +485,7 @@ int main(int argc, char **argv)
 	get_system_time_of_day( dummy );
 
 	init_registry();
-	FIBER::fibers_init();
+	FIBER::FibersInit();
 	init_root();
 	create_directory_object( (PWSTR) L"\\" );
 	create_directory_object( (PWSTR) L"\\??" );
@@ -527,7 +527,7 @@ int main(int argc, char **argv)
 	do_cleanup();
 
 	free_root();
-	FIBER::fibers_finish();
+	FIBER::FibersFinish();
 	free_registry();
 	free_ntdll();
 
