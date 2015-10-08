@@ -498,13 +498,13 @@ int main(int argc, char **argv)
 	create_directory_object( (PWSTR) L"\\Security" );
 	//create_directory_object( (PWSTR) L"\\DosDevices" );
 	create_directory_object( (PWSTR) L"\\BaseNamedObjects" );
-	create_sync_event( (PWSTR) L"\\Security\\LSA_AUTHENTICATION_INITIALIZED" );
-	create_sync_event( (PWSTR) L"\\SeLsaInitEvent" );
+	CreateSyncEvent( (PWSTR) L"\\Security\\LSA_AUTHENTICATION_INITIALIZED" );
+	CreateSyncEvent( (PWSTR) L"\\SeLsaInitEvent" );
 	init_random();
 	init_pipe_device();
 	// XP
 	create_directory_object( (PWSTR) L"\\KernelObjects" );
-	create_sync_event( (PWSTR) L"\\KernelObjects\\CritSecOutOfMemoryEvent" );
+	CreateSyncEvent( (PWSTR) L"\\KernelObjects\\CritSecOutOfMemoryEvent" );
 	init_drives();
 	init_ntdll();
 	create_kthread();

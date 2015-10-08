@@ -42,10 +42,10 @@ public:
 	virtual ~EVENT_IMPL();
 	virtual BOOLEAN IsSignalled( void );
 	virtual BOOLEAN Satisfy( void ) = 0;
-	void set( PULONG prev );
-	void reset( PULONG prev );
-	void pulse( PULONG prev );
-	virtual void query(EVENT_BASIC_INFORMATION &info) = 0;
+	void Set( PULONG prev );
+	void Reset( PULONG prev );
+	void Pulse( PULONG prev );
+	virtual void Query(EVENT_BASIC_INFORMATION &info) = 0;
 	virtual bool AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle );
 };
 
@@ -54,7 +54,7 @@ class AUTO_EVENT : public EVENT_IMPL
 public:
 	AUTO_EVENT( BOOLEAN state );
 	virtual BOOLEAN Satisfy( void );
-	virtual void query(EVENT_BASIC_INFORMATION &info);
+	virtual void Query(EVENT_BASIC_INFORMATION &info);
 };
 
 class MANUAL_EVENT : public EVENT_IMPL
@@ -62,7 +62,7 @@ class MANUAL_EVENT : public EVENT_IMPL
 public:
 	MANUAL_EVENT( BOOLEAN state );
 	virtual BOOLEAN Satisfy( void );
-	virtual void query(EVENT_BASIC_INFORMATION &info);
+	virtual void Query(EVENT_BASIC_INFORMATION &info);
 };
 
 EVENT_IMPL::EVENT_IMPL( BOOLEAN _state ) :
@@ -104,13 +104,13 @@ BOOLEAN MANUAL_EVENT::Satisfy( void )
 	return TRUE;
 }
 
-void AUTO_EVENT::query( EVENT_BASIC_INFORMATION &info )
+void AUTO_EVENT::Query( EVENT_BASIC_INFORMATION &info )
 {
 	info.EventType = SynchronizationEvent;
 	info.SignalState = state;
 }
 
-void MANUAL_EVENT::query( EVENT_BASIC_INFORMATION &info )
+void MANUAL_EVENT::Query( EVENT_BASIC_INFORMATION &info )
 {
 	info.EventType = NotificationEvent;
 	info.SignalState = state;
@@ -124,7 +124,7 @@ EVENT_IMPL::~EVENT_IMPL( )
 {
 }
 
-void EVENT_IMPL::set( PULONG prev )
+void EVENT_IMPL::Set( PULONG prev )
 {
 	*prev = state;
 	state = 1;
@@ -132,17 +132,17 @@ void EVENT_IMPL::set( PULONG prev )
 	notify_watchers();
 }
 
-void EVENT_IMPL::reset( PULONG prev )
+void EVENT_IMPL::Reset( PULONG prev )
 {
 	*prev = state;
 	state = 0;
 }
 
-void EVENT_IMPL::pulse( PULONG prev )
+void EVENT_IMPL::Pulse( PULONG prev )
 {
-	set(prev);
+	Set(prev);
 	ULONG dummy;
-	reset(&dummy);
+	Reset(&dummy);
 }
 
 class EVENT_FACTORY : public OBJECT_FACTORY
@@ -173,7 +173,7 @@ NTSTATUS EVENT_FACTORY::AllocObject(OBJECT** obj)
 	return STATUS_SUCCESS;
 }
 
-EVENT* create_sync_event( PWSTR name, BOOL InitialState )
+EVENT* CreateSyncEvent( PWSTR name, BOOL InitialState )
 {
 	EVENT *event = new AUTO_EVENT( InitialState );
 	if (event)
@@ -223,7 +223,7 @@ NTSTATUS NTAPI NtOpenEvent(
 	return nt_open_object<EVENT>( EventHandle, DesiredAccess, ObjectAttributes );
 }
 
-NTSTATUS nteventfunc( HANDLE Handle, PULONG PreviousState, void (EVENT::*fn)(PULONG) )
+NTSTATUS Nteventfunc( HANDLE Handle, PULONG PreviousState, void (EVENT::*fn)(PULONG) )
 {
 	NTSTATUS r;
 	ULONG prev;
@@ -252,21 +252,21 @@ NTSTATUS NTAPI NtSetEvent(
 	HANDLE Handle,
 	PULONG PreviousState )
 {
-	return nteventfunc( Handle, PreviousState, &EVENT::set );
+	return Nteventfunc( Handle, PreviousState, &EVENT::Set );
 }
 
 NTSTATUS NTAPI NtResetEvent(
 	HANDLE Handle,
 	PULONG PreviousState )
 {
-	return nteventfunc( Handle, PreviousState, &EVENT::reset );
+	return Nteventfunc( Handle, PreviousState, &EVENT::Reset );
 }
 
 NTSTATUS NTAPI NtPulseEvent(
 	HANDLE Handle,
 	PULONG PreviousState )
 {
-	return nteventfunc( Handle, PreviousState, &EVENT::pulse );
+	return Nteventfunc( Handle, PreviousState, &EVENT::Pulse );
 }
 
 NTSTATUS NTAPI NtClearEvent(
@@ -282,7 +282,7 @@ NTSTATUS NTAPI NtClearEvent(
 		return r;
 
 	ULONG prev;
-	event->reset( &prev );
+	event->Reset( &prev );
 	return r;
 }
 
@@ -318,7 +318,7 @@ NTSTATUS NTAPI NtQueryEvent(
 	if (sz != EventInformationLength)
 		return STATUS_INFO_LENGTH_MISMATCH;
 
-	event->query( info.basic );
+	event->Query( info.basic );
 
 	r = copy_to_user( EventInformation, &info, sz );
 	if (r < STATUS_SUCCESS)
@@ -335,12 +335,12 @@ class EVENT_PAIR : public OBJECT
 	AUTO_EVENT low, high;
 public:
 	EVENT_PAIR();
-	NTSTATUS set_low();
-	NTSTATUS set_high();
-	NTSTATUS set_low_wait_high();
-	NTSTATUS set_high_wait_low();
-	NTSTATUS wait_high();
-	NTSTATUS wait_low();
+	NTSTATUS SetLow();
+	NTSTATUS SetHigh();
+	NTSTATUS SetLowWaitHigh();
+	NTSTATUS SetHighWaitLow();
+	NTSTATUS WaitHigh();
+	NTSTATUS WaitLow();
 };
 
 EVENT_PAIR::EVENT_PAIR() :
@@ -348,21 +348,21 @@ EVENT_PAIR::EVENT_PAIR() :
 {
 }
 
-NTSTATUS EVENT_PAIR::set_low()
+NTSTATUS EVENT_PAIR::SetLow()
 {
 	ULONG prev;
-	low.set( &prev );
+	low.Set( &prev );
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS EVENT_PAIR::set_high()
+NTSTATUS EVENT_PAIR::SetHigh()
 {
 	ULONG prev;
-	high.set( &prev );
+	high.Set( &prev );
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS EVENT_PAIR::wait_high()
+NTSTATUS EVENT_PAIR::WaitHigh()
 {
 	/*wait_watch_t *ww = new wait_watch_t(&high, current, FALSE, NULL);
 	if (!ww)
@@ -372,7 +372,7 @@ NTSTATUS EVENT_PAIR::wait_high()
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS EVENT_PAIR::wait_low()
+NTSTATUS EVENT_PAIR::WaitLow()
 {
 	/*wait_watch_t *ww = new wait_watch_t(&low, current, FALSE, NULL);
 	if (!ww)
@@ -382,19 +382,19 @@ NTSTATUS EVENT_PAIR::wait_low()
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS EVENT_PAIR::set_low_wait_high()
+NTSTATUS EVENT_PAIR::SetLowWaitHigh()
 {
-	set_low();
-	return wait_high();
+	SetLow();
+	return WaitHigh();
 }
 
-NTSTATUS EVENT_PAIR::set_high_wait_low()
+NTSTATUS EVENT_PAIR::SetHighWaitLow()
 {
-	set_high();
-	return wait_low();
+	SetHigh();
+	return WaitLow();
 }
 
-NTSTATUS event_pair_operation( HANDLE handle, NTSTATUS (EVENT_PAIR::*op)() )
+NTSTATUS EventPairOperation( HANDLE handle, NTSTATUS (EVENT_PAIR::*op)() )
 {
 	EVENT_PAIR *eventpair = 0;
 	NTSTATUS r;
@@ -405,13 +405,13 @@ NTSTATUS event_pair_operation( HANDLE handle, NTSTATUS (EVENT_PAIR::*op)() )
 	return (eventpair->*op)();
 }
 
-class event_pair_factory : public OBJECT_FACTORY
+class EVENT_PAIR_FACTORY : public OBJECT_FACTORY
 {
 public:
 	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS event_pair_factory::AllocObject(OBJECT** obj)
+NTSTATUS EVENT_PAIR_FACTORY::AllocObject(OBJECT** obj)
 {
 	*obj = new EVENT_PAIR();
 	if (!*obj)
@@ -425,7 +425,7 @@ NTSTATUS NTAPI NtCreateEventPair(
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
 	trace("%p %08lx %p\n", EventPairHandle, DesiredAccess, ObjectAttributes);
-	event_pair_factory factory;
+	EVENT_PAIR_FACTORY factory;
 	return factory.create( EventPairHandle, DesiredAccess, ObjectAttributes );
 }
 
@@ -442,42 +442,42 @@ NTSTATUS NTAPI NtSetHighEventPair(
 	HANDLE EventPairHandle)
 {
 	trace("%p\n", EventPairHandle );
-	return event_pair_operation( EventPairHandle, &EVENT_PAIR::set_high );
+	return EventPairOperation( EventPairHandle, &EVENT_PAIR::SetHigh );
 }
 
 NTSTATUS NTAPI NtSetHighWaitLowEventPair(
 	HANDLE EventPairHandle)
 {
 	trace("%p\n", EventPairHandle );
-	return event_pair_operation( EventPairHandle, &EVENT_PAIR::set_high_wait_low );
+	return EventPairOperation( EventPairHandle, &EVENT_PAIR::SetHighWaitLow );
 }
 
 NTSTATUS NTAPI NtSetLowEventPair(
 	HANDLE EventPairHandle)
 {
 	trace("%p\n", EventPairHandle );
-	return event_pair_operation( EventPairHandle, &EVENT_PAIR::set_low );
+	return EventPairOperation( EventPairHandle, &EVENT_PAIR::SetLow );
 }
 
 NTSTATUS NTAPI NtSetLowWaitHighEventPair(
 	HANDLE EventPairHandle)
 {
 	trace("%p\n", EventPairHandle );
-	return event_pair_operation( EventPairHandle, &EVENT_PAIR::set_low_wait_high );
+	return EventPairOperation( EventPairHandle, &EVENT_PAIR::SetLowWaitHigh );
 }
 
 NTSTATUS NTAPI NtWaitHighEventPair(
 	HANDLE EventPairHandle)
 {
 	trace("%p\n", EventPairHandle );
-	return event_pair_operation( EventPairHandle, &EVENT_PAIR::wait_high );
+	return EventPairOperation( EventPairHandle, &EVENT_PAIR::WaitHigh );
 }
 
 NTSTATUS NTAPI NtWaitLowEventPair(
 	HANDLE EventPairHandle)
 {
 	trace("%p\n", EventPairHandle );
-	return event_pair_operation( EventPairHandle, &EVENT_PAIR::wait_low );
+	return EventPairOperation( EventPairHandle, &EVENT_PAIR::WaitLow );
 }
 
 NTSTATUS NTAPI NtSetLowWaitHighThread(void)
