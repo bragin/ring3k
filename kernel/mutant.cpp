@@ -37,13 +37,13 @@ class MUTANT : public SYNC_OBJECT
 	ULONG count;
 public:
 	MUTANT(BOOLEAN InitialOwner);
-	NTSTATUS take_ownership();
-	NTSTATUS release_ownership(ULONG& prev);
+	NTSTATUS TakeOwnership();
+	NTSTATUS ReleaseOwnership(ULONG& prev);
 	virtual BOOLEAN IsSignalled();
 	virtual BOOLEAN Satisfy();
 };
 
-MUTANT *mutant_from_obj( OBJECT *obj )
+MUTANT *MutantFromObj( OBJECT *obj )
 {
 	return dynamic_cast<MUTANT*>( obj );
 }
@@ -53,7 +53,7 @@ MUTANT::MUTANT(BOOLEAN InitialOwner) :
 	count(0)
 {
 	if (InitialOwner)
-		take_ownership();
+		TakeOwnership();
 }
 
 BOOLEAN MUTANT::IsSignalled()
@@ -63,11 +63,11 @@ BOOLEAN MUTANT::IsSignalled()
 
 BOOLEAN MUTANT::Satisfy()
 {
-	take_ownership();
+	TakeOwnership();
 	return TRUE;
 }
 
-NTSTATUS MUTANT::take_ownership()
+NTSTATUS MUTANT::TakeOwnership()
 {
 	if (owner && owner != current)
 		return STATUS_MUTANT_NOT_OWNED;
@@ -76,7 +76,7 @@ NTSTATUS MUTANT::take_ownership()
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS MUTANT::release_ownership(ULONG& prev)
+NTSTATUS MUTANT::ReleaseOwnership(ULONG& prev)
 {
 	if (owner != current)
 		return STATUS_MUTANT_NOT_OWNED;
@@ -137,7 +137,7 @@ NTSTATUS NTAPI NtReleaseMutant(
 			return r;
 	}
 
-	r = mutant->release_ownership( prev );
+	r = mutant->ReleaseOwnership( prev );
 	if (r == STATUS_SUCCESS && PreviousState)
 		r = copy_to_user( PreviousState, &prev, sizeof prev );
 

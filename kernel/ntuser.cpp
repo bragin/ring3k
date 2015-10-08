@@ -1353,7 +1353,7 @@ window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, 
 	win->style |= WS_CLIPSIBLINGS;
 
 	// send WM_CREATE
-	CREATE_MESSAGEm create( cs, cls, name );
+	CREATE_MESSAGE create( cs, cls, name );
 	win->send( create );
 
 	if (win->style & WS_VISIBLE)
