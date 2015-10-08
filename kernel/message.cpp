@@ -36,208 +36,208 @@
 #include "spy.h"
 
 template<class Pack>
-generic_message_tt<Pack>::generic_message_tt()
+GENERIC_MESSAGE<Pack>::GENERIC_MESSAGE()
 {
-	memset( &info, 0, sizeof info );
+	memset( &Info, 0, sizeof Info );
 }
 
 template<class Pack>
-ULONG generic_message_tt<Pack>::get_size() const
+ULONG GENERIC_MESSAGE<Pack>::GetSize() const
 {
-	return sizeof info;
+	return sizeof Info;
 }
 
 template<class Pack>
-NTSTATUS generic_message_tt<Pack>::copy_to_user( void *ptr ) const
+NTSTATUS GENERIC_MESSAGE<Pack>::CopyToUser( void *ptr ) const
 {
-	return ::copy_to_user( ptr, &info, sizeof info );
+	return ::copy_to_user( ptr, &Info, sizeof Info );
 }
 
 template<class Pack>
-void generic_message_tt<Pack>::set_window_info( window_tt *win )
+void GENERIC_MESSAGE<Pack>::SetWindowInfo( window_tt *win )
 {
-	info.wininfo = win->get_wininfo();
-	info.wndproc = win->get_wndproc();
-	info.func = (typeof(info.func)) g_funcsW[17];
+	Info.wininfo = win->get_wininfo();
+	Info.wndproc = win->get_wndproc();
+	Info.func = (typeof(Info.func)) g_funcsW[17];
 }
 
 template<class Pack>
-const char *generic_message_tt<Pack>::description()
+const char *GENERIC_MESSAGE<Pack>::Description()
 {
-	return get_message_name( info.msg );
+	return get_message_name( Info.msg );
 }
 
-nccreate_message_tt::nccreate_message_tt( NTCREATESTRUCT& cs, const UNICODE_STRING& cls, const UNICODE_STRING& name ) :
-	create_message_tt( cs, cls, name )
+NCCREATE_MESSAGE::NCCREATE_MESSAGE( NTCREATESTRUCT& cs, const UNICODE_STRING& cls, const UNICODE_STRING& name ) :
+	CREATE_MESSAGE( cs, cls, name )
 {
-	info.msg = WM_NCCREATE;
+	Info.msg = WM_NCCREATE;
 }
 
-create_message_tt::create_message_tt( NTCREATESTRUCT& cs,
+CREATE_MESSAGE::CREATE_MESSAGE( NTCREATESTRUCT& cs,
 									  const UNICODE_STRING& _cls, const UNICODE_STRING& _name ) :
 	cls( _cls ),
 	name( _name )
 {
-	memset( &info, 0, sizeof info );
+	memset( &Info, 0, sizeof Info );
 
-	info.pi.x = 0;
-	info.pi.count = 0;
-	info.pi.kernel_address = 0;
-	info.pi.adjust_info_ofs = 0;
-	info.pi.no_adjust = 0;
+	Info.pi.x = 0;
+	Info.pi.count = 0;
+	Info.pi.kernel_address = 0;
+	Info.pi.adjust_info_ofs = 0;
+	Info.pi.no_adjust = 0;
 
-	info.pi.sz = sizeof info;
-	info.wininfo = NULL;
-	info.msg = WM_CREATE;
-	info.wparam = 0;
-	info.cs_nonnull = TRUE;
-	info.cs = cs;
+	Info.pi.sz = sizeof Info;
+	Info.wininfo = NULL;
+	Info.msg = WM_CREATE;
+	Info.wparam = 0;
+	Info.cs_nonnull = TRUE;
+	Info.cs = cs;
 }
 
-ULONG create_message_tt::get_callback_num() const
+ULONG CREATE_MESSAGE::GetCallbackNum() const
 {
 	return NTWIN32_CREATE_CALLBACK;
 }
 
-getminmaxinfo_tt::getminmaxinfo_tt()
+GETMINMAXINFO_MESSAGE::GETMINMAXINFO_MESSAGE()
 {
-	info.msg = WM_GETMINMAXINFO;
+	Info.msg = WM_GETMINMAXINFO;
 }
 
-ULONG getminmaxinfo_tt::get_callback_num() const
+ULONG GETMINMAXINFO_MESSAGE::GetCallbackNum() const
 {
 	return NTWIN32_MINMAX_CALLBACK;
 }
 
-nccalcsize_message_tt::nccalcsize_message_tt( BOOLEAN wparam, RECT& new_rect )
+NCCALCULATE_MESSAGE::NCCALCULATE_MESSAGE( BOOLEAN wparam, RECT& new_rect )
 {
-	info.msg = WM_NCCALCSIZE;
-	info.wparam = wparam;
-	info.params.rgrc[0] = new_rect;
+	Info.msg = WM_NCCALCSIZE;
+	Info.wparam = wparam;
+	Info.params.rgrc[0] = new_rect;
 }
 
-ULONG nccalcsize_message_tt::get_callback_num() const
+ULONG NCCALCULATE_MESSAGE::GetCallbackNum() const
 {
 	return NTWIN32_NCCALC_CALLBACK;
 }
 
-basicmsg_tt::basicmsg_tt()
+BASIC_MSG::BASIC_MSG()
 {
 }
 
-basicmsg_tt::basicmsg_tt( INT message )
+BASIC_MSG::BASIC_MSG( INT message )
 {
-	info.msg = message;
+	Info.msg = message;
 }
 
-ULONG basicmsg_tt::get_callback_num() const
+ULONG BASIC_MSG::GetCallbackNum() const
 {
 	return NTWIN32_BASICMSG_CALLBACK;
 }
 
-showwindowmsg_tt::showwindowmsg_tt( bool show )
+SHOWWINDOW_MSG::SHOWWINDOW_MSG( bool show )
 {
-	info.msg = WM_SHOWWINDOW;
-	info.wparam = show;
-	info.lparam = 0;
+	Info.msg = WM_SHOWWINDOW;
+	Info.wparam = show;
+	Info.lparam = 0;
 }
 
-winposchange_tt::winposchange_tt( ULONG message, WINDOWPOS& pos )
+WINPOSCHANGE_MSG::WINPOSCHANGE_MSG( ULONG message, WINDOWPOS& pos )
 {
-	memcpy( &info.winpos, &pos, sizeof pos );
-	info.msg = message;
+	memcpy( &Info.winpos, &pos, sizeof pos );
+	Info.msg = message;
 }
 
 // comes BEFORE a window's position changes
-winposchanging_tt::winposchanging_tt( WINDOWPOS& pos ) :
-	winposchange_tt( WM_WINDOWPOSCHANGING, pos )
+WINPOSCHANGING_MSG::WINPOSCHANGING_MSG( WINDOWPOS& pos ) :
+	WINPOSCHANGE_MSG( WM_WINDOWPOSCHANGING, pos )
 {
 }
 
-ULONG winposchanging_tt::get_callback_num() const
+ULONG WINPOSCHANGING_MSG::GetCallbackNum() const
 {
 	return NTWIN32_POSCHANGING_CALLBACK;
 }
 
 // comes AFTER a window's position changes
-winposchanged_tt::winposchanged_tt( WINDOWPOS& pos ) :
-	winposchange_tt( WM_WINDOWPOSCHANGED, pos )
+WINPOSCHANGED_MSG::WINPOSCHANGED_MSG( WINDOWPOS& pos ) :
+	WINPOSCHANGE_MSG( WM_WINDOWPOSCHANGED, pos )
 {
 }
 
-ULONG winposchanged_tt::get_callback_num() const
+ULONG WINPOSCHANGED_MSG::GetCallbackNum() const
 {
 	return NTWIN32_POSCHANGED_CALLBACK;
 }
 
-appactmsg_tt::appactmsg_tt( UINT type )
+APPACT_MSG::APPACT_MSG( UINT type )
 {
-	info.msg = WM_ACTIVATEAPP;
-	info.wparam = type;
+	Info.msg = WM_ACTIVATEAPP;
+	Info.wparam = type;
 }
 
-ncactivate_tt::ncactivate_tt()
+NCACTIVATE_MSG::NCACTIVATE_MSG()
 {
-	info.msg = WM_NCACTIVATE;
+	Info.msg = WM_NCACTIVATE;
 }
 
-activate_tt::activate_tt()
+ACTIVATE_MSG::ACTIVATE_MSG()
 {
-	info.msg = WM_ACTIVATE;
+	Info.msg = WM_ACTIVATE;
 }
 
-setfocusmsg_tt::setfocusmsg_tt()
+SETFOCUS_MSG::SETFOCUS_MSG()
 {
-	info.msg = WM_SETFOCUS;
+	Info.msg = WM_SETFOCUS;
 }
 
-ncpaintmsg_tt::ncpaintmsg_tt() :
-	basicmsg_tt( WM_NCPAINT )
-{
-}
-
-paintmsg_tt::paintmsg_tt() :
-	basicmsg_tt( WM_PAINT )
+NCPAINT_MSG::NCPAINT_MSG() :
+	BASIC_MSG( WM_NCPAINT )
 {
 }
 
-erasebkgmsg_tt::erasebkgmsg_tt( HANDLE dc ) :
-	basicmsg_tt( WM_ERASEBKGND )
-{
-	info.wparam = (WPARAM) dc;
-}
-
-keyup_msg_tt::keyup_msg_tt( UINT key )
-{
-	info.msg = WM_KEYUP;
-	info.wparam = key;
-}
-
-keydown_msg_tt::keydown_msg_tt( UINT key )
-{
-	info.msg = WM_KEYDOWN;
-	info.wparam = key;
-}
-
-sizemsg_tt::sizemsg_tt( INT cx, INT cy ) :
-	basicmsg_tt( WM_SIZE )
-{
-	info.lparam = MAKELONG( cx, cy );
-}
-
-movemsg_tt::movemsg_tt( INT x, INT y ) :
-	basicmsg_tt( WM_MOVE )
-{
-	info.lparam = MAKELONG( x, y );
-}
-
-ncdestroymsg_tt::ncdestroymsg_tt() :
-	basicmsg_tt( WM_NCDESTROY )
+PAINT_MSG::PAINT_MSG() :
+	BASIC_MSG( WM_PAINT )
 {
 }
 
-destroymsg_tt::destroymsg_tt() :
-	basicmsg_tt( WM_DESTROY )
+ERASEBKG_MSG::ERASEBKG_MSG( HANDLE dc ) :
+	BASIC_MSG( WM_ERASEBKGND )
+{
+	Info.wparam = (WPARAM) dc;
+}
+
+KEYUP_MSG::KEYUP_MSG( UINT key )
+{
+	Info.msg = WM_KEYUP;
+	Info.wparam = key;
+}
+
+KEYDOWN_MSG::KEYDOWN_MSG( UINT key )
+{
+	Info.msg = WM_KEYDOWN;
+	Info.wparam = key;
+}
+
+SIZE_MSG::SIZE_MSG( INT cx, INT cy ) :
+	BASIC_MSG( WM_SIZE )
+{
+	Info.lparam = MAKELONG( cx, cy );
+}
+
+MOVE_MSG::MOVE_MSG( INT x, INT y ) :
+	BASIC_MSG( WM_MOVE )
+{
+	Info.lparam = MAKELONG( x, y );
+}
+
+NCDESTROY_MSG::NCDESTROY_MSG() :
+	BASIC_MSG( WM_NCDESTROY )
+{
+}
+
+DESTROY_MSG::DESTROY_MSG() :
+	BASIC_MSG( WM_DESTROY )
 {
 }
 

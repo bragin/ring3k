@@ -26,182 +26,182 @@
 
 // a message sent to a window via a callback
 // the message information needs to be copied to user space
-class message_tt
+class MESSAGE
 {
 public:
-	virtual ULONG get_size() const = 0;
-	virtual NTSTATUS copy_to_user( void *ptr ) const = 0;
-	virtual ULONG get_callback_num() const = 0;
-	virtual void set_window_info( window_tt *win ) = 0;
-	virtual const char *description() = 0;
-	virtual ~message_tt() {}
+	virtual ULONG GetSize() const = 0;
+	virtual NTSTATUS CopyToUser( void *ptr ) const = 0;
+	virtual ULONG GetCallbackNum() const = 0;
+	virtual void SetWindowInfo( window_tt *win ) = 0;
+	virtual const char *Description() = 0;
+	virtual ~MESSAGE() {}
 };
 
 // message with the piece of packed information to be sent
 // one fixed size piece of data to send named 'info'
-template<class Pack> class generic_message_tt : public message_tt
+template<class Pack> class GENERIC_MESSAGE : public MESSAGE
 {
 public:
-	Pack info;
+	Pack Info;
 public:
-	generic_message_tt();
-	virtual ULONG get_size() const;
-	virtual NTSTATUS copy_to_user( void *ptr ) const;
-	virtual ULONG get_callback_num() const = 0;
-	virtual void set_window_info( window_tt *win );
-	virtual const char *description();
+	GENERIC_MESSAGE();
+	virtual ULONG GetSize() const;
+	virtual NTSTATUS CopyToUser( void *ptr ) const;
+	virtual ULONG GetCallbackNum() const = 0;
+	virtual void SetWindowInfo( window_tt *win );
+	virtual const char *Description();
 };
 
 // WM_CREATE and WM_NCCREATE
-class create_message_tt : public generic_message_tt<NTCREATEPACKEDINFO>
+class CREATE_MESSAGE : public GENERIC_MESSAGE<NTCREATEPACKEDINFO>
 {
 protected:
 	const UNICODE_STRING& cls;
 	const UNICODE_STRING& name;
 public:
-	create_message_tt( NTCREATESTRUCT& cs, const UNICODE_STRING& cls, const UNICODE_STRING& name );
-	virtual ULONG get_callback_num() const;
+	CREATE_MESSAGE( NTCREATESTRUCT& cs, const UNICODE_STRING& cls, const UNICODE_STRING& name );
+	virtual ULONG GetCallbackNum() const;
 };
 
-class nccreate_message_tt : public create_message_tt
+class NCCREATE_MESSAGE : public CREATE_MESSAGE
 {
 public:
-	nccreate_message_tt( NTCREATESTRUCT& cs, const UNICODE_STRING& cls, const UNICODE_STRING& name );
+	NCCREATE_MESSAGE( NTCREATESTRUCT& cs, const UNICODE_STRING& cls, const UNICODE_STRING& name );
 };
 
 // WM_GETMINMAXINFO
-class getminmaxinfo_tt : public generic_message_tt<NTMINMAXPACKEDINFO>
+class GETMINMAXINFO_MESSAGE : public GENERIC_MESSAGE<NTMINMAXPACKEDINFO>
 {
 public:
-	getminmaxinfo_tt();
-	virtual ULONG get_callback_num() const;
+	GETMINMAXINFO_MESSAGE();
+	virtual ULONG GetCallbackNum() const;
 };
 
 // WM_NCCALCSIZE
-class nccalcsize_message_tt : public generic_message_tt<NTNCCALCSIZEPACKEDINFO>
+class NCCALCULATE_MESSAGE : public GENERIC_MESSAGE<NTNCCALCSIZEPACKEDINFO>
 {
 public:
-	nccalcsize_message_tt( BOOLEAN wparam, RECT& new_rect );
-	virtual ULONG get_callback_num() const;
+	NCCALCULATE_MESSAGE( BOOLEAN wparam, RECT& new_rect );
+	virtual ULONG GetCallbackNum() const;
 };
 
 // basic messages where lparam and wparam aren't pointers
-class basicmsg_tt : public generic_message_tt<NTSIMPLEMESSAGEPACKEDINFO>
+class BASIC_MSG : public GENERIC_MESSAGE<NTSIMPLEMESSAGEPACKEDINFO>
 {
 public:
-	basicmsg_tt();
-	basicmsg_tt( INT message );
-	virtual ULONG get_callback_num() const;
+	BASIC_MSG();
+	BASIC_MSG( INT message );
+	virtual ULONG GetCallbackNum() const;
 };
 
-class showwindowmsg_tt : public basicmsg_tt
+class SHOWWINDOW_MSG : public BASIC_MSG
 {
 public:
-	showwindowmsg_tt( bool show );
+	SHOWWINDOW_MSG( bool show );
 };
 
 // WM_WINDOWPOSCHANGING and WM_WINDOWPOSCHANGED
-class winposchange_tt : public generic_message_tt<NTPOSCHANGINGPACKEDINFO>
+class WINPOSCHANGE_MSG : public GENERIC_MESSAGE<NTPOSCHANGINGPACKEDINFO>
 {
 public:
-	winposchange_tt( ULONG message, WINDOWPOS& pos );
-	virtual ULONG get_callback_num() const = 0;
+	WINPOSCHANGE_MSG( ULONG message, WINDOWPOS& pos );
+	virtual ULONG GetCallbackNum() const = 0;
 };
 
-class winposchanging_tt : public winposchange_tt
+class WINPOSCHANGING_MSG : public WINPOSCHANGE_MSG
 {
 public:
-	winposchanging_tt( WINDOWPOS& _pos );
-	virtual ULONG get_callback_num() const;
+	WINPOSCHANGING_MSG( WINDOWPOS& _pos );
+	virtual ULONG GetCallbackNum() const;
 };
 
-class winposchanged_tt : public winposchange_tt
+class WINPOSCHANGED_MSG : public WINPOSCHANGE_MSG
 {
 public:
-	winposchanged_tt( WINDOWPOS& _pos );
-	virtual ULONG get_callback_num() const;
+	WINPOSCHANGED_MSG( WINDOWPOS& _pos );
+	virtual ULONG GetCallbackNum() const;
 };
 
 // WM_ACTIVATEAPP
-class appactmsg_tt : public basicmsg_tt
+class APPACT_MSG : public BASIC_MSG
 {
 public:
-	appactmsg_tt( UINT type );
+	APPACT_MSG( UINT type );
 };
 
 // WM_NCACTIVATE
-class ncactivate_tt : public basicmsg_tt
+class NCACTIVATE_MSG : public BASIC_MSG
 {
 public:
-	ncactivate_tt();
+	NCACTIVATE_MSG();
 };
 
 // WM_ACTIVATE
-class activate_tt : public basicmsg_tt
+class ACTIVATE_MSG : public BASIC_MSG
 {
 public:
-	activate_tt();
+	ACTIVATE_MSG();
 };
 
 // WM_SETFOCUS
-class setfocusmsg_tt : public basicmsg_tt
+class SETFOCUS_MSG : public BASIC_MSG
 {
 public:
-	setfocusmsg_tt();
+	SETFOCUS_MSG();
 };
 
-class paintmsg_tt : public basicmsg_tt
+class PAINT_MSG : public BASIC_MSG
 {
 public:
-	paintmsg_tt();
+	PAINT_MSG();
 };
 
-class ncpaintmsg_tt : public basicmsg_tt
+class NCPAINT_MSG : public BASIC_MSG
 {
 public:
-	ncpaintmsg_tt();
+	NCPAINT_MSG();
 };
 
-class erasebkgmsg_tt : public basicmsg_tt
+class ERASEBKG_MSG : public BASIC_MSG
 {
 public:
-	erasebkgmsg_tt( HANDLE dc );
+	ERASEBKG_MSG( HANDLE dc );
 };
 
-class keyup_msg_tt : public basicmsg_tt
+class KEYUP_MSG : public BASIC_MSG
 {
 public:
-	keyup_msg_tt( UINT key );
+	KEYUP_MSG( UINT key );
 };
 
-class keydown_msg_tt : public basicmsg_tt
+class KEYDOWN_MSG : public BASIC_MSG
 {
 public:
-	keydown_msg_tt( UINT key );
+	KEYDOWN_MSG( UINT key );
 };
 
-class sizemsg_tt : public basicmsg_tt
+class SIZE_MSG : public BASIC_MSG
 {
 public:
-	sizemsg_tt( INT cx, INT cy );
+	SIZE_MSG( INT cx, INT cy );
 };
 
-class movemsg_tt : public basicmsg_tt
+class MOVE_MSG : public BASIC_MSG
 {
 public:
-	movemsg_tt( INT x, INT y );
+	MOVE_MSG( INT x, INT y );
 };
 
-class ncdestroymsg_tt : public basicmsg_tt
+class NCDESTROY_MSG : public BASIC_MSG
 {
 public:
-	ncdestroymsg_tt();
+	NCDESTROY_MSG();
 };
 
-class destroymsg_tt : public basicmsg_tt
+class DESTROY_MSG : public BASIC_MSG
 {
 public:
-	destroymsg_tt();
+	DESTROY_MSG();
 };
 
 #endif // __RING3K_MESSAGE__

@@ -26,7 +26,7 @@
 
 struct window_tt;
 class wndcls_tt;
-class message_tt;
+class MESSAGE;
 
 typedef LIST_ANCHOR<wndcls_tt, 0> wndcls_list_tt;
 typedef LIST_ELEMENT<wndcls_tt> wndcls_entry_tt;
@@ -78,7 +78,7 @@ public:
 	window_tt();
 	~window_tt();
 	static window_tt* do_create( unicode_string_t& name, unicode_string_t& cls, NTCREATESTRUCT& cs );
-	NTSTATUS send( message_tt& msg );
+	NTSTATUS send( MESSAGE& msg );
 	void *get_wndproc()
 	{
 		return wndproc;

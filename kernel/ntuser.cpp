@@ -1172,7 +1172,7 @@ PWND window_tt::get_wininfo()
 	return (PWND) (current->process->win32k_info->user_shared_mem + ofs);
 }
 
-NTSTATUS window_tt::send( message_tt& msg )
+NTSTATUS window_tt::send( MESSAGE& msg )
 {
 	THREAD*& thread = get_win_thread();
 	if (thread->IsTerminated())
@@ -1182,25 +1182,25 @@ NTSTATUS window_tt::send( message_tt& msg )
 	teb->CachedWindowHandle = handle;
 	teb->CachedWindowPointer = get_wininfo();
 
-	trace("sending %s\n", msg.description());
+	trace("sending %s\n", msg.Description());
 
-	msg.set_window_info( this );
+	msg.SetWindowInfo( this );
 
-	void *address = thread->Push( msg.get_size() );
+	void *address = thread->Push( msg.GetSize() );
 
-	NTSTATUS r = msg.copy_to_user( address );
+	NTSTATUS r = msg.CopyToUser( address );
 	if (r >= STATUS_SUCCESS)
 	{
 		ULONG ret_len = 0;
 		PVOID ret_buf = 0;
 
-		r = thread->DoUserCallback( msg.get_callback_num(), ret_len, ret_buf );
+		r = thread->DoUserCallback( msg.GetCallbackNum(), ret_len, ret_buf );
 	}
 
 	if (thread->IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
 
-	thread->Pop( msg.get_size() );
+	thread->Pop( msg.GetSize() );
 	teb->CachedWindowHandle = 0;
 	teb->CachedWindowPointer = 0;
 
@@ -1210,7 +1210,7 @@ NTSTATUS window_tt::send( message_tt& msg )
 BOOLEAN window_tt::show( INT Show )
 {
 	// send a WM_SHOWWINDOW message
-	showwindowmsg_tt sw( TRUE );
+	SHOWWINDOW_MSG sw( TRUE );
 	send( sw );
 	style |= WS_VISIBLE;
 
@@ -1331,11 +1331,11 @@ window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, 
 	region->empty_region();
 
 	// send WM_GETMINMAXINFO
-	getminmaxinfo_tt minmax;
+	GETMINMAXINFO_MESSAGE minmax;
 	win->send( minmax );
 
 	// send WM_NCCREATE
-	nccreate_message_tt nccreate( cs, cls, name );
+	NCCREATE_MESSAGE nccreate( cs, cls, name );
 	win->send( nccreate );
 
 	win->rcWnd.left = cs.x;
@@ -1347,13 +1347,13 @@ window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, 
 	win->rcClient = win->rcWnd;
 
 	// send WM_NCCALCSIZE
-	nccalcsize_message_tt nccalcsize( FALSE, win->rcWnd );
+	NCCALCULATE_MESSAGE nccalcsize( FALSE, win->rcWnd );
 	win->send( nccalcsize );
 
 	win->style |= WS_CLIPSIBLINGS;
 
 	// send WM_CREATE
-	create_message_tt create( cs, cls, name );
+	CREATE_MESSAGEm create( cs, cls, name );
 	win->send( create );
 
 	if (win->style & WS_VISIBLE)
@@ -1362,7 +1362,7 @@ window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, 
 		win->set_window_pos( SWP_SHOWWINDOW | SWP_NOMOVE );
 
 		// move manually afterwards
-		movemsg_tt move( win->rcWnd.left, win->rcWnd.top );
+		MOVE_MSG move( win->rcWnd.left, win->rcWnd.top );
 		win->send( move );
 	}
 
@@ -1431,7 +1431,7 @@ void window_tt::set_window_pos( UINT flags )
 
 	if (flags & (SWP_SHOWWINDOW | SWP_HIDEWINDOW))
 	{
-		winposchanging_tt poschanging( wp );
+		WINPOSCHANGING_MSG poschanging( wp );
 		send( poschanging );
 	}
 
@@ -1441,36 +1441,36 @@ void window_tt::set_window_pos( UINT flags )
 		activate();
 
 		// painting probably should be done elsewhere
-		ncpaintmsg_tt ncpaint;
+		NCPAINT_MSG ncpaint;
 		send( ncpaint );
 
-		erasebkgmsg_tt erase( get_dc() );
+		ERASEBKG_MSG erase( get_dc() );
 		send( erase );
 	}
 
 	if (style & WS_VISIBLE)
 	{
-		winposchanged_tt poschanged( wp );
+		WINPOSCHANGED_MSG poschanged( wp );
 		send( poschanged );
 	}
 
 	if (flags & SWP_HIDEWINDOW)
 	{
 		// deactivate
-		ncactivate_tt ncact;
+		NCACTIVATE_MSG ncact;
 		send( ncact );
 	}
 
 	if (!(flags & SWP_NOSIZE))
 	{
-		sizemsg_tt size( rcWnd.right - rcWnd.left,
+		SIZE_MSG size( rcWnd.right - rcWnd.left,
 						 rcWnd.bottom - rcWnd.top );
 		send( size );
 	}
 
 	if (!(flags & SWP_NOMOVE))
 	{
-		movemsg_tt move( rcWnd.left, rcWnd.top );
+		MOVE_MSG move( rcWnd.left, rcWnd.top );
 		send( move );
 	}
 }
@@ -1492,21 +1492,21 @@ void window_tt::activate()
 
 	if (active_window)
 	{
-		appactmsg_tt aa( WA_INACTIVE );
+		APPACT_MSG aa( WA_INACTIVE );
 		active_window->send( aa );
 	}
 
 	active_window = this;
-	appactmsg_tt aa( WA_ACTIVE );
+	APPACT_MSG aa( WA_ACTIVE );
 	send( aa );
 
-	ncactivate_tt ncact;
+	NCACTIVATE_MSG ncact;
 	send( ncact );
 
-	activate_tt act;
+	ACTIVATE_MSG act;
 	send( act );
 
-	setfocusmsg_tt setfocus;
+	SETFOCUS_MSG setfocus;
 	send( setfocus );
 }
 
@@ -1516,10 +1516,10 @@ BOOLEAN window_tt::destroy()
 	set_window_pos( SWP_NOMOVE | SWP_NOSIZE |
 					SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW );
 
-	destroymsg_tt destroy;
+	DESTROY_MSG destroy;
 	send( destroy );
 
-	ncdestroymsg_tt ncdestroy;
+	NCDESTROY_MSG ncdestroy;
 	send( ncdestroy );
 
 	delete this;
@@ -1602,7 +1602,7 @@ BOOLEAN window_tt::move_window( int x, int y, int width, int height, BOOLEAN rep
 	wp.cx = width;
 	wp.cy = height;
 
-	winposchanging_tt poschanging( wp );
+	WINPOSCHANGING_MSG poschanging( wp );
 	send( poschanging );
 
 	rcWnd.left = x;
@@ -1612,10 +1612,10 @@ BOOLEAN window_tt::move_window( int x, int y, int width, int height, BOOLEAN rep
 
 	rcClient = rcWnd;
 
-	nccalcsize_message_tt nccalcsize( TRUE, rcWnd );
+	NCCALCULATE_MESSAGE nccalcsize( TRUE, rcWnd );
 	send( nccalcsize );
 
-	winposchanged_tt poschanged( wp );
+	WINPOSCHANGED_MSG poschanged( wp );
 	send( poschanged );
 
 	return TRUE;
@@ -1669,7 +1669,7 @@ LRESULT NTAPI NtUserDispatchMessage( PMSG Message )
 	{
 		case WM_PAINT:
 		{
-			paintmsg_tt msg;
+			PAINT_MSG msg;
 			win->send( msg );
 		}
 		break;
