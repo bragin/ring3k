@@ -716,7 +716,7 @@ BOOL DEVICE_CONTEXT::bitblt(
 		cy = src_bm->get_height() - ySrc;
 
 	// FIXME translate coordinates
-	return dest_bm->bitblt( xDest, yDest, cx, cy, src_bm, xSrc, ySrc, rop );
+	return dest_bm->BitBlt( xDest, yDest, cx, cy, src_bm, xSrc, ySrc, rop );
 }
 
 BOOL DEVICE_CONTEXT::rectangle(INT left, INT top, INT right, INT bottom)
@@ -739,7 +739,7 @@ BOOL DEVICE_CONTEXT::rectangle(INT left, INT top, INT right, INT bottom)
 	right = min( bm->get_width() - 1, right );
 	bottom = min( bm->get_height() - 1, bottom );
 
-	return bm->rectangle( left, top, right, bottom, brush );
+	return bm->Rectangle( left, top, right, bottom, brush );
 }
 
 memory_device_context_t::memory_device_context_t()
@@ -758,7 +758,7 @@ BOOL DEVICE_CONTEXT::lineto(INT x, INT y)
 	POINT& cur = get_current_pen_pos();
 	POINT& winofs = get_window_offset();
 
-	bm->line(cur.x + winofs.x, cur.y + winofs.y, x + winofs.x, y + winofs.y, pen);
+	bm->Line(cur.x + winofs.x, cur.y + winofs.y, x + winofs.x, y + winofs.y, pen);
 
 	// update the position
 	cur.x = x;
@@ -783,15 +783,15 @@ BOOL DEVICE_CONTEXT::set_pixel( INT x, INT y, COLORREF color )
 {
 	CBITMAP* bitmap = get_bitmap();
 	if (bitmap)
-		return bitmap->set_pixel( x, y, color );
+		return bitmap->SetPixel( x, y, color );
 	return TRUE;
 }
 
-COLORREF DEVICE_CONTEXT::get_pixel( INT x, INT y )
+COLORREF DEVICE_CONTEXT::GetPixel( INT x, INT y )
 {
 	CBITMAP* bitmap = get_bitmap();
 	if (bitmap)
-		return bitmap->get_pixel( x, y );
+		return bitmap->GetPixel( x, y );
 	return 0;
 }
 
@@ -829,7 +829,7 @@ static void freetype_bitblt( CBITMAP* bm, int x, int y, FT_Bitmap* ftbm )
 		{
 			// FIXME: assumes text color is black
 			COLORREF color = freetype_get_pixel( bmpX, bmpY, ftbm );
-			bm->set_pixel( j, i, color );
+			bm->SetPixel( j, i, color );
 		}
 	}
 }
@@ -924,7 +924,7 @@ BOOL DEVICE_CONTEXT::polypatblt( ULONG Rop, PRECT rect )
 	right = min( bm->get_width() - 1, right );
 	bottom = min( bm->get_height() - 1, bottom );
 
-	return bm->rectangle( left, top, right, bottom, &black );
+	return bm->Rectangle( left, top, right, bottom, &black );
 }
 
 int memory_device_context_t::getcaps( int index )
@@ -1202,7 +1202,7 @@ HGDIOBJ NTAPI NtGdiCreateDIBitmapInternal(
 	ULONG,
 	ULONG)
 {
-	CBITMAP *bm = alloc_bitmap( Width, Height, Bpp );
+	CBITMAP *bm = AllocBitmap( Width, Height, Bpp );
 	if (!bm)
 		return NULL;
 	return bm->get_handle();
@@ -1267,7 +1267,7 @@ HGDIOBJ NTAPI NtGdiSelectBitmap( HGDIOBJ hdc, HGDIOBJ hbm )
 	if (!dc)
 		return FALSE;
 
-	CBITMAP* bitmap = bitmap_from_handle( hbm );
+	CBITMAP* bitmap = BitmapFromHandle( hbm );
 	if (!bitmap)
 		return FALSE;
 
@@ -1586,7 +1586,7 @@ HANDLE NTAPI NtGdiCreateCompatibleBitmap( HANDLE DeviceContext, int width, int h
 	if (!bpp)
 		return FALSE;
 
-	CBITMAP *bm = alloc_bitmap( width, height, bpp );
+	CBITMAP *bm = AllocBitmap( width, height, bpp );
 	return bm->get_handle();
 }
 

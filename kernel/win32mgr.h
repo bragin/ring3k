@@ -170,7 +170,7 @@ public:
 
 class CBITMAP : public GDI_OBJECT
 {
-	friend CBITMAP* alloc_bitmap( int width, int height, int depth );
+	friend CBITMAP* AllocBitmap( int width, int height, int depth );
 	static const int magic_val = 0xbb11aa22;
 	int magic;
 protected:
@@ -180,13 +180,13 @@ protected:
 	int planes;
 	int bpp;
 protected:
-	void dump();
-	virtual void lock();
-	virtual void unlock();
+	void Dump();
+	virtual void Lock();
+	virtual void Unlock();
 public:
 	CBITMAP( int _width, int _height, int _planes, int _bpp );
 	virtual ~CBITMAP();
-	ULONG bitmap_size();
+	ULONG BitmapSize();
 	int get_width()
 	{
 		return width;
@@ -196,46 +196,46 @@ public:
 		return height;
 	}
 	//int get_planes() {return planes;}
-	ULONG get_rowsize();
-	virtual COLORREF get_pixel( int x, int y ) = 0;
-	virtual BOOL set_pixel( INT x, INT y, COLORREF color );
+	ULONG GetRowsize();
+	virtual COLORREF GetPixel( int x, int y ) = 0;
+	virtual BOOL SetPixel( INT x, INT y, COLORREF color );
 	bool is_valid() const
 	{
 		return magic == magic_val;
 	}
-	NTSTATUS copy_pixels( void* pixels );
-	virtual BOOL bitblt( INT xDest, INT yDest, INT cx, INT cy,
+	NTSTATUS CopyPixels( void* pixels );
+	virtual BOOL BitBlt( INT xDest, INT yDest, INT cx, INT cy,
 						 CBITMAP *src, INT xSrc, INT ySrc, ULONG rop );
-	virtual BOOL rectangle(INT left, INT top, INT right, INT bottom, brush_t* brush);
-	virtual BOOL line( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
+	virtual BOOL Rectangle(INT left, INT top, INT right, INT bottom, brush_t* brush);
+	virtual BOOL Line( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
 protected:
-	BOOL pen_dot( INT x, INT y, pen_t *pen );
-	virtual BOOL set_pixel_l( INT x, INT y, COLORREF color );
-	virtual void draw_hline(INT left, INT y, INT right, COLORREF color);
-	virtual void draw_vline(INT x, INT top, INT bottom, COLORREF color);
-	virtual BOOL line_bresenham( INT x0, INT y0, INT x1, INT y1, pen_t *pen );
-	virtual BOOL line_wide( INT x0, INT y0, INT x1, INT y1, pen_t *pen );
-	static INT line_error(INT x0, INT y0, INT x1, INT y1, INT x, INT y);
+	BOOL PenDot( INT x, INT y, pen_t *pen );
+	virtual BOOL SetPixelL( INT x, INT y, COLORREF color );
+	virtual void DrawHLine(INT left, INT y, INT right, COLORREF color);
+	virtual void DrawVLine(INT x, INT top, INT bottom, COLORREF color);
+	virtual BOOL LineBresenham( INT x0, INT y0, INT x1, INT y1, pen_t *pen );
+	virtual BOOL LineWide( INT x0, INT y0, INT x1, INT y1, pen_t *pen );
+	static INT LineError(INT x0, INT y0, INT x1, INT y1, INT x, INT y);
 };
 
 template<const int DEPTH>
-class bitmap_impl_t : public CBITMAP
+class BitmapImpl : public CBITMAP
 {
 public:
-	bitmap_impl_t( int _width, int _height );
-	virtual ~bitmap_impl_t();
-	virtual COLORREF get_pixel( int x, int y );
+	BitmapImpl( int _width, int _height );
+	virtual ~BitmapImpl();
+	virtual COLORREF GetPixel( int x, int y );
 	//virtual BOOL set_pixel( INT x, INT y, COLORREF color );
 };
 
 template<const int DEPTH>
-bitmap_impl_t<DEPTH>::bitmap_impl_t( int _width, int _height ) :
+BitmapImpl<DEPTH>::BitmapImpl( int _width, int _height ) :
 	CBITMAP( _width, _height, 1, DEPTH )
 {
 }
 
 template<const int DEPTH>
-bitmap_impl_t<DEPTH>::~bitmap_impl_t()
+BitmapImpl<DEPTH>::~BitmapImpl()
 {
 }
 
@@ -282,7 +282,7 @@ public:
 	virtual HANDLE select_bitmap( CBITMAP *bitmap );
 	virtual BOOL bitblt( INT xDest, INT yDest, INT cx, INT cy,
 						 DEVICE_CONTEXT* src, INT xSrc, INT ySrc, ULONG rop );
-	virtual COLORREF get_pixel( INT x, INT y );
+	virtual COLORREF GetPixel( INT x, INT y );
 	virtual BOOL polypatblt( ULONG Rop, PRECT rect );
 	virtual int getcaps( int index ) = 0;
 	virtual BOOL stretch_di_bits( stretch_di_bits_args& args );
@@ -306,7 +306,7 @@ HGDIOBJ alloc_gdi_handle( BOOL stock, ULONG type, void *user_info, GDI_OBJECT* o
 HGDIOBJ alloc_gdi_object( BOOL stock, ULONG type );
 gdi_handle_table_entry *get_handle_table_entry(HGDIOBJ handle);
 BOOLEAN do_gdi_init();
-CBITMAP* bitmap_from_handle( HANDLE handle );
-CBITMAP* alloc_bitmap( int width, int height, int depth );
+CBITMAP* BitmapFromHandle( HANDLE handle );
+CBITMAP* AllocBitmap( int width, int height, int depth );
 
 #endif // __WIN32K_MANAGER__

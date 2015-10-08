@@ -40,24 +40,24 @@
 #include "ntwin32.h"
 #include "sdl.h"
 
-#if defined (HAVE_SDL) && defined (HAVE_SDL_SDL_H)
+#if defined (HAVE_SDL) && defined (HAVE_SDL_SDL_H) || true
 #include <SDL/SDL.h>
 
-class sdl_16bpp_bitmap_t : public bitmap_impl_t<16>
+class sdl_16bpp_bitmap_t : public BitmapImpl<16>
 {
 	SDL_Surface *surface;
 public:
 	sdl_16bpp_bitmap_t( SDL_Surface *s );
 	void lock();
 	void unlock();
-	virtual BOOL set_pixel( INT x, INT y, COLORREF color );
-	virtual COLORREF get_pixel( INT x, INT y );
-	virtual BOOL bitblt( INT xDest, INT yDest, INT cx, INT cy,
+	virtual BOOL SetPixel( INT x, INT y, COLORREF color );
+	virtual COLORREF GetPixel( INT x, INT y );
+	virtual BOOL BitBlt( INT xDest, INT yDest, INT cx, INT cy,
 						 CBITMAP *src, INT xSrc, INT ySrc, ULONG rop );
-	virtual BOOL rectangle( INT x, INT y, INT width, INT height, brush_t* brush );
-	virtual BOOL line( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
+	virtual BOOL Rectangle( INT x, INT y, INT width, INT height, brush_t* brush );
+	virtual BOOL Line( INT x1, INT y1, INT x2, INT y2, pen_t *pen );
 protected:
-	virtual ULONG map_colorref( COLORREF color );
+	virtual ULONG MapColorref( COLORREF color );
 };
 
 class sdl_device_context_t : public DEVICE_CONTEXT
@@ -97,7 +97,7 @@ public:
 	virtual DEVICE_CONTEXT* alloc_screen_dc_ptr();
 
 protected:
-	Uint16 map_colorref( COLORREF );
+	Uint16 MapColorref( COLORREF );
 	virtual SDL_Surface* set_mode() = 0;
 	virtual int getcaps( int index );
 };
@@ -107,52 +107,52 @@ win32k_sdl_t::win32k_sdl_t() :
 {
 }
 
-BOOL sdl_16bpp_bitmap_t::set_pixel( INT x, INT y, COLORREF color )
+BOOL sdl_16bpp_bitmap_t::SetPixel( INT x, INT y, COLORREF color )
 {
 	BOOL r;
 	lock();
-	r = CBITMAP::set_pixel( x, y, color );
+	r = CBITMAP::SetPixel( x, y, color );
 	SDL_UpdateRect(surface, x, y, 1, 1);
 	unlock();
 	return r;
 }
 
-COLORREF sdl_16bpp_bitmap_t::get_pixel( INT x, INT y )
+COLORREF sdl_16bpp_bitmap_t::GetPixel( INT x, INT y )
 {
 	BOOL r;
 	lock();
-	r = CBITMAP::get_pixel(x, y);
+	r = CBITMAP::GetPixel(x, y);
 	unlock();
 	return r;
 }
 
-BOOL sdl_16bpp_bitmap_t::rectangle(INT left, INT top, INT right, INT bottom, brush_t* brush )
+BOOL sdl_16bpp_bitmap_t::Rectangle(INT left, INT top, INT right, INT bottom, brush_t* brush )
 {
 	trace("sdl_16bpp_bitmap_t::rectangle\n");
 	lock();
-	CBITMAP::rectangle( left, top, right, bottom, brush );
+	CBITMAP::Rectangle( left, top, right, bottom, brush );
 	unlock();
 	SDL_UpdateRect( surface, left, top, right - left, bottom - top );
 	return TRUE;
 }
 
-BOOL sdl_16bpp_bitmap_t::bitblt( INT xDest, INT yDest, INT cx, INT cy, CBITMAP *src, INT xSrc, INT ySrc, ULONG rop )
+BOOL sdl_16bpp_bitmap_t::BitBlt( INT xDest, INT yDest, INT cx, INT cy, CBITMAP *src, INT xSrc, INT ySrc, ULONG rop )
 {
 	BOOL r;
 	lock();
 	assert(cx>=0);
 	assert(cy>=0);
-	r = CBITMAP::bitblt(xDest, yDest, cx, cy, src, xSrc, ySrc, rop);
+	r = CBITMAP::BitBlt(xDest, yDest, cx, cy, src, xSrc, ySrc, rop);
 	SDL_UpdateRect(surface, xDest, yDest, xDest + cx, yDest + cy);
 	unlock();
 	return r;
 }
 
-BOOL sdl_16bpp_bitmap_t::line( INT x1, INT y1, INT x2, INT y2, pen_t *pen )
+BOOL sdl_16bpp_bitmap_t::Line( INT x1, INT y1, INT x2, INT y2, pen_t *pen )
 {
 	BOOL r;
 	lock();
-	r = CBITMAP::line(x1, y1, x2, y2, pen);
+	r = CBITMAP::Line(x1, y1, x2, y2, pen);
 	// FIXME: possible optimization when updating?
 	if (x1 > x2)
 		swap(x1, x2);
@@ -355,7 +355,7 @@ BOOL win32k_sdl_t::init()
 
 	// FIXME: move this to caller
 	brush_t light_blue(0, RGB(0x3b, 0x72, 0xa9), 0);
-	sdl_bitmap->rectangle( 0, 0, screen->w, screen->h, &light_blue );
+	sdl_bitmap->Rectangle( 0, 0, screen->w, screen->h, &light_blue );
 
 	::sleeper = &sdl_sleeper;
 
@@ -370,7 +370,7 @@ void win32k_sdl_t::fini()
 }
 
 sdl_16bpp_bitmap_t::sdl_16bpp_bitmap_t( SDL_Surface *s ) :
-	bitmap_impl_t<16>( s->w, s->h ),
+	BitmapImpl<16>( s->w, s->h ),
 	surface( s )
 {
 	bits = reinterpret_cast<unsigned char*>( s->pixels );
@@ -388,7 +388,7 @@ void sdl_16bpp_bitmap_t::unlock()
 		SDL_UnlockSurface(surface);
 }
 
-ULONG sdl_16bpp_bitmap_t::map_colorref( COLORREF color )
+ULONG sdl_16bpp_bitmap_t::MapColorref( COLORREF color )
 {
 	return SDL_MapRGB(surface->format, GetRValue(color), GetGValue(color), GetBValue(color));
 }
@@ -397,7 +397,7 @@ class win32k_sdl_16bpp_t : public win32k_sdl_t
 {
 public:
 	virtual SDL_Surface* set_mode();
-	Uint16 map_colorref( COLORREF color );
+	Uint16 MapColorref( COLORREF color );
 };
 
 SDL_Surface* win32k_sdl_16bpp_t::set_mode()
@@ -405,7 +405,7 @@ SDL_Surface* win32k_sdl_16bpp_t::set_mode()
 	return SDL_SetVideoMode( 640, 480, 16, SDL_SWSURFACE );
 }
 
-Uint16 win32k_sdl_16bpp_t::map_colorref( COLORREF color )
+Uint16 win32k_sdl_16bpp_t::MapColorref( COLORREF color )
 {
 	return SDL_MapRGB(screen->format, GetRValue(color), GetGValue(color), GetBValue(color));
 }
