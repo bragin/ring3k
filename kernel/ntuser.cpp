@@ -448,8 +448,8 @@ NTSTATUS map_user_shared_memory( PROCESS *proc )
 
 	if (option_trace)
 	{
-		proc->vm->set_tracer( user_shared_mem, ntusershm_trace );
-		proc->vm->set_tracer( user_handles, ntuserhandle_trace );
+		proc->vm->SetTracer( user_shared_mem, ntusershm_trace );
+		proc->vm->SetTracer( user_handles, ntuserhandle_trace );
 	}
 
 	// map the shared handle table

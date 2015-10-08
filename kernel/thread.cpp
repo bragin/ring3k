@@ -106,7 +106,7 @@ struct thread_apc_t
 
 class THREAD_IMPL :
 	public THREAD,
-	public execution_context_t,
+	public EXECUTION_CONTEXT,
 	public timeout_t
 {
 	THREAD_STATE ThreadState;
@@ -200,8 +200,8 @@ public:
 	NTSTATUS alert();
 	ULONG is_last_thread();
 
-	virtual void handle_fault();
-	virtual void handle_breakpoint();
+	virtual void HandleFault();
+	virtual void HandleBreakpoint();
 
 	virtual NTSTATUS CopyToUser( void *dest, const void *src, size_t count );
 	virtual NTSTATUS CopyFromUser( void *dest, const void *src, size_t count );
@@ -236,7 +236,7 @@ ULONG runlist_entry_t::num_active_threads()
 
 int THREAD_IMPL::set_initial_regs( void *start, void *stack)
 {
-	process->vm->init_context( ctx );
+	process->vm->InitContext( ctx );
 
 	ctx.Eip = (DWORD) start;
 	ctx.Esp = (DWORD) stack;
@@ -336,7 +336,7 @@ NTSTATUS THREAD_IMPL::kernel_debugger_call( ULONG func, void *arg1, void *arg2 )
 			break;
 		case 0x101:
 		{
-			const char *sym = process->vm->get_symbol( (BYTE*) arg1 );
+			const char *sym = process->vm->GetSymbol( (BYTE*) arg1 );
 			if (sym)
 				fprintf(stderr, "%04lx: %s called\n", TraceId(), sym);
 			else
@@ -411,11 +411,11 @@ bool THREAD_IMPL::traced_access()
 
 	// get the fault address
 	void* addr = 0;
-	if (0 != current->process->vm->get_fault_info( addr ))
+	if (0 != current->process->vm->GetFaultInfo( addr ))
 		return false;
 
 	// confirm the memory is traced
-	if (!current->process->vm->traced_access( addr, ctx.Eip ))
+	if (!current->process->vm->TracedAccess( addr, ctx.Eip ))
 		return false;
 
 	trace_accessed_address = addr;
@@ -777,7 +777,7 @@ NTSTATUS THREAD_IMPL::CopyToUser( void *dest, const void *src, size_t count )
 	assert( process->is_valid() );
 	if (IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
-	return process->vm->copy_to_user( dest, src, count );
+	return process->vm->CopyToUser( dest, src, count );
 }
 
 NTSTATUS THREAD_IMPL::CopyFromUser( void *dest, const void *src, size_t count )
@@ -785,7 +785,7 @@ NTSTATUS THREAD_IMPL::CopyFromUser( void *dest, const void *src, size_t count )
 	assert( process->is_valid() );
 	if (IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
-	return process->vm->copy_from_user( dest, src, count );
+	return process->vm->CopyFromUser( dest, src, count );
 }
 
 NTSTATUS THREAD_IMPL::VerifyForWrite( void *dest, size_t count )
@@ -793,7 +793,7 @@ NTSTATUS THREAD_IMPL::VerifyForWrite( void *dest, size_t count )
 	assert( process->is_valid() );
 	if (IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
-	return process->vm->verify_for_write( dest, count );
+	return process->vm->VerifyForWrite( dest, count );
 }
 
 NTSTATUS THREAD_IMPL::zero_tls_cells( ULONG index )
@@ -871,14 +871,14 @@ int THREAD_IMPL::Run()
 		LARGE_INTEGER timeout;
 		timeout.QuadPart = 10L; // 10ms
 
-		process->vm->run( TebBaseAddress, &ctx, false, timeout, this );
+		process->vm->Run( TebBaseAddress, &ctx, false, timeout, this );
 
 		if (trace_step_access)
 		{
 			// enable access to the memory, then single step over the access
-			process->vm->set_traced( trace_accessed_address, false );
-			process->vm->run( TebBaseAddress, &ctx, true, timeout, this );
-			process->vm->set_traced( trace_accessed_address, true );
+			process->vm->SetTraced( trace_accessed_address, false );
+			process->vm->Run( TebBaseAddress, &ctx, true, timeout, this );
+			process->vm->SetTraced( trace_accessed_address, true );
 			trace_step_access = false;
 		}
 
@@ -901,7 +901,7 @@ int THREAD_IMPL::Run()
 	return 0;
 }
 
-void THREAD_IMPL::handle_fault()
+void THREAD_IMPL::HandleFault()
 {
 	unsigned char inst[8];
 	NTSTATUS r;
@@ -923,7 +923,7 @@ void THREAD_IMPL::handle_fault()
 	}
 }
 
-void THREAD_IMPL::handle_breakpoint()
+void THREAD_IMPL::HandleBreakpoint()
 {
 	if (option_debug)
 	{
@@ -1486,14 +1486,14 @@ NTSTATUS THREAD_IMPL::create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspe
 	memcpy( &init_stack.ctx, ctx, sizeof *ctx );
 	init_stack.ret  = (void*) 0xf00baa;
 
-	r = process->vm->copy_to_user( stack, &init_stack, sizeof init_stack );
+	r = process->vm->CopyToUser( stack, &init_stack, sizeof init_stack );
 	if (r < STATUS_SUCCESS)
 		trace("failed to copy initial stack data\n");
 
 	if (!suspended)
 		Resume( NULL );
 
-	process->vm->set_tracer( addr, teb_trace );
+	process->vm->SetTracer( addr, teb_trace );
 
 	return STATUS_SUCCESS;
 }

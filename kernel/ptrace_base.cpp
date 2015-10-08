@@ -312,7 +312,7 @@ void ptrace_address_space_impl::set_signals()
 		Die("unable to unblock SIGALRM\n");
 }
 
-void ptrace_address_space_impl::run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, execution_context_t *exec )
+void ptrace_address_space_impl::Run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, EXECUTION_CONTEXT *exec )
 {
 	set_userspace_fs(TebBaseAddress, ctx->SegFs);
 
@@ -332,7 +332,7 @@ void ptrace_address_space_impl::run( void *TebBaseAddress, PCONTEXT ctx, int sin
 
 		if (sig == SIGSEGV)
 		{
-			exec->handle_fault();
+			exec->HandleFault();
 			break;
 		}
 
@@ -361,14 +361,14 @@ void ptrace_address_space_impl::run( void *TebBaseAddress, PCONTEXT ctx, int sin
 				// assumes int $3 (0xcc, not 0xcd 0x03)
 				trace("breakpoint!\n");
 				ctx->Eip--;
-				exec->handle_breakpoint();
+				exec->HandleBreakpoint();
 			}
 			else
 			{
 				// assumes int $0x80 (0xcd 0x80)
 				ctx->Eip -= 2;
 				trace("syscall!\n");
-				exec->handle_fault();
+				exec->HandleFault();
 			}
 			continue;
 		}
@@ -386,12 +386,12 @@ void ptrace_address_space_impl::run( void *TebBaseAddress, PCONTEXT ctx, int sin
 			break;
 
 		trace("stopped, signal %d\n", WEXITSTATUS(status));
-		exec->handle_breakpoint();
+		exec->HandleBreakpoint();
 		break;
 	}
 }
 
-int ptrace_address_space_impl::get_fault_info( void *& addr )
+int ptrace_address_space_impl::GetFaultInfo( void *& addr )
 {
 	siginfo_t info;
 	memset( &info, 0, sizeof info );
@@ -414,7 +414,7 @@ unsigned short ptrace_address_space_impl::get_userspace_data_seg()
 	return cs;
 }
 
-void ptrace_address_space_impl::init_context( CONTEXT& ctx )
+void ptrace_address_space_impl::InitContext( CONTEXT& ctx )
 {
 	memset( &ctx, 0, sizeof ctx );
 	ctx.SegFs = get_userspace_fs();

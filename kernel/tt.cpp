@@ -64,8 +64,8 @@ public:
 	tt_address_space_impl();
 	virtual pid_t get_child_pid();
 	virtual ~tt_address_space_impl();
-	virtual int mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset );
-	virtual int munmap( BYTE *address, size_t length );
+	virtual int Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset );
+	virtual int Munmap( BYTE *address, size_t length );
 	virtual unsigned short get_userspace_fs();
 };
 
@@ -110,7 +110,7 @@ tt_address_space_impl::~tt_address_space_impl()
 {
 	assert( sig_target == 0 );
 	//trace(stderr,"~tt_address_space_impl()\n");
-	destroy();
+	Destroy();
 	ptrace( PTRACE_KILL, child_pid, 0, 0 );
 	assert( child_pid != -1 );
 	kill( child_pid, SIGTERM );
@@ -147,7 +147,7 @@ int tt_address_space_impl::userside_req( int type )
 	return stub_regs[EAX];
 }
 
-int tt_address_space_impl::mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset )
+int tt_address_space_impl::Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset )
 {
 	//trace("tt_address_space_impl::mmap()\n");
 
@@ -162,7 +162,7 @@ int tt_address_space_impl::mmap( BYTE *address, size_t length, int prot, int fla
 	return userside_req( tt_req_map );
 }
 
-int tt_address_space_impl::munmap( BYTE *address, size_t length )
+int tt_address_space_impl::Munmap( BYTE *address, size_t length )
 {
 	//trace("tt_address_space_impl::munmap()\n");
 	struct tt_req *ureq = (struct tt_req *) stub_regs[EBX];
@@ -214,6 +214,6 @@ bool InitTt( const char *kernel_path )
 	check_proc();
 	trace("using thread tracing, kernel %s, client %s\n", kernel_path, stub_path );
 	ptrace_address_space_impl::set_signals();
-	pcreate_address_space = &create_tt_address_space;
+	pCreateAddressSpace = &create_tt_address_space;
 	return true;
 }

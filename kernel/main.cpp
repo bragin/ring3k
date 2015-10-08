@@ -160,7 +160,7 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 
 	/* map the stack */
 	pstack = NULL;
-	r = p->vm->allocate_virtual_memory( &pstack, 0, stack_size, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE );
+	r = p->vm->AllocateVirtualMemory( &pstack, 0, stack_size, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -171,14 +171,14 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 	init_teb.StackCommitMax = (BYTE*)init_teb.StackCommit - PAGE_SIZE;
 
 	/* initialize the first thread's context */
-	p->vm->init_context( ctx );
+	p->vm->InitContext( ctx );
 	ctx.Eip = (DWORD) get_entry_point( p );
 	ctx.Esp = (DWORD) pstack + stack_size - 8;
 
 	trace("entry point = %08lx\n", ctx.Eip);
 
 	/* when starting nt processes, make the PEB the first arg of NtProcessStartup */
-	r = p->vm->copy_to_user( (BYTE*) ctx.Esp + 4, &p->PebBaseAddress, sizeof p->PebBaseAddress );
+	r = p->vm->CopyToUser( (BYTE*) ctx.Esp + 4, &p->PebBaseAddress, sizeof p->PebBaseAddress );
 
 	if (r == STATUS_SUCCESS)
 		r = create_thread( t, p, &id, &ctx, &init_teb, FALSE );
@@ -467,7 +467,7 @@ int main(int argc, char **argv)
 
 	// pass our path so thread tracing can find the client stub
 	InitTt( argv[0] );
-	if (!pcreate_address_space)
+	if (!pCreateAddressSpace)
 		Die("no way to manage address spaces found\n");
 
 	if (!TraceIsEnabled("core"))

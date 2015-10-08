@@ -28,12 +28,12 @@
 class MBLOCK;
 
 // pure virtual base class for things that can execution code (eg. threads)
-class execution_context_t
+class EXECUTION_CONTEXT
 {
 public:
-	virtual void handle_fault() = 0;
-	virtual void handle_breakpoint() = 0;
-	virtual ~execution_context_t() {};
+	virtual void HandleFault() = 0;
+	virtual void HandleBreakpoint() = 0;
+	virtual ~EXECUTION_CONTEXT() {};
 };
 
 class BACKING_STORE
@@ -57,40 +57,40 @@ class ADDRESS_SPACE
 {
 public:
 	virtual ~ADDRESS_SPACE();
-	virtual NTSTATUS query( BYTE *start, MEMORY_BASIC_INFORMATION *info ) = 0;
-	virtual NTSTATUS get_kernel_address( BYTE **address, size_t *len ) = 0;
-	virtual NTSTATUS copy_to_user( void *dest, const void *src, size_t len ) = 0;
-	virtual NTSTATUS copy_from_user( void *dest, const void *src, size_t len ) = 0;
-	virtual NTSTATUS verify_for_write( void *dest, size_t len ) = 0;
-	virtual NTSTATUS allocate_virtual_memory( BYTE **start, int zero_bits, size_t length, int state, int prot ) = 0;
-	virtual NTSTATUS map_fd( BYTE **start, int zero_bits, size_t length, int state, int prot, BACKING_STORE *backing ) = 0;
-	virtual NTSTATUS free_virtual_memory( void *start, size_t length, ULONG state ) = 0;
-	virtual NTSTATUS unmap_view( void *start ) = 0;
-	virtual void dump() = 0;
-	virtual int mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset ) = 0;
-	virtual int munmap( BYTE *address, size_t length ) = 0;
-	virtual MBLOCK* find_block( BYTE *addr ) = 0;
-	virtual const char *get_symbol( BYTE *address ) = 0;
-	virtual void run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, execution_context_t *exec ) = 0;
-	virtual void init_context( CONTEXT& ctx ) = 0;
-	virtual int get_fault_info( void *& addr ) = 0;
-	virtual bool traced_access( void* address, ULONG Eip ) = 0;
-	virtual bool set_traced( void* address, bool traced ) = 0;
-	virtual bool set_tracer( BYTE* address, BLOCK_TRACER& tracer) = 0;
+	virtual NTSTATUS Query( BYTE *start, MEMORY_BASIC_INFORMATION *info ) = 0;
+	virtual NTSTATUS GetKernelAddress( BYTE **address, size_t *len ) = 0;
+	virtual NTSTATUS CopyToUser( void *dest, const void *src, size_t len ) = 0;
+	virtual NTSTATUS CopyFromUser( void *dest, const void *src, size_t len ) = 0;
+	virtual NTSTATUS VerifyForWrite( void *dest, size_t len ) = 0;
+	virtual NTSTATUS AllocateVirtualMemory( BYTE **start, int zero_bits, size_t length, int state, int prot ) = 0;
+	virtual NTSTATUS MapFD( BYTE **start, int zero_bits, size_t length, int state, int prot, BACKING_STORE *backing ) = 0;
+	virtual NTSTATUS FreeVirtualMemory( void *start, size_t length, ULONG state ) = 0;
+	virtual NTSTATUS UnmapView( void *start ) = 0;
+	virtual void Dump() = 0;
+	virtual int Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset ) = 0;
+	virtual int Munmap( BYTE *address, size_t length ) = 0;
+	virtual MBLOCK* FindBlock( BYTE *addr ) = 0;
+	virtual const char *GetSymbol( BYTE *address ) = 0;
+	virtual void Run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, EXECUTION_CONTEXT *exec ) = 0;
+	virtual void InitContext( CONTEXT& ctx ) = 0;
+	virtual int GetFaultInfo( void *& addr ) = 0;
+	virtual bool TracedAccess( void* address, ULONG Eip ) = 0;
+	virtual bool SetTraced( void* address, bool traced ) = 0;
+	virtual bool SetTracer( BYTE* address, BLOCK_TRACER& tracer) = 0;
 };
 
-unsigned int allocate_core_memory(unsigned int size);
-int free_core_memory( unsigned int offset, unsigned int size );
-struct ADDRESS_SPACE *create_address_space( BYTE *high );
+unsigned int AllocateCoreMemory(unsigned int size);
+int FreeCoreMemory( unsigned int offset, unsigned int size );
+struct ADDRESS_SPACE *CreateAddressSpace( BYTE *high );
 
-typedef LIST_ANCHOR<MBLOCK,0> MBLOCK_list_t;
-typedef LIST_ITER<MBLOCK,0> MBLOCK_iter_t;
-typedef LIST_ELEMENT<MBLOCK> MBLOCK_element_t;
+typedef LIST_ANCHOR<MBLOCK,0> MBLOCK_LIST;
+typedef LIST_ITER<MBLOCK,0> MBLOCK_ITER;
+typedef LIST_ELEMENT<MBLOCK> MBLOCK_ELEMENT;
 
 class MBLOCK
 {
 public:
-	MBLOCK_element_t entry[1];
+	MBLOCK_ELEMENT entry[1];
 
 protected:
 	// windows-ish stuff
@@ -101,11 +101,11 @@ protected:
 	DWORD  Type;
 
 	// linux-ish stuff
-	BYTE *kernel_address;
+	BYTE *KernelAddress;
 
 	// access tracing
-	BLOCK_TRACER *tracer;
-	OBJECT *section;
+	BLOCK_TRACER *Tracer;
+	OBJECT *Section;
 
 public:
 	MBLOCK( BYTE *address, size_t size );
@@ -144,7 +144,7 @@ public:
 	}
 	BYTE *GetKernelAddress()
 	{
-		return kernel_address;
+		return KernelAddress;
 	};
 	BYTE *GetBaseAddress()
 	{
@@ -160,7 +160,7 @@ public:
 	};
 	OBJECT* GetSection()
 	{
-		return section;
+		return Section;
 	};
 	static ULONG MmapFlagFromPageProt( ULONG prot );
 	void RemoteRemap( ADDRESS_SPACE *vm, bool except );
@@ -182,60 +182,60 @@ class ADDRESS_SPACE_IMPL : public ADDRESS_SPACE
 private:
 	BYTE *const lowest_address;
 	BYTE *highest_address;
-	MBLOCK_list_t blocks;
+	MBLOCK_LIST blocks;
 	int num_pages;
 	MBLOCK **xlate;
 
 protected:
-	MBLOCK *&xlate_entry( BYTE *address )
+	MBLOCK *&XlateEntry( BYTE *address )
 	{
 		return xlate[ ((unsigned int)address)>>12 ];
 	}
 	ADDRESS_SPACE_IMPL();
-	bool init( BYTE *high );
-	void destroy();
-	MBLOCK *get_MBLOCK( BYTE *address );
-	NTSTATUS find_free_area( int zero_bits, size_t length, int top_down, BYTE *&address );
-	NTSTATUS check_params( BYTE *start, int zero_bits, size_t length, int state, int prot );
-	NTSTATUS set_block_state( MBLOCK *mb, int state, int prot );
-	MBLOCK *split_area( MBLOCK *mb, BYTE *address, size_t length );
-	void free_shared( MBLOCK *mb );
-	NTSTATUS get_mem_region( BYTE *start, size_t length, int state );
-	void insert_block( MBLOCK *x );
-	void remove_block( MBLOCK *x );
-	ULONG check_area( BYTE *address, size_t length );
-	MBLOCK* alloc_guard_block(BYTE *address, ULONG size);
+	bool Init( BYTE *high );
+	void Destroy();
+	MBLOCK *GetMBLOCK( BYTE *address );
+	NTSTATUS FindFreeArea( int zero_bits, size_t length, int top_down, BYTE *&address );
+	NTSTATUS CheckParams( BYTE *start, int zero_bits, size_t length, int state, int prot );
+	NTSTATUS SetBlockState( MBLOCK *mb, int state, int prot );
+	MBLOCK *SplitArea( MBLOCK *mb, BYTE *address, size_t length );
+	void FreeShared( MBLOCK *mb );
+	NTSTATUS GetMemRegion( BYTE *start, size_t length, int state );
+	void InsertBlock( MBLOCK *x );
+	void RemoveBlock( MBLOCK *x );
+	ULONG CheckArea( BYTE *address, size_t length );
+	MBLOCK* AllocGuardBlock(BYTE *address, ULONG size);
 
 public:
 	// a constructor that can fail...
-	friend ADDRESS_SPACE *create_address_space( BYTE *high );
+	friend ADDRESS_SPACE *CreateAddressSpace( BYTE *high );
 
 	~ADDRESS_SPACE_IMPL();
-	void verify();
-	NTSTATUS query( BYTE *start, MEMORY_BASIC_INFORMATION *info );
+	void Verify();
+	NTSTATUS Query( BYTE *start, MEMORY_BASIC_INFORMATION *info );
 
 public:
-	virtual NTSTATUS get_kernel_address( BYTE **address, size_t *len );
-	virtual NTSTATUS copy_from_user( void *dest, const void *src, size_t len );
-	virtual NTSTATUS copy_to_user( void *dest, const void *src, size_t len );
-	virtual NTSTATUS verify_for_write( void *dest, size_t len );
-	virtual NTSTATUS allocate_virtual_memory( BYTE **start, int zero_bits, size_t length, int state, int prot );
-	virtual NTSTATUS map_fd( BYTE **start, int zero_bits, size_t length, int state, int prot, BACKING_STORE *backing );
-	virtual NTSTATUS free_virtual_memory( void *start, size_t length, ULONG state );
-	virtual NTSTATUS unmap_view( void *start );
-	virtual void dump();
-	virtual int mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset ) = 0;
-	virtual int munmap( BYTE *address, size_t length ) = 0;
-	virtual void update_page_translation( MBLOCK *mb );
-	virtual MBLOCK* find_block( BYTE *addr );
-	virtual const char *get_symbol( BYTE *address );
-	virtual void run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, execution_context_t *exec ) = 0;
-	virtual void init_context( CONTEXT& ctx ) = 0;
-	virtual bool traced_access( void* address, ULONG Eip );
-	virtual bool set_traced( void* address, bool traced );
-	virtual bool set_tracer( BYTE* address, BLOCK_TRACER& tracer);
+	virtual NTSTATUS GetKernelAddress( BYTE **address, size_t *len );
+	virtual NTSTATUS CopyFromUser( void *dest, const void *src, size_t len );
+	virtual NTSTATUS CopyToUser( void *dest, const void *src, size_t len );
+	virtual NTSTATUS VerifyForWrite( void *dest, size_t len );
+	virtual NTSTATUS AllocateVirtualMemory( BYTE **start, int zero_bits, size_t length, int state, int prot );
+	virtual NTSTATUS MapFD( BYTE **start, int zero_bits, size_t length, int state, int prot, BACKING_STORE *backing );
+	virtual NTSTATUS FreeVirtualMemory( void *start, size_t length, ULONG state );
+	virtual NTSTATUS UnmapView( void *start );
+	virtual void Dump();
+	virtual int Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset ) = 0;
+	virtual int Munmap( BYTE *address, size_t length ) = 0;
+	virtual void UpdatePageTranslation( MBLOCK *mb );
+	virtual MBLOCK* FindBlock( BYTE *addr );
+	virtual const char *GetSymbol( BYTE *address );
+	virtual void Run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, EXECUTION_CONTEXT *exec ) = 0;
+	virtual void InitContext( CONTEXT& ctx ) = 0;
+	virtual bool TracedAccess( void* address, ULONG Eip );
+	virtual bool SetTraced( void* address, bool traced );
+	virtual bool SetTracer( BYTE* address, BLOCK_TRACER& tracer);
 };
 
-extern struct ADDRESS_SPACE_IMPL *(*pcreate_address_space)();
+extern struct ADDRESS_SPACE_IMPL *(*pCreateAddressSpace)();
 
 #endif // __MEM_H__

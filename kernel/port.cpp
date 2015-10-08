@@ -416,9 +416,9 @@ port_t::~port_t()
 	}
 
 	if (other_section_base)
-		thread->process->vm->unmap_view( other_section_base );
+		thread->process->vm->UnmapView( other_section_base );
 	if (our_section_base)
-		thread->process->vm->unmap_view( our_section_base );
+		thread->process->vm->UnmapView( our_section_base );
 	if (section)
 		release(section);
 	if (other)

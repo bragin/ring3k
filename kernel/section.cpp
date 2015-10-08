@@ -83,7 +83,7 @@ NTSTATUS section_t::mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG
 	trace("anonymous map\n");
 	if ((prot&0xff) > (Protect&0xff))
 		return STATUS_INVALID_PARAMETER;
-	NTSTATUS r = vm->map_fd( &addr, ZeroBits, len, State, prot, this );
+	NTSTATUS r = vm->MapFD( &addr, ZeroBits, len, State, prot, this );
 	return r;
 }
 
@@ -302,7 +302,7 @@ bool pe_section_t::add_relay_stub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG fun
 
 	// copy the stub
 	//PBYTE stub_addr = p + relay_code_size + sizeof stub*i;
-	NTSTATUS r = vm->copy_to_user( stub_addr, &stub, sizeof stub );
+	NTSTATUS r = vm->CopyToUser( stub_addr, &stub, sizeof stub );
 	if (r < STATUS_SUCCESS)
 	{
 		trace("stub copy failed %08lx\n", r);
@@ -311,7 +311,7 @@ bool pe_section_t::add_relay_stub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG fun
 
 	// write the offset of the stub back to the import table
 	ULONG ofs = stub_addr - (PBYTE) nt->OptionalHeader.ImageBase;
-	r = vm->copy_to_user( user_addr, &ofs, sizeof ofs );
+	r = vm->CopyToUser( user_addr, &ofs, sizeof ofs );
 	if (r < STATUS_SUCCESS)
 	{
 		trace("failed to set address %08lx\n", r);
@@ -344,7 +344,7 @@ void pe_section_t::add_relay(ADDRESS_SPACE *vm)
 	BYTE *p = 0;
 	ULONG sz = (exp->NumberOfNames * sizeof (relay_stub) + 0xfff) & ~0xfff;
 	trace("relay stubs at %p, %08lx\n", p, sz);
-	NTSTATUS r = vm->allocate_virtual_memory( &p, 0, sz, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	NTSTATUS r = vm->AllocateVirtualMemory( &p, 0, sz, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	if (r < STATUS_SUCCESS)
 	{
 		Die("anonymous map failed %08lx\n", r);
@@ -358,7 +358,7 @@ void pe_section_t::add_relay(ADDRESS_SPACE *vm)
 		return;
 	}
 
-	r = vm->copy_to_user( p, relay_code, relay_code_size );
+	r = vm->CopyToUser( p, relay_code, relay_code_size );
 	if (r < STATUS_SUCCESS)
 	{
 		trace("relay copy failed %08lx\n", r);
@@ -395,7 +395,7 @@ NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, UL
 
 	p = (BYTE*) nt->OptionalHeader.ImageBase;
 	trace("image at %p\n", p);
-	r = vm->allocate_virtual_memory( &p, ZeroBits, 0x1000, MEM_COMMIT, PAGE_READONLY );
+	r = vm->AllocateVirtualMemory( &p, ZeroBits, 0x1000, MEM_COMMIT, PAGE_READONLY );
 	if (r < STATUS_SUCCESS)
 	{
 		trace("map failed\n");
@@ -404,10 +404,10 @@ NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, UL
 
 	// use of MBLOCK here is a bit of a hack
 	// should convert this function to create a flat file to map
-	mb = vm->find_block( p );
+	mb = vm->FindBlock( p );
 	mb->SetSection( this );
 
-	r = vm->copy_to_user( p, addr, 0x1000 );
+	r = vm->CopyToUser( p, addr, 0x1000 );
 	if (r < STATUS_SUCCESS)
 		trace("copy_to_user failed\n");
 
@@ -436,15 +436,15 @@ NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, UL
 
 		p = (BYTE*) (nt->OptionalHeader.ImageBase + sections[i].VirtualAddress);
 		// FIXME - map sections with correct permissions
-		r = vm->allocate_virtual_memory( &p, 0, sz, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+		r = vm->AllocateVirtualMemory( &p, 0, sz, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 		if (r < STATUS_SUCCESS)
 			Die("anonymous map failed %08x\n", r);
-		mb = vm->find_block( p );
+		mb = vm->FindBlock( p );
 		mb->SetSection( this );
 
 		if (sections[i].SizeOfRawData)
 		{
-			r = vm->copy_to_user( p, addr + sections[i].PointerToRawData, sections[i].SizeOfRawData);
+			r = vm->CopyToUser( p, addr + sections[i].PointerToRawData, sections[i].SizeOfRawData);
 			if (r < STATUS_SUCCESS)
 				trace("copy_to_user failed\n");
 		}
@@ -605,13 +605,13 @@ void *get_entry_point( PROCESS *p )
 	PPEB ppeb = (PPEB) p->peb_section->get_kernel_address();
 	dos = (IMAGE_DOS_HEADER*) ppeb->ImageBaseAddress;
 
-	r = p->vm->copy_from_user( &ofs, &dos->e_lfanew, sizeof dos->e_lfanew );
+	r = p->vm->CopyFromUser( &ofs, &dos->e_lfanew, sizeof dos->e_lfanew );
 	if (r < STATUS_SUCCESS)
 		return NULL;
 
 	nt = (IMAGE_NT_HEADERS*) ((BYTE*) dos + ofs);
 
-	r = p->vm->copy_from_user( &entry, &nt->OptionalHeader.AddressOfEntryPoint,
+	r = p->vm->CopyFromUser( &entry, &nt->OptionalHeader.AddressOfEntryPoint,
 							   sizeof nt->OptionalHeader.AddressOfEntryPoint );
 	if (r < STATUS_SUCCESS)
 		return NULL;
@@ -825,7 +825,7 @@ NTSTATUS NTAPI NtUnmapViewOfSection(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = p->vm->unmap_view( BaseAddress );
+	r = p->vm->UnmapView( BaseAddress );
 
 	return r;
 }

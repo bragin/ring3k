@@ -100,8 +100,8 @@ COREPAGES::COREPAGES( BYTE* address, size_t sz, BACKING_STORE* _backing ) :
 int COREPAGES::LocalMap( int prot )
 {
 	int fd = backing->GetFD();
-	kernel_address = (BYTE*) mmap( NULL, RegionSize, prot, MAP_SHARED, fd, core_ofs );
-	if (kernel_address == (BYTE*) -1)
+	KernelAddress = (BYTE*) mmap( NULL, RegionSize, prot, MAP_SHARED, fd, core_ofs );
+	if (KernelAddress == (BYTE*) -1)
 		return -1;
 	return 0;
 }
@@ -110,7 +110,7 @@ int COREPAGES::RemoteMap( ADDRESS_SPACE *vm, ULONG prot )
 {
 	int fd = backing->GetFD();
 	int mmap_flags = MmapFlagFromPageProt( prot );
-	return vm->mmap( BaseAddress, RegionSize, mmap_flags, MAP_SHARED | MAP_FIXED, fd, core_ofs );
+	return vm->Mmap( BaseAddress, RegionSize, mmap_flags, MAP_SHARED | MAP_FIXED, fd, core_ofs );
 }
 
 MBLOCK *COREPAGES::DoSplit( BYTE *address, size_t size )
@@ -228,16 +228,16 @@ MBLOCK::MBLOCK( BYTE *address, size_t size ) :
 	BaseAddress( address ),
 	RegionSize( size ),
 	State( MEM_FREE ),
-	kernel_address( NULL ),
-	tracer(0),
-	section(0)
+	KernelAddress( NULL ),
+	Tracer(0),
+	Section(0)
 {
 }
 
 MBLOCK::~MBLOCK()
 {
-	if (section)
-		release( section );
+	if (Section)
+		release( Section );
 	assert( IsFree() );
 }
 
@@ -273,8 +273,8 @@ MBLOCK *MBLOCK::Split( size_t target_length )
 	ret->State = State;
 	ret->Type = Type;
 	ret->Protect = Protect;
-	if (kernel_address)
-		ret->kernel_address = kernel_address + RegionSize;
+	if (KernelAddress)
+		ret->KernelAddress = KernelAddress + RegionSize;
 
 	assert( !(RegionSize&0xfff) );
 	assert( !(ret->RegionSize&0xfff) );
@@ -286,15 +286,15 @@ MBLOCK *MBLOCK::Split( size_t target_length )
 
 int MBLOCK::LocalUnmap()
 {
-	if (kernel_address)
-		::munmap( kernel_address, RegionSize );
-	kernel_address = 0;
+	if (KernelAddress)
+		::munmap( KernelAddress, RegionSize );
+	KernelAddress = 0;
 	return 0;
 }
 
 int MBLOCK::RemoteUnmap( ADDRESS_SPACE *vm )
 {
-	return vm->munmap( BaseAddress, RegionSize );
+	return vm->Munmap( BaseAddress, RegionSize );
 }
 
 ULONG MBLOCK::MmapFlagFromPageProt( ULONG prot )
@@ -343,7 +343,7 @@ void MBLOCK::Commit( ADDRESS_SPACE *vm )
 			Die("couldn't map user memory into kernel %d\n", errno);
 	}
 
-	RemoteRemap( vm, tracer != 0 );
+	RemoteRemap( vm, Tracer != 0 );
 }
 
 void MBLOCK::RemoteRemap( ADDRESS_SPACE *vm, bool except )
@@ -357,9 +357,9 @@ bool MBLOCK::SetTracer( ADDRESS_SPACE *vm, BLOCK_TRACER *bt )
 {
 	if (!bt->Enabled())
 		return false;
-	assert( (tracer == 0) ^ (bt == 0) );
-	tracer = bt;
-	RemoteRemap( vm, tracer != 0 );
+	assert( (Tracer == 0) ^ (bt == 0) );
+	Tracer = bt;
+	RemoteRemap( vm, Tracer != 0 );
 	return true;
 }
 
@@ -381,7 +381,7 @@ void MBLOCK::Uncommit( ADDRESS_SPACE *vm )
 	RemoteUnmap( vm );
 	LocalUnmap();
 	State = MEM_RESERVE;
-	kernel_address = NULL;
+	KernelAddress = NULL;
 }
 
 void MBLOCK::Unreserve( ADDRESS_SPACE *vm )
@@ -416,15 +416,15 @@ NTSTATUS MBLOCK::Query( BYTE *start, MEMORY_BASIC_INFORMATION *info )
 
 bool MBLOCK::TracedAccess( BYTE *address, ULONG Eip )
 {
-	if (!tracer)
+	if (!Tracer)
 		return false;
-	tracer->OnAccess( this, address, Eip );
+	Tracer->OnAccess( this, address, Eip );
 	return true;
 }
 
 bool MBLOCK::SetTraced( ADDRESS_SPACE *vm, bool traced )
 {
-	if (!tracer)
+	if (!Tracer)
 		return false;
 	RemoteRemap( vm, traced );
 	return true;
@@ -432,10 +432,10 @@ bool MBLOCK::SetTraced( ADDRESS_SPACE *vm, bool traced )
 
 void MBLOCK::SetSection( OBJECT *s )
 {
-	if (section)
-		release( section );
-	section = s;
-	addref( section );
+	if (Section)
+		release( Section );
+	Section = s;
+	addref( Section );
 }
 
 void BLOCK_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG Eip )

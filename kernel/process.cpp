@@ -105,23 +105,23 @@ NTSTATUS PROCESS::create_parameters(
 
 	// process parameters block
 	ppb = NULL;
-	r = vm->allocate_virtual_memory( (BYTE**) &ppb, 0, PAGE_SIZE, MEM_COMMIT, PAGE_READWRITE );
+	r = vm->AllocateVirtualMemory( (BYTE**) &ppb, 0, PAGE_SIZE, MEM_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		Die("address_space_mmap failed\n");
 
 	// allocate the initial environment
 	penv = NULL;
-	r = vm->allocate_virtual_memory( (BYTE**) &penv, 0, PAGE_SIZE, MEM_COMMIT, PAGE_READWRITE );
+	r = vm->AllocateVirtualMemory( (BYTE**) &penv, 0, PAGE_SIZE, MEM_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		Die("address_space_mmap failed\n");
 
 	// write the initial environment
-	vm->copy_to_user( penv, initial_env, sizeof initial_env );
+	vm->CopyToUser( penv, initial_env, sizeof initial_env );
 
 	// write the address of the environment string into the PPB
 	p->Environment = penv;
 
-	vm->copy_to_user( ppb, p, sizeof init_ppb );
+	vm->CopyToUser( ppb, p, sizeof init_ppb );
 
 	// write the address of the process parameters into the PEB
 	*pparams = ppb;
@@ -244,7 +244,7 @@ NTSTATUS get_shared_memory_block( PROCESS *p )
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	p->vm->set_tracer( shm, kshm_trace );
+	p->vm->SetTracer( shm, kshm_trace );
 
 	assert( shm == (BYTE*) 0x7ffe0000 );
 
@@ -443,7 +443,7 @@ NTSTATUS create_process( PROCESS **pprocess, OBJECT *section )
 
 	/* create a new address space */
 	// FIXME: determine address space limits from exe
-	p->vm = create_address_space( (BYTE*) 0x80000000 );
+	p->vm = CreateAddressSpace( (BYTE*) 0x80000000 );
 	if (!p->vm)
 		Die("create_address_space failed\n");
 
@@ -473,7 +473,7 @@ NTSTATUS create_process( PROCESS **pprocess, OBJECT *section )
 	/* reserve the GDI shared section */
 	BYTE *gdi_shared = GDI_SHARED_HANDLE_TABLE_ADDRESS;
 	ULONG size = GDI_SHARED_HANDLE_TABLE_SIZE;
-	r = p->vm->allocate_virtual_memory( &gdi_shared, 0, size, MEM_RESERVE, PAGE_NOACCESS );
+	r = p->vm->AllocateVirtualMemory( &gdi_shared, 0, size, MEM_RESERVE, PAGE_NOACCESS );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -507,7 +507,7 @@ NTSTATUS create_process( PROCESS **pprocess, OBJECT *section )
 
 	*pprocess = p;
 
-	p->vm->set_tracer( peb_addr, peb_trace );
+	p->vm->SetTracer( peb_addr, peb_trace );
 
 	return r;
 }

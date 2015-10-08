@@ -59,9 +59,9 @@ public:
 	skas3_address_space_impl(int _fd);
 	virtual pid_t get_child_pid();
 	virtual ~skas3_address_space_impl();
-	virtual int mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset );
-	virtual int munmap( BYTE *address, size_t length );
-	virtual void run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, execution_context_t *exec );
+	virtual int Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset );
+	virtual int Munmap( BYTE *address, size_t length );
+	virtual void Run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, EXECUTION_CONTEXT *exec );
 	static pid_t create_tracee(void);
 	static void init_fs(void);
 	virtual unsigned short get_userspace_fs();
@@ -175,19 +175,19 @@ skas3_address_space_impl::skas3_address_space_impl(int _fd) :
 	num_address_spaces++;
 }
 
-void skas3_address_space_impl::run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, execution_context_t *exec )
+void skas3_address_space_impl::Run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, EXECUTION_CONTEXT *exec )
 {
 	/* load the process address space into the child process */
 	int r = ptrace_set_address_space( child_pid, fd );
 	if (r < 0)
 		Die("ptrace_set_address_space failed %d (%d)\n", r, errno);
 
-	ptrace_address_space_impl::run( TebBaseAddress, ctx, single_step, timeout, exec );
+	ptrace_address_space_impl::Run( TebBaseAddress, ctx, single_step, timeout, exec );
 }
 
 skas3_address_space_impl::~skas3_address_space_impl()
 {
-	destroy();
+	Destroy();
 	close( fd );
 	assert(num_address_spaces>0);
 	num_address_spaces--;
@@ -215,12 +215,12 @@ ADDRESS_SPACE_IMPL* create_skas3_address_space()
 	return new skas3_address_space_impl( fd );
 }
 
-int skas3_address_space_impl::mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset )
+int skas3_address_space_impl::Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset )
 {
 	return remote_mmap( fd, address, length, prot, flags, file, offset );
 }
 
-int skas3_address_space_impl::munmap( BYTE *address, size_t length )
+int skas3_address_space_impl::Munmap( BYTE *address, size_t length )
 {
 	return remote_munmap( fd, address, length );
 }
@@ -236,7 +236,7 @@ bool InitSkas()
 	close( fd );
 	trace("using skas3\n");
 	ptrace_address_space_impl::set_signals();
-	pcreate_address_space = &create_skas3_address_space;
+	pCreateAddressSpace = &create_skas3_address_space;
 	return true;
 }
 

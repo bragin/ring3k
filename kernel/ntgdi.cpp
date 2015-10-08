@@ -334,7 +334,7 @@ NTSTATUS win32k_process_init(PROCESS *process)
 	BYTE *p = GDI_SHARED_HANDLE_TABLE_ADDRESS;
 
 	// unreserve memory so mapit doesn't get a conflicting address
-	process->vm->free_virtual_memory( p, GDI_SHARED_HANDLE_TABLE_SIZE, MEM_FREE );
+	process->vm->FreeVirtualMemory( p, GDI_SHARED_HANDLE_TABLE_SIZE, MEM_FREE );
 
 	r = gdi_ht_section->mapit( process->vm, p, 0, MEM_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
@@ -349,7 +349,7 @@ NTSTATUS win32k_process_init(PROCESS *process)
 	if (!win32k_manager->init())
 		Die("unable to allocate screen\n");
 
-	process->vm->set_tracer( p, ntgdishm_trace );
+	process->vm->SetTracer( p, ntgdishm_trace );
 
 	return r;
 }
@@ -559,7 +559,7 @@ void GDI_OBJECT::init_gdi_shared_mem()
 			assert( 0 );
 		}
 
-		current->process->vm->set_tracer( dc_shared_mem, gdishm_trace );
+		current->process->vm->SetTracer( dc_shared_mem, gdishm_trace );
 	}
 }
 
