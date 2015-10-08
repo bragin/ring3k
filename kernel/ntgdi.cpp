@@ -96,7 +96,7 @@ public:
 
 bool NTGDISHM_TRACER::Enabled() const
 {
-	return trace_is_enabled( "gdishm" );
+	return TraceIsEnabled( "gdishm" );
 }
 
 #define MAX_GDI_HANDLE 0x4000
@@ -505,7 +505,7 @@ void gdishm_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 
 bool gdishm_tracer::Enabled() const
 {
-	return trace_is_enabled( "gdishm" );
+	return TraceIsEnabled( "gdishm" );
 }
 
 static gdishm_tracer gdishm_trace;

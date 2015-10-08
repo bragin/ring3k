@@ -225,7 +225,7 @@ int skas3_address_space_impl::munmap( BYTE *address, size_t length )
 	return remote_munmap( fd, address, length );
 }
 
-bool init_skas()
+bool InitSkas()
 {
 	int fd = ptrace_alloc_address_space_fd();
 	if (fd < 0)

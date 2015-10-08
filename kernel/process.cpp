@@ -500,9 +500,9 @@ NTSTATUS create_process( PROCESS **pprocess, OBJECT *section )
 	ppeb->OSBuildNumber = 0x01000893;
 	ppeb->OSPlatformId = 2;
 	ppeb->NtGlobalFlag = 0;
-	if (trace_is_enabled("csrdebug"))
+	if (TraceIsEnabled("csrdebug"))
 		ppeb->NtGlobalFlag |= FLG_ENABLE_CSRDEBUG;
-	if (trace_is_enabled("ldrsnaps"))
+	if (TraceIsEnabled("ldrsnaps"))
 		ppeb->NtGlobalFlag |= FLG_SHOW_LDR_SNAPS;
 
 	*pprocess = p;

@@ -62,11 +62,11 @@ bool forced_quit;
 class DEFAULT_SLEEPER : public SLEEPER
 {
 public:
-	virtual bool check_events( bool wait );
+	virtual bool CheckEvents( bool wait );
 	virtual ~DEFAULT_SLEEPER() {}
 };
 
-int SLEEPER::get_int_timeout( LARGE_INTEGER& timeout )
+int SLEEPER::GetIntTimeout( LARGE_INTEGER& timeout )
 {
 	timeout.QuadPart = (timeout.QuadPart+9999)/10000;
 	int t = INT_MAX;
@@ -75,7 +75,7 @@ int SLEEPER::get_int_timeout( LARGE_INTEGER& timeout )
 	return t;
 }
 
-bool DEFAULT_SLEEPER::check_events( bool wait )
+bool DEFAULT_SLEEPER::CheckEvents( bool wait )
 {
 	LARGE_INTEGER timeout;
 
@@ -90,7 +90,7 @@ bool DEFAULT_SLEEPER::check_events( bool wait )
 	if (!wait)
 		return false;
 
-	int t = get_int_timeout( timeout );
+	int t = GetIntTimeout( timeout );
 	int r = poll( 0, 0, t );
 	if (r >= 0)
 		return false;
@@ -99,16 +99,16 @@ bool DEFAULT_SLEEPER::check_events( bool wait )
 	return false;
 }
 
-DEFAULT_SLEEPER default_sleeper;
-SLEEPER* sleeper = &default_sleeper;
+DEFAULT_SLEEPER DefaultSleeper;
+SLEEPER* Sleeper = &DefaultSleeper;
 
-int schedule(void)
+int Schedule(void)
 {
 	/* while there's still a thread running */
 	while (processes.Head())
 	{
 		// check if any thing interesting has happened
-		sleeper->check_events( false );
+		Sleeper->CheckEvents( false );
 
 		// other fibers are active... schedule run them
 		if (!FIBER::LastFiber())
@@ -118,14 +118,14 @@ int schedule(void)
 		}
 
 		// there's still processes but no active threads ... sleep
-		if (sleeper->check_events( true ))
+		if (Sleeper->CheckEvents( true ))
 			break;
 	}
 
 	return 0;
 }
 
-NTSTATUS create_initial_process( THREAD **t, UNICODE_STRING& us )
+NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 {
 	BYTE *pstack;
 	const unsigned int stack_size = 0x100 * PAGE_SIZE;
@@ -188,7 +188,7 @@ NTSTATUS create_initial_process( THREAD **t, UNICODE_STRING& us )
 	return r;
 }
 
-NTSTATUS init_ntdll( void )
+NTSTATUS InitNtDLL( void )
 {
 	WCHAR ntdll[] =
 	{
@@ -218,13 +218,13 @@ NTSTATUS init_ntdll( void )
 	return r;
 }
 
-void free_ntdll( void )
+void FreeNtDLL( void )
 {
 	release( ntdll_section );
 	ntdll_section = NULL;
 }
 
-void do_cleanup( void )
+void DoCleanup( void )
 {
 	int num_threads = 0, num_processes = 0;
 
@@ -248,7 +248,7 @@ void do_cleanup( void )
 		fprintf(stderr, "%d threads %d processes left\n", num_threads, num_processes);
 }
 
-static void backtrace_and_quit()
+static void BacktraceAndQuit()
 {
 	const int max_frames = 20;
 	void *bt[max_frames];
@@ -270,18 +270,18 @@ static void backtrace_and_quit()
 	exit(1);
 }
 
-static void segv_handler(int)
+static void SegvHandler(int)
 {
-	backtrace_and_quit();
+	BacktraceAndQuit();
 }
 
-static void abort_handler(int)
+static void AbortHandler(int)
 {
-	backtrace_and_quit();
+	BacktraceAndQuit();
 }
 
-bool init_skas();
-bool init_tt( const char *loader_path );
+bool InitSkas();
+bool InitTt( const char *loader_path );
 
 struct trace_option
 {
@@ -305,7 +305,7 @@ trace_option trace_option_list[] =
 
 int& option_trace = trace_option_list[0].enabled;
 
-void usage( void )
+void Usage( void )
 {
 	const char usage[] =
 		"Usage: %s [options] [native.exe]\n"
@@ -336,7 +336,7 @@ void usage( void )
 }
 
 
-void version( void )
+void Version( void )
 {
 	const char version[] = "%s\n"
 						   "Copyright (C) 2008-2009 Mike McCormack\n"
@@ -347,7 +347,7 @@ void version( void )
 	exit(0);
 }
 
-bool trace_is_enabled( const char *name )
+bool TraceIsEnabled( const char *name )
 {
 	for (int i=0; trace_option_list[i].name; i++)
 		if (!strcmp(name, trace_option_list[i].name))
@@ -356,7 +356,7 @@ bool trace_is_enabled( const char *name )
 	return false;
 }
 
-void enable_trace( const char *name )
+void EnableTrace( const char *name )
 {
 	for (int i=0; trace_option_list[i].name; i++)
 	{
@@ -368,14 +368,14 @@ void enable_trace( const char *name )
 	}
 
 	fprintf(stderr, "unknown trace: %s\n\n", name);
-	usage();
+	Usage();
 }
 
-void parse_trace_options( const char *options )
+void ParseTraceOptions( const char *options )
 {
 	if (!options)
 	{
-		enable_trace( "syscall" );
+		EnableTrace( "syscall" );
 		return;
 	}
 
@@ -393,14 +393,14 @@ void parse_trace_options( const char *options )
 		len = min( len, sizeof str );
 		memcpy( str, p, len );
 		str[len] = 0;
-		enable_trace( str );
+		EnableTrace( str );
 		p += len;
 		if ( *p == ',')
 			p++;
 	}
 }
 
-void parse_options(int argc, char **argv)
+void ParseOptions(int argc, char **argv)
 {
 	while (1)
 	{
@@ -428,18 +428,18 @@ void parse_options(int argc, char **argv)
 			if (!set_graphics_driver( optarg ))
 			{
 				fprintf(stderr, "unknown graphics driver %s\n", optarg);
-				usage();
+				Usage();
 			}
 			break;
 		case '?':
 		case 'h':
-			usage();
+			Usage();
 			break;
 		case 't':
-			parse_trace_options( optarg );
+			ParseTraceOptions( optarg );
 			break;
 		case 'v':
-			version();
+			Version();
 		}
 	}
 }
@@ -450,7 +450,7 @@ int main(int argc, char **argv)
 	THREAD *initial_thread = NULL;
 	const char *exename;
 
-	parse_options( argc, argv );
+	ParseOptions( argc, argv );
 
 	if (optind == argc)
 	{
@@ -463,18 +463,18 @@ int main(int argc, char **argv)
 	}
 
 	// the skas3 patch is deprecated...
-	if (0) init_skas();
+	if (0) InitSkas();
 
 	// pass our path so thread tracing can find the client stub
-	init_tt( argv[0] );
+	InitTt( argv[0] );
 	if (!pcreate_address_space)
 		Die("no way to manage address spaces found\n");
 
-	if (!trace_is_enabled("core"))
+	if (!TraceIsEnabled("core"))
 	{
 		// enable backtraces
-		signal(SIGSEGV, segv_handler);
-		signal(SIGABRT, abort_handler);
+		signal(SIGSEGV, SegvHandler);
+		signal(SIGABRT, AbortHandler);
 	}
 
 	// quick sanity test
@@ -506,17 +506,17 @@ int main(int argc, char **argv)
 	create_directory_object( (PWSTR) L"\\KernelObjects" );
 	CreateSyncEvent( (PWSTR) L"\\KernelObjects\\CritSecOutOfMemoryEvent" );
 	InitDrives();
-	init_ntdll();
+	InitNtDLL();
 	CreateKThread();
 
 	us.copy( exename );
 
-	int r = create_initial_process( &initial_thread, us );
+	int r = CreateInitialProcess( &initial_thread, us );
 	if (r < STATUS_SUCCESS)
 		Die("create_initial_process() failed (%08x)\n", r);
 
 	// run the main loop
-	schedule();
+	Schedule();
 
 	ntgdi_fini();
 	r = initial_thread->process->ExitStatus;
@@ -524,12 +524,12 @@ int main(int argc, char **argv)
 	release( initial_thread );
 
 	ShutdownKThread();
-	do_cleanup();
+	DoCleanup();
 
 	free_root();
 	FIBER::FibersFinish();
 	free_registry();
-	free_ntdll();
+	FreeNtDLL();
 
 	return r;
 }

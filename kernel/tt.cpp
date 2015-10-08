@@ -208,7 +208,7 @@ void check_proc()
 	close( fd );
 }
 
-bool init_tt( const char *kernel_path )
+bool InitTt( const char *kernel_path )
 {
 	get_stub_path( kernel_path );
 	check_proc();

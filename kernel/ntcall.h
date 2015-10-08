@@ -85,7 +85,7 @@ void free_registry( void );
 
 // from main.cpp
 extern int& option_trace;
-bool trace_is_enabled( const char *name );
+bool TraceIsEnabled( const char *name );
 
 extern ULONG KiIntSystemCall;
 
@@ -93,12 +93,12 @@ class SLEEPER
 {
 public:
 	virtual ~SLEEPER() {};
-	virtual bool check_events( bool wait ) = 0;
+	virtual bool CheckEvents( bool wait ) = 0;
 protected:
-	int get_int_timeout( LARGE_INTEGER& timeout );
+	int GetIntTimeout( LARGE_INTEGER& timeout );
 };
 
-extern SLEEPER* sleeper;
+extern SLEEPER* Sleeper;
 
 // from section.cpp
 const char *get_section_symbol( OBJECT *section, ULONG address );

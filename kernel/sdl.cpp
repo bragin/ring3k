@@ -77,7 +77,7 @@ class sdl_sleeper_t : public SLEEPER
 	WIN32K_MANAGER *manager;
 public:
 	sdl_sleeper_t( WIN32K_MANAGER* mgr );
-	virtual bool check_events( bool wait );
+	virtual bool CheckEvents( bool wait );
 	static Uint32 timeout_callback( Uint32 interval, void *arg );
 	bool handle_sdl_event( SDL_Event& event );
 	WORD sdl_keysum_to_vkey( SDLKey sym );
@@ -273,7 +273,7 @@ bool sdl_sleeper_t::handle_sdl_event( SDL_Event& event )
 
 // wait for timers or input
 // return true if we're quitting
-bool sdl_sleeper_t::check_events( bool wait )
+bool sdl_sleeper_t::CheckEvents( bool wait )
 {
 	LARGE_INTEGER timeout;
 	SDL_Event event;
@@ -300,7 +300,7 @@ bool sdl_sleeper_t::check_events( bool wait )
 	Uint32 interval = 0;
 	if (timers_left)
 	{
-		interval = get_int_timeout( timeout );
+		interval = GetIntTimeout( timeout );
 		id = SDL_AddTimer( interval, sdl_sleeper_t::timeout_callback, 0 );
 	}
 
@@ -357,7 +357,7 @@ BOOL win32k_sdl_t::init()
 	brush_t light_blue(0, RGB(0x3b, 0x72, 0xa9), 0);
 	sdl_bitmap->Rectangle( 0, 0, screen->w, screen->h, &light_blue );
 
-	::sleeper = &sdl_sleeper;
+	::Sleeper = &sdl_sleeper;
 
 	return TRUE;
 }

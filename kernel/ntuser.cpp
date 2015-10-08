@@ -281,7 +281,7 @@ public:
 
 bool NTUSERSHM_TRACER::Enabled() const
 {
-	return trace_is_enabled( "usershm" );
+	return TraceIsEnabled( "usershm" );
 }
 
 bool message_map_on_access( BYTE *address, ULONG eip )
@@ -359,7 +359,7 @@ public:
 
 bool NTUSERHANDLE_TRACER::Enabled() const
 {
-	return trace_is_enabled( "usershm" );
+	return TraceIsEnabled( "usershm" );
 }
 
 void NTUSERHANDLE_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )

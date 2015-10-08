@@ -1372,7 +1372,7 @@ public:
 
 bool teb_tracer::Enabled() const
 {
-	return trace_is_enabled( "tebshm" );
+	return TraceIsEnabled( "tebshm" );
 }
 
 void teb_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
