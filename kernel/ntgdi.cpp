@@ -309,7 +309,7 @@ NTSTATUS win32k_process_init(PROCESS *process)
 	}
 
 	if (!win32k_manager)
-		die("failed to allocate graphics driver\n");
+		Die("failed to allocate graphics driver\n");
 
 	process->win32k_info = win32k_manager->alloc_win32k_info();
 
@@ -347,7 +347,7 @@ NTSTATUS win32k_process_init(PROCESS *process)
 	ppeb->GdiSharedHandleTable = (void*) p;
 
 	if (!win32k_manager->init())
-		die("unable to allocate screen\n");
+		Die("unable to allocate screen\n");
 
 	process->vm->set_tracer( p, ntgdishm_trace );
 

@@ -273,7 +273,7 @@ void THREAD_IMPL::set_state( THREAD_STATE state )
 			runlist_remove();
 		break;
 	default:
-		die("switch to unknown thread state\n");
+		Die("switch to unknown thread state\n");
 	}
 
 	// ready to complete some I/O?
@@ -345,7 +345,7 @@ NTSTATUS THREAD_IMPL::kernel_debugger_call( ULONG func, void *arg1, void *arg2 )
 		r = 0;
 		break;
 		default:
-			dump_regs( &ctx );
+			DumpRegs( &ctx );
 			trace("unhandled function %ld\n", func );
 			r = STATUS_NOT_IMPLEMENTED;
 	}
@@ -428,8 +428,8 @@ void THREAD_IMPL::handle_user_segv( ULONG code )
 	trace("%04lx: exception at %08lx\n", trace_id(), ctx.Eip);
 	if (option_trace)
 	{
-		dump_regs( &ctx );
-		debugger_backtrace(&ctx);
+		DumpRegs( &ctx );
+		DebuggerBacktrace(&ctx);
 	}
 
 	exception_stack_frame info;
@@ -498,7 +498,7 @@ void THREAD_IMPL::start_exception_handler(exception_stack_frame& info)
 	BYTE *pKiExceptionDispatcher = (BYTE*)process->pntdll +
 								   get_proc_address( ntdll_section, "KiUserExceptionDispatcher" );
 	if (!pKiExceptionDispatcher)
-		die("failed to find KiExceptionDispatcher in ntdll\n");
+		Die("failed to find KiExceptionDispatcher in ntdll\n");
 
 	context_changed = 1;
 	ctx.Eip = (ULONG) pKiExceptionDispatcher;
@@ -571,7 +571,7 @@ NTSTATUS THREAD_IMPL::do_user_callback( ULONG index, ULONG &length, PVOID &buffe
 	} frame;
 
 	if (index == 0)
-		die("zero index in win32 callback\n");
+		Die("zero index in win32 callback\n");
 	frame.x[0] = 0;
 	frame.x[1] = index;
 	frame.x[2] = ctx.Esp;
@@ -695,7 +695,7 @@ BOOLEAN THREAD_IMPL::deliver_apc(NTSTATUS thread_return)
 	void *pKiUserApcDispatcher;
 	pKiUserApcDispatcher = (BYTE*)process->pntdll + get_proc_address( ntdll_section, "KiUserApcDispatcher" );
 	if (!pKiUserApcDispatcher)
-		die("failed to find KiUserApcDispatcher in ntdll\n");
+		Die("failed to find KiUserApcDispatcher in ntdll\n");
 
 	ctx.Esp = new_esp;
 	ctx.Eip = (ULONG) pKiUserApcDispatcher;
@@ -769,7 +769,7 @@ void THREAD_IMPL::set_context( CONTEXT& c, bool override_return )
 {
 	copy_registers( ctx, c, c.ContextFlags );
 	context_changed = override_return;
-	dump_regs( &ctx );
+	DumpRegs( &ctx );
 }
 
 NTSTATUS THREAD_IMPL::copy_to_user( void *dest, const void *src, size_t count )
@@ -918,7 +918,7 @@ void THREAD_IMPL::handle_fault()
 		if (traced_access())
 			return;
 		if (option_debug)
-			debugger();
+			Debugger();
 		handle_user_segv( STATUS_ACCESS_VIOLATION );
 	}
 }
@@ -927,7 +927,7 @@ void THREAD_IMPL::handle_breakpoint()
 {
 	if (option_debug)
 	{
-		debugger();
+		Debugger();
 		return;
 	}
 
@@ -1459,11 +1459,11 @@ NTSTATUS THREAD_IMPL::create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspe
 	/* find entry points */
 	pLdrInitializeThunk = (BYTE*)process->pntdll + get_proc_address( ntdll_section, "LdrInitializeThunk" );
 	if (!pLdrInitializeThunk)
-		die("failed to find LdrInitializeThunk in ntdll\n");
+		Die("failed to find LdrInitializeThunk in ntdll\n");
 
 	pKiUserApcDispatcher = (BYTE*)process->pntdll + get_proc_address( ntdll_section, "KiUserApcDispatcher" );
 	if (!pKiUserApcDispatcher)
-		die("failed to find KiUserApcDispatcher in ntdll\n");
+		Die("failed to find KiUserApcDispatcher in ntdll\n");
 
 	trace("LdrInitializeThunk = %p pKiUserApcDispatcher = %p\n",
 		  pLdrInitializeThunk, pKiUserApcDispatcher );

@@ -340,7 +340,7 @@ void MBLOCK::Commit( ADDRESS_SPACE *vm )
 		//trace("committing %p/%p %08lx\n", kernel_address, BaseAddress, RegionSize);
 		if (0 > LocalMap( PROT_READ | PROT_WRITE ) &&
 			0 > LocalMap( PROT_READ ))
-			die("couldn't map user memory into kernel %d\n", errno);
+			Die("couldn't map user memory into kernel %d\n", errno);
 	}
 
 	RemoteRemap( vm, tracer != 0 );
@@ -350,7 +350,7 @@ void MBLOCK::RemoteRemap( ADDRESS_SPACE *vm, bool except )
 {
 	int r = RemoteMap( vm, except ? PAGE_NOACCESS : Protect );
 	if (0 < r )
-		die("RemoteMap failed\n");
+		Die("RemoteMap failed\n");
 }
 
 bool MBLOCK::SetTracer( ADDRESS_SPACE *vm, BLOCK_TRACER *bt )

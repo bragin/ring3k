@@ -25,18 +25,18 @@
 extern "C" {
 #endif
 
-void debugprintf(const char *file, const char *func, int line, const char *fmt, ...) __attribute__((format (printf,4,5)));
-void dump_mem(void *p, unsigned int len);
-void die(const char *fmt, ...) __attribute__((format (printf,1,2))) __attribute__((noreturn));
+void DebugPrintf(const char *file, const char *func, int line, const char *fmt, ...) __attribute__((format (printf,4,5)));
+void DumpMem(void *p, unsigned int len);
+void Die(const char *fmt, ...) __attribute__((format (printf,1,2))) __attribute__((noreturn));
 int dump_instruction(unsigned char *inst);
 void print_wide_string( unsigned short *str, int len );
 
 extern int option_quiet;
 extern int option_debug;
-void dump_regs(CONTEXT *ctx);
+void DumpRegs(CONTEXT *ctx);
 
-void debugger( void );
-void debugger_backtrace(PCONTEXT ctx);
+void Debugger( void );
+void DebuggerBacktrace(PCONTEXT ctx);
 
 #ifdef __cplusplus
 }
@@ -45,6 +45,6 @@ void debugger_backtrace(PCONTEXT ctx);
 #define kalloc( size ) _kalloc( __FILE__, __LINE__, (size) )
 #define kfree( mem ) _kfree( __FILE__, __LINE__, (mem) )
 
-#define trace(...) debugprintf(__FILE__,__FUNCTION__,__LINE__,__VA_ARGS__)
+#define trace(...) DebugPrintf(__FILE__,__FUNCTION__,__LINE__,__VA_ARGS__)
 
 #endif // _DEBUG_H_

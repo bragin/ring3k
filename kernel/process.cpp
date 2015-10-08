@@ -107,13 +107,13 @@ NTSTATUS PROCESS::create_parameters(
 	ppb = NULL;
 	r = vm->allocate_virtual_memory( (BYTE**) &ppb, 0, PAGE_SIZE, MEM_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
-		die("address_space_mmap failed\n");
+		Die("address_space_mmap failed\n");
 
 	// allocate the initial environment
 	penv = NULL;
 	r = vm->allocate_virtual_memory( (BYTE**) &penv, 0, PAGE_SIZE, MEM_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
-		die("address_space_mmap failed\n");
+		Die("address_space_mmap failed\n");
 
 	// write the initial environment
 	vm->copy_to_user( penv, initial_env, sizeof initial_env );
@@ -147,16 +147,16 @@ NTSTATUS map_locale_data( ADDRESS_SPACE *vm, const char *name, void **addr )
 
 	r = open_file( file, us );
 	if (r < STATUS_SUCCESS)
-		die("locale data %s missing from system directory (%08lx)\n", name, r);
+		Die("locale data %s missing from system directory (%08lx)\n", name, r);
 
 	r = create_section( &section, file, 0, SEC_FILE, PAGE_EXECUTE_READWRITE );
 	release( file );
 	if (r < STATUS_SUCCESS)
-		die("failed to create section for locale data\n");
+		Die("failed to create section for locale data\n");
 
 	r = mapit( vm, section, data );
 	if (r < STATUS_SUCCESS)
-		die("failed to map locale data (%08lx)\n", r);
+		Die("failed to map locale data (%08lx)\n", r);
 
 	*addr = (void*) data;
 	trace("locale data %s at %p\n", name, data);
@@ -445,7 +445,7 @@ NTSTATUS create_process( PROCESS **pprocess, OBJECT *section )
 	// FIXME: determine address space limits from exe
 	p->vm = create_address_space( (BYTE*) 0x80000000 );
 	if (!p->vm)
-		die("create_address_space failed\n");
+		Die("create_address_space failed\n");
 
 	addref( section );
 	p->exe = section;

@@ -204,7 +204,7 @@ void MESSAGE::dump()
 		  (int)req.ClientId.UniqueProcess, (int)req.ClientId.UniqueThread);
 	trace("MessageId   = %ld\n", req.MessageId);
 	trace("SectionSize = %08lx\n", req.SectionSize);
-	dump_mem(&req.Data, req.DataSize);
+	DumpMem(&req.Data, req.DataSize);
 }
 
 port_t *port_from_obj( OBJECT *obj )

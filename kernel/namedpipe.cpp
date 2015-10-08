@@ -231,7 +231,7 @@ void init_pipe_device()
 	OBJECT *obj = 0;
 	r = factory.create_kernel( obj, name );
 	if (r < STATUS_SUCCESS)
-		die("failed to create named pipe\n");
+		Die("failed to create named pipe\n");
 }
 
 NTSTATUS PIPE_DEVICE::read( PVOID buffer, ULONG length, ULONG *read )

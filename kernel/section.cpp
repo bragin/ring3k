@@ -347,14 +347,14 @@ void pe_section_t::add_relay(ADDRESS_SPACE *vm)
 	NTSTATUS r = vm->allocate_virtual_memory( &p, 0, sz, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	if (r < STATUS_SUCCESS)
 	{
-		die("anonymous map failed %08lx\n", r);
+		Die("anonymous map failed %08lx\n", r);
 		return;
 	}
 
 	funcs = (DWORD*) virtual_addr_to_offset( exp->AddressOfFunctions );
 	if (!funcs)
 	{
-		die("virtual_addr_to_offset failed\n");
+		Die("virtual_addr_to_offset failed\n");
 		return;
 	}
 
@@ -428,7 +428,7 @@ NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, UL
 				  sections[i].SizeOfRawData,
 				  sections[i].Misc.VirtualSize);
 		if (sections[i].VirtualAddress == 0)
-			die("virtual address was zero!\n");
+			Die("virtual address was zero!\n");
 
 		sz = (sections[i].Misc.VirtualSize + 0xfff )& ~0xfff;
 		if (!sz)
@@ -438,7 +438,7 @@ NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, UL
 		// FIXME - map sections with correct permissions
 		r = vm->allocate_virtual_memory( &p, 0, sz, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 		if (r < STATUS_SUCCESS)
-			die("anonymous map failed %08x\n", r);
+			Die("anonymous map failed %08x\n", r);
 		mb = vm->find_block( p );
 		mb->SetSection( this );
 

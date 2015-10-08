@@ -208,7 +208,7 @@ int SECURITY_REFERENCE_MONITOR::run()
 	if (r == STATUS_THREAD_IS_TERMINATING)
 		return 0;
 	if (r < STATUS_SUCCESS)
-		die("NtCreatePort(SeRmCommandPort) failed r = %08lx\n", r);
+		Die("NtCreatePort(SeRmCommandPort) failed r = %08lx\n", r);
 
 	BYTE buf[maxlen];
 	LPC_MESSAGE *req = (LPC_MESSAGE*) buf;
@@ -216,20 +216,20 @@ int SECURITY_REFERENCE_MONITOR::run()
 	if (r == STATUS_THREAD_IS_TERMINATING)
 		return 0;
 	if (r < STATUS_SUCCESS)
-		die("NtListenPort(SeRmCommandPort) failed r = %08lx\n", r);
+		Die("NtListenPort(SeRmCommandPort) failed r = %08lx\n", r);
 
 	HANDLE conn_port = 0;
 	r = NtAcceptConnectPort( &conn_port, 0, req, TRUE, NULL, NULL );
 	if (r == STATUS_THREAD_IS_TERMINATING)
 		return 0;
 	if (r < STATUS_SUCCESS)
-		die("NtAcceptConnectPort(SeRmCommandPort) failed r = %08lx\n", r);
+		Die("NtAcceptConnectPort(SeRmCommandPort) failed r = %08lx\n", r);
 
 	r = NtCompleteConnectPort( conn_port );
 	if (r == STATUS_THREAD_IS_TERMINATING)
 		return 0;
 	if (r < STATUS_SUCCESS)
-		die("NtCompleteConnectPort(SeRmCommandPort) failed r = %08lx\n", r);
+		Die("NtCompleteConnectPort(SeRmCommandPort) failed r = %08lx\n", r);
 
 	unicode_string_t lsa;
 	lsa.copy( (PCWSTR) L"\\SeLsaCommandPort" );
@@ -244,7 +244,7 @@ int SECURITY_REFERENCE_MONITOR::run()
 	if (r == STATUS_THREAD_IS_TERMINATING)
 		return 0;
 	if (r < STATUS_SUCCESS)
-		die("NtConnectPort(SeLsaCommandPort) failed r = %08lx\n", r);
+		Die("NtConnectPort(SeLsaCommandPort) failed r = %08lx\n", r);
 
 	while (!terminated)
 	{
@@ -255,7 +255,7 @@ int SECURITY_REFERENCE_MONITOR::run()
 			return 0;
 
 		if (r < STATUS_SUCCESS)
-			die("NtReplyWaitReceivePort(SeRmCommandPort) failed r = %08lx\n", r);
+			Die("NtReplyWaitReceivePort(SeRmCommandPort) failed r = %08lx\n", r);
 
 		trace("got message %ld\n", req->MessageId );
 
@@ -265,7 +265,7 @@ int SECURITY_REFERENCE_MONITOR::run()
 			return 0;
 
 		if (r < STATUS_SUCCESS)
-			die("NtReplyPort(SeRmCommandPort) failed r = %08lx\n", r);
+			Die("NtReplyPort(SeRmCommandPort) failed r = %08lx\n", r);
 	}
 
 	trace("done\n");

@@ -127,7 +127,7 @@ void skas3_address_space_impl::init_fs(void)
 	ldt.entry_number = -1;
 	int r = set_thread_area( &ldt );
 	if (r<0)
-		die("alloc %%fs failed, errno = %d\n", errno);
+		Die("alloc %%fs failed, errno = %d\n", errno);
 	user_fs = (ldt.entry_number << 3) | 3;
 }
 
@@ -156,7 +156,7 @@ pid_t skas3_address_space_impl::create_tracee(void)
 	if (pid == 0)
 	{
 		// using CLONE_STOPPED we should never get here
-		die("CLONE_STOPPED\n");
+		Die("CLONE_STOPPED\n");
 	}
 
 	int r = ::ptrace( PTRACE_ATTACH, pid, 0, 0 );
@@ -180,7 +180,7 @@ void skas3_address_space_impl::run( void *TebBaseAddress, PCONTEXT ctx, int sing
 	/* load the process address space into the child process */
 	int r = ptrace_set_address_space( child_pid, fd );
 	if (r < 0)
-		die("ptrace_set_address_space failed %d (%d)\n", r, errno);
+		Die("ptrace_set_address_space failed %d (%d)\n", r, errno);
 
 	ptrace_address_space_impl::run( TebBaseAddress, ctx, single_step, timeout, exec );
 }

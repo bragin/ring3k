@@ -38,23 +38,23 @@
 #include "types.h"
 #include "extern.h"
 
-char printable( WCHAR x )
+char Printable( WCHAR x )
 {
 	if (x>=0x20 && x<0x7f)
 		return x;
 	return '.';
 }
 
-int sprint_wide_string( char *output, int len, unsigned short *str )
+int SPrintWideString( char *output, int len, unsigned short *str )
 {
 	int n;
 	for (n=0; n<len && str[n]; n++)
-		*output++ = printable( str[n] );
+		*output++ = Printable( str[n] );
 	*output++ = 0;
 	return n;
 }
 
-int sprint_unicode_string( char *output, int len, UNICODE_STRING *us )
+int SPrintUnicodeString( char *output, int len, UNICODE_STRING *us )
 {
 	int n;
 
@@ -62,13 +62,13 @@ int sprint_unicode_string( char *output, int len, UNICODE_STRING *us )
 		return snprintf(output, len, "(null us)");
 
 	for (n=0; n<len && n<us->Length/2; n++)
-		*output++ = printable( us->Buffer[n] );
+		*output++ = Printable( us->Buffer[n] );
 	*output++ = 0;
 
 	return n;
 }
 
-void debugprintf(const char *file, const char *func, int line, const char *fmt, ...)
+void DebugPrintf(const char *file, const char *func, int line, const char *fmt, ...)
 {
 	char buffer[0x100], fstr[16], *p;
 	int sz, n, i, is_longlong;
@@ -126,12 +126,12 @@ void debugprintf(const char *file, const char *func, int line, const char *fmt, 
 		case 'p':
 			if (fmt[1] == 'w' && fmt[2] == 's')
 			{
-				n = sprint_wide_string( p, sz, va_arg(va, unsigned short * ) );
+				n = SPrintWideString( p, sz, va_arg(va, unsigned short * ) );
 				fmt += 2;
 			}
 			else if (fmt[1] == 'u' && fmt[2] == 's')
 			{
-				n = sprint_unicode_string( p, sz, va_arg(va, UNICODE_STRING* ) );
+				n = SPrintUnicodeString( p, sz, va_arg(va, UNICODE_STRING* ) );
 				fmt += 2;
 			}
 			else
@@ -155,7 +155,7 @@ void debugprintf(const char *file, const char *func, int line, const char *fmt, 
 			n = snprintf( p, sz, fstr, va_arg( va, char * ) );
 			break;
 		case 'S':
-			n = sprint_wide_string( p, sz, va_arg(va, unsigned short * ) );
+			n = SPrintWideString( p, sz, va_arg(va, unsigned short * ) );
 			break;
 		case 'c':
 			n = snprintf( p, sz, fstr, va_arg( va, int ) );
@@ -178,7 +178,7 @@ void debugprintf(const char *file, const char *func, int line, const char *fmt, 
 	fprintf( stderr, "%s %s", func, buffer );
 }
 
-void dump_mem(void *p, unsigned int len)
+void DumpMem(void *p, unsigned int len)
 {
 	unsigned char *x = (unsigned char*) p;
 	unsigned int i;
@@ -192,7 +192,7 @@ void dump_mem(void *p, unsigned int len)
 			memset( line, ' ', sizeof line );
 			line[0x10] = 0;
 		}
-		line[i%0x10] = printable(x[i]);
+		line[i%0x10] = Printable(x[i]);
 		fprintf(stderr,"%02x ", x[i] );
 		if ((i+1)%0x10 == 0 || (i+1) == len)
 			fprintf(stderr, "%*s\n", ((15 - i)%16)*3 + 20, line);
@@ -201,7 +201,7 @@ void dump_mem(void *p, unsigned int len)
 
 //extern pid_t child_pid;
 
-void die(const char *fmt, ...)
+void Die(const char *fmt, ...)
 {
 	//char maps[0x30];
 	va_list va;
@@ -214,7 +214,7 @@ void die(const char *fmt, ...)
 	exit(1);
 }
 
-void do_dump_regs(CONTEXT *ctx)
+void DoDumpRegs(CONTEXT *ctx)
 {
 	fprintf(stderr, "eax %08lx ebx %08lx ecx %08lx edx %08lx\n"
 			"esi %08lx edi %08lx ebp %08lx efl %08lx\n"
@@ -226,13 +226,13 @@ void do_dump_regs(CONTEXT *ctx)
 			ctx->SegDs, ctx->SegEs, ctx->SegFs, ctx->SegGs);
 }
 
-void dump_regs(CONTEXT *ctx)
+void DumpRegs(CONTEXT *ctx)
 {
 	if (option_trace)
-		do_dump_regs( ctx );
+		DoDumpRegs( ctx );
 }
 
-BYTE* dump_user_mem( BYTE *address )
+BYTE* DumpUserMem( BYTE *address )
 {
 	BYTE mem[0x80];
 	unsigned int len = sizeof mem;
@@ -255,7 +255,7 @@ BYTE* dump_user_mem( BYTE *address )
 			memset( line, ' ', sizeof line );
 			line[0x10] = 0;
 		}
-		line[i%0x10] = printable(x[i]);
+		line[i%0x10] = Printable(x[i]);
 		fprintf(stderr,"%02x ", x[i] );
 		if ((i+1)%0x10 == 0 || (i+1) == len)
 			fprintf(stderr, "%*s\n", ((15 - i)%16)*3 + 20, line);
@@ -263,7 +263,7 @@ BYTE* dump_user_mem( BYTE *address )
 	return address + sizeof mem;
 }
 
-void debugger_backtrace(PCONTEXT ctx)
+void DebuggerBacktrace(PCONTEXT ctx)
 {
 	ULONG frame, stack, x[2], i;
 	NTSTATUS r;
@@ -309,7 +309,7 @@ typedef struct _ud_info
 	BYTE *src;
 } ud_info;
 
-int ud_input_hook(struct ud* ud_obj)
+int UDInputHook(struct ud* ud_obj)
 {
 	ud_info *info = (ud_info*) ud_obj;
 	BYTE b = 0;
@@ -320,14 +320,14 @@ int ud_input_hook(struct ud* ud_obj)
 	return b;
 }
 
-BYTE *unassemble( BYTE *address )
+BYTE *Unassemble( BYTE *address )
 {
 	ud_info info;
 	int i = 10;
 	BYTE *insn_addr = address;
 
 	ud_init(&info.ud_obj);
-	ud_set_input_hook(&info.ud_obj, ud_input_hook);
+	ud_set_input_hook(&info.ud_obj, UDInputHook);
 	ud_set_mode(&info.ud_obj, 32);
 	ud_set_syntax(&info.ud_obj, UD_SYN_INTEL);
 	ud_set_pc(&info.ud_obj, (ULONG_PTR) address);
@@ -347,7 +347,7 @@ BYTE *unassemble( BYTE *address )
 	return insn_addr;
 }
 
-void chomp( char *buf )
+void Chomp( char *buf )
 {
 	int len = strlen(buf);
 
@@ -355,7 +355,7 @@ void chomp( char *buf )
 		buf[ len - 1 ] = 0;
 }
 
-void debugger_help( void )
+void DebuggerHelp( void )
 {
 	const char *help_text =
 		"ring3k debugger\n\n"
@@ -369,7 +369,7 @@ void debugger_help( void )
 	fprintf( stderr, "%s\n", help_text);
 }
 
-void debugger( void )
+void Debugger( void )
 {
 	CONTEXT ctx;
 
@@ -383,10 +383,10 @@ void debugger( void )
 
 	if (!help_displayed)
 	{
-		debugger_help();
+		DebuggerHelp();
 		help_displayed = true;
 	}
-	do_dump_regs( &ctx );
+	DoDumpRegs( &ctx );
 
 	while (errors < 3)
 	{
@@ -397,7 +397,7 @@ void debugger( void )
 			continue;
 		}
 
-		chomp( buf );
+		Chomp( buf );
 
 		switch (buf[0])
 		{
@@ -407,27 +407,27 @@ void debugger( void )
 		case 'd': // dump, like DOS debug :)
 			if (buf[1])
 				d_address = (BYTE*)strtol(buf+1, NULL, 0x10);
-			d_address = dump_user_mem( d_address );
+			d_address = DumpUserMem( d_address );
 			break;
 
 		case 'r': // registers
-			do_dump_regs( &ctx );
+			DoDumpRegs( &ctx );
 			break;
 
 		case 'h': // continue
-			debugger_help();
+			DebuggerHelp();
 			break;
 		case 'c': // continue
 			return;
 
 		case 'b': // backtrace
-			debugger_backtrace( &ctx );
+			DebuggerBacktrace( &ctx );
 			break;
 
 		case 'u': // unassemble
 			if (buf[1])
 				u_address = (BYTE*)strtol(buf+1, NULL, 0x10);
-			u_address = unassemble( u_address );
+			u_address = Unassemble( u_address );
 			break;
 
 		default:

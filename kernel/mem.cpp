@@ -178,7 +178,7 @@ bool ADDRESS_SPACE_IMPL::init(BYTE *high)
 	num_pages = ((unsigned long)high)>>12;
 	xlate = (MBLOCK**) ::mmap_anon( 0, num_pages * sizeof (MBLOCK*), PROT_READ | PROT_WRITE );
 	if (xlate == (MBLOCK**) -1)
-		die("failed to allocate page translation table\n");
+		Die("failed to allocate page translation table\n");
 
 	// make sure there's 0x10000 bytes of reserved memory at 0x00000000
 	if (!alloc_guard_block( NULL, guard_size ))

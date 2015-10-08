@@ -159,7 +159,7 @@ int ptrace_address_space_impl::get_context( PCONTEXT ctx )
 	}
 
 	if (flags & ~CONTEXT86_FULL)
-		die( "invalid context flags\n");
+		Die( "invalid context flags\n");
 #endif
 
 	return 0;
@@ -175,12 +175,12 @@ void ptrace_address_space_impl::wait_for_signal( pid_t pid, int signal )
 		{
 			if (errno == EINTR)
 				continue;
-			die("wait_for_signal: wait4() failed %d\n", errno);
+			Die("wait_for_signal: wait4() failed %d\n", errno);
 		}
 		if (r != pid)
 			continue;
 		if (WIFEXITED(status) )
-			die("Client died\n");
+			Die("Client died\n");
 
 		if (WIFSTOPPED(status) && WEXITSTATUS(status) == signal)
 			return;
@@ -193,8 +193,8 @@ void ptrace_address_space_impl::wait_for_signal( pid_t pid, int signal )
 		{
 			CONTEXT ctx;
 			get_context( &ctx );
-			dump_regs( &ctx );
-			die( "client crashed in stub code :-(\n");
+			DumpRegs( &ctx );
+			Die( "client crashed in stub code :-(\n");
 		}
 
 		if (WIFSTOPPED(status) && WEXITSTATUS(status) == SIGALRM)
@@ -205,7 +205,7 @@ void ptrace_address_space_impl::wait_for_signal( pid_t pid, int signal )
 		// start the child again so we can get the next signal
 		r = ptrace( PTRACE_CONT, pid, 0, 0 );
 		if (r < 0)
-			die("PTRACE_CONT failed %d\n", errno);
+			Die("PTRACE_CONT failed %d\n", errno);
 	}
 }
 
@@ -220,12 +220,12 @@ int ptrace_address_space_impl::ptrace_run( PCONTEXT ctx, int single_step, LARGE_
 	/* set the current thread's context */
 	r = set_context( ctx );
 	if (r<0)
-		die("set_thread_context failed\n");
+		Die("set_thread_context failed\n");
 
 	/* run it */
 	r = ptrace( (__ptrace_request) (single_step ? PTRACE_SYSEMU_SINGLESTEP : PTRACE_SYSEMU), get_child_pid(), 0, 0 );
 	if (r<0)
-		die("PTRACE_CONT failed (%d) (PTRACE_SYSEMU not supported?)\n", errno);
+		Die("PTRACE_CONT failed (%d) (PTRACE_SYSEMU not supported?)\n", errno);
 
 	/* wait until it needs our attention */
 	while (1)
@@ -234,7 +234,7 @@ int ptrace_address_space_impl::ptrace_run( PCONTEXT ctx, int single_step, LARGE_
 		if (r == -1 && errno == EINTR)
 			continue;
 		if (r < 0)
-			die("wait4 failed (%d)\n", errno);
+			Die("wait4 failed (%d)\n", errno);
 		if (r != get_child_pid())
 			continue;
 		break;
@@ -242,7 +242,7 @@ int ptrace_address_space_impl::ptrace_run( PCONTEXT ctx, int single_step, LARGE_
 
 	r = get_context( ctx );
 	if (r < 0)
-		die("failed to get registers\n");
+		Die("failed to get registers\n");
 
 	// cancel itimer (SIGALRM)
 	cancel_timer();
@@ -261,14 +261,14 @@ void ptrace_address_space_impl::alarm_timeout(LARGE_INTEGER &timeout)
 	val.it_interval.tv_usec = 0;
 	int r = setitimer(ITIMER_REAL, &val, NULL);
 	if (r < 0)
-		die("couldn't set itimer\n");
+		Die("couldn't set itimer\n");
 }
 
 void ptrace_address_space_impl::cancel_timer()
 {
 	int r = setitimer(ITIMER_REAL, NULL, NULL);
 	if (r < 0)
-		die("couldn't cancel itimer\n");
+		Die("couldn't cancel itimer\n");
 }
 
 ptrace_address_space_impl* ptrace_address_space_impl::sig_target;
@@ -302,14 +302,14 @@ void ptrace_address_space_impl::set_signals()
 	sigemptyset(&sa.sa_mask);
 
 	if (0 > sigaction(SIGALRM, &sa, NULL))
-		die("unable to set action for SIGALRM\n");
+		Die("unable to set action for SIGALRM\n");
 
 	// turn the signal on
 	sigset_t sigset;
 	sigemptyset(&sigset);
 	sigaddset(&sigset, SIGALRM);
 	if (0 > sigprocmask(SIG_UNBLOCK, &sigset, NULL))
-		die("unable to unblock SIGALRM\n");
+		Die("unable to unblock SIGALRM\n");
 }
 
 void ptrace_address_space_impl::run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, execution_context_t *exec )
@@ -326,7 +326,7 @@ void ptrace_address_space_impl::run( void *TebBaseAddress, PCONTEXT ctx, int sin
 			break;
 
 		if (!WIFSTOPPED(status))
-			die("unknown wait4 status\n");
+			Die("unknown wait4 status\n");
 
 		int sig = WEXITSTATUS(status);
 
@@ -355,7 +355,7 @@ void ptrace_address_space_impl::run( void *TebBaseAddress, PCONTEXT ctx, int sin
 			memset(&siginfo, 0, sizeof siginfo);
 			int r = ptrace_get_signal_info( get_child_pid(), &siginfo );
 			if (r < 0)
-				die("ptrace_get_signal_info failed\n");
+				Die("ptrace_get_signal_info failed\n");
 			if (siginfo.si_code == 0x80)
 			{
 				// assumes int $3 (0xcc, not 0xcd 0x03)
@@ -438,6 +438,6 @@ int ptrace_address_space_impl::set_userspace_fs(void *TebBaseAddress, ULONG fs)
 
 	r = ptrace_set_thread_area( get_child_pid(), &ldt );
 	if (r<0)
-		die("set %%fs failed, fs = %ld errno = %d child = %d\n", fs, errno, get_child_pid());
+		Die("set %%fs failed, fs = %ld errno = %d child = %d\n", fs, errno, get_child_pid());
 	return r;
 }

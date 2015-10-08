@@ -95,7 +95,7 @@ bool DEFAULT_SLEEPER::check_events( bool wait )
 	if (r >= 0)
 		return false;
 	if (errno != EINTR)
-		die("poll failed %d\n", errno);
+		Die("poll failed %d\n", errno);
 	return false;
 }
 
@@ -203,11 +203,11 @@ NTSTATUS init_ntdll( void )
 
 	r = open_file( file, us );
 	if (r < STATUS_SUCCESS)
-		die("failed to open ntdll\n");
+		Die("failed to open ntdll\n");
 
 	r = create_section( &ntdll_section, file, 0, SEC_IMAGE, PAGE_EXECUTE_READWRITE );
 	if (r < STATUS_SUCCESS)
-		die("failed to create ntdll section\n");
+		Die("failed to create ntdll section\n");
 
 	KiIntSystemCall = get_proc_address( ntdll_section, "KiIntSystemCall" );
 	trace("KiIntSystemCall = %08lx\n", KiIntSystemCall);
@@ -468,7 +468,7 @@ int main(int argc, char **argv)
 	// pass our path so thread tracing can find the client stub
 	init_tt( argv[0] );
 	if (!pcreate_address_space)
-		die("no way to manage address spaces found\n");
+		Die("no way to manage address spaces found\n");
 
 	if (!trace_is_enabled("core"))
 	{
@@ -513,7 +513,7 @@ int main(int argc, char **argv)
 
 	int r = create_initial_process( &initial_thread, us );
 	if (r < STATUS_SUCCESS)
-		die("create_initial_process() failed (%08x)\n", r);
+		Die("create_initial_process() failed (%08x)\n", r);
 
 	// run the main loop
 	schedule();

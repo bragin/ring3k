@@ -1104,7 +1104,7 @@ void number_to_binary( xmlChar *str, ULONG len, BYTE *buf )
 	{
 		ch = hexchar(str[i]);
 		if (ch >= base)
-			die("invalid registry value %s\n", valstr);
+			Die("invalid registry value %s\n", valstr);
 		val *= base;
 		val += ch;
 		i++;
@@ -1228,7 +1228,7 @@ void init_registry( void )
 
 	doc = xmlReadFile( regfile, NULL, 0 );
 	if (!doc)
-		die("failed to load registry (%s)\n", regfile );
+		Die("failed to load registry (%s)\n", regfile );
 
 	root = xmlDocGetRootElement( doc );
 	load_reg_key( root_key, root );

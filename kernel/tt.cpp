@@ -81,27 +81,27 @@ tt_address_space_impl::tt_address_space_impl()
 
 	pid = fork();
 	if (pid == -1)
-		die("fork() failed %d\n", errno);
+		Die("fork() failed %d\n", errno);
 
 	if (pid == 0)
 	{
 		::ptrace( PTRACE_TRACEME, 0, 0, 0 );
 		r = ::execl( stub_path, stub_name, NULL );
 		// the next line should not be reached
-		die("exec failed (%d) - %s missing?\n", r, stub_path);
+		Die("exec failed (%d) - %s missing?\n", r, stub_path);
 	}
 
 	// trace through exec after traceme
 	wait_for_signal( pid, SIGTRAP );
 	r = ::ptrace( PTRACE_CONT, pid, 0, 0 );
 	if (r < 0)
-		die("PTRACE_CONT failed (%d)\n", errno);
+		Die("PTRACE_CONT failed (%d)\n", errno);
 
 	// client should hit a breakpoint
 	wait_for_signal( pid, SIGTRAP );
 	r = ptrace_get_regs( pid, stub_regs );
 	if (r < 0)
-		die("constructor: ptrace_get_regs failed (%d)\n", errno);
+		Die("constructor: ptrace_get_regs failed (%d)\n", errno);
 
 	child_pid = pid;
 }
@@ -134,15 +134,15 @@ int tt_address_space_impl::userside_req( int type )
 
 	r = ptrace_set_regs( child_pid, stub_regs );
 	if (r < 0)
-		die("ptrace_set_regs failed\n");
+		Die("ptrace_set_regs failed\n");
 	r = ::ptrace( PTRACE_CONT, child_pid, 0, 0 );
 	if (r < 0)
-		die("ptrace( PTRACE_CONT ) failed\n");
+		Die("ptrace( PTRACE_CONT ) failed\n");
 
 	wait_for_signal( child_pid, SIGTRAP );
 	r = ptrace_get_regs( child_pid, stub_regs );
 	if (r < 0)
-		die("ptrace_get_regs failed (%d)\n", errno);
+		Die("ptrace_get_regs failed (%d)\n", errno);
 
 	return stub_regs[EAX];
 }
@@ -195,7 +195,7 @@ void get_stub_path( const char *kernel_path )
 	memcpy( stub_path, kernel_path, len );
 	stub_path[len] = 0;
 	if ((len + sizeof stub_name) > sizeof stub_path)
-		die("path too long\n");
+		Die("path too long\n");
 	strcat( stub_path, stub_name );
 }
 
@@ -204,7 +204,7 @@ void check_proc()
 {
 	int fd = open("/proc/self/fd/0", O_RDONLY);
 	if (fd < 0)
-		die("/proc not mounted\n");
+		Die("/proc not mounted\n");
 	close( fd );
 }
 

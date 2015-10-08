@@ -794,7 +794,7 @@ void init_drives()
 {
 	int fd = open( "drive", O_RDONLY );
 	if (fd < 0)
-		die("drive does not exist");
+		Die("drive does not exist");
 	DIRECTORY_FACTORY factory( fd );
 	unicode_string_t dirname;
 	dirname.copy( L"\\Device\\HarddiskVolume1" );
@@ -804,7 +804,7 @@ void init_drives()
 	if (r < STATUS_SUCCESS)
 	{
 		trace( "failed to create %pus\n", &dirname);
-		die("fatal\n");
+		Die("fatal\n");
 	}
 
 	unicode_string_t c_link;
@@ -813,7 +813,7 @@ void init_drives()
 	if (r < STATUS_SUCCESS)
 	{
 		trace( "failed to create symlink %pus (%08lx)\n", &c_link, r);
-		die("fatal\n");
+		Die("fatal\n");
 	}
 }
 

@@ -172,7 +172,7 @@ NTSTATUS do_nt_syscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
 	}
 
 	if (sizeof args/sizeof args[0] < ntcall->numargs)
-		die("not enough room for %d args\n", ntcall->numargs);
+		Die("not enough room for %d args\n", ntcall->numargs);
 
 	/* call it */
 	r = copy_from_user( args, uargs, ntcall->numargs*sizeof (args[0]) );
