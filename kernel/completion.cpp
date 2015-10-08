@@ -42,7 +42,7 @@ typedef LIST_ELEMENT<COMPLETION_PACKET> COMPLETION_LIST_ELEMENT;
 class COMPLETION_PACKET
 {
 public:
-	COMPLETION_LIST_ELEMENT entry[1];
+	COMPLETION_LIST_ELEMENT Entry[1];
 	ULONG key;
 	ULONG value;
 	NTSTATUS status;
@@ -67,7 +67,7 @@ class COMPLETION_WAITER
 protected:
 	friend class LIST_ANCHOR<COMPLETION_WAITER,0>;
 	friend class LIST_ELEMENT<COMPLETION_WAITER>;
-	COMPLETION_WAITER_LIST_ELEMENT entry[1];
+	COMPLETION_WAITER_LIST_ELEMENT Entry[1];
 	THREAD *thread;
 	COMPLETION_PACKET *packet;
 public:
@@ -79,7 +79,7 @@ public:
 	void SetPacket( COMPLETION_PACKET* _packet );
 	bool IsLinked()
 	{
-		return entry[0].IsLinked();
+		return Entry[0].IsLinked();
 	}
 };
 
@@ -124,7 +124,7 @@ class COMPLETION_PORT_IMPL : public COMPLETION_PORT
 {
 	friend class LIST_ANCHOR<COMPLETION_PORT_IMPL,0>;
 	friend class LIST_ELEMENT<COMPLETION_PORT_IMPL>;
-	COMPLETION_PORT_LIST_ELEMENT entry[1];
+	COMPLETION_PORT_LIST_ELEMENT Entry[1];
 	static COMPLETION_PORT_LIST waiting_thread_ports;
 	friend void CheckCompletions( void );
 private:
@@ -143,7 +143,7 @@ public:
 	void PortWaitIdle();
 	bool IsLinked()
 	{
-		return entry[0].IsLinked();
+		return Entry[0].IsLinked();
 	}
 	void StartWaiter( COMPLETION_WAITER *waiter );
 };

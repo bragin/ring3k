@@ -55,7 +55,7 @@ class OBJECT
 	friend class LIST_ANCHOR<OBJECT, 0>;
 	friend class LIST_ELEMENT<OBJECT>;
 	friend class LIST_ITER<OBJECT, 0>;
-	object_entry_t entry[1];
+	object_entry_t Entry[1];
 	ULONG refcount;
 public:
 	ULONG attr;
@@ -100,7 +100,7 @@ typedef LIST_ITER<watch_t, 0> watch_iter_t;
 class watch_t
 {
 public:
-	watch_entry_t entry[1];
+	watch_entry_t Entry[1];
 	virtual void notify() = 0;
 	virtual ~watch_t();
 };

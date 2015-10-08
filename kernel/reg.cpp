@@ -52,7 +52,7 @@ typedef LIST_ELEMENT<regkey_t> regkey_element, regkey_element_t;
 
 struct regval_t
 {
-	regval_element entry[1];
+	regval_element Entry[1];
 	unicode_string_t name;
 	ULONG type;
 	ULONG size;
@@ -67,7 +67,7 @@ struct regkey_t : public OBJECT
 	regkey_t *parent;
 	unicode_string_t name;
 	unicode_string_t cls;
-	regkey_element entry[1];
+	regkey_element Entry[1];
 	regkey_anchor children;
 	regval_anchor values;
 public:

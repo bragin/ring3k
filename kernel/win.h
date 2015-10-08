@@ -37,7 +37,7 @@ class wndcls_tt : public CLASSINFO
 	// FIXME: all these have to go
 	friend class LIST_ANCHOR<wndcls_tt, 0>;
 	friend class LIST_ITER<wndcls_tt, 0>;
-	wndcls_entry_tt entry[1];
+	wndcls_entry_tt Entry[1];
 	unicode_string_t name;
 	unicode_string_t menu;
 	NTWNDCLASSEX info;

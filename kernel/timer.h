@@ -33,7 +33,7 @@ class timeout_t
 {
 	friend class LIST_ANCHOR<timeout_t,0> ;
 	friend class LIST_ITER<timeout_t,0> ;
-	timeout_entry_t entry[1];
+	timeout_entry_t Entry[1];
 private:
 	static timeout_list_t g_timeouts;
 	LARGE_INTEGER expires;

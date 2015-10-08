@@ -39,7 +39,7 @@ static ULONG tick_count;
 
 bool timeout_t::has_expired()
 {
-	return !entry[0].IsLinked();
+	return !Entry[0].IsLinked();
 }
 
 bool timeout_t::queue_is_valid()
@@ -146,7 +146,7 @@ void timeout_t::add()
 
 void timeout_t::remove()
 {
-	if (entry[0].IsLinked())
+	if (Entry[0].IsLinked())
 		g_timeouts.Unlink(this);
 }
 

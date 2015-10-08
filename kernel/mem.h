@@ -90,7 +90,7 @@ typedef LIST_ELEMENT<MBLOCK> MBLOCK_ELEMENT;
 class MBLOCK
 {
 public:
-	MBLOCK_ELEMENT entry[1];
+	MBLOCK_ELEMENT Entry[1];
 
 protected:
 	// windows-ish stuff
@@ -140,7 +140,7 @@ public:
 	void Dump();
 	int IsLinked()
 	{
-		return entry[0].IsLinked();
+		return Entry[0].IsLinked();
 	}
 	BYTE *GetKernelAddress()
 	{

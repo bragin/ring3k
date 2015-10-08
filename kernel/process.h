@@ -41,7 +41,7 @@ struct PROCESS : public SYNC_OBJECT
 
 	HANDLE_TABLE handle_table;
 
-	process_element_t entry[1];
+	process_element_t Entry[1];
 
 	// exception handling
 	OBJECT *exception_port;

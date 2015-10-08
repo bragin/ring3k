@@ -57,7 +57,7 @@ class luid_and_privileges_t : public LUID_AND_ATTRIBUTES
 	friend class LIST_ANCHOR<luid_and_privileges_t,0>;
 	friend class LIST_ITER<luid_and_privileges_t,0>;
 protected:
-	luid_and_priv_entry_t entry[1];
+	luid_and_priv_entry_t Entry[1];
 public:
 	void dump();
 };
@@ -433,7 +433,7 @@ class ace_t : public user_copy_t
 	friend class LIST_ANCHOR<ace_t,0>;
 	friend class LIST_ITER<ace_t,0>;
 protected:
-	ace_entry_t entry[1];
+	ace_entry_t Entry[1];
 	BYTE type;
 	BYTE flags;
 	ULONG mask;

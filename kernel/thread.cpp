@@ -49,7 +49,7 @@ typedef LIST_ITER<thread_obj_wait_t, 0> thread_obj_wait_iter_t;
 
 struct thread_obj_wait_t : public watch_t
 {
-	thread_obj_wait_element_t entry[1];
+	thread_obj_wait_element_t Entry[1];
 	SYNC_OBJECT *obj;
 	THREAD_IMPL *thread;
 public:
@@ -99,7 +99,7 @@ struct thread_apc_t
 		arg[1] = Arg2;
 		arg[2] = Arg3;
 	}
-	thread_apc_element_t entry[1];
+	thread_apc_element_t Entry[1];
 	PKNORMAL_ROUTINE proc;
 	PVOID arg[3];
 };

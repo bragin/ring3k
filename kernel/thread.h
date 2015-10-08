@@ -70,7 +70,7 @@ class runlist_entry_t
 {
 	friend class LIST_ANCHOR<runlist_entry_t,0>;
 	friend class LIST_ELEMENT<runlist_entry_t>;
-	LIST_ELEMENT<runlist_entry_t> entry[1];
+	LIST_ELEMENT<runlist_entry_t> Entry[1];
 	static LIST_ANCHOR<runlist_entry_t,0> running_threads;
 	static ULONG num_running_threads;
 public:
@@ -87,7 +87,7 @@ class THREAD :
 	friend class LIST_ANCHOR<THREAD,0>;
 	friend class LIST_ELEMENT<THREAD>;
 	friend class LIST_ITER<THREAD,0>;
-	thread_element_t entry[1];
+	thread_element_t Entry[1];
 
 protected:
 	ULONG id;

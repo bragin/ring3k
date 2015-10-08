@@ -230,7 +230,7 @@ typedef LIST_ELEMENT<DIRECTORY_ENTRY> DIRLIST_ELEMENT;
 class DIRECTORY_ENTRY
 {
 public:
-	DIRLIST_ELEMENT entry[1];
+	DIRLIST_ELEMENT Entry[1];
 	unicode_string_t name;
 	struct stat st;
 };
@@ -562,7 +562,7 @@ DIRECTORY_ENTRY* DIRECTORY::GetNext()
 	if (ptr == entries.Tail())
 		return 0;
 
-	ptr = ptr->entry[0].GetNext();
+	ptr = ptr->Entry[0].GetNext();
 
 	return ptr;
 }

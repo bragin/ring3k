@@ -39,7 +39,7 @@ class msg_waiter_tt
 {
 	friend class thread_message_queue_tt;
 	friend class LIST_ANCHOR<msg_waiter_tt,0>;
-	msg_waiter_element_t entry[1];
+	msg_waiter_element_t Entry[1];
 	THREAD *t;
 	MSG& msg;
 public:
@@ -49,7 +49,7 @@ public:
 class msg_tt
 {
 public:
-	msg_element_t entry[1];
+	msg_element_t Entry[1];
 	HWND hwnd;
 	UINT message;
 	WPARAM wparam;
@@ -68,7 +68,7 @@ typedef LIST_ELEMENT<win_timer_tt> win_timer_element_t;
 class win_timer_tt
 {
 public:
-	win_timer_element_t entry[1];
+	win_timer_element_t Entry[1];
 	HWND hwnd;
 	UINT id;
 	void *lparam;

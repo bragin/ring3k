@@ -103,7 +103,7 @@ protected:
 	}
 	PIPE_MESSAGE(ULONG _Length);
 public:
-	PIPE_MESSAGE_ELEMENT entry[1];
+	PIPE_MESSAGE_ELEMENT Entry[1];
 	ULONG Length;
 	static PIPE_MESSAGE* AllocPipeMessage( ULONG _Length );
 	unsigned char *DataPtr();
@@ -126,7 +126,7 @@ public:
 	pipe_state State;
 	PIPE_CLIENT *Client;
 	THREAD *Thread;
-	PIPE_SERVER_ELEMENT entry[1];
+	PIPE_SERVER_ELEMENT Entry[1];
 	PIPE_MESSAGE_LIST ReceivedMessages;
 	PIPE_MESSAGE_LIST SentMessages;
 public:
@@ -162,7 +162,7 @@ class PIPE_CLIENT : public IO_OBJECT
 {
 	friend class PIPE_CONTAINER;
 public:
-	PIPE_CLIENT_ELEMENT entry[1];
+	PIPE_CLIENT_ELEMENT Entry[1];
 	PIPE_SERVER *Server;
 	THREAD *Thread;
 public:

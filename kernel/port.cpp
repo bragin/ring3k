@@ -47,14 +47,14 @@ public:
 protected:
 	friend class LIST_ANCHOR<MESSAGE, 0>;
 	friend class LIST_ITER<MESSAGE, 0>;
-	MESSAGE_ENTRY entry[1];
+	MESSAGE_ENTRY Entry[1];
 public:
 	void *operator new(size_t n, size_t len);
 	void operator delete(void* ptr);
 	explicit MESSAGE();
 	bool IsLinked()
 	{
-		return entry[0].IsLinked();
+		return Entry[0].IsLinked();
 	}
 	~MESSAGE();
 	void dump();
@@ -72,7 +72,7 @@ typedef LIST_ITER<listener_t, 0> listener_iter_t;
 
 struct listener_t
 {
-	listener_entry_t entry[1];
+	listener_entry_t Entry[1];
 	port_t *port;
 	THREAD *thread;
 	BOOLEAN want_connect;
@@ -82,7 +82,7 @@ public:
 	~listener_t();
 	bool IsLinked()
 	{
-		return entry[0].IsLinked();
+		return Entry[0].IsLinked();
 	}
 };
 
