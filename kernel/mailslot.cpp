@@ -54,10 +54,10 @@ class MAILSLOT_FACTORY : public OBJECT_FACTORY
 {
 public:
 	MAILSLOT_FACTORY() {}
-	virtual NTSTATUS alloc_object(OBJECT** obj);
+	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS MAILSLOT_FACTORY::alloc_object(OBJECT** obj)
+NTSTATUS MAILSLOT_FACTORY::AllocObject(OBJECT** obj)
 {
 	*obj = new MAILSLOT;
 	if (!*obj)

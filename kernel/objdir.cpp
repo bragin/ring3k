@@ -79,7 +79,7 @@ void OBJECT_DIR_IMPL::append( OBJECT *obj )
 	set_obj_parent( obj, this );
 }
 
-bool OBJECT_DIR_IMPL::access_allowed( ACCESS_MASK required, ACCESS_MASK handle )
+bool OBJECT_DIR_IMPL::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
 	return check_access( required, handle,
 						 DIRECTORY_QUERY | DIRECTORY_TRAVERSE,
@@ -105,10 +105,10 @@ OBJECT *OBJECT_DIR_IMPL::lookup( UNICODE_STRING& name, bool ignore_case )
 class OBJECT_DIR_FACTORY : public OBJECT_FACTORY
 {
 public:
-	virtual NTSTATUS alloc_object(OBJECT** obj);
+	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS OBJECT_DIR_FACTORY::alloc_object(OBJECT** obj)
+NTSTATUS OBJECT_DIR_FACTORY::AllocObject(OBJECT** obj)
 {
 	*obj = new OBJECT_DIR_IMPL;
 	if (!*obj)

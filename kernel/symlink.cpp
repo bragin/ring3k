@@ -94,7 +94,7 @@ private:
 	const UNICODE_STRING& target;
 public:
 	symlink_factory_t(const UNICODE_STRING& _target);
-	virtual NTSTATUS alloc_object(OBJECT** obj);
+	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
 symlink_factory_t::symlink_factory_t(const UNICODE_STRING& _target) :
@@ -102,7 +102,7 @@ symlink_factory_t::symlink_factory_t(const UNICODE_STRING& _target) :
 {
 }
 
-NTSTATUS symlink_factory_t::alloc_object(OBJECT** obj)
+NTSTATUS symlink_factory_t::AllocObject(OBJECT** obj)
 {
 	trace("allocating object\n");
 	if (target.Length == 0)

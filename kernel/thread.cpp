@@ -56,13 +56,13 @@ public:
 	thread_obj_wait_t( THREAD_IMPL* t, SYNC_OBJECT* o);
 	virtual void notify();
 	virtual ~thread_obj_wait_t();
-	BOOLEAN is_signalled()
+	BOOLEAN IsSignalled()
 	{
-		return obj->is_signalled();
+		return obj->IsSignalled();
 	}
-	BOOLEAN satisfy()
+	BOOLEAN Satisfy()
 	{
-		return obj->satisfy();
+		return obj->Satisfy();
 	}
 };
 
@@ -149,7 +149,7 @@ public:
 	THREAD_IMPL( PROCESS *p );
 	~THREAD_IMPL();
 	NTSTATUS create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended );
-	virtual BOOLEAN is_signalled( void );
+	virtual BOOLEAN IsSignalled( void );
 	void set_state( THREAD_STATE state );
 	bool is_terminated()
 	{
@@ -246,7 +246,7 @@ int THREAD_IMPL::set_initial_regs( void *start, void *stack)
 	return 0;
 }
 
-BOOLEAN THREAD_IMPL::is_signalled( void )
+BOOLEAN THREAD_IMPL::IsSignalled( void )
 {
 	return (ThreadState == StateTerminated);
 }
@@ -833,7 +833,7 @@ NTSTATUS THREAD_IMPL::terminate( NTSTATUS status )
 	}
 
 	// if we just killed the last thread in the process, kill the process too
-	if (process->is_signalled())
+	if (process->IsSignalled())
 	{
 		trace("last thread in process exited %08lx\n", status);
 		process->terminate( status );
@@ -1145,7 +1145,7 @@ NTSTATUS THREAD_IMPL::check_wait_all()
 	{
 		thread_obj_wait_t *wait = i;
 
-		if (!wait->obj->is_signalled())
+		if (!wait->obj->IsSignalled())
 			return STATUS_PENDING;
 		i.next();
 	}
@@ -1154,7 +1154,7 @@ NTSTATUS THREAD_IMPL::check_wait_all()
 	while (i)
 	{
 		thread_obj_wait_t *wait = i;
-		wait->obj->satisfy();
+		wait->obj->Satisfy();
 		i.next();
 	}
 	return STATUS_SUCCESS;
@@ -1170,9 +1170,9 @@ NTSTATUS THREAD_IMPL::check_wait_any()
 		thread_obj_wait_t *wait = i;
 
 		i.next();
-		if (wait->is_signalled())
+		if (wait->IsSignalled())
 		{
-			wait->satisfy();
+			wait->Satisfy();
 			return ret;
 		}
 		ret++;

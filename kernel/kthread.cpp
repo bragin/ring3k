@@ -64,7 +64,7 @@ public:
 	virtual NTSTATUS copy_from_user( void *dest, const void *src, size_t count );
 	virtual NTSTATUS verify_for_write( void *dest, size_t count );
 	virtual int run() = 0;
-	virtual BOOLEAN is_signalled( void );
+	virtual BOOLEAN IsSignalled( void );
 	virtual void* push( ULONG count );
 	virtual void pop( ULONG count );
 	virtual PTEB get_teb();
@@ -80,7 +80,7 @@ KERNEL_THREAD::~KERNEL_THREAD()
 {
 }
 
-BOOLEAN KERNEL_THREAD::is_signalled()
+BOOLEAN KERNEL_THREAD::IsSignalled()
 {
 	return terminated;
 }

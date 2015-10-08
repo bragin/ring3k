@@ -96,7 +96,7 @@ bool thread_message_queue_tt::get_paint_message( HWND Window, MSG& msg )
 	return TRUE;
 }
 
-BOOLEAN thread_message_queue_tt::is_signalled( void )
+BOOLEAN thread_message_queue_tt::IsSignalled( void )
 {
 	return FALSE;
 }

@@ -98,7 +98,7 @@ public:
 	void post_quit_message( ULONG exit_code );
 	bool get_quit_message( MSG &msg );
 	bool get_paint_message( HWND Window, MSG& msg );
-	virtual BOOLEAN is_signalled( void );
+	virtual BOOLEAN IsSignalled( void );
 	virtual void signal_timeout();
 	BOOLEAN get_message( MSG& Message, HWND Window, ULONG MinMessage, ULONG MaxMessage);
 	BOOLEAN get_message_no_wait( MSG& Message, HWND Window, ULONG MinMessage, ULONG MaxMessage);

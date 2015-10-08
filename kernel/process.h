@@ -64,7 +64,7 @@ public:
 public:
 	PROCESS();
 	~PROCESS();
-	virtual BOOLEAN is_signalled( void );
+	virtual BOOLEAN IsSignalled( void );
 	void terminate( NTSTATUS status );
 	bool is_valid()
 	{

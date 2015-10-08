@@ -32,7 +32,7 @@ protected:
 public:
 	OBJECT_DIR();
 	virtual ~OBJECT_DIR();
-	virtual bool access_allowed( ACCESS_MASK access, ACCESS_MASK handle_access ) = 0;
+	virtual bool AccessAllowed( ACCESS_MASK access, ACCESS_MASK handle_access ) = 0;
 	virtual OBJECT *lookup( UNICODE_STRING& name, bool ignore_case ) = 0;
 	virtual void append( OBJECT *child ) = 0;
 };
@@ -43,7 +43,7 @@ class OBJECT_DIR_IMPL : public OBJECT_DIR
 public:
 	OBJECT_DIR_IMPL();
 	virtual ~OBJECT_DIR_IMPL();
-	virtual bool access_allowed( ACCESS_MASK access, ACCESS_MASK handle_access );
+	virtual bool AccessAllowed( ACCESS_MASK access, ACCESS_MASK handle_access );
 	virtual void unlink( OBJECT *child );
 	virtual void append( OBJECT *child );
 public:

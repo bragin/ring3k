@@ -80,7 +80,7 @@ public:
 	void delkey();
 	regkey_t *get_child( ULONG Index );
 	NTSTATUS query(KEY_INFORMATION_CLASS KeyInformationClass, PVOID KeyInformation, ULONG KeyInformationLength, PULONG ReturnLength);
-	virtual bool access_allowed( ACCESS_MASK required, ACCESS_MASK handle );
+	virtual bool AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle );
 };
 
 regkey_t *root_key;
@@ -141,7 +141,7 @@ regkey_t::~regkey_t()
 	}
 }
 
-bool regkey_t::access_allowed( ACCESS_MASK required, ACCESS_MASK handle )
+bool regkey_t::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
 	return check_access( required, handle,
 						 KEY_QUERY_VALUE|KEY_ENUMERATE_SUB_KEYS|KEY_NOTIFY,

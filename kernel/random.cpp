@@ -56,10 +56,10 @@ NTSTATUS random_dev_t::write( PVOID Buffer, ULONG Length, ULONG *written )
 class random_dev_factory_t: public OBJECT_FACTORY
 {
 public:
-	NTSTATUS alloc_object(OBJECT** obj);
+	NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS random_dev_factory_t::alloc_object(OBJECT** obj)
+NTSTATUS random_dev_factory_t::AllocObject(OBJECT** obj)
 {
 	*obj = new random_dev_t;
 	return STATUS_SUCCESS;

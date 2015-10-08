@@ -236,8 +236,8 @@ public:
 	nttimer_t();
 	~nttimer_t();
 	NTSTATUS set(LARGE_INTEGER& DueTime, PKNORMAL_ROUTINE apc, PVOID context, BOOLEAN Resume, ULONG Period, BOOLEAN& prev);
-	virtual BOOLEAN is_signalled( void );
-	virtual BOOLEAN satisfy( void );
+	virtual BOOLEAN IsSignalled( void );
+	virtual BOOLEAN Satisfy( void );
 	virtual void signal_timeout();
 	void cancel( BOOLEAN& prev );
 };
@@ -262,12 +262,12 @@ nttimer_t *nttimer_from_obj( OBJECT *obj )
 	return dynamic_cast<nttimer_t*>( obj );
 }
 
-BOOLEAN nttimer_t::is_signalled( void )
+BOOLEAN nttimer_t::IsSignalled( void )
 {
 	return expired;
 }
 
-BOOLEAN nttimer_t::satisfy( void )
+BOOLEAN nttimer_t::Satisfy( void )
 {
 	// FIXME: user correct time values
 	if (apc_routine)
@@ -329,13 +329,13 @@ void nttimer_t::cancel( BOOLEAN& prev )
 class sync_timer_t : public nttimer_t
 {
 public:
-	virtual BOOLEAN satisfy( void );
+	virtual BOOLEAN Satisfy( void );
 };
 
-BOOLEAN sync_timer_t::satisfy()
+BOOLEAN sync_timer_t::Satisfy()
 {
 	expired = FALSE;
-	return nttimer_t::satisfy();
+	return nttimer_t::Satisfy();
 }
 
 class timer_factory : public OBJECT_FACTORY
@@ -344,10 +344,10 @@ private:
 	TIMER_TYPE Type;
 public:
 	timer_factory(TIMER_TYPE t) : Type(t) {}
-	virtual NTSTATUS alloc_object(OBJECT** obj);
+	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS timer_factory::alloc_object(OBJECT** obj)
+NTSTATUS timer_factory::AllocObject(OBJECT** obj)
 {
 	switch (Type)
 	{
@@ -491,7 +491,7 @@ NTSTATUS NTAPI NtQueryTimer(
 	switch (TimerInformationClass)
 	{
 	case TimerBasicInformation:
-		info.basic.SignalState = timer->is_signalled();
+		info.basic.SignalState = timer->IsSignalled();
 		timer->time_remaining( info.basic.TimeRemaining );
 		break;
 	default:

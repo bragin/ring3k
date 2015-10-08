@@ -60,7 +60,7 @@ public:
 class PIPE_DEVICE_FACTORY : public OBJECT_FACTORY
 {
 public:
-	NTSTATUS alloc_object(OBJECT** obj);
+	NTSTATUS AllocObject(OBJECT** obj);
 };
 
 // contains all clients and servers associated with a specific pipe name
@@ -182,7 +182,7 @@ class PIPE_FACTORY : public OBJECT_FACTORY
 	ULONG MaxInstances;
 public:
 	PIPE_FACTORY( ULONG _MaxInstances );
-	NTSTATUS alloc_object(OBJECT** obj);
+	NTSTATUS AllocObject(OBJECT** obj);
 	NTSTATUS on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
@@ -213,7 +213,7 @@ NTSTATUS PIPE_CONTAINER::open( OBJECT *&out, OPEN_INFO& info )
 	return r;
 }
 
-NTSTATUS PIPE_DEVICE_FACTORY::alloc_object(OBJECT** obj)
+NTSTATUS PIPE_DEVICE_FACTORY::AllocObject(OBJECT** obj)
 {
 	*obj = new PIPE_DEVICE;
 	if (!*obj)
@@ -687,7 +687,7 @@ PIPE_FACTORY::PIPE_FACTORY( ULONG _MaxInstances ) :
 {
 }
 
-NTSTATUS PIPE_FACTORY::alloc_object(OBJECT** obj)
+NTSTATUS PIPE_FACTORY::AllocObject(OBJECT** obj)
 {
 	assert(0);
 	return STATUS_SUCCESS;

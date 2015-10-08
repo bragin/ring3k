@@ -281,7 +281,7 @@ PROCESS *find_process_by_id( HANDLE UniqueProcess )
 	return 0;
 }
 
-BOOLEAN PROCESS::is_signalled( void )
+BOOLEAN PROCESS::IsSignalled( void )
 {
 	for ( sibling_iter_t i(threads); i; i.next() )
 	{

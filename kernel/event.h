@@ -34,13 +34,13 @@ class EVENT : public SYNC_OBJECT
 {
 public:
 	virtual ~EVENT();
-	virtual BOOLEAN is_signalled( void ) = 0;
-	virtual BOOLEAN satisfy( void ) = 0;
+	virtual BOOLEAN IsSignalled( void ) = 0;
+	virtual BOOLEAN Satisfy( void ) = 0;
 	virtual void set( PULONG prev ) = 0;
 	virtual void reset( PULONG prev ) = 0;
 	virtual void pulse( PULONG prev ) = 0;
 	virtual void query(EVENT_BASIC_INFORMATION &info) = 0;
-	virtual bool access_allowed( ACCESS_MASK required, ACCESS_MASK handle ) = 0;
+	virtual bool AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle ) = 0;
 };
 
 EVENT* create_sync_event( PWSTR name, BOOL InitialState = 0 );

@@ -628,7 +628,7 @@ private:
 	ULONG Protect;
 public:
 	section_factory( OBJECT *_file, PLARGE_INTEGER _SectionSize, ULONG _Attributes, ULONG _Protect );
-	virtual NTSTATUS alloc_object(OBJECT** obj);
+	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
 section_factory::section_factory(
@@ -643,7 +643,7 @@ section_factory::section_factory(
 {
 }
 
-NTSTATUS section_factory::alloc_object(OBJECT** obj)
+NTSTATUS section_factory::AllocObject(OBJECT** obj)
 {
 	NTSTATUS r = create_section( obj, file, SectionSize, Attributes, Protect );
 	if (r < STATUS_SUCCESS)

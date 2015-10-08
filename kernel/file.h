@@ -32,11 +32,11 @@ class COMPLETION_PORT : public SYNC_OBJECT
 {
 public:
 	virtual ~COMPLETION_PORT() = 0;
-	virtual BOOLEAN is_signalled( void ) = 0;
-	virtual BOOLEAN satisfy( void ) = 0;
-	virtual void set(ULONG key, ULONG value, NTSTATUS status, ULONG info) = 0;
-	virtual NTSTATUS remove(ULONG& key, ULONG& value, NTSTATUS& status, ULONG& info, PLARGE_INTEGER timeout) = 0;
-	virtual bool access_allowed( ACCESS_MASK required, ACCESS_MASK handle ) = 0;
+	virtual BOOLEAN IsSignalled( void ) = 0;
+	virtual BOOLEAN Satisfy( void ) = 0;
+	virtual void Set(ULONG key, ULONG value, NTSTATUS status, ULONG info) = 0;
+	virtual NTSTATUS Remove(ULONG& key, ULONG& value, NTSTATUS& status, ULONG& info, PLARGE_INTEGER timeout) = 0;
+	virtual bool AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle ) = 0;
 };
 
 void check_completions( void );

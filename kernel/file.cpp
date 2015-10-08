@@ -269,7 +269,7 @@ class DIRECTORY_FACTORY : public OBJECT_FACTORY
 	int fd;
 public:
 	DIRECTORY_FACTORY( int _fd );
-	NTSTATUS alloc_object(OBJECT** obj);
+	NTSTATUS AllocObject(OBJECT** obj);
 };
 
 DIRECTORY_FACTORY::DIRECTORY_FACTORY( int _fd ) :
@@ -277,7 +277,7 @@ DIRECTORY_FACTORY::DIRECTORY_FACTORY( int _fd ) :
 {
 }
 
-NTSTATUS DIRECTORY_FACTORY::alloc_object(OBJECT** obj)
+NTSTATUS DIRECTORY_FACTORY::AllocObject(OBJECT** obj)
 {
 	*obj = new DIRECTORY( fd );
 	if (!*obj)

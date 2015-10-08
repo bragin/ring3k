@@ -36,13 +36,13 @@
 // COMPLETION_PACKET holds the data for one I/O completion
 class COMPLETION_PACKET;
 
-typedef LIST_ANCHOR<COMPLETION_PACKET,0> completion_list_t;
-typedef LIST_ELEMENT<COMPLETION_PACKET> completion_list_element_t;
+typedef LIST_ANCHOR<COMPLETION_PACKET,0> COMPLETION_LIST;
+typedef LIST_ELEMENT<COMPLETION_PACKET> COMPLETION_LIST_ELEMENT;
 
 class COMPLETION_PACKET
 {
 public:
-	completion_list_element_t entry[1];
+	COMPLETION_LIST_ELEMENT entry[1];
 	ULONG key;
 	ULONG value;
 	NTSTATUS status;
@@ -59,32 +59,32 @@ public:
 // COMPLETION_WAITER is instantiated on the stack of a thread waiting on an I/O completion
 class COMPLETION_WAITER;
 
-typedef LIST_ANCHOR<COMPLETION_WAITER,0> completion_waiter_list_t;
-typedef LIST_ELEMENT<COMPLETION_WAITER> completion_waiter_list_element_t;
+typedef LIST_ANCHOR<COMPLETION_WAITER,0> COMPLETION_WAITER_LIST;
+typedef LIST_ELEMENT<COMPLETION_WAITER> COMPLETION_WAITER_LIST_ELEMENT;
 
 class COMPLETION_WAITER
 {
 protected:
 	friend class LIST_ANCHOR<COMPLETION_WAITER,0>;
 	friend class LIST_ELEMENT<COMPLETION_WAITER>;
-	completion_waiter_list_element_t entry[1];
+	COMPLETION_WAITER_LIST_ELEMENT entry[1];
 	THREAD *thread;
 	COMPLETION_PACKET *packet;
 public:
 	COMPLETION_WAITER(THREAD *t) : thread(t), packet(0) {}
 	~COMPLETION_WAITER();
-	void stop( completion_waiter_list_t& waiter_list, PLARGE_INTEGER timeout = 0);
-	void start();
-	COMPLETION_PACKET *get_packet();
-	void set_packet( COMPLETION_PACKET* _packet );
-	bool is_linked()
+	void Stop( COMPLETION_WAITER_LIST& waiter_list, PLARGE_INTEGER timeout = 0);
+	void Start();
+	COMPLETION_PACKET *GetPacket();
+	void SetPacket( COMPLETION_PACKET* _packet );
+	bool IsLinked()
 	{
 		return entry[0].is_linked();
 	}
 };
 
-void COMPLETION_WAITER::stop(
-	completion_waiter_list_t& waiter_list,
+void COMPLETION_WAITER::Stop(
+	COMPLETION_WAITER_LIST& waiter_list,
 	PLARGE_INTEGER timeout)
 {
 	waiter_list.append(this);
@@ -93,23 +93,23 @@ void COMPLETION_WAITER::stop(
 	//thread->set_timeout( 0 );
 }
 
-void COMPLETION_WAITER::start()
+void COMPLETION_WAITER::Start()
 {
 	thread->start();
 }
 
 COMPLETION_WAITER::~COMPLETION_WAITER()
 {
-	assert(!is_linked());
+	assert(!IsLinked());
 }
 
-void COMPLETION_WAITER::set_packet( COMPLETION_PACKET* _packet )
+void COMPLETION_WAITER::SetPacket( COMPLETION_PACKET* _packet )
 {
 	assert( packet == NULL );
 	packet = _packet;
 }
 
-COMPLETION_PACKET *COMPLETION_WAITER::get_packet()
+COMPLETION_PACKET *COMPLETION_WAITER::GetPacket()
 {
 	return packet;
 }
@@ -117,35 +117,35 @@ COMPLETION_PACKET *COMPLETION_WAITER::get_packet()
 class COMPLETION_PORT_IMPL;
 
 typedef LIST_ANCHOR<COMPLETION_PORT_IMPL,0> COMPLETION_PORT_LIST;
-typedef LIST_ELEMENT<COMPLETION_PORT_IMPL> completion_port_list_element_t;
+typedef LIST_ELEMENT<COMPLETION_PORT_IMPL> COMPLETION_PORT_LIST_ELEMENT;
 
 // COMPLETION_PORT_IMPL is the implementation of the I/O completion port object
 class COMPLETION_PORT_IMPL : public COMPLETION_PORT
 {
 	friend class LIST_ANCHOR<COMPLETION_PORT_IMPL,0>;
 	friend class LIST_ELEMENT<COMPLETION_PORT_IMPL>;
-	completion_port_list_element_t entry[1];
+	COMPLETION_PORT_LIST_ELEMENT entry[1];
 	static COMPLETION_PORT_LIST waiting_thread_ports;
 	friend void check_completions( void );
 private:
 	ULONG num_threads;
-	completion_list_t queue;
-	completion_waiter_list_t waiter_list;
+	COMPLETION_LIST queue;
+	COMPLETION_WAITER_LIST waiter_list;
 public:
 	COMPLETION_PORT_IMPL( ULONG num );
 	virtual ~COMPLETION_PORT_IMPL();
-	virtual BOOLEAN is_signalled( void );
-	virtual BOOLEAN satisfy( void );
-	virtual void set(ULONG key, ULONG value, NTSTATUS status, ULONG info);
-	virtual NTSTATUS remove(ULONG& key, ULONG& value, NTSTATUS& status, ULONG& info, PLARGE_INTEGER timeout);
-	virtual bool access_allowed( ACCESS_MASK required, ACCESS_MASK handle );
-	void check_waiters();
-	void port_wait_idle();
-	bool is_linked()
+	virtual BOOLEAN IsSignalled( void );
+	virtual BOOLEAN Satisfy( void );
+	virtual void Set(ULONG key, ULONG value, NTSTATUS status, ULONG info);
+	virtual NTSTATUS Remove(ULONG& key, ULONG& value, NTSTATUS& status, ULONG& info, PLARGE_INTEGER timeout);
+	virtual bool AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle );
+	void CheckWaiters();
+	void PortWaitIdle();
+	bool IsLinked()
 	{
 		return entry[0].is_linked();
 	}
-	void start_waiter( COMPLETION_WAITER *waiter );
+	void StartWaiter( COMPLETION_WAITER *waiter );
 };
 
 COMPLETION_PORT_IMPL::COMPLETION_PORT_IMPL( ULONG num ) :
@@ -153,17 +153,17 @@ COMPLETION_PORT_IMPL::COMPLETION_PORT_IMPL( ULONG num ) :
 {
 }
 
-BOOLEAN COMPLETION_PORT_IMPL::satisfy()
+BOOLEAN COMPLETION_PORT_IMPL::Satisfy()
 {
 	return FALSE;
 }
 
-BOOLEAN COMPLETION_PORT_IMPL::is_signalled()
+BOOLEAN COMPLETION_PORT_IMPL::IsSignalled()
 {
 	return TRUE;
 }
 
-bool COMPLETION_PORT_IMPL::access_allowed( ACCESS_MASK required, ACCESS_MASK handle )
+bool COMPLETION_PORT_IMPL::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
 	return check_access( required, handle,
 						 IO_COMPLETION_QUERY_STATE,
@@ -173,7 +173,7 @@ bool COMPLETION_PORT_IMPL::access_allowed( ACCESS_MASK required, ACCESS_MASK han
 
 COMPLETION_PORT_IMPL::~COMPLETION_PORT_IMPL()
 {
-	assert(!is_linked());
+	assert(!IsLinked());
 }
 
 COMPLETION_PORT::~COMPLETION_PORT()
@@ -187,26 +187,26 @@ void check_completions( void )
 	COMPLETION_PORT_IMPL *port = COMPLETION_PORT_IMPL::waiting_thread_ports.head();
 	if (!port)
 		return;
-	port->check_waiters();
+	port->CheckWaiters();
 }
 
-void COMPLETION_PORT_IMPL::check_waiters()
+void COMPLETION_PORT_IMPL::CheckWaiters()
 {
 	// start the first waiter
 	COMPLETION_WAITER *waiter = waiter_list.head();
 	assert( waiter );
 
-	start_waiter( waiter );
+	StartWaiter( waiter );
 }
 
-void COMPLETION_PORT_IMPL::port_wait_idle()
+void COMPLETION_PORT_IMPL::PortWaitIdle()
 {
-	if (is_linked())
+	if (IsLinked())
 		return;
 	waiting_thread_ports.append( this );
 }
 
-void COMPLETION_PORT_IMPL::set(ULONG key, ULONG value, NTSTATUS status, ULONG info)
+void COMPLETION_PORT_IMPL::Set(ULONG key, ULONG value, NTSTATUS status, ULONG info)
 {
 	COMPLETION_PACKET *packet;
 	packet = new COMPLETION_PACKET( key, value, status, info );
@@ -221,16 +221,16 @@ void COMPLETION_PORT_IMPL::set(ULONG key, ULONG value, NTSTATUS status, ULONG in
 	// and add it to the list of idle threads
 	if (runlist_entry_t::num_active_threads() >= num_threads )
 	{
-		port_wait_idle();
+		PortWaitIdle();
 		return;
 	}
 
 	// there should only be one packet in the queue here
-	start_waiter( waiter );
+	StartWaiter( waiter );
 	assert( queue.empty() );
 }
 
-void COMPLETION_PORT_IMPL::start_waiter( COMPLETION_WAITER *waiter )
+void COMPLETION_PORT_IMPL::StartWaiter( COMPLETION_WAITER *waiter )
 {
 	// remove a packet from the queue
 	COMPLETION_PACKET *packet = queue.head();
@@ -238,18 +238,18 @@ void COMPLETION_PORT_IMPL::start_waiter( COMPLETION_WAITER *waiter )
 	queue.unlink( packet );
 
 	// pass the packet to the waiting thread
-	waiter->set_packet( packet );
+	waiter->SetPacket( packet );
 
 	// unlink the waiter, and possibly unlink this port
 	waiter_list.unlink( waiter );
-	if (waiter_list.empty() && is_linked())
+	if (waiter_list.empty() && IsLinked())
 		waiting_thread_ports.unlink( this );
 
 	// restart the waiter last
-	waiter->start();
+	waiter->Start();
 }
 
-NTSTATUS COMPLETION_PORT_IMPL::remove(ULONG& key, ULONG& value, NTSTATUS& status, ULONG& info, PLARGE_INTEGER timeout)
+NTSTATUS COMPLETION_PORT_IMPL::Remove(ULONG& key, ULONG& value, NTSTATUS& status, ULONG& info, PLARGE_INTEGER timeout)
 {
 
 	// try remove the completion entry first
@@ -258,8 +258,8 @@ NTSTATUS COMPLETION_PORT_IMPL::remove(ULONG& key, ULONG& value, NTSTATUS& status
 	{
 		// queue thread here
 		COMPLETION_WAITER waiter(current);
-		waiter.stop( waiter_list, timeout );
-		packet = waiter.get_packet();
+		waiter.Stop( waiter_list, timeout );
+		packet = waiter.GetPacket();
 	}
 	// this thread must be active... don't block ourselves
 	else if (runlist_entry_t::num_active_threads() > num_threads )
@@ -267,12 +267,12 @@ NTSTATUS COMPLETION_PORT_IMPL::remove(ULONG& key, ULONG& value, NTSTATUS& status
 		// there's a packet ready but the system, is busy
 		// a completion port isn't a FIFO - leave the packt alone
 		// wait for idle, then remove the packet
-		port_wait_idle();
+		PortWaitIdle();
 		COMPLETION_WAITER waiter(current);
-		waiter.stop( waiter_list, timeout );
+		waiter.Stop( waiter_list, timeout );
 		//if (queue.empty() && is_linked())
 			//waiting_thread_ports.unlink( this );
-		packet = waiter.get_packet();
+		packet = waiter.GetPacket();
 	}
 	else
 	{
@@ -300,10 +300,10 @@ private:
 	ULONG num_threads;
 public:
 	COMPLETION_FACTORY(ULONG n) : num_threads(n) {}
-	virtual NTSTATUS alloc_object(OBJECT** obj);
+	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS COMPLETION_FACTORY::alloc_object(OBJECT** obj)
+NTSTATUS COMPLETION_FACTORY::AllocObject(OBJECT** obj)
 {
 	if (num_threads == 0)
 		num_threads = num_cpus;
@@ -390,7 +390,7 @@ NTSTATUS NTAPI NtRemoveIoCompletion(
 	IO_STATUS_BLOCK iosb;
 	iosb.Status = 0;
 	iosb.Information = 0;
-	port->remove( key, val, iosb.Status, iosb.Information, TimeOut );
+	port->Remove( key, val, iosb.Status, iosb.Information, TimeOut );
 
 	if (IoCompletionKey)
 		copy_to_user( IoCompletionKey, &key, sizeof key );
@@ -422,7 +422,7 @@ NTSTATUS NTAPI NtSetIoCompletion(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	port->set( IoCompletionKey, IoCompletionValue, Status, Information );
+	port->Set( IoCompletionKey, IoCompletionValue, Status, Information );
 
 	return STATUS_SUCCESS;
 }

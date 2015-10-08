@@ -37,8 +37,8 @@ protected:
 public:
 	semaphore_t( ULONG Initial, ULONG Maximum );
 	virtual ~semaphore_t();
-	virtual BOOLEAN is_signalled();
-	virtual BOOLEAN satisfy();
+	virtual BOOLEAN IsSignalled();
+	virtual BOOLEAN Satisfy();
 	NTSTATUS release( ULONG count, ULONG& prev );
 };
 
@@ -52,12 +52,12 @@ semaphore_t::~semaphore_t()
 {
 }
 
-BOOLEAN semaphore_t::is_signalled()
+BOOLEAN semaphore_t::IsSignalled()
 {
 	return (count>0);
 }
 
-BOOLEAN semaphore_t::satisfy()
+BOOLEAN semaphore_t::Satisfy()
 {
 	count--;
 	return TRUE;
@@ -87,10 +87,10 @@ private:
 	ULONG MaximumCount;
 public:
 	semaphore_factory(ULONG init, ULONG max) : InitialCount(init), MaximumCount(max) {}
-	virtual NTSTATUS alloc_object(OBJECT** obj);
+	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS semaphore_factory::alloc_object(OBJECT** obj)
+NTSTATUS semaphore_factory::AllocObject(OBJECT** obj)
 {
 	*obj = new semaphore_t( InitialCount, MaximumCount );
 	if (!*obj)

@@ -69,7 +69,7 @@ public:
 	}
 public:
 	OBJECT();
-	virtual bool access_allowed( ACCESS_MASK required, ACCESS_MASK handle );
+	virtual bool AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle );
 	virtual ~OBJECT();
 	static bool check_access( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK read, ACCESS_MASK write, ACCESS_MASK all );
 	static void addref( OBJECT *obj );
@@ -80,7 +80,7 @@ public:
 class OBJECT_FACTORY : public OPEN_INFO
 {
 protected:
-	virtual NTSTATUS alloc_object(OBJECT** obj) = 0;
+	virtual NTSTATUS AllocObject(OBJECT** obj) = 0;
 	virtual NTSTATUS on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
 public:
 	NTSTATUS create(
@@ -112,8 +112,8 @@ private:
 public:
 	SYNC_OBJECT();
 	virtual ~SYNC_OBJECT();
-	virtual BOOLEAN is_signalled( void ) = 0;
-	virtual BOOLEAN satisfy( void );
+	virtual BOOLEAN IsSignalled( void ) = 0;
+	virtual BOOLEAN Satisfy( void );
 	void add_watch( watch_t* watcher );
 	void remove_watch( watch_t* watcher );
 	void notify_watchers();

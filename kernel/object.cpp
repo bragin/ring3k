@@ -152,7 +152,7 @@ NTSTATUS HANDLE_TABLE::object_from_handle( OBJECT*& obj, HANDLE handle, ACCESS_M
 		return STATUS_INVALID_HANDLE;
 	if (!info[n].object)
 		return STATUS_INVALID_HANDLE;
-	if (!info[n].object->access_allowed( access, info[n].access ))
+	if (!info[n].object->AccessAllowed( access, info[n].access ))
 		return STATUS_ACCESS_DENIED;
 	obj = info[n].object;
 	return STATUS_SUCCESS;
@@ -191,7 +191,7 @@ NTSTATUS OBJECT_FACTORY::on_open( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info
 	}
 
 	NTSTATUS r;
-	r = alloc_object( &obj );
+	r = AllocObject( &obj );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -241,13 +241,13 @@ NTSTATUS OBJECT_FACTORY::create(
 	}
 	else
 	{
-		r = alloc_object( &obj );
+		r = AllocObject( &obj );
 	}
 
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	// maybe this should be done in alloc_object ?
+	// maybe this should be done in AllocObject ?
 	NTSTATUS r2 = alloc_user_handle( obj, AccessMask, Handle );
 	if (r2 == STATUS_SUCCESS && (oa.Attributes & OBJ_PERMANENT ))
 		trace("permanent object\n");
@@ -288,7 +288,7 @@ bool OBJECT::check_access( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK
 	return (required & ~effective) == 0;
 }
 
-bool OBJECT::access_allowed( ACCESS_MASK access, ACCESS_MASK handle_access )
+bool OBJECT::AccessAllowed( ACCESS_MASK access, ACCESS_MASK handle_access )
 {
 	trace("fixme: no access check\n");
 	return true;
@@ -328,7 +328,7 @@ watch_t::~watch_t()
 {
 }
 
-BOOLEAN SYNC_OBJECT::satisfy( void )
+BOOLEAN SYNC_OBJECT::Satisfy( void )
 {
 	return TRUE;
 }

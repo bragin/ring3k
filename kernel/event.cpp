@@ -40,20 +40,20 @@ protected:
 public:
 	EVENT_IMPL( BOOLEAN _state );
 	virtual ~EVENT_IMPL();
-	virtual BOOLEAN is_signalled( void );
-	virtual BOOLEAN satisfy( void ) = 0;
+	virtual BOOLEAN IsSignalled( void );
+	virtual BOOLEAN Satisfy( void ) = 0;
 	void set( PULONG prev );
 	void reset( PULONG prev );
 	void pulse( PULONG prev );
 	virtual void query(EVENT_BASIC_INFORMATION &info) = 0;
-	virtual bool access_allowed( ACCESS_MASK required, ACCESS_MASK handle );
+	virtual bool AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle );
 };
 
 class AUTO_EVENT : public EVENT_IMPL
 {
 public:
 	AUTO_EVENT( BOOLEAN state );
-	virtual BOOLEAN satisfy( void );
+	virtual BOOLEAN Satisfy( void );
 	virtual void query(EVENT_BASIC_INFORMATION &info);
 };
 
@@ -61,7 +61,7 @@ class MANUAL_EVENT : public EVENT_IMPL
 {
 public:
 	MANUAL_EVENT( BOOLEAN state );
-	virtual BOOLEAN satisfy( void );
+	virtual BOOLEAN Satisfy( void );
 	virtual void query(EVENT_BASIC_INFORMATION &info);
 };
 
@@ -70,7 +70,7 @@ EVENT_IMPL::EVENT_IMPL( BOOLEAN _state ) :
 {
 }
 
-bool EVENT_IMPL::access_allowed( ACCESS_MASK required, ACCESS_MASK handle )
+bool EVENT_IMPL::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
 	return check_access( required, handle,
 						 EVENT_QUERY_STATE,
@@ -88,18 +88,18 @@ MANUAL_EVENT::MANUAL_EVENT( BOOLEAN _state) :
 {
 }
 
-BOOLEAN EVENT_IMPL::is_signalled( void )
+BOOLEAN EVENT_IMPL::IsSignalled( void )
 {
 	return state;
 }
 
-BOOLEAN AUTO_EVENT::satisfy( void )
+BOOLEAN AUTO_EVENT::Satisfy( void )
 {
 	state = 0;
 	return TRUE;
 }
 
-BOOLEAN MANUAL_EVENT::satisfy( void )
+BOOLEAN MANUAL_EVENT::Satisfy( void )
 {
 	return TRUE;
 }
@@ -152,10 +152,10 @@ private:
 	BOOLEAN InitialState;
 public:
 	EVENT_FACTORY(EVENT_TYPE t, BOOLEAN s) : Type(t), InitialState(s) {}
-	virtual NTSTATUS alloc_object(OBJECT** obj);
+	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS EVENT_FACTORY::alloc_object(OBJECT** obj)
+NTSTATUS EVENT_FACTORY::AllocObject(OBJECT** obj)
 {
 	switch (Type)
 	{
@@ -408,10 +408,10 @@ NTSTATUS event_pair_operation( HANDLE handle, NTSTATUS (EVENT_PAIR::*op)() )
 class event_pair_factory : public OBJECT_FACTORY
 {
 public:
-	virtual NTSTATUS alloc_object(OBJECT** obj);
+	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS event_pair_factory::alloc_object(OBJECT** obj)
+NTSTATUS event_pair_factory::AllocObject(OBJECT** obj)
 {
 	*obj = new EVENT_PAIR();
 	if (!*obj)

@@ -39,8 +39,8 @@ public:
 	MUTANT(BOOLEAN InitialOwner);
 	NTSTATUS take_ownership();
 	NTSTATUS release_ownership(ULONG& prev);
-	virtual BOOLEAN is_signalled();
-	virtual BOOLEAN satisfy();
+	virtual BOOLEAN IsSignalled();
+	virtual BOOLEAN Satisfy();
 };
 
 MUTANT *mutant_from_obj( OBJECT *obj )
@@ -56,12 +56,12 @@ MUTANT::MUTANT(BOOLEAN InitialOwner) :
 		take_ownership();
 }
 
-BOOLEAN MUTANT::is_signalled()
+BOOLEAN MUTANT::IsSignalled()
 {
 	return current != NULL;
 }
 
-BOOLEAN MUTANT::satisfy()
+BOOLEAN MUTANT::Satisfy()
 {
 	take_ownership();
 	return TRUE;
@@ -92,10 +92,10 @@ private:
 	BOOLEAN InitialOwner;
 public:
 	MUTANT_FACTORY(BOOLEAN io) : InitialOwner(io) {};
-	virtual NTSTATUS alloc_object(OBJECT** obj);
+	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS MUTANT_FACTORY::alloc_object(OBJECT** obj)
+NTSTATUS MUTANT_FACTORY::AllocObject(OBJECT** obj)
 {
 	*obj = new MUTANT(InitialOwner);
 	if (!*obj)

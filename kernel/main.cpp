@@ -231,14 +231,14 @@ void do_cleanup( void )
 	for ( process_iter_t pi(processes); pi; pi.next() )
 	{
 		PROCESS *p = pi;
-		if (p->is_signalled())
+		if (p->IsSignalled())
 			continue;
 		num_processes++;
 		fprintf(stderr, "process %04lx\n", p->id);
 		for ( sibling_iter_t ti(p->threads); ti; ti.next() )
 		{
 			THREAD *t = ti;
-			if (t->is_signalled())
+			if (t->IsSignalled())
 				continue;
 			fprintf(stderr, "\tthread %04lx\n", t->trace_id());
 			num_threads++;
