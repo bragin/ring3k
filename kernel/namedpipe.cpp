@@ -289,7 +289,7 @@ NTSTATUS WAIT_SERVER_INFO::CopyFromUser( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG 
 
 	if (Length < sz)
 		return STATUS_INVALID_PARAMETER;
-	r = ::copy_from_user( &info, pwfb, sz );
+	r = ::CopyFromUser( &info, pwfb, sz );
 	if (r < STATUS_SUCCESS)
 		return r;
 	if (Length < (sz + NameLength))
@@ -327,7 +327,7 @@ NTSTATUS PIPE_DEVICE::WaitServerAvailable( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULON
 	if (!server)
 	{
 		//FIXME: timeout
-		current->Wait();
+		Current->Wait();
 	}
 
 	return STATUS_SUCCESS;
@@ -457,9 +457,9 @@ NTSTATUS PIPE_SERVER::Read( PVOID buffer, ULONG length, ULONG *read )
 	if (!msg)
 	{
 		// wait for a message
-		Thread = current;
-		current->Wait();
-		if (current->IsTerminated())
+		Thread = Current;
+		Current->Wait();
+		if (Current->IsTerminated())
 			return STATUS_THREAD_IS_TERMINATING;
 		assert( Thread == NULL );
 		msg = ReceivedMessages.Head();
@@ -469,7 +469,7 @@ NTSTATUS PIPE_SERVER::Read( PVOID buffer, ULONG length, ULONG *read )
 	if (msg)
 	{
 		len = min( length, msg->Length );
-		NTSTATUS r = copy_to_user( buffer, msg->DataPtr(), len );
+		NTSTATUS r = CopyToUser( buffer, msg->DataPtr(), len );
 		if (r < STATUS_SUCCESS)
 			return r;
 		ReceivedMessages.Unlink( msg );
@@ -484,7 +484,7 @@ NTSTATUS PIPE_SERVER::Write( PVOID buffer, ULONG length, ULONG *written )
 	PIPE_MESSAGE *msg = PIPE_MESSAGE::AllocPipeMessage( length );
 
 	NTSTATUS r;
-	r = copy_from_user( msg->DataPtr(), buffer, length );
+	r = CopyFromUser( msg->DataPtr(), buffer, length );
 	if (r < STATUS_SUCCESS)
 	{
 		delete msg;
@@ -519,9 +519,9 @@ NTSTATUS PIPE_SERVER::Connect()
 	DoConnect();
 	if (!IsConnected())
 	{
-		Thread = current;
-		current->Wait();
-		if (current->IsTerminated())
+		Thread = Current;
+		Current->Wait();
+		if (Current->IsTerminated())
 			return STATUS_THREAD_IS_TERMINATING;
 		assert( Thread == NULL );
 		assert( IsConnected() );
@@ -606,9 +606,9 @@ NTSTATUS PIPE_CLIENT::Read( PVOID buffer, ULONG length, ULONG *read )
 	if (!msg)
 	{
 		// wait for a message
-		Thread = current;
-		current->Wait();
-		if (current->IsTerminated())
+		Thread = Current;
+		Current->Wait();
+		if (Current->IsTerminated())
 			return STATUS_THREAD_IS_TERMINATING;
 		assert( Thread == NULL );
 		msg = Server->SentMessages.Head();
@@ -618,7 +618,7 @@ NTSTATUS PIPE_CLIENT::Read( PVOID buffer, ULONG length, ULONG *read )
 	if (msg)
 	{
 		len = min( length, msg->Length );
-		NTSTATUS r = copy_to_user( buffer, msg->DataPtr(), len );
+		NTSTATUS r = CopyToUser( buffer, msg->DataPtr(), len );
 		if (r < STATUS_SUCCESS)
 			return r;
 		Server->SentMessages.Unlink( msg );
@@ -636,7 +636,7 @@ NTSTATUS PIPE_CLIENT::Write( PVOID buffer, ULONG length, ULONG *written )
 		return STATUS_PIPE_BROKEN;
 
 	NTSTATUS r;
-	r = copy_from_user( msg->DataPtr(), buffer, length );
+	r = CopyFromUser( msg->DataPtr(), buffer, length );
 	if (r < STATUS_SUCCESS)
 	{
 		delete msg;
@@ -762,18 +762,18 @@ NTSTATUS NTAPI NtCreateNamedPipeFile(
 	if (!(ShareAccess & FILE_SHARE_WRITE))
 		return STATUS_INVALID_PARAMETER;
 
-	r = copy_from_user( &timeout, DefaultTimeout, sizeof timeout );
+	r = CopyFromUser( &timeout, DefaultTimeout, sizeof timeout );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	if (timeout.QuadPart > 0)
 		return STATUS_INVALID_PARAMETER;
 
-	r = verify_for_write( PipeHandle, sizeof *PipeHandle );
+	r = VerifyForWrite( PipeHandle, sizeof *PipeHandle );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = verify_for_write( IoStatusBlock, sizeof IoStatusBlock );
+	r = VerifyForWrite( IoStatusBlock, sizeof IoStatusBlock );
 	if (r < STATUS_SUCCESS)
 		return r;
 

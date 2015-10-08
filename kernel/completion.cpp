@@ -257,7 +257,7 @@ NTSTATUS COMPLETION_PORT_IMPL::Remove(ULONG& key, ULONG& value, NTSTATUS& status
 	if (!packet)
 	{
 		// queue thread here
-		COMPLETION_WAITER waiter(current);
+		COMPLETION_WAITER waiter(Current);
 		waiter.Stop( waiter_list, timeout );
 		packet = waiter.GetPacket();
 	}
@@ -268,7 +268,7 @@ NTSTATUS COMPLETION_PORT_IMPL::Remove(ULONG& key, ULONG& value, NTSTATUS& status
 		// a completion port isn't a FIFO - leave the packt alone
 		// wait for idle, then remove the packet
 		PortWaitIdle();
-		COMPLETION_WAITER waiter(current);
+		COMPLETION_WAITER waiter(Current);
 		waiter.Stop( waiter_list, timeout );
 		//if (queue.empty() && IsLinked())
 			//waiting_thread_ports.unlink( this );
@@ -357,21 +357,21 @@ NTSTATUS NTAPI NtRemoveIoCompletion(
 
 	if (IoCompletionKey)
 	{
-		r = verify_for_write( IoCompletionKey, sizeof *IoCompletionKey );
+		r = VerifyForWrite( IoCompletionKey, sizeof *IoCompletionKey );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
 
 	if (IoCompletionValue)
 	{
-		r = verify_for_write( IoCompletionValue, sizeof *IoCompletionValue );
+		r = VerifyForWrite( IoCompletionValue, sizeof *IoCompletionValue );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
 
 	if (IoStatusBlock)
 	{
-		r = verify_for_write( IoStatusBlock, sizeof *IoStatusBlock );
+		r = VerifyForWrite( IoStatusBlock, sizeof *IoStatusBlock );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -380,7 +380,7 @@ NTSTATUS NTAPI NtRemoveIoCompletion(
 	t.QuadPart = 0LL;
 	if (TimeOut)
 	{
-		r = copy_from_user( &t, TimeOut, sizeof t );
+		r = CopyFromUser( &t, TimeOut, sizeof t );
 		if (r < STATUS_SUCCESS)
 			return r;
 		TimeOut = &t;
@@ -393,13 +393,13 @@ NTSTATUS NTAPI NtRemoveIoCompletion(
 	port->Remove( key, val, iosb.Status, iosb.Information, TimeOut );
 
 	if (IoCompletionKey)
-		copy_to_user( IoCompletionKey, &key, sizeof key );
+		CopyToUser( IoCompletionKey, &key, sizeof key );
 
 	if (IoCompletionValue)
-		copy_to_user( IoCompletionValue, &val, sizeof val );
+		CopyToUser( IoCompletionValue, &val, sizeof val );
 
 	if (IoStatusBlock)
-		copy_to_user( IoStatusBlock, &iosb, sizeof iosb );
+		CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
 
 	return r;
 }

@@ -94,7 +94,7 @@ void unicode_string_t::set( PCWSTR str )
 
 NTSTATUS unicode_string_t::copy_from_user(PUNICODE_STRING ptr)
 {
-	NTSTATUS r = ::copy_from_user( static_cast<UNICODE_STRING*>(this), ptr, sizeof (UNICODE_STRING) );
+	NTSTATUS r = ::CopyFromUser( static_cast<UNICODE_STRING*>(this), ptr, sizeof (UNICODE_STRING) );
 	if (r < STATUS_SUCCESS)
 		return r;
 	return copy_wstr_from_user();
@@ -112,7 +112,7 @@ NTSTATUS unicode_string_t::copy_wstr_from_user()
 		buf = new WCHAR[ Length/2 ];
 		if (!buf)
 			return STATUS_NO_MEMORY;
-		NTSTATUS r = ::copy_from_user( buf, Buffer, Length );
+		NTSTATUS r = ::CopyFromUser( buf, Buffer, Length );
 		if (r < STATUS_SUCCESS)
 		{
 			delete[] buf;
@@ -363,7 +363,7 @@ NTSTATUS object_attributes_t::copy_from_user( POBJECT_ATTRIBUTES oa )
 {
 	NTSTATUS r;
 
-	r = ::copy_from_user( static_cast<OBJECT_ATTRIBUTES*>( this ), oa, sizeof *oa );
+	r = ::CopyFromUser( static_cast<OBJECT_ATTRIBUTES*>( this ), oa, sizeof *oa );
 	if (r < STATUS_SUCCESS)
 		return r;
 

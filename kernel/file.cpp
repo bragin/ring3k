@@ -136,7 +136,7 @@ NTSTATUS CFILE::Read( PVOID Buffer, ULONG Length, ULONG *bytes_read )
 		BYTE *p = (BYTE*)Buffer+ofs;
 		size_t len = Length - ofs;
 
-		r = current->process->vm->GetKernelAddress( &p, &len );
+		r = Current->process->vm->GetKernelAddress( &p, &len );
 		if (r < STATUS_SUCCESS)
 			break;
 
@@ -164,7 +164,7 @@ NTSTATUS CFILE::Write( PVOID Buffer, ULONG Length, ULONG *written )
 		BYTE *p = (BYTE*)Buffer+ofs;
 		size_t len = Length - ofs;
 
-		NTSTATUS r = current->process->vm->GetKernelAddress( &p, &len );
+		NTSTATUS r = Current->process->vm->GetKernelAddress( &p, &len );
 		if (r < STATUS_SUCCESS)
 			break;
 
@@ -841,11 +841,11 @@ NTSTATUS NTAPI NtCreateFile(
 	trace("root %p attr %08lx %pus\n",
 		  oa.RootDirectory, oa.Attributes, oa.ObjectName);
 
-	r = verify_for_write( IoStatusBlock, sizeof *IoStatusBlock );
+	r = VerifyForWrite( IoStatusBlock, sizeof *IoStatusBlock );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = verify_for_write( FileHandle, sizeof *FileHandle );
+	r = VerifyForWrite( FileHandle, sizeof *FileHandle );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -864,14 +864,14 @@ NTSTATUS NTAPI NtCreateFile(
 	r = open_root( obj, info );
 	if (r >= STATUS_SUCCESS)
 	{
-		r = alloc_user_handle( obj, DesiredAccess, FileHandle );
+		r = AllocUserHandle( obj, DesiredAccess, FileHandle );
 		release( obj );
 	}
 
 	iosb.Status = r;
 	iosb.Information = info.created ? FILE_CREATED : FILE_OPENED;
 
-	copy_to_user( IoStatusBlock, &iosb, sizeof iosb );
+	CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
 
 	return r;
 }
@@ -913,7 +913,7 @@ NTSTATUS NTAPI NtFsControlFile(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = verify_for_write( IoStatusBlock, sizeof *IoStatusBlock );
+	r = VerifyForWrite( IoStatusBlock, sizeof *IoStatusBlock );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -931,7 +931,7 @@ NTSTATUS NTAPI NtFsControlFile(
 
 	iosb.Status = r;
 
-	copy_to_user( IoStatusBlock, &iosb, sizeof iosb );
+	CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
 
 	return r;
 }
@@ -976,7 +976,7 @@ NTSTATUS NTAPI NtWriteFile(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = verify_for_write( IoStatusBlock, sizeof *IoStatusBlock );
+	r = VerifyForWrite( IoStatusBlock, sizeof *IoStatusBlock );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -989,7 +989,7 @@ NTSTATUS NTAPI NtWriteFile(
 	iosb.Status = r;
 	iosb.Information = ofs;
 
-	copy_to_user( IoStatusBlock, &iosb, sizeof iosb );
+	CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
 
 	return r;
 }
@@ -1071,7 +1071,7 @@ NTSTATUS NTAPI NtReadFile(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = verify_for_write( IoStatusBlock, sizeof *IoStatusBlock );
+	r = VerifyForWrite( IoStatusBlock, sizeof *IoStatusBlock );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1084,7 +1084,7 @@ NTSTATUS NTAPI NtReadFile(
 	iosb.Status = r;
 	iosb.Information = ofs;
 
-	r = copy_to_user( IoStatusBlock, &iosb, sizeof iosb );
+	r = CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
 
 	return STATUS_SUCCESS;
 }
@@ -1182,7 +1182,7 @@ NTSTATUS NTAPI NtSetInformationFile(
 		return STATUS_INVALID_PARAMETER;
 	}
 
-	r = copy_from_user( &info, FileInformation, len );
+	r = CopyFromUser( &info, FileInformation, len );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1263,7 +1263,7 @@ NTSTATUS NTAPI NtQueryInformationFile(
 	if (len > FileInformationLength)
 		len = FileInformationLength;
 
-	return copy_to_user( FileInformation, &info, len );
+	return CopyToUser( FileInformation, &info, len );
 }
 
 NTSTATUS NTAPI NtSetQuotaInformationFile(
@@ -1376,13 +1376,13 @@ NTSTATUS NTAPI NtQueryDirectoryFile(
 	info.EndOfFile.QuadPart = de->st.st_size;
 	info.AllocationSize.QuadPart = de->st.st_blocks * 512;
 
-	r = copy_to_user( FileInformation, &info, sizeof info );
+	r = CopyToUser( FileInformation, &info, sizeof info );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	const ULONG ofs = FIELD_OFFSET(FILE_BOTH_DIRECTORY_INFORMATION, FileName);
 	PWSTR p = (PWSTR)((PBYTE)FileInformation + ofs);
-	r = copy_to_user( p, de->name.Buffer, de->name.Length );
+	r = CopyToUser( p, de->name.Buffer, de->name.Length );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1390,7 +1390,7 @@ NTSTATUS NTAPI NtQueryDirectoryFile(
 	iosb.Status = r;
 	iosb.Information = ofs + de->name.Length;
 
-	copy_to_user( IoStatusBlock, &iosb, sizeof iosb );
+	CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
 
 	return r;
 }

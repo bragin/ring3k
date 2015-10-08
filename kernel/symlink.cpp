@@ -157,18 +157,18 @@ NTSTATUS NTAPI NtQuerySymbolicLinkObject(
 	UNICODE_STRING name;
 	NTSTATUS r;
 
-	r = copy_from_user( &name, LinkName, sizeof name );
+	r = CopyFromUser( &name, LinkName, sizeof name );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	// make sure we can write back the length
-	r = verify_for_write( &LinkName->Length, sizeof LinkName->Length );
+	r = VerifyForWrite( &LinkName->Length, sizeof LinkName->Length );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	if (DataWritten)
 	{
-		r = verify_for_write( DataWritten, sizeof DataWritten );
+		r = VerifyForWrite( DataWritten, sizeof DataWritten );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -183,17 +183,17 @@ NTSTATUS NTAPI NtQuerySymbolicLinkObject(
 	if (name.MaximumLength < target.Length)
 		return STATUS_BUFFER_TOO_SMALL;
 
-	r = copy_to_user( name.Buffer, target.Buffer, target.Length );
+	r = CopyToUser( name.Buffer, target.Buffer, target.Length );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	copy_to_user( &LinkName->Length, &target.Length, sizeof target.Length );
+	CopyToUser( &LinkName->Length, &target.Length, sizeof target.Length );
 
 	if (DataWritten)
 	{
 		// convert from USHORT to ULONG
 		ULONG len = target.Length;
-		copy_to_user( DataWritten, &len, sizeof len );
+		CopyToUser( DataWritten, &len, sizeof len );
 	}
 
 	return r;

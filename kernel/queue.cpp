@@ -85,7 +85,7 @@ bool thread_message_queue_tt::get_quit_message( MSG& msg )
 
 bool thread_message_queue_tt::get_paint_message( HWND Window, MSG& msg )
 {
-	window_tt *win = window_tt::find_window_to_repaint( Window, current );
+	window_tt *win = window_tt::find_window_to_repaint( Window, Current );
 	if (!win)
 		return FALSE;
 
@@ -165,7 +165,7 @@ bool thread_message_queue_tt::get_posted_message( HWND Window, MSG& Message )
 msg_waiter_tt::msg_waiter_tt( MSG& m):
 	msg( m )
 {
-	t = current;
+	t = Current;
 }
 
 win_timer_tt::win_timer_tt( HWND Window, UINT Identifier ) :
@@ -346,30 +346,30 @@ BOOLEAN thread_message_queue_tt::get_message(
 	// a thread sending a message will restart us
 	msg_waiter_tt wait( Message );
 	waiter_list.Append( &wait );
-	current->Stop();
+	Current->Stop();
 
-	return !current->IsTerminated();
+	return !Current->IsTerminated();
 }
 
 BOOLEAN NTAPI NtUserGetMessage(PMSG Message, HWND Window, ULONG MinMessage, ULONG MaxMessage)
 {
 	// no input queue...
-	thread_message_queue_tt* queue = current->queue;
+	thread_message_queue_tt* queue = Current->queue;
 	if (!queue)
 		return FALSE;
 
-	NTSTATUS r = verify_for_write( Message, sizeof *Message );
+	NTSTATUS r = VerifyForWrite( Message, sizeof *Message );
 	if (r != STATUS_SUCCESS)
 		return FALSE;
 
 	MSG msg;
 	memset( &msg, 0, sizeof msg );
 	if (queue->get_message( msg, Window, MinMessage, MaxMessage ))
-		copy_to_user( Message, &msg, sizeof msg );
+		CopyToUser( Message, &msg, sizeof msg );
 
-	if (option_trace)
+	if (OptionTrace)
 	{
-		fprintf(stderr, "%04lx: %s\n", current->TraceId(), __FUNCTION__);
+		fprintf(stderr, "%04lx: %s\n", Current->TraceId(), __FUNCTION__);
 		fprintf(stderr, " msg.hwnd    = %p\n", msg.hwnd);
 		fprintf(stderr, " msg.message = %08x (%s)\n", msg.message, get_message_name(msg.message));
 		fprintf(stderr, " msg.wParam  = %08x\n", msg.wParam);
@@ -396,11 +396,11 @@ BOOLEAN NTAPI NtUserPostMessage( HWND Window, UINT Message, WPARAM Wparam, LPARA
 
 BOOLEAN NTAPI NtUserPeekMessage( PMSG Message, HWND Window, UINT MaxMessage, UINT MinMessage, UINT Remove)
 {
-	thread_message_queue_tt* queue = current->queue;
+	thread_message_queue_tt* queue = Current->queue;
 	if (!queue)
 		return FALSE;
 
-	NTSTATUS r = verify_for_write( Message, sizeof *Message );
+	NTSTATUS r = VerifyForWrite( Message, sizeof *Message );
 	if (r != STATUS_SUCCESS)
 		return FALSE;
 
@@ -408,7 +408,7 @@ BOOLEAN NTAPI NtUserPeekMessage( PMSG Message, HWND Window, UINT MaxMessage, UIN
 	memset( &msg, 0, sizeof msg );
 	BOOL ret = queue->get_message_no_wait( msg, Window, MinMessage, MaxMessage );
 	if (ret)
-		copy_to_user( Message, &msg, sizeof msg );
+		CopyToUser( Message, &msg, sizeof msg );
 
 	return ret;
 }

@@ -81,7 +81,7 @@ NTSTATUS NTAPI NtCreateMailslotFile(
 
 	NTSTATUS r;
 
-	r = verify_for_write( IoStatusBlock, sizeof *IoStatusBlock );
+	r = VerifyForWrite( IoStatusBlock, sizeof *IoStatusBlock );
 	if (r < STATUS_SUCCESS)
 		return r;
 

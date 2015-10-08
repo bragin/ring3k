@@ -50,7 +50,7 @@ ULONG GENERIC_MESSAGE<Pack>::GetSize() const
 template<class Pack>
 NTSTATUS GENERIC_MESSAGE<Pack>::CopyToUser( void *ptr ) const
 {
-	return ::copy_to_user( ptr, &Info, sizeof Info );
+	return ::CopyToUser( ptr, &Info, sizeof Info );
 }
 
 template<class Pack>

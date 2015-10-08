@@ -133,7 +133,7 @@ NTSTATUS NTAPI NtReleaseSemaphore(
 	r = semaphore->release( ReleaseCount, prev );
 	if (r == STATUS_SUCCESS && PreviousCount)
 	{
-		r = copy_to_user( PreviousCount, &prev, sizeof prev );
+		r = CopyToUser( PreviousCount, &prev, sizeof prev );
 	}
 
 	return r;

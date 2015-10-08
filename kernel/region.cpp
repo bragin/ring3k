@@ -464,7 +464,7 @@ int NTAPI NtGdiGetRgnBox( HRGN Region, PRECT Rect )
 	int region_type = region->get_region_box( &box );
 
 	NTSTATUS r;
-	r = copy_to_user( Rect, &box, sizeof box );
+	r = CopyToUser( Rect, &box, sizeof box );
 	if (r < STATUS_SUCCESS)
 		return ERROR;
 
@@ -542,11 +542,11 @@ ULONG NTAPI NtGdiGetRegionData( HRGN Region, ULONG Count, PRGNDATA Data )
 	region->get_bounds_rect( rdh.rcBound );
 
 	NTSTATUS r;
-	r = copy_to_user( Data, &rdh, sizeof rdh );
+	r = CopyToUser( Data, &rdh, sizeof rdh );
 	if (r < STATUS_SUCCESS)
 		return ERROR;
 
-	r = copy_to_user( Data->Buffer, region->get_rects(), size );
+	r = CopyToUser( Data->Buffer, region->get_rects(), size );
 	if (r < STATUS_SUCCESS)
 		return ERROR;
 
@@ -570,7 +570,7 @@ BOOLEAN NTAPI NtGdiRectInRegion( HRGN Region, const RECT *rect )
 
 	rect_tt overlap;
 	NTSTATUS r;
-	r = copy_from_user( &overlap, rect, sizeof *rect );
+	r = CopyFromUser( &overlap, rect, sizeof *rect );
 	if (r < STATUS_SUCCESS)
 		return ERROR;
 

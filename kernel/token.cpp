@@ -125,14 +125,14 @@ NTSTATUS token_privileges_t::copy_from_user( PTOKEN_PRIVILEGES tp )
 	NTSTATUS r;
 	ULONG count = 0;
 
-	r = ::copy_from_user( &count, &tp->PrivilegeCount, sizeof count );
+	r = ::CopyFromUser( &count, &tp->PrivilegeCount, sizeof count );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	for (ULONG i=0; i<count; i++)
 	{
 		LUID_AND_ATTRIBUTES la;
-		r = ::copy_from_user( &la, &tp->Privileges[i], sizeof la );
+		r = ::CopyFromUser( &la, &tp->Privileges[i], sizeof la );
 		if (r < STATUS_SUCCESS)
 			return r;
 		r = add( la );
@@ -152,7 +152,7 @@ NTSTATUS token_privileges_t::copy_to_user( PTOKEN_PRIVILEGES tp )
 {
 	NTSTATUS r;
 
-	r = ::copy_to_user( &tp->PrivilegeCount, &priv_count, sizeof priv_count );
+	r = ::CopyToUser( &tp->PrivilegeCount, &priv_count, sizeof priv_count );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -162,7 +162,7 @@ NTSTATUS token_privileges_t::copy_to_user( PTOKEN_PRIVILEGES tp )
 	{
 		luid_and_privileges_t *priv = i;
 		LUID_AND_ATTRIBUTES* la = priv;
-		r = ::copy_to_user( &tp->Privileges[n], la, sizeof *la );
+		r = ::CopyToUser( &tp->Privileges[n], la, sizeof *la );
 		if (r < STATUS_SUCCESS)
 			break;
 		i.Next();
@@ -248,7 +248,7 @@ NTSTATUS sid_t::copy_from_user( PSID psid )
 	NTSTATUS r;
 	SID sid;
 
-	r = ::copy_from_user( &sid, psid, sid_len() );
+	r = ::CopyFromUser( &sid, psid, sid_len() );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -257,7 +257,7 @@ NTSTATUS sid_t::copy_from_user( PSID psid )
 	set_subauth_count( sid.SubAuthorityCount );
 
 	PISID pisid = (PISID) psid;
-	r = ::copy_from_user( subauthority, &pisid->SubAuthority, SubAuthorityCount * sizeof (ULONG));
+	r = ::CopyFromUser( subauthority, &pisid->SubAuthority, SubAuthorityCount * sizeof (ULONG));
 
 	return r;
 }
@@ -271,12 +271,12 @@ NTSTATUS sid_t::copy_to_user( PSID psid )
 	sid.IdentifierAuthority = IdentifierAuthority;
 	sid.SubAuthorityCount = SubAuthorityCount;
 
-	r = ::copy_to_user( psid, &sid, sid_len() );
+	r = ::CopyToUser( psid, &sid, sid_len() );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	PISID pisid = (PISID) psid;
-	r = ::copy_to_user( &pisid->SubAuthority, subauthority, SubAuthorityCount * sizeof (ULONG));
+	r = ::CopyToUser( &pisid->SubAuthority, subauthority, SubAuthorityCount * sizeof (ULONG));
 
 	return r;
 }
@@ -314,7 +314,7 @@ NTSTATUS sid_and_attributes_t::copy_hdr_to_user( SID_AND_ATTRIBUTES* psida, ULON
 	SID_AND_ATTRIBUTES sida;
 	sida.Attributes = Attributes;
 	sida.Sid = (PSID) ((BYTE*)psida + ofs);
-	return ::copy_to_user( psida, &sida, sizeof sida );
+	return ::CopyToUser( psida, &sida, sizeof sida );
 }
 
 NTSTATUS sid_and_attributes_t::copy_to_user( SID_AND_ATTRIBUTES* psida )
@@ -388,7 +388,7 @@ ULONG token_groups_t::get_length()
 NTSTATUS token_groups_t::copy_to_user( TOKEN_GROUPS *tg )
 {
 	NTSTATUS r;
-	r = ::copy_to_user( &tg->GroupCount, &count, sizeof count );
+	r = ::CopyToUser( &tg->GroupCount, &count, sizeof count );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -478,7 +478,7 @@ NTSTATUS ace_t::copy_to_user( PVOID pace )
 	ace.mask = mask;
 	ace.sid_start = sizeof ace;
 
-	NTSTATUS r = ::copy_to_user( pace, &ace, sizeof ace );
+	NTSTATUS r = ::CopyToUser( pace, &ace, sizeof ace );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -568,7 +568,7 @@ NTSTATUS acl_t::copy_to_user( PVOID pacl )
 {
 	PACL acl = this;
 	ULONG ofs = sizeof *acl;
-	NTSTATUS r = ::copy_to_user( pacl, acl, ofs );
+	NTSTATUS r = ::CopyToUser( pacl, acl, ofs );
 
 	ace_iter_t i(ace_list);
 	while (i && r == STATUS_SUCCESS)
@@ -636,14 +636,14 @@ NTSTATUS privilege_set_t::copy_from_user( PPRIVILEGE_SET ps )
 		ULONG control;
 	} x;
 
-	NTSTATUS r = ::copy_from_user( &x, ps, sizeof x );
+	NTSTATUS r = ::CopyFromUser( &x, ps, sizeof x );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	set_count( x.count );
 	control = x.control;
 
-	r = ::copy_from_user( privileges, ps->Privilege, count * sizeof privileges[0] );
+	r = ::CopyFromUser( privileges, ps->Privilege, count * sizeof privileges[0] );
 
 	return STATUS_SUCCESS;
 }
@@ -748,7 +748,7 @@ NTSTATUS NTAPI NtOpenProcessToken(
 
 	trace("%p %08lx %p\n", Process, DesiredAccess, Token);
 
-	r = verify_for_write( Token, sizeof *Token );
+	r = VerifyForWrite( Token, sizeof *Token );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -761,7 +761,7 @@ NTSTATUS NTAPI NtOpenProcessToken(
 	if (!token)
 		return STATUS_NO_MEMORY;
 
-	r = alloc_user_handle( token, DesiredAccess, Token );
+	r = AllocUserHandle( token, DesiredAccess, Token );
 	release( token );
 
 	return r;
@@ -777,7 +777,7 @@ NTSTATUS NTAPI NtOpenThreadToken(
 
 	trace("%p %08lx %u %p\n", Thread, DesiredAccess, OpenAsSelf, TokenHandle);
 
-	r = verify_for_write( TokenHandle, sizeof *TokenHandle );
+	r = VerifyForWrite( TokenHandle, sizeof *TokenHandle );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -790,7 +790,7 @@ NTSTATUS NTAPI NtOpenThreadToken(
 	if (tok == 0)
 		return STATUS_NO_TOKEN;
 
-	r = alloc_user_handle( tok, DesiredAccess, TokenHandle );
+	r = AllocUserHandle( tok, DesiredAccess, TokenHandle );
 
 	return r;
 }
@@ -810,7 +810,7 @@ NTSTATUS NTAPI NtAdjustPrivilegesToken(
 
 	if (ReturnLength)
 	{
-		r = verify_for_write( ReturnLength, sizeof *ReturnLength );
+		r = VerifyForWrite( ReturnLength, sizeof *ReturnLength );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -848,7 +848,7 @@ NTSTATUS NTAPI NtAdjustPrivilegesToken(
 		if (r < STATUS_SUCCESS)
 			return r;
 
-		r = copy_to_user( ReturnLength, &len, sizeof len );
+		r = CopyToUser( ReturnLength, &len, sizeof len );
 		assert( r == STATUS_SUCCESS );
 	}
 
@@ -869,7 +869,7 @@ static NTSTATUS copy_ptr_to_user( user_copy_t& item, PVOID info, ULONG infolen, 
 
 	// pointer followed by the data blob
 	PVOID ptr = (PVOID) ((PVOID*) info + 1);
-	NTSTATUS r = copy_to_user( info, &ptr, sizeof ptr );
+	NTSTATUS r = CopyToUser( info, &ptr, sizeof ptr );
 	if (r < STATUS_SUCCESS)
 		return r;
 	return item.copy_to_user( ptr );
@@ -934,7 +934,7 @@ NTSTATUS NTAPI NtQueryInformationToken(
 			return STATUS_INFO_LENGTH_MISMATCH;
 
 		memset( &stats, 0, sizeof stats );
-		r = copy_to_user( TokenInformation, &stats, sizeof stats );
+		r = CopyToUser( TokenInformation, &stats, sizeof stats );
 		if (r < STATUS_SUCCESS)
 			return r;
 
@@ -958,7 +958,7 @@ NTSTATUS NTAPI NtQueryInformationToken(
 	}
 
 	if (ReturnLength)
-		copy_to_user( ReturnLength, &len, sizeof len );
+		CopyToUser( ReturnLength, &len, sizeof len );
 
 	return r;
 }
@@ -990,7 +990,7 @@ NTSTATUS NTAPI NtDuplicateToken(
 	if (!token)
 		return STATUS_NO_MEMORY;
 
-	r = alloc_user_handle( token, DesiredAccess, TokenHandle );
+	r = AllocUserHandle( token, DesiredAccess, TokenHandle );
 	release( token );
 
 	return r;
@@ -1038,7 +1038,7 @@ NTSTATUS NtPrivilegeCheck(
 		return r;
 
 	BOOLEAN ok = TRUE;
-	r = copy_to_user( Result, &ok, sizeof ok );
+	r = CopyToUser( Result, &ok, sizeof ok );
 
 	return r;
 }

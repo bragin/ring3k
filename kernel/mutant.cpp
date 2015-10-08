@@ -58,7 +58,7 @@ MUTANT::MUTANT(BOOLEAN InitialOwner) :
 
 BOOLEAN MUTANT::IsSignalled()
 {
-	return current != NULL;
+	return Current != NULL;
 }
 
 BOOLEAN MUTANT::Satisfy()
@@ -69,16 +69,16 @@ BOOLEAN MUTANT::Satisfy()
 
 NTSTATUS MUTANT::TakeOwnership()
 {
-	if (owner && owner != current)
+	if (owner && owner != Current)
 		return STATUS_MUTANT_NOT_OWNED;
-	owner = current;
+	owner = Current;
 	count++;
 	return STATUS_SUCCESS;
 }
 
 NTSTATUS MUTANT::ReleaseOwnership(ULONG& prev)
 {
-	if (owner != current)
+	if (owner != Current)
 		return STATUS_MUTANT_NOT_OWNED;
 	prev = count;
 	if (!--count)
@@ -132,14 +132,14 @@ NTSTATUS NTAPI NtReleaseMutant(
 
 	if (PreviousState)
 	{
-		r = verify_for_write( PreviousState, sizeof PreviousState );
+		r = VerifyForWrite( PreviousState, sizeof PreviousState );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
 
 	r = mutant->ReleaseOwnership( prev );
 	if (r == STATUS_SUCCESS && PreviousState)
-		r = copy_to_user( PreviousState, &prev, sizeof prev );
+		r = CopyToUser( PreviousState, &prev, sizeof prev );
 
 	return r;
 }

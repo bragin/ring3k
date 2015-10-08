@@ -134,7 +134,7 @@ public:
 NTSTATUS create_thread( THREAD **pthread, PROCESS *p, PCLIENT_ID id, CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended );
 int run_thread(FIBER *arg);
 
-extern THREAD *current;
+extern THREAD *Current;
 
 void send_terminate_message( THREAD *thread, OBJECT *port, LARGE_INTEGER& create_time );
 bool send_exception( THREAD *thread, EXCEPTION_RECORD &rec );

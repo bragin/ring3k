@@ -230,7 +230,7 @@ NTSTATUS Nteventfunc( HANDLE Handle, PULONG PreviousState, void (EVENT::*fn)(PUL
 
 	if (PreviousState)
 	{
-		r = verify_for_write( PreviousState, sizeof PreviousState );
+		r = VerifyForWrite( PreviousState, sizeof PreviousState );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -243,7 +243,7 @@ NTSTATUS Nteventfunc( HANDLE Handle, PULONG PreviousState, void (EVENT::*fn)(PUL
 	(event->*fn)( &prev );
 
 	if (PreviousState)
-		copy_to_user( PreviousState, &prev, sizeof prev );
+		CopyToUser( PreviousState, &prev, sizeof prev );
 
 	return r;
 }
@@ -320,12 +320,12 @@ NTSTATUS NTAPI NtQueryEvent(
 
 	event->Query( info.basic );
 
-	r = copy_to_user( EventInformation, &info, sz );
+	r = CopyToUser( EventInformation, &info, sz );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	if (ReturnLength)
-		copy_to_user( ReturnLength, &sz, sizeof sz );
+		CopyToUser( ReturnLength, &sz, sizeof sz );
 
 	return r;
 }

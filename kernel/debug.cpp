@@ -74,7 +74,7 @@ void DebugPrintf(const char *file, const char *func, int line, const char *fmt, 
 	int sz, n, i, is_longlong;
 	va_list va;
 
-	if (!option_trace)
+	if (!OptionTrace)
 		return;
 
 	va_start( va, fmt );
@@ -228,7 +228,7 @@ void DoDumpRegs(CONTEXT *ctx)
 
 void DumpRegs(CONTEXT *ctx)
 {
-	if (option_trace)
+	if (OptionTrace)
 		DoDumpRegs( ctx );
 }
 
@@ -240,7 +240,7 @@ BYTE* DumpUserMem( BYTE *address )
 	unsigned int i;
 	char line[0x11];
 
-	NTSTATUS r = copy_from_user( mem, address, len );
+	NTSTATUS r = CopyFromUser( mem, address, len );
 	if (r)
 	{
 		fprintf(stderr, "address %p: invalid\n", address);
@@ -271,7 +271,7 @@ void DebuggerBacktrace(PCONTEXT ctx)
 	frame = ctx->Ebp;
 	stack = ctx->Esp;
 
-	r = copy_from_user( &x[0], (void*) stack, sizeof x );
+	r = CopyFromUser( &x[0], (void*) stack, sizeof x );
 	if (r == STATUS_SUCCESS)
 	{
 		fprintf(stderr, "sysret = %08lx\n", x[0]);
@@ -286,7 +286,7 @@ void DebuggerBacktrace(PCONTEXT ctx)
 			break;
 		}
 
-		r = copy_from_user( &x[0], (void*) frame, sizeof x );
+		r = CopyFromUser( &x[0], (void*) frame, sizeof x );
 		if (r < STATUS_SUCCESS)
 		{
 			fprintf(stderr, "<invalid address>\n");
@@ -313,7 +313,7 @@ int UDInputHook(struct ud* ud_obj)
 {
 	ud_info *info = (ud_info*) ud_obj;
 	BYTE b = 0;
-	NTSTATUS r = copy_from_user( &b, info->src, 1 );
+	NTSTATUS r = CopyFromUser( &b, info->src, 1 );
 	if (r < STATUS_SUCCESS)
 		return UD_EOI;
 	info->src++;
@@ -374,7 +374,7 @@ void Debugger( void )
 	CONTEXT ctx;
 
 	ctx.ContextFlags = context_all;
-	current->GetContext( ctx );
+	Current->GetContext( ctx );
 	BYTE *d_address = (BYTE*) ctx.Esp;
 	BYTE *u_address = (BYTE*) ctx.Eip;
 	char buf[100];

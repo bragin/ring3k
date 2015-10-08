@@ -413,14 +413,14 @@ NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, UL
 
 	sections = (IMAGE_SECTION_HEADER*) (addr + dos->e_lfanew + sizeof (*nt));
 
-	if (option_trace)
+	if (OptionTrace)
 		trace("read %d sections, load at %08lx\n",
 			  nt->FileHeader.NumberOfSections,
 			  nt->OptionalHeader.ImageBase);
 
 	for ( i=0; i<nt->FileHeader.NumberOfSections; i++ )
 	{
-		if (option_trace)
+		if (OptionTrace)
 			trace("%-8s %08lx %08lx %08lx %08lx\n",
 				  sections[i].Name,
 				  sections[i].VirtualAddress,
@@ -584,7 +584,7 @@ const char *pe_section_t::get_symbol( ULONG address )
 	return 0;
 }
 
-const char *get_section_symbol( OBJECT *object, ULONG address )
+const char *GetSectionSymbol( OBJECT *object, ULONG address )
 {
 	trace("%p %08lx\n", object, address);
 	if (!object)
@@ -687,7 +687,7 @@ NTSTATUS NTAPI NtCreateSection(
 		return STATUS_INVALID_PARAMETER_6;
 	}
 
-	r = verify_for_write( SectionHandle, sizeof *SectionHandle );
+	r = VerifyForWrite( SectionHandle, sizeof *SectionHandle );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -739,7 +739,7 @@ NTSTATUS NTAPI NtCreateSection(
 
 	if (SectionSize)
 	{
-		r = copy_from_user( &sz, SectionSize, sizeof sz );
+		r = CopyFromUser( &sz, SectionSize, sizeof sz );
 		if (r < STATUS_SUCCESS)
 			return r;
 		if (sz.QuadPart == 0)
@@ -780,7 +780,7 @@ NTSTATUS NTAPI NtMapViewOfSection(
 		  SectionHandle, ProcessHandle, BaseAddress, ZeroBits, CommitSize,
 		  SectionOffset, ViewSize, InheritDisposition, AllocationType, Protect );
 
-	r = process_from_handle( ProcessHandle, &p );
+	r = ProcessFromHandle( ProcessHandle, &p );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -789,14 +789,14 @@ NTSTATUS NTAPI NtMapViewOfSection(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_from_user( &addr, BaseAddress, sizeof addr );
+	r = CopyFromUser( &addr, BaseAddress, sizeof addr );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	if (addr)
 		trace("requested specific address %p\n", addr);
 
-	r = verify_for_write( ViewSize, sizeof *ViewSize );
+	r = VerifyForWrite( ViewSize, sizeof *ViewSize );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -805,7 +805,7 @@ NTSTATUS NTAPI NtMapViewOfSection(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_to_user( BaseAddress, &addr, sizeof addr );
+	r = CopyToUser( BaseAddress, &addr, sizeof addr );
 
 	trace("mapped at %p\n", addr );
 
@@ -821,7 +821,7 @@ NTSTATUS NTAPI NtUnmapViewOfSection(
 
 	trace("%p %p\n", ProcessHandle, BaseAddress );
 
-	r = process_from_handle( ProcessHandle, &p );
+	r = ProcessFromHandle( ProcessHandle, &p );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -877,9 +877,9 @@ NTSTATUS NTAPI NtQuerySection(
 	if (len > SectionInformationLength)
 		return STATUS_BUFFER_TOO_SMALL;
 
-	r = copy_to_user( SectionInformation, &info, len );
+	r = CopyToUser( SectionInformation, &info, len );
 	if (r == STATUS_SUCCESS && ResultLength)
-		r = copy_to_user( ResultLength, &len, sizeof len );
+		r = CopyToUser( ResultLength, &len, sizeof len );
 
 	return r;
 }

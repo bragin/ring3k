@@ -65,7 +65,7 @@ NTSTATUS random_dev_factory_t::AllocObject(OBJECT** obj)
 	return STATUS_SUCCESS;
 }
 
-void init_random()
+void InitRandom()
 {
 	random_dev_factory_t factory;
 	unicode_string_t rand;

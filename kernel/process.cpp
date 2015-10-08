@@ -203,7 +203,7 @@ void kshm_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 	}
 
 	fprintf(stderr, "%04lx: accessed kshm[%04lx]%s from %08lx\n",
-			current->TraceId(), ofs, field, eip);
+			Current->TraceId(), ofs, field, eip);
 }
 
 kshm_tracer kshm_trace;
@@ -251,9 +251,9 @@ NTSTATUS get_shared_memory_block( PROCESS *p )
 	return STATUS_SUCCESS;
 }
 
-THREAD *find_thread_by_client_id( CLIENT_ID *id )
+THREAD *FindThreadByClientId( CLIENT_ID *id )
 {
-	for ( process_iter_t i(processes); i; i.Next() )
+	for ( PROCESS_ITER i(Processes); i; i.Next() )
 	{
 		PROCESS *p = i;
 		if (p->id == (ULONG)id->UniqueProcess)
@@ -272,7 +272,7 @@ THREAD *find_thread_by_client_id( CLIENT_ID *id )
 
 PROCESS *find_process_by_id( HANDLE UniqueProcess )
 {
-	for ( process_iter_t i(processes); i; i.Next() )
+	for ( PROCESS_ITER i(Processes); i; i.Next() )
 	{
 		PROCESS *p = i;
 		if (p->id == (ULONG)UniqueProcess)
@@ -293,20 +293,20 @@ BOOLEAN PROCESS::IsSignalled( void )
 	return TRUE;
 }
 
-NTSTATUS process_from_handle( HANDLE handle, PROCESS **process )
+NTSTATUS ProcessFromHandle( HANDLE handle, PROCESS **process )
 {
 	return object_from_handle( *process, handle, 0 );
 }
 
 
-ULONG allocate_id()
+ULONG AllocateId()
 {
 	static ULONG unique_counter;
 
 	return (++unique_counter) << 2;
 }
 
-NTSTATUS process_alloc_user_handle(
+NTSTATUS ProcessAllocUserHandle(
 	PROCESS *p,
 	OBJECT *obj,
 	ACCESS_MASK access,
@@ -326,7 +326,7 @@ NTSTATUS process_alloc_user_handle(
 	trace("handle = %08lx\n", (ULONG)handle );
 
 	// write the handle into our process's VM
-	r = copy_to_user( out, &handle, sizeof handle );
+	r = CopyToUser( out, &handle, sizeof handle );
 	if (r < STATUS_SUCCESS)
 	{
 		trace("write to %p failed\n", out);
@@ -372,16 +372,16 @@ PROCESS::PROCESS() :
 	window_station(0)
 {
 	ExitStatus = STATUS_PENDING;
-	id = allocate_id();
+	id = AllocateId();
 	memset( &handle_table, 0, sizeof handle_table );
-	processes.Append( this );
+	Processes.Append( this );
 }
 
 PROCESS::~PROCESS()
 {
 	if (win32k_info)
 		delete win32k_info;
-	processes.Unlink( this );
+	Processes.Unlink( this );
 	exception_port = 0;
 }
 
@@ -427,7 +427,7 @@ void peb_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 	}
 
 	fprintf(stderr, "%04lx: accessed peb[%04lx]%s from %08lx\n",
-			current->TraceId(), ofs, field, eip);
+			Current->TraceId(), ofs, field, eip);
 }
 
 peb_tracer peb_trace;
@@ -455,7 +455,7 @@ NTSTATUS create_process( PROCESS **pprocess, OBJECT *section )
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = mapit( p->vm, ntdll_section, p->pntdll );
+	r = mapit( p->vm, NtDLLSection, p->pntdll );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -537,7 +537,7 @@ NTSTATUS NTAPI NtCreateProcess(
 	r = create_process( &p, section );
 	if (r == STATUS_SUCCESS)
 	{
-		r = alloc_user_handle( p, DesiredAccess, ProcessHandle );
+		r = AllocUserHandle( p, DesiredAccess, ProcessHandle );
 		release( p );
 	}
 
@@ -580,7 +580,7 @@ NTSTATUS NTAPI NtOpenProcess(
 
 	trace("%p %08lx %p %p\n", ProcessHandle, DesiredAccess, ObjectAttributes, ClientId );
 
-	r = copy_from_user( &oa, ObjectAttributes, sizeof oa );
+	r = CopyFromUser( &oa, ObjectAttributes, sizeof oa );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -596,7 +596,7 @@ NTSTATUS NTAPI NtOpenProcess(
 	id.UniqueThread = 0;
 	if (ClientId)
 	{
-		r = copy_from_user( &id, ClientId, sizeof id );
+		r = CopyFromUser( &id, ClientId, sizeof id );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -608,7 +608,7 @@ NTSTATUS NTAPI NtOpenProcess(
 		//trace("cid\n");
 		if (id.UniqueThread)
 		{
-			THREAD *t = find_thread_by_client_id( &id );
+			THREAD *t = FindThreadByClientId( &id );
 			if (!t)
 				return STATUS_INVALID_CID;
 			process = t->process;
@@ -645,7 +645,7 @@ NTSTATUS NTAPI NtOpenProcess(
 
 	if (r == STATUS_SUCCESS)
 	{
-		r = alloc_user_handle( process, DesiredAccess, ProcessHandle );
+		r = AllocUserHandle( process, DesiredAccess, ProcessHandle );
 	}
 	release( process );
 
@@ -707,14 +707,14 @@ NTSTATUS NTAPI NtSetInformationProcess(
 		return STATUS_INVALID_INFO_CLASS;
 	}
 
-	NTSTATUS r = process_from_handle( Process, &p );
+	NTSTATUS r = ProcessFromHandle( Process, &p );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	if (ProcessInformationLength != sz)
 		return STATUS_INFO_LENGTH_MISMATCH;
 
-	r = copy_from_user( &info, ProcessInformation, sz );
+	r = CopyFromUser( &info, ProcessInformation, sz );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -830,7 +830,7 @@ NTSTATUS NTAPI NtQueryInformationProcess(
 
 	memset( &info, 0, sizeof info );
 
-	r = process_from_handle( Process, &p );
+	r = ProcessFromHandle( Process, &p );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -870,9 +870,9 @@ NTSTATUS NTAPI NtQueryInformationProcess(
 	if (sz > ProcessInformationLength)
 		sz = ProcessInformationLength;
 
-	r = copy_to_user( ProcessInformation, &info, sz );
+	r = CopyToUser( ProcessInformation, &info, sz );
 	if (r == STATUS_SUCCESS && ReturnLength)
-		r = copy_to_user( ReturnLength, &len, sizeof len );
+		r = CopyToUser( ReturnLength, &len, sizeof len );
 
 	return r;
 }
@@ -892,7 +892,7 @@ NTSTATUS NTAPI NtTerminateProcess(
 		return STATUS_SUCCESS;
 	}
 
-	r = process_from_handle( Process, &p );
+	r = ProcessFromHandle( Process, &p );
 	if (r < STATUS_SUCCESS)
 		return r;
 

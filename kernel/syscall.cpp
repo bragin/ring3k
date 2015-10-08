@@ -79,7 +79,7 @@ ULONG number_of_uicalls;
 
 static ULONG uicall_offset = 0x1000;
 
-void init_syscalls(bool xp)
+void InitSyscalls(bool xp)
 {
 	if (xp)
 	{
@@ -100,7 +100,7 @@ void init_syscalls(bool xp)
 void trace_syscall_enter(ULONG id, ntcalldesc *ntcall, ULONG *args, ULONG retaddr)
 {
 	/* print a relay style trace line */
-	if (!option_trace)
+	if (!OptionTrace)
 		return;
 
 	fprintf(stderr,"%04lx: %s(", id, ntcall->name);
@@ -116,14 +116,14 @@ void trace_syscall_enter(ULONG id, ntcalldesc *ntcall, ULONG *args, ULONG retadd
 
 void trace_syscall_exit(ULONG id, ntcalldesc *ntcall, ULONG r, ULONG retaddr)
 {
-	if (!option_trace)
+	if (!OptionTrace)
 		return;
 
 	fprintf(stderr, "%04lx: %s retval=%08lx ret=%08lx\n",
 			id, ntcall->name, r, retaddr);
 }
 
-NTSTATUS do_nt_syscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
+NTSTATUS DoNtSyscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
 {
 	NTSTATUS r = STATUS_INVALID_SYSTEM_SERVICE;
 	ntcalldesc *ntcall = 0;
@@ -147,7 +147,7 @@ NTSTATUS do_nt_syscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
 	}
 
 	BYTE inst[4];
-	r = copy_from_user( inst, (const void*)retaddr, sizeof inst );
+	r = CopyFromUser( inst, (const void*)retaddr, sizeof inst );
 	if (r == STATUS_SUCCESS && inst[0] == 0xc2)
 	{
 		// detect the number of args
@@ -159,13 +159,13 @@ NTSTATUS do_nt_syscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
 
 		// many syscalls are a short asm function
 		// find the caller of that function
-		if (option_trace)
+		if (OptionTrace)
 		{
 			ULONG r2 = 0;
 			CONTEXT ctx;
 			ctx.ContextFlags = CONTEXT_CONTROL;
-			current->GetContext( ctx );
-			r = copy_from_user( &r2, (const void*) ctx.Esp, sizeof r2);
+			Current->GetContext( ctx );
+			r = CopyFromUser( &r2, (const void*) ctx.Esp, sizeof r2);
 			if (r == STATUS_SUCCESS)
 				retaddr = r2;
 		}
@@ -175,7 +175,7 @@ NTSTATUS do_nt_syscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
 		Die("not enough room for %d args\n", ntcall->numargs);
 
 	/* call it */
-	r = copy_from_user( args, uargs, ntcall->numargs*sizeof (args[0]) );
+	r = CopyFromUser( args, uargs, ntcall->numargs*sizeof (args[0]) );
 	if (r < STATUS_SUCCESS)
 		goto end;
 
@@ -183,7 +183,7 @@ NTSTATUS do_nt_syscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
 
 	// initialize the windows subsystem if necessary
 	if (win32k_func)
-		win32k_thread_init(current);
+		Win32kThreadInit(Current);
 
 	/* debug info for this call */
 	if (!ntcall->func)

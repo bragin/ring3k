@@ -12,7 +12,7 @@ template<class T> NTSTATUS nt_open_object(
 	unicode_string_t us;
 	NTSTATUS r;
 
-	r = copy_from_user( &oa, ObjectAttributes, sizeof oa );
+	r = CopyFromUser( &oa, ObjectAttributes, sizeof oa );
 	if (r != STATUS_SUCCESS)
 		return r;
 
@@ -34,7 +34,7 @@ template<class T> NTSTATUS nt_open_object(
 
 	if (dynamic_cast<T*>( object ))
 	{
-		r = alloc_user_handle( object, DesiredAccess, Handle );
+		r = AllocUserHandle( object, DesiredAccess, Handle );
 	}
 	else
 		r = STATUS_OBJECT_TYPE_MISMATCH;
@@ -49,7 +49,7 @@ template<typename T> NTSTATUS object_from_handle(T*& out, HANDLE handle, ACCESS_
 	NTSTATUS r;
 	OBJECT *obj = 0;
 
-	r = current->process->handle_table.object_from_handle( obj, handle, access );
+	r = Current->process->handle_table.object_from_handle( obj, handle, access );
 	if (r != STATUS_SUCCESS)
 		return r;
 

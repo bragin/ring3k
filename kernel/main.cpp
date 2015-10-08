@@ -52,9 +52,9 @@
 #include "symlink.h"
 #include "alloc_bitmap.h"
 
-process_list_t processes;
-THREAD *current;
-OBJECT *ntdll_section;
+PROCESS_LIST Processes;
+THREAD *Current;
+OBJECT *NtDLLSection;
 int option_debug = 0;
 ULONG KiIntSystemCall = 0;
 bool forced_quit;
@@ -105,7 +105,7 @@ SLEEPER* Sleeper = &DefaultSleeper;
 int Schedule(void)
 {
 	/* while there's still a thread running */
-	while (processes.Head())
+	while (Processes.Head())
 	{
 		// check if any thing interesting has happened
 		Sleeper->CheckEvents( false );
@@ -205,13 +205,13 @@ NTSTATUS InitNtDLL( void )
 	if (r < STATUS_SUCCESS)
 		Die("failed to open ntdll\n");
 
-	r = create_section( &ntdll_section, file, 0, SEC_IMAGE, PAGE_EXECUTE_READWRITE );
+	r = create_section( &NtDLLSection, file, 0, SEC_IMAGE, PAGE_EXECUTE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		Die("failed to create ntdll section\n");
 
-	KiIntSystemCall = get_proc_address( ntdll_section, "KiIntSystemCall" );
+	KiIntSystemCall = get_proc_address( NtDLLSection, "KiIntSystemCall" );
 	trace("KiIntSystemCall = %08lx\n", KiIntSystemCall);
-	init_syscalls(KiIntSystemCall != 0);
+	InitSyscalls(KiIntSystemCall != 0);
 
 	release( file );
 
@@ -220,15 +220,15 @@ NTSTATUS InitNtDLL( void )
 
 void FreeNtDLL( void )
 {
-	release( ntdll_section );
-	ntdll_section = NULL;
+	release( NtDLLSection );
+	NtDLLSection = NULL;
 }
 
 void DoCleanup( void )
 {
 	int num_threads = 0, num_processes = 0;
 
-	for ( process_iter_t pi(processes); pi; pi.Next() )
+	for ( PROCESS_ITER pi(Processes); pi; pi.Next() )
 	{
 		PROCESS *p = pi;
 		if (p->IsSignalled())
@@ -256,8 +256,8 @@ static void BacktraceAndQuit()
 	int n=0, size;
 	ULONG id = 0;
 
-	if (current)
-		id = current->TraceId();
+	if (Current)
+		id = Current->TraceId();
 
 	size = backtrace(bt, max_frames);
 	names = backtrace_symbols(bt, size);
@@ -303,7 +303,7 @@ trace_option trace_option_list[] =
 	{ 0, false },
 };
 
-int& option_trace = trace_option_list[0].enabled;
+int& OptionTrace = trace_option_list[0].enabled;
 
 void Usage( void )
 {
@@ -327,7 +327,7 @@ void Usage( void )
 
 	// list the graphics drivers
 	printf("  graphics drivers: ");
-	list_graphics_drivers();
+	ListGraphicsDrivers();
 	printf("\n");
 
 	printf("\n");
@@ -425,7 +425,7 @@ void ParseOptions(int argc, char **argv)
 			option_debug = 1;
 			break;
 		case 'g':
-			if (!set_graphics_driver( optarg ))
+			if (!SetGraphicsDriver( optarg ))
 			{
 				fprintf(stderr, "unknown graphics driver %s\n", optarg);
 				Usage();
@@ -484,7 +484,7 @@ int main(int argc, char **argv)
 	SYSTEM_TIME_OF_DAY_INFORMATION dummy;
 	get_system_time_of_day( dummy );
 
-	init_registry();
+	InitRegistry();
 	FIBER::FibersInit();
 	init_root();
 	create_directory_object( (PWSTR) L"\\" );
@@ -500,7 +500,7 @@ int main(int argc, char **argv)
 	create_directory_object( (PWSTR) L"\\BaseNamedObjects" );
 	CreateSyncEvent( (PWSTR) L"\\Security\\LSA_AUTHENTICATION_INITIALIZED" );
 	CreateSyncEvent( (PWSTR) L"\\SeLsaInitEvent" );
-	init_random();
+	InitRandom();
 	InitPipeDevice();
 	// XP
 	create_directory_object( (PWSTR) L"\\KernelObjects" );
@@ -518,7 +518,7 @@ int main(int argc, char **argv)
 	// run the main loop
 	Schedule();
 
-	ntgdi_fini();
+	NtGdiFini();
 	r = initial_thread->process->ExitStatus;
 	//fprintf(stderr, "process exited (%08x)\n", r);
 	release( initial_thread );
@@ -528,7 +528,7 @@ int main(int argc, char **argv)
 
 	free_root();
 	FIBER::FibersFinish();
-	free_registry();
+	FreeRegistry();
 	FreeNtDLL();
 
 	return r;

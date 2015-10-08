@@ -183,7 +183,7 @@ BOOL CBITMAP::SetPixelL( int x, int y, COLORREF color )
 
 NTSTATUS CBITMAP::CopyPixels( void *pixels )
 {
-	return copy_from_user( bits, pixels, BitmapSize() );
+	return CopyFromUser( bits, pixels, BitmapSize() );
 }
 
 BOOL CBITMAP::BitBlt(

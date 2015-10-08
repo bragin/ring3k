@@ -34,23 +34,23 @@
 #include "ntcall.h"
 #include "timer.h"
 
-NTSTATUS copy_to_user( void *dest, const void *src, size_t len )
+NTSTATUS CopyToUser( void *dest, const void *src, size_t len )
 {
-	return current->CopyToUser( dest, src, len );
+	return Current->CopyToUser( dest, src, len );
 }
 
-NTSTATUS copy_from_user( void *dest, const void *src, size_t len )
+NTSTATUS CopyFromUser( void *dest, const void *src, size_t len )
 {
-	return current->CopyFromUser( dest, src, len );
+	return Current->CopyFromUser( dest, src, len );
 }
 
-NTSTATUS verify_for_write( void *dest, size_t len )
+NTSTATUS VerifyForWrite( void *dest, size_t len )
 {
-	return current->VerifyForWrite( dest, len );
+	return Current->VerifyForWrite( dest, len );
 }
 
 // print with white on blue - appologies for the lame hack ;)
-void color_print( const char* format, ... )
+void ColorPrint( const char* format, ... )
 {
 	va_list va;
 	va_start( va, format);
@@ -79,12 +79,12 @@ NTSTATUS NTAPI NtRaiseHardError(
 	if (NumberOfArguments>32)
 		return STATUS_INVALID_PARAMETER;
 
-	color_print(" Blue screen of death! ");
+	ColorPrint(" Blue screen of death! ");
 	for (i=0; i<NumberOfArguments; i++)
 	{
 		void *arg;
 
-		r = copy_from_user( &arg, &Arguments[i], sizeof (PUNICODE_STRING) );
+		r = CopyFromUser( &arg, &Arguments[i], sizeof (PUNICODE_STRING) );
 		if (r < STATUS_SUCCESS)
 			break;
 
@@ -98,10 +98,10 @@ NTSTATUS NTAPI NtRaiseHardError(
 				break;
 
 			us.wchar_to_utf8( buffer, sizeof buffer );
-			color_print(" %s ", buffer);
+			ColorPrint(" %s ", buffer);
 		}
 		else
-			color_print(" %08lx ", (ULONG)arg);
+			ColorPrint(" %08lx ", (ULONG)arg);
 	}
 
 	exit(1);
@@ -143,7 +143,7 @@ NTSTATUS NTAPI NtQuerySystemInformation(
 
 	if (ReturnLength)
 	{
-		r = copy_to_user( ReturnLength, &len, sizeof len );
+		r = CopyToUser( ReturnLength, &len, sizeof len );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -188,7 +188,7 @@ NTSTATUS NTAPI NtQuerySystemInformation(
 	case SystemGlobalFlag:
 		SET_INFO_LENGTH( len, info.global_flag );
 		info.global_flag.GlobalFlag = 0;
-		if (option_trace)
+		if (OptionTrace)
 			info.global_flag.GlobalFlag |= FLG_SHOW_LDR_SNAPS | FLG_ENABLE_CSRDEBUG;
 		break;
 
@@ -214,9 +214,9 @@ NTSTATUS NTAPI NtQuerySystemInformation(
 		r = STATUS_INVALID_INFO_CLASS;
 	}
 
-	r = copy_to_user( SystemInformation, &info, len );
+	r = CopyToUser( SystemInformation, &info, len );
 	if (ReturnLength)
-		r = copy_to_user( ReturnLength, &len, sizeof len );
+		r = CopyToUser( ReturnLength, &len, sizeof len );
 
 	return r;
 }
@@ -268,11 +268,11 @@ NTSTATUS NTAPI NtCreatePagingFile(
 
 	ULARGE_INTEGER init_sz, max_sz;
 
-	r = copy_from_user( &init_sz, InitialSize, sizeof init_sz );
+	r = CopyFromUser( &init_sz, InitialSize, sizeof init_sz );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_from_user( &max_sz, MaximumSize, sizeof max_sz );
+	r = CopyFromUser( &max_sz, MaximumSize, sizeof max_sz );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -312,10 +312,10 @@ NTSTATUS NTAPI NtQueryPerformanceCounter(
 	LARGE_INTEGER freq;
 	NTSTATUS r;
 	freq.QuadPart = 1000LL;
-	r = copy_to_user( PerformanceCount, &now, sizeof now );
+	r = CopyToUser( PerformanceCount, &now, sizeof now );
 	if (r < STATUS_SUCCESS)
 		return r;
-	r = copy_to_user( PerformanceFrequency, &freq, sizeof freq );
+	r = CopyToUser( PerformanceFrequency, &freq, sizeof freq );
 	return r;
 }
 
@@ -326,7 +326,7 @@ NTSTATUS NTAPI NtAllocateLocallyUniqueId(
 	LUID luid;
 	luid.HighPart = id.QuadPart >> 32;
 	luid.LowPart = id.QuadPart & 0xffffffffLL;
-	NTSTATUS r = copy_to_user( Luid, &luid, sizeof luid );
+	NTSTATUS r = CopyToUser( Luid, &luid, sizeof luid );
 	if (r == STATUS_SUCCESS)
 		id.QuadPart++;
 	return r;

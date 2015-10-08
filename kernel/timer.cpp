@@ -301,7 +301,7 @@ NTSTATUS nttimer_t::set(
 
 	prev = expired;
 	interval = Period;
-	thread = current;
+	thread = Current;
 	addref( thread );
 	apc_routine = apc;
 	apc_context = context;
@@ -400,7 +400,7 @@ NTSTATUS NtCancelTimer(
 
 	if (PreviousState)
 	{
-		r = verify_for_write( PreviousState, sizeof *PreviousState );
+		r = VerifyForWrite( PreviousState, sizeof *PreviousState );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -409,7 +409,7 @@ NTSTATUS NtCancelTimer(
 	timer->cancel(prev);
 
 	if (PreviousState)
-		copy_to_user( PreviousState, &prev, sizeof prev );
+		CopyToUser( PreviousState, &prev, sizeof prev );
 
 	return STATUS_SUCCESS;
 }
@@ -425,7 +425,7 @@ NTSTATUS NtSetTimer(
 {
 	LARGE_INTEGER due;
 
-	NTSTATUS r = copy_from_user( &due, DueTime, sizeof due );
+	NTSTATUS r = CopyFromUser( &due, DueTime, sizeof due );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -438,7 +438,7 @@ NTSTATUS NtSetTimer(
 
 	if (PreviousState)
 	{
-		r = verify_for_write( PreviousState, sizeof *PreviousState );
+		r = VerifyForWrite( PreviousState, sizeof *PreviousState );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -446,7 +446,7 @@ NTSTATUS NtSetTimer(
 	BOOLEAN prev = FALSE;
 	r = timer->set( due, (PKNORMAL_ROUTINE)TimerApcRoutine, TimerContext, Resume, Period, prev );
 	if (r == STATUS_SUCCESS && PreviousState )
-		copy_to_user( PreviousState, &prev, sizeof prev );
+		CopyToUser( PreviousState, &prev, sizeof prev );
 
 	return r;
 }
@@ -481,7 +481,7 @@ NTSTATUS NTAPI NtQueryTimer(
 	}
 
 	// this seems like the wrong order, but agrees with what tests show
-	r = verify_for_write( TimerInformation, sz );
+	r = VerifyForWrite( TimerInformation, sz );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -498,12 +498,12 @@ NTSTATUS NTAPI NtQueryTimer(
 		assert(0);
 	}
 
-	r = copy_to_user( TimerInformation, &info, sz );
+	r = CopyToUser( TimerInformation, &info, sz );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	if (ResultLength)
-		copy_to_user( ResultLength, &sz, sizeof sz );
+		CopyToUser( ResultLength, &sz, sizeof sz );
 
 	return r;
 }
@@ -512,20 +512,20 @@ NTSTATUS NTAPI NtQuerySystemTime(PLARGE_INTEGER CurrentTime)
 {
 	LARGE_INTEGER now = timeout_t::current_time();
 
-	return copy_to_user( CurrentTime, &now, sizeof now );
+	return CopyToUser( CurrentTime, &now, sizeof now );
 }
 
 NTSTATUS NTAPI NtQueryTimerResolution( PULONG CoarsestResolution, PULONG FinestResolution, PULONG ActualResolution)
 {
 	ULONG resolution = 100000LL; // 10ms
 	NTSTATUS r;
-	r = copy_to_user( CoarsestResolution, &resolution );
+	r = CopyToUser( CoarsestResolution, &resolution );
 	if (r < STATUS_SUCCESS)
 		return r;
-	r = copy_to_user( FinestResolution, &resolution );
+	r = CopyToUser( FinestResolution, &resolution );
 	if (r < STATUS_SUCCESS)
 		return r;
-	r = copy_to_user( ActualResolution, &resolution );
+	r = CopyToUser( ActualResolution, &resolution );
 	if (r < STATUS_SUCCESS)
 		return r;
 	return STATUS_SUCCESS;

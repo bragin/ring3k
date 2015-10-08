@@ -379,7 +379,7 @@ NTSTATUS NTAPI NtQueryDirectoryObject(
 		  ReturnSingleEntry, RestartScan, Offset, ReturnLength);
 
 	ULONG ofs = 0;
-	NTSTATUS r = copy_from_user( &ofs, Offset, sizeof ofs );
+	NTSTATUS r = CopyFromUser( &ofs, Offset, sizeof ofs );
 	if (r < STATUS_SUCCESS)
 		return r;
 

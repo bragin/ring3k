@@ -390,7 +390,7 @@ BOOLEAN THREAD_IMPL::software_interrupt( BYTE number )
 		break;
 
 	case 0x2e:
-		r = do_nt_syscall( TraceId(), ctx.Eax, (ULONG*) ctx.Edx, ctx.Eip );
+		r = DoNtSyscall( TraceId(), ctx.Eax, (ULONG*) ctx.Edx, ctx.Eip );
 		break;
 
 	default:
@@ -411,11 +411,11 @@ bool THREAD_IMPL::traced_access()
 
 	// get the fault address
 	void* addr = 0;
-	if (0 != current->process->vm->GetFaultInfo( addr ))
+	if (0 != Current->process->vm->GetFaultInfo( addr ))
 		return false;
 
 	// confirm the memory is traced
-	if (!current->process->vm->TracedAccess( addr, ctx.Eip ))
+	if (!Current->process->vm->TracedAccess( addr, ctx.Eip ))
 		return false;
 
 	trace_accessed_address = addr;
@@ -426,7 +426,7 @@ bool THREAD_IMPL::traced_access()
 void THREAD_IMPL::handle_user_segv( ULONG code )
 {
 	trace("%04lx: exception at %08lx\n", TraceId(), ctx.Eip);
-	if (option_trace)
+	if (OptionTrace)
 	{
 		DumpRegs( &ctx );
 		DebuggerBacktrace(&ctx);
@@ -496,7 +496,7 @@ void THREAD_IMPL::start_exception_handler(exception_stack_frame& info)
 	// get the address of the user side handler
 	// FIXME: this should be stored in the PROCESS structure
 	BYTE *pKiExceptionDispatcher = (BYTE*)process->pntdll +
-								   get_proc_address( ntdll_section, "KiUserExceptionDispatcher" );
+								   get_proc_address( NtDLLSection, "KiUserExceptionDispatcher" );
 	if (!pKiExceptionDispatcher)
 		Die("failed to find KiExceptionDispatcher in ntdll\n");
 
@@ -595,7 +595,7 @@ NTSTATUS THREAD_IMPL::DoUserCallback( ULONG index, ULONG &length, PVOID &buffer)
 
 	// setup the new execution context
 	BYTE *pKiUserCallbackDispatcher = (BYTE*)process->pntdll +
-									  get_proc_address( ntdll_section, "KiUserCallbackDispatcher" );
+									  get_proc_address( NtDLLSection, "KiUserCallbackDispatcher" );
 
 	context_changed = 1;
 	ctx.Eip = (ULONG) pKiUserCallbackDispatcher;
@@ -693,7 +693,7 @@ BOOLEAN THREAD_IMPL::deliver_apc(NTSTATUS thread_return)
 		goto end;
 
 	void *pKiUserApcDispatcher;
-	pKiUserApcDispatcher = (BYTE*)process->pntdll + get_proc_address( ntdll_section, "KiUserApcDispatcher" );
+	pKiUserApcDispatcher = (BYTE*)process->pntdll + get_proc_address( NtDLLSection, "KiUserApcDispatcher" );
 	if (!pKiUserApcDispatcher)
 		Die("failed to find KiUserApcDispatcher in ntdll\n");
 
@@ -839,7 +839,7 @@ NTSTATUS THREAD_IMPL::Terminate( NTSTATUS status )
 		process->terminate( status );
 	}
 
-	if (this == current)
+	if (this == Current)
 		Stop();
 
 	return STATUS_SUCCESS;
@@ -848,7 +848,7 @@ NTSTATUS THREAD_IMPL::Terminate( NTSTATUS status )
 void THREAD::Stop()
 {
 	FIBER::Stop();
-	current = this;
+	Current = this;
 }
 
 int THREAD_IMPL::Run()
@@ -856,7 +856,7 @@ int THREAD_IMPL::Run()
 	int i = 0;
 	while (1)
 	{
-		current = this;
+		Current = this;
 
 		if (ThreadState == StateTerminated)
 			return 0;
@@ -907,7 +907,7 @@ void THREAD_IMPL::HandleFault()
 	NTSTATUS r;
 
 	memset( inst, 0, sizeof inst );
-	assert( current == this );
+	assert( Current == this );
 	r = CopyFromUser( inst, (void*) ctx.Eip, 2 );
 	if (r < STATUS_SUCCESS ||
 			inst[0] != 0xcd ||
@@ -941,7 +941,7 @@ THREAD::THREAD(PROCESS *p) :
 	port(0),
 	queue(0)
 {
-	id = allocate_id();
+	id = AllocateId();
 	addref( process );
 	process->threads.Append( this );
 }
@@ -1050,7 +1050,7 @@ NTSTATUS NTAPI NtResumeThread(
 	r = thread->Resume( &count );
 
 	if (r == STATUS_SUCCESS && PreviousSuspendCount)
-		r = copy_to_user( PreviousSuspendCount, &count, sizeof count );
+		r = CopyToUser( PreviousSuspendCount, &count, sizeof count );
 
 	return r;
 }
@@ -1300,13 +1300,13 @@ NTSTATUS NTAPI NtWaitForSingleObject(
 	LARGE_INTEGER time;
 	if (Timeout)
 	{
-		r = copy_from_user( &time, Timeout, sizeof *Timeout );
+		r = CopyFromUser( &time, Timeout, sizeof *Timeout );
 		if (r < STATUS_SUCCESS)
 			return r;
 		Timeout = &time;
 	}
 
-	THREAD_IMPL *t = dynamic_cast<THREAD_IMPL*>( current );
+	THREAD_IMPL *t = dynamic_cast<THREAD_IMPL*>( Current );
 	assert( t );
 	return t->wait_on_handles( 1, &Handle, WaitAny, Alertable, Timeout );
 }
@@ -1328,7 +1328,7 @@ NTSTATUS NTAPI NtWaitForMultipleObjects(
 	LARGE_INTEGER t;
 	if (Timeout)
 	{
-		r = copy_from_user( &t, Timeout, sizeof t );
+		r = CopyFromUser( &t, Timeout, sizeof t );
 		if (r < STATUS_SUCCESS)
 			return r;
 		Timeout = &t;
@@ -1336,11 +1336,11 @@ NTSTATUS NTAPI NtWaitForMultipleObjects(
 
 	// copy the array of handles
 	HANDLE hcopy[MAXIMUM_WAIT_OBJECTS];
-	r = copy_from_user( hcopy, Handles, HandleCount * sizeof (HANDLE) );
+	r = CopyFromUser( hcopy, Handles, HandleCount * sizeof (HANDLE) );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
+	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( Current );
 	assert( thread );
 	return thread->wait_on_handles( HandleCount, hcopy, WaitType, Alertable, Timeout );
 }
@@ -1350,12 +1350,12 @@ NTSTATUS NTAPI NtDelayExecution( BOOLEAN Alertable, PLARGE_INTEGER Interval )
 	LARGE_INTEGER timeout;
 	NTSTATUS r;
 
-	r = copy_from_user( &timeout, Interval, sizeof timeout );
+	r = CopyFromUser( &timeout, Interval, sizeof timeout );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	trace("timeout = %llx\n", timeout.QuadPart);
-	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
+	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( Current );
 	assert( thread );
 	r = thread->wait_on_handles( 0, 0, WaitAny, Alertable, &timeout );
 	if (r == STATUS_TIMEOUT)
@@ -1379,7 +1379,7 @@ void teb_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->GetBaseAddress();
 	fprintf(stderr, "%04lx: accessed teb[%04lx] from %08lx\n",
-			current->TraceId(), ofs, eip);
+			Current->TraceId(), ofs, eip);
 }
 
 teb_tracer teb_trace;
@@ -1457,11 +1457,11 @@ NTSTATUS THREAD_IMPL::create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspe
 	TebBaseAddress = pteb;
 
 	/* find entry points */
-	pLdrInitializeThunk = (BYTE*)process->pntdll + get_proc_address( ntdll_section, "LdrInitializeThunk" );
+	pLdrInitializeThunk = (BYTE*)process->pntdll + get_proc_address( NtDLLSection, "LdrInitializeThunk" );
 	if (!pLdrInitializeThunk)
 		Die("failed to find LdrInitializeThunk in ntdll\n");
 
-	pKiUserApcDispatcher = (BYTE*)process->pntdll + get_proc_address( ntdll_section, "KiUserApcDispatcher" );
+	pKiUserApcDispatcher = (BYTE*)process->pntdll + get_proc_address( NtDLLSection, "KiUserApcDispatcher" );
 	if (!pKiUserApcDispatcher)
 		Die("failed to find KiUserApcDispatcher in ntdll\n");
 
@@ -1518,15 +1518,15 @@ NTSTATUS NTAPI NtCreateThread(
 	trace("%p %08lx %p %p %p %p %p %d\n", Thread, DesiredAccess, ObjectAttributes,
 		  Process, ClientId, Context, InitialTeb, CreateSuspended);
 
-	r = copy_from_user( &ctx, Context, sizeof ctx );
+	r = CopyFromUser( &ctx, Context, sizeof ctx );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_from_user( &init_teb, InitialTeb, sizeof init_teb );
+	r = CopyFromUser( &init_teb, InitialTeb, sizeof init_teb );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = process_from_handle( Process, &p );
+	r = ProcessFromHandle( Process, &p );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1535,12 +1535,12 @@ NTSTATUS NTAPI NtCreateThread(
 
 	if (r == STATUS_SUCCESS)
 	{
-		r = alloc_user_handle( t, DesiredAccess, Thread );
+		r = AllocUserHandle( t, DesiredAccess, Thread );
 		release( t );
 	}
 
 	if (r == STATUS_SUCCESS)
-		r = copy_to_user( ClientId, &id, sizeof id );
+		r = CopyToUser( ClientId, &id, sizeof id );
 
 	return r;
 }
@@ -1554,12 +1554,12 @@ NTSTATUS NTAPI NtContinue(
 	trace("%p %d\n", Context, RaiseAlert);
 
 	CONTEXT c;
-	r = copy_from_user( &c, Context, sizeof c );
+	r = CopyFromUser( &c, Context, sizeof c );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	c.ContextFlags = CONTEXT_CONTROL | CONTEXT_INTEGER;
-	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
+	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( Current );
 	assert( thread );
 	thread->set_context( c );
 
@@ -1568,10 +1568,10 @@ NTSTATUS NTAPI NtContinue(
 
 NTSTATUS NTAPI NtYieldExecution( void )
 {
-	THREAD *t = current;
+	THREAD *t = Current;
 	for (int i=0; i<0x10; i++)
 		FIBER::Yield();
-	current = t;
+	Current = t;
 	return STATUS_SUCCESS;
 }
 
@@ -1585,7 +1585,7 @@ NTSTATUS NTAPI NtTerminateThread(
 	trace("%p %08lx\n", ThreadHandle, Status);
 
 	if (ThreadHandle == 0)
-		t = current;
+		t = Current;
 	else
 	{
 		r = object_from_handle( t, ThreadHandle, 0 );
@@ -1655,7 +1655,7 @@ NTSTATUS NTAPI NtQueryInformationThread(
 
 	if (ReturnLength)
 	{
-		r = verify_for_write( ReturnLength, sizeof *ReturnLength );
+		r = VerifyForWrite( ReturnLength, sizeof *ReturnLength );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -1675,10 +1675,10 @@ NTSTATUS NTAPI NtQueryInformationThread(
 		assert(0);
 	}
 
-	r = copy_to_user( ThreadInformation, &info, sz );
+	r = CopyToUser( ThreadInformation, &info, sz );
 
 	if (r == STATUS_SUCCESS && ReturnLength)
-		copy_to_user( ReturnLength, &sz, sizeof sz );
+		CopyToUser( ReturnLength, &sz, sizeof sz );
 
 	return r;
 }
@@ -1708,7 +1708,7 @@ NTSTATUS NTAPI NtAlertResumeThread(
 
 NTSTATUS NTAPI NtTestAlert(void)
 {
-	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
+	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( Current );
 	assert( thread );
 	return thread->test_alert();
 }
@@ -1768,7 +1768,7 @@ NTSTATUS NTAPI NtSetInformationThread(
 			HANDLE TokenHandle = 0;
 			if (ThreadInformationLength != sizeof TokenHandle)
 				return STATUS_INFO_LENGTH_MISMATCH;
-			NTSTATUS r = copy_from_user( &TokenHandle, ThreadInformation, sizeof TokenHandle );
+			NTSTATUS r = CopyFromUser( &TokenHandle, ThreadInformation, sizeof TokenHandle );
 			if (r < STATUS_SUCCESS)
 				return r;
 			token_t *token = 0;
@@ -1781,7 +1781,7 @@ NTSTATUS NTAPI NtSetInformationThread(
 		case ThreadZeroTlsCell:
 		{
 			ULONG index = 0;
-			NTSTATUS r = copy_from_user( &index, ThreadInformation, sizeof index );
+			NTSTATUS r = CopyFromUser( &index, ThreadInformation, sizeof index );
 			if (r < STATUS_SUCCESS)
 				return r;
 			return t->zero_tls_cells( index );
@@ -1792,7 +1792,7 @@ NTSTATUS NTAPI NtSetInformationThread(
 			PVOID& Win32StartAddress = t->win32_start_address();
 			if (ThreadInformationLength != sizeof Win32StartAddress)
 				return STATUS_INFO_LENGTH_MISMATCH;
-			return copy_from_user( &Win32StartAddress, ThreadInformation, sizeof Win32StartAddress );
+			return CopyFromUser( &Win32StartAddress, ThreadInformation, sizeof Win32StartAddress );
 		}
 		default:
 			break;
@@ -1834,7 +1834,7 @@ NTSTATUS output_debug_string( EXCEPTION_RECORD& exrec )
 	char buffer[0x100];
 	len = min( sizeof buffer - 1, len );
 
-	r = copy_from_user( buffer, str, len );
+	r = CopyFromUser( buffer, str, len );
 	if (r != STATUS_SUCCESS)
 	{
 		trace("OutputDebugStringA %p %ld (unreadable)\n", str, len);
@@ -1842,7 +1842,7 @@ NTSTATUS output_debug_string( EXCEPTION_RECORD& exrec )
 	}
 	buffer[len] = 0;
 
-	if (option_trace)
+	if (OptionTrace)
 		fprintf(stderr, "OutputDebugString: %s\n", buffer );
 
 	return STATUS_SUCCESS;
@@ -1853,11 +1853,11 @@ NTSTATUS NTAPI NtRaiseException( PEXCEPTION_RECORD ExceptionRecord, PCONTEXT Con
 	exception_stack_frame info;
 	NTSTATUS r;
 
-	r = copy_from_user( &info.rec, ExceptionRecord, sizeof info.rec );
+	r = CopyFromUser( &info.rec, ExceptionRecord, sizeof info.rec );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_from_user( &info.ctx, Context, sizeof info.ctx );
+	r = CopyFromUser( &info.ctx, Context, sizeof info.ctx );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1865,7 +1865,7 @@ NTSTATUS NTAPI NtRaiseException( PEXCEPTION_RECORD ExceptionRecord, PCONTEXT Con
 	if (info.rec.ExceptionCode == DBG_PRINTEXCEPTION_C)
 	{
 		output_debug_string( info.rec );
-		THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
+		THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( Current );
 		assert( thread );
 		thread->set_context( info.ctx );
 		return STATUS_SUCCESS;
@@ -1873,7 +1873,7 @@ NTSTATUS NTAPI NtRaiseException( PEXCEPTION_RECORD ExceptionRecord, PCONTEXT Con
 
 	// FIXME: perhaps we should blow away everything pushed on after the current frame
 
-	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
+	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( Current );
 	assert( thread );
 	return thread->raise_exception( info, SearchFrames );
 }
@@ -1901,7 +1901,7 @@ NTSTATUS NTAPI NtCallbackReturn(
 	ULONG ResultLength,
 	NTSTATUS Status)
 {
-	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( current );
+	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( Current );
 	assert( thread );
 	return thread->user_callback_return(Result, ResultLength, Status);
 }
@@ -1926,13 +1926,13 @@ NTSTATUS NTAPI NtGetContextThread(
 		return r;
 
 	CONTEXT c;
-	r = copy_from_user( &c, Context, sizeof c );
+	r = CopyFromUser( &c, Context, sizeof c );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	t->GetContext( c );
 
-	r = copy_to_user( Context, &c, sizeof c );
+	r = CopyToUser( Context, &c, sizeof c );
 	return r;
 }
 
@@ -1948,7 +1948,7 @@ NTSTATUS NTAPI NtSetContextThread(
 		return r;
 
 	CONTEXT c;
-	r = copy_from_user( &c, Context, sizeof c );
+	r = CopyFromUser( &c, Context, sizeof c );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1964,21 +1964,21 @@ NTSTATUS NTAPI NtQueryDefaultLocale(
 
 	LCID lcid = MAKELCID( MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), SORT_DEFAULT );
 
-	return copy_to_user( Locale, &lcid, sizeof lcid );
+	return CopyToUser( Locale, &lcid, sizeof lcid );
 }
 
 NTSTATUS NTAPI NtQueryDefaultUILanguage(
 	LANGID* Language)
 {
 	LANGID lang = MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT);
-	return copy_to_user( Language, &lang, sizeof lang );
+	return CopyToUser( Language, &lang, sizeof lang );
 }
 
 NTSTATUS NTAPI NtQueryInstallUILanguage(
 	LANGID* Language)
 {
 	LANGID lang = MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT);
-	return copy_to_user( Language, &lang, sizeof lang );
+	return CopyToUser( Language, &lang, sizeof lang );
 }
 
 NTSTATUS NTAPI NtImpersonateThread(
@@ -1999,7 +1999,7 @@ NTSTATUS NTAPI NtImpersonateThread(
 		return r;
 
 	SECURITY_QUALITY_OF_SERVICE qos;
-	r = copy_from_user( &qos, SecurityQoS, sizeof qos );
+	r = CopyFromUser( &qos, SecurityQoS, sizeof qos );
 	if (r < STATUS_SUCCESS)
 		return r;
 

@@ -41,7 +41,7 @@ struct PROCESS : public SYNC_OBJECT
 
 	HANDLE_TABLE handle_table;
 
-	process_element_t Entry[1];
+	PROCESS_ELEMENT Entry[1];
 
 	// exception handling
 	OBJECT *exception_port;
@@ -72,7 +72,7 @@ public:
 	}
 };
 
-extern process_list_t processes;
+extern PROCESS_LIST Processes;
 
 NTSTATUS create_process( PROCESS **pprocess, OBJECT *section );
 NTSTATUS set_exception_port( PROCESS *process, OBJECT *obj );

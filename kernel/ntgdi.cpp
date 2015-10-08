@@ -61,7 +61,7 @@ struct graphics_driver_list graphics_drivers[] =
 	{ NULL, NULL, },
 };
 
-bool set_graphics_driver( const char *driver )
+bool SetGraphicsDriver( const char *driver )
 {
 	int i;
 
@@ -77,7 +77,7 @@ bool set_graphics_driver( const char *driver )
 	return false;
 }
 
-void list_graphics_drivers()
+void ListGraphicsDrivers()
 {
 	int i;
 
@@ -124,11 +124,11 @@ void NTGDISHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 			sprintf(unk, "unk_%04lx", ofs);
 		}
 		fprintf(stderr, "%04lx: accessed gdi handle[%04lx]:%s from %08lx\n",
-				current->TraceId(), ofs>>4, field, eip);
+				Current->TraceId(), ofs>>4, field, eip);
 	}
 	else
 		fprintf(stderr, "%04lx: accessed gshm[%04lx] from %08lx\n",
-				current->TraceId(), ofs, eip);
+				Current->TraceId(), ofs, eip);
 }
 
 static NTGDISHM_TRACER ntgdishm_trace;
@@ -282,13 +282,13 @@ ULONG WIN32K_MANAGER::get_async_key_state( ULONG Key )
 	return key_state[ Key ];
 }
 
-void ntgdi_fini()
+void NtGdiFini()
 {
 	if (win32k_manager)
 		win32k_manager->fini();
 }
 
-NTSTATUS win32k_process_init(PROCESS *process)
+NTSTATUS Win32kProcessInit(PROCESS *process)
 {
 	NTSTATUS r;
 
@@ -354,14 +354,14 @@ NTSTATUS win32k_process_init(PROCESS *process)
 	return r;
 }
 
-NTSTATUS win32k_thread_init(THREAD *thread)
+NTSTATUS Win32kThreadInit(THREAD *thread)
 {
 	NTSTATUS r;
 
 	if (thread->Win32kInitComplete())
 		return STATUS_SUCCESS;
 
-	r = win32k_process_init( thread->process );
+	r = Win32kProcessInit( thread->process );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -391,7 +391,7 @@ BOOLEAN NTAPI NtGdiAddFontResourceW(
 	FilenameLength *= 2;
 	if (FilenameLength > sizeof buf)
 		return FALSE;
-	NTSTATUS r = copy_from_user( buf, Filename, FilenameLength );
+	NTSTATUS r = CopyFromUser( buf, Filename, FilenameLength );
 	if (r < STATUS_SUCCESS)
 		return FALSE;
 	trace("filename = %pws\n", buf);
@@ -422,7 +422,7 @@ HGDIOBJ alloc_gdi_handle( BOOL stock, ULONG type, void *user_info, GDI_OBJECT* o
 		type = GDI_OBJECT_BRUSH;
 
 	gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
-	table[index].ProcessId = current->process->id;
+	table[index].ProcessId = Current->process->id;
 	table[index].Type = type;
 	HGDIOBJ handle = makeHGDIOBJ(0,stock,reported_type,index);
 	table[index].Count = 0;
@@ -493,13 +493,13 @@ void gdishm_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 		gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
 		ULONG ofs = address - (BYTE*) table[n].user_info;
 		fprintf(stderr, "%04lx: accessed gdishm[%04lx][%04lx] from %08lx\n",
-				current->TraceId(), n, ofs, eip);
+				Current->TraceId(), n, ofs, eip);
 	}
 	else
 	{
 		ULONG ofs = address - mb->GetBaseAddress();
 		fprintf(stderr, "%04lx: accessed gdishm[%04lx] from %08lx\n",
-				current->TraceId(), ofs, eip);
+				Current->TraceId(), ofs, eip);
 	}
 }
 
@@ -549,17 +549,17 @@ void GDI_OBJECT::init_gdi_shared_mem()
 		g_gdi_shared_bitmap->SetArea( g_gdi_shared_memory, dc_shared_memory_size );
 	}
 
-	BYTE*& dc_shared_mem = current->process->win32k_info->dc_shared_mem;
+	BYTE*& dc_shared_mem = Current->process->win32k_info->dc_shared_mem;
 	if (!dc_shared_mem)
 	{
-		r = g_gdi_section->mapit( current->process->vm, dc_shared_mem, 0, MEM_COMMIT, PAGE_READWRITE );
+		r = g_gdi_section->mapit( Current->process->vm, dc_shared_mem, 0, MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 		{
 			trace("failed to map shared memory\n");
 			assert( 0 );
 		}
 
-		current->process->vm->SetTracer( dc_shared_mem, gdishm_trace );
+		Current->process->vm->SetTracer( dc_shared_mem, gdishm_trace );
 	}
 }
 
@@ -1043,7 +1043,7 @@ COLORREF get_di_pixel_4bpp( stretch_di_bits_args& args, int x, int y )
 	// slow!
 	BYTE pixel = 0;
 	NTSTATUS r;
-	r = copy_from_user( &pixel, (BYTE*) args.bits + ofs, 1 );
+	r = CopyFromUser( &pixel, (BYTE*) args.bits + ofs, 1 );
 	if ( r < STATUS_SUCCESS)
 	{
 		trace("copy failed\n");
@@ -1133,7 +1133,7 @@ HANDLE WIN32K_MANAGER::get_stock_object( ULONG Index )
 {
 	if (Index > STOCK_LAST)
 		return 0;
-	HANDLE& handle = current->process->win32k_info->stock_object[Index];
+	HANDLE& handle = Current->process->win32k_info->stock_object[Index];
 	if (handle)
 		return handle;
 
@@ -1231,7 +1231,7 @@ BOOLEAN NTAPI NtGdiDeleteObjectApp(HGDIOBJ Object)
 	gdi_handle_table_entry *entry = get_handle_table_entry(Object);
 	if (!entry)
 		return FALSE;
-	if (entry->ProcessId != current->process->id)
+	if (entry->ProcessId != Current->process->id)
 	{
 		trace("pirate deletion! %p\n", Object);
 		return FALSE;
@@ -1363,7 +1363,7 @@ ULONG NTAPI NtGdiExtGetObjectW(HGDIOBJ Object, ULONG Size, PVOID Buffer)
 	if (Size < len)
 		return 0;
 
-	NTSTATUS r = copy_to_user( Buffer, &info, len );
+	NTSTATUS r = CopyToUser( Buffer, &info, len );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -1464,7 +1464,7 @@ HANDLE NTAPI NtGdiEnumFontOpen(
 	PULONG DataLength)
 {
 	ULONG len = sizeof (font_enum_entry)*2;
-	NTSTATUS r = copy_to_user( DataLength, &len, sizeof len );
+	NTSTATUS r = CopyToUser( DataLength, &len, sizeof len );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -1487,11 +1487,11 @@ BOOLEAN NTAPI NtGdiEnumFontChunk(
 	fill_system( &fee[0] );
 	fill_terminal( &fee[1] );
 
-	NTSTATUS r = copy_to_user( Buffer, &fee, len );
+	NTSTATUS r = CopyToUser( Buffer, &fee, len );
 	if (r < STATUS_SUCCESS)
 		return FALSE;
 
-	r = copy_to_user( ReturnLength, &len, sizeof len );
+	r = CopyToUser( ReturnLength, &len, sizeof len );
 	if (r < STATUS_SUCCESS)
 		return FALSE;
 
@@ -1513,7 +1513,7 @@ BOOLEAN NTAPI NtGdiGetTextMetricsW(HANDLE DeviceContext, PVOID Buffer, ULONG Len
 	if (Length < sizeof (TEXTMETRICW))
 		return FALSE;
 
-	r = copy_to_user( Buffer, &fee.ntme, sizeof (TEXTMETRICW) );
+	r = CopyToUser( Buffer, &fee.ntme, sizeof (TEXTMETRICW) );
 	if (r < STATUS_SUCCESS)
 		return FALSE;
 
@@ -1559,7 +1559,7 @@ BOOLEAN NTAPI NtGdiExtTextOutW( HANDLE handle, INT x, INT y, UINT options,
 	NTSTATUS r;
 	if (rect)
 	{
-		r = copy_from_user( &rectangle, rect, sizeof *rect );
+		r = CopyFromUser( &rectangle, rect, sizeof *rect );
 		if (r < STATUS_SUCCESS)
 			return FALSE;
 		rect = &rectangle;
@@ -1596,7 +1596,7 @@ int NTAPI NtGdiGetAppClipBox( HANDLE handle, RECT* rectangle )
 	if (!dc)
 		return FALSE;
 
-	NTSTATUS r = copy_to_user( rectangle, &dc->get_bounds_rect(), sizeof *rectangle );
+	NTSTATUS r = CopyToUser( rectangle, &dc->get_bounds_rect(), sizeof *rectangle );
 	if (r < STATUS_SUCCESS)
 		return ERROR;
 
@@ -1612,7 +1612,7 @@ BOOLEAN NTAPI NtGdiPolyPatBlt( HANDLE handle, ULONG Rop, PRECT Rectangle, ULONG,
 	// copy the rectangle
 	RECT rect;
 	NTSTATUS r;
-	r = copy_from_user( &rect, Rectangle, sizeof rect );
+	r = CopyFromUser( &rect, Rectangle, sizeof rect );
 	if (r < STATUS_SUCCESS)
 		return FALSE;
 
@@ -1633,7 +1633,7 @@ BOOLEAN NTAPI NtGdiMoveTo( HDC handle, int xpos, int ypos, LPPOINT pptOut)
 	/* copy the original point back */
 	if (pptOut)
 	{
-		NTSTATUS r = copy_to_user( pptOut, &pt );
+		NTSTATUS r = CopyToUser( pptOut, &pt );
 		if (r < STATUS_SUCCESS)
 			return FALSE;
 	}
@@ -1679,7 +1679,7 @@ BOOLEAN NTAPI NtGdiStretchDIBitsInternal(
 	NTSTATUS r;
 	RGBQUAD colors[0x100];
 
-	r = copy_from_user( &bmi, &info->bmiHeader );
+	r = CopyFromUser( &bmi, &info->bmiHeader );
 	if (r < STATUS_SUCCESS)
 		return FALSE;
 
@@ -1700,7 +1700,7 @@ BOOLEAN NTAPI NtGdiStretchDIBitsInternal(
 	if (bmi.biBitCount <= 8)
 	{
 		trace("copying %d colors\n",  bmi.biBitCount);
-		r = copy_from_user( colors, &info->bmiColors, (1 << bmi.biBitCount) * sizeof (RGBQUAD));
+		r = CopyFromUser( colors, &info->bmiColors, (1 << bmi.biBitCount) * sizeof (RGBQUAD));
 		if (r < STATUS_SUCCESS)
 			return FALSE;
 		args.colors = colors;

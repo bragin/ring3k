@@ -637,7 +637,7 @@ const char *ADDRESS_SPACE_IMPL::GetSymbol( BYTE *address )
 	//  when pe_section_t::mapit is fixed, fix here too
 	//return get_section_symbol( mb->get_section(), address - mb->get_base_address() );
 
-	return get_section_symbol( mb->GetSection(), (ULONG) address );
+	return GetSectionSymbol( mb->GetSection(), (ULONG) address );
 }
 
 NTSTATUS ADDRESS_SPACE_IMPL::CopyFromUser( void *dest, const void *src, size_t len )
@@ -777,18 +777,18 @@ NTSTATUS NTAPI NtAllocateVirtualMemory(
 	if (!MemProtectionIsValid(Protect))
 		return STATUS_INVALID_PAGE_PROTECTION;
 
-	r = copy_from_user( &size, AllocationSize, sizeof (ULONG) );
+	r = CopyFromUser( &size, AllocationSize, sizeof (ULONG) );
 	if (r)
 		return r;
 
-	r = copy_from_user( &addr, BaseAddress, sizeof (PVOID) );
+	r = CopyFromUser( &addr, BaseAddress, sizeof (PVOID) );
 	if (r)
 		return r;
 
 	if (ZeroBits == 1 || ZeroBits > 20)
 		return STATUS_INVALID_PARAMETER_3;
 
-	r = process_from_handle( ProcessHandle, &process );
+	r = ProcessFromHandle( ProcessHandle, &process );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -808,11 +808,11 @@ NTSTATUS NTAPI NtAllocateVirtualMemory(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_to_user( AllocationSize, &size, sizeof (ULONG) );
+	r = CopyToUser( AllocationSize, &size, sizeof (ULONG) );
 	if (r)
 		return r;
 
-	r = copy_to_user( BaseAddress, &addr, sizeof (BYTE*) );
+	r = CopyToUser( BaseAddress, &addr, sizeof (BYTE*) );
 
 	return r;
 }
@@ -838,7 +838,7 @@ NTSTATUS NTAPI NtQueryVirtualMemory(
 
 	if (ReturnLength)
 	{
-		r = copy_from_user( &len, ReturnLength, sizeof len );
+		r = CopyFromUser( &len, ReturnLength, sizeof len );
 		if (r)
 			return r;
 	}
@@ -846,7 +846,7 @@ NTSTATUS NTAPI NtQueryVirtualMemory(
 		len = sizeof info;
 
 	PROCESS *p = 0;
-	r = process_from_handle( ProcessHandle, &p );
+	r = ProcessFromHandle( ProcessHandle, &p );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -859,9 +859,9 @@ NTSTATUS NTAPI NtQueryVirtualMemory(
 	else
 		r = STATUS_INFO_LENGTH_MISMATCH;
 
-	r = copy_to_user( MemoryInformation, &info, len );
+	r = CopyToUser( MemoryInformation, &info, len );
 	if (r == STATUS_SUCCESS && ReturnLength)
-		r = copy_to_user( ReturnLength, &len, sizeof len );
+		r = CopyToUser( ReturnLength, &len, sizeof len );
 
 	return r;
 }
@@ -881,15 +881,15 @@ NTSTATUS NTAPI NtProtectVirtualMemory(
 	trace("%p %p %p %lu %p\n", ProcessHandle, BaseAddress,
 		  NumberOfBytesToProtect, NewAccessProtection, OldAccessProtection);
 
-	r = process_from_handle( ProcessHandle, &process );
+	r = ProcessFromHandle( ProcessHandle, &process );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_from_user( &addr, BaseAddress, sizeof addr );
+	r = CopyFromUser( &addr, BaseAddress, sizeof addr );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_from_user( &size, NumberOfBytesToProtect, sizeof size );
+	r = CopyFromUser( &size, NumberOfBytesToProtect, sizeof size );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -912,7 +912,7 @@ NTSTATUS NTAPI NtWriteVirtualMemory(
 
 	trace("%p %p %p %08lx %p\n", ProcessHandle, BaseAddress, Buffer, NumberOfBytesToWrite, NumberOfBytesWritten );
 
-	r = process_from_handle( ProcessHandle, &p );
+	r = ProcessFromHandle( ProcessHandle, &p );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -923,7 +923,7 @@ NTSTATUS NTAPI NtWriteVirtualMemory(
 		src = (BYTE*)Buffer;
 		dest = (BYTE*)BaseAddress;
 
-		r = current->process->vm->GetKernelAddress( &src, &len );
+		r = Current->process->vm->GetKernelAddress( &src, &len );
 		if (r < STATUS_SUCCESS)
 			break;
 
@@ -944,7 +944,7 @@ NTSTATUS NTAPI NtWriteVirtualMemory(
 	trace("wrote %d bytes\n", (unsigned int) written);
 
 	if (NumberOfBytesWritten)
-		r = copy_to_user( NumberOfBytesWritten, &written, sizeof written );
+		r = CopyToUser( NumberOfBytesWritten, &written, sizeof written );
 
 	return r;
 }
@@ -972,15 +972,15 @@ NTSTATUS NTAPI NtFreeVirtualMemory(
 		return STATUS_INVALID_PARAMETER_4;
 	}
 
-	r = process_from_handle( ProcessHandle, &process );
+	r = ProcessFromHandle( ProcessHandle, &process );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_from_user( &size, RegionSize, sizeof (ULONG) );
+	r = CopyFromUser( &size, RegionSize, sizeof (ULONG) );
 	if (r)
 		return r;
 
-	r = copy_from_user( &addr, BaseAddress, sizeof (PVOID) );
+	r = CopyFromUser( &addr, BaseAddress, sizeof (PVOID) );
 	if (r)
 		return r;
 
@@ -995,11 +995,11 @@ NTSTATUS NTAPI NtFreeVirtualMemory(
 
 	r = process->vm->FreeVirtualMemory( addr, size, FreeType );
 
-	r = copy_from_user( &size, RegionSize, sizeof (ULONG) );
+	r = CopyFromUser( &size, RegionSize, sizeof (ULONG) );
 	if (r)
 		return r;
 
-	r = copy_from_user( &addr, BaseAddress, sizeof (PVOID) );
+	r = CopyFromUser( &addr, BaseAddress, sizeof (PVOID) );
 
 	trace("returning %08lx\n", r);
 

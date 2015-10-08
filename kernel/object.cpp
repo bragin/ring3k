@@ -134,12 +134,12 @@ NTSTATUS HANDLE_TABLE::object_from_handle( OBJECT*& obj, HANDLE handle, ACCESS_M
 {
 	if (handle == NtCurrentThread())
 	{
-		obj = current;
+		obj = Current;
 		return STATUS_SUCCESS;
 	}
 	if (handle == NtCurrentProcess())
 	{
-		obj = current->process;
+		obj = Current->process;
 		return STATUS_SUCCESS;
 	}
 	ULONG n = (ULONG) handle;
@@ -219,7 +219,7 @@ NTSTATUS OBJECT_FACTORY::create(
 	OBJECT *obj = 0;
 	NTSTATUS r;
 
-	r = verify_for_write( Handle, sizeof *Handle );
+	r = VerifyForWrite( Handle, sizeof *Handle );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -248,7 +248,7 @@ NTSTATUS OBJECT_FACTORY::create(
 		return r;
 
 	// maybe this should be done in AllocObject ?
-	NTSTATUS r2 = alloc_user_handle( obj, AccessMask, Handle );
+	NTSTATUS r2 = AllocUserHandle( obj, AccessMask, Handle );
 	if (r2 == STATUS_SUCCESS && (oa.Attributes & OBJ_PERMANENT ))
 		trace("permanent object\n");
 	else
@@ -336,7 +336,7 @@ BOOLEAN SYNC_OBJECT::Satisfy( void )
 NTSTATUS NTAPI NtClose( HANDLE Handle )
 {
 	trace("%p\n", Handle );
-	return current->process->handle_table.free_handle( Handle );
+	return Current->process->handle_table.free_handle( Handle );
 }
 
 NTSTATUS NTAPI NtQueryObject(
@@ -387,9 +387,9 @@ NTSTATUS NTAPI NtQueryObject(
 		assert(0);
 	}
 
-	r = copy_to_user( ObjectInformation, &info, sz );
+	r = CopyToUser( ObjectInformation, &info, sz );
 	if (r == STATUS_SUCCESS && ReturnLength)
-		r = copy_to_user( ReturnLength, &sz, sizeof sz );
+		r = CopyToUser( ReturnLength, &sz, sizeof sz );
 
 	return r;
 }
@@ -432,7 +432,7 @@ NTSTATUS NTAPI NtSetInformationObject(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_from_user( &info, ObjectInformation, sz );
+	r = CopyFromUser( &info, ObjectInformation, sz );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -463,7 +463,7 @@ NTSTATUS NTAPI NtDuplicateObject(
 	NTSTATUS r;
 
 	PROCESS *sp = 0;
-	r = process_from_handle( SourceProcessHandle, &sp );
+	r = ProcessFromHandle( SourceProcessHandle, &sp );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -485,12 +485,12 @@ NTSTATUS NTAPI NtDuplicateObject(
 
 	// put the object into the target process's handle table
 	PROCESS *tp = 0;
-	r = process_from_handle( TargetProcessHandle, &tp );
+	r = ProcessFromHandle( TargetProcessHandle, &tp );
 	trace("target process %p\n", tp );
 	if (r == STATUS_SUCCESS)
 	{
 		HANDLE handle;
-		r = process_alloc_user_handle( tp, obj, DesiredAccess, TargetHandle, &handle );
+		r = ProcessAllocUserHandle( tp, obj, DesiredAccess, TargetHandle, &handle );
 		trace("new handle is %p\n", handle );
 	}
 
@@ -509,7 +509,7 @@ NTSTATUS NTAPI NtQuerySecurityObject(
 	NTSTATUS r;
 
 	// always checked
-	r = verify_for_write( ReturnLength, sizeof *ReturnLength );
+	r = VerifyForWrite( ReturnLength, sizeof *ReturnLength );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -541,14 +541,14 @@ NTSTATUS NTAPI NtQuerySecurityObject(
 		sdr.Sacl = 0; // System Access Control List
 		sdr.Dacl = 0; // Discretionary Access Control List
 
-		r = copy_to_user( SecurityDescriptor, &sdr, sizeof sdr );
+		r = CopyToUser( SecurityDescriptor, &sdr, sizeof sdr );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
 	else
 		r = STATUS_BUFFER_TOO_SMALL;
 
-	copy_to_user( ReturnLength, &sz, sizeof sz);
+	CopyToUser( ReturnLength, &sz, sizeof sz);
 
 	return r;
 }

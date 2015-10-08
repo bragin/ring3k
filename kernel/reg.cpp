@@ -461,19 +461,19 @@ NTSTATUS reg_query_value(
 		info.full.DataLength = val->size;
 		info.full.NameLength = val->name.Length;
 
-		r = copy_to_user( KeyValueInformation, &info.full, info_sz );
+		r = CopyToUser( KeyValueInformation, &info.full, info_sz );
 		if (r < STATUS_SUCCESS)
 			break;
 
 		if (len > KeyValueInformationLength)
 			return STATUS_BUFFER_OVERFLOW;
 
-		r = copy_to_user( (BYTE*)KeyValueInformation + info_sz,
+		r = CopyToUser( (BYTE*)KeyValueInformation + info_sz,
 						  val->name.Buffer, val->name.Length );
 		if (r < STATUS_SUCCESS)
 			break;
 
-		r = copy_to_user( (BYTE*)KeyValueInformation + info.full.DataOffset,
+		r = CopyToUser( (BYTE*)KeyValueInformation + info.full.DataOffset,
 						  val->data, val->size );
 		break;
 
@@ -486,14 +486,14 @@ NTSTATUS reg_query_value(
 		info.partial.Type = val->type;
 		info.partial.DataLength = val->size;
 
-		r = copy_to_user( KeyValueInformation, &info.partial, info_sz );
+		r = CopyToUser( KeyValueInformation, &info.partial, info_sz );
 		if (r < STATUS_SUCCESS)
 			break;
 
 		if (len > KeyValueInformationLength)
 			return STATUS_BUFFER_OVERFLOW;
 
-		r = copy_to_user( (BYTE*)KeyValueInformation + info_sz, val->data, val->size );
+		r = CopyToUser( (BYTE*)KeyValueInformation + info_sz, val->data, val->size );
 		break;
 
 	case KeyValueBasicInformation:
@@ -524,7 +524,7 @@ NTSTATUS NTAPI NtCreateKey(
 
 	if (Disposition)
 	{
-		r = verify_for_write( Disposition, sizeof *Disposition );
+		r = VerifyForWrite( Disposition, sizeof *Disposition );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -551,10 +551,10 @@ NTSTATUS NTAPI NtCreateKey(
 		if (Disposition)
 		{
 			ULONG dispos = opened_existing ? REG_OPENED_EXISTING_KEY : REG_CREATED_NEW_KEY;
-			copy_to_user( Disposition, &dispos, sizeof *Disposition );
+			CopyToUser( Disposition, &dispos, sizeof *Disposition );
 		}
 		key->cls.copy( &cls );
-		r = alloc_user_handle( key, DesiredAccess, KeyHandle );
+		r = AllocUserHandle( key, DesiredAccess, KeyHandle );
 		//release( event );
 	}
 	return r;
@@ -573,7 +573,7 @@ NTSTATUS NTAPI NtOpenKey(
 	trace("%p %08lx %p\n", KeyHandle, DesiredAccess, ObjectAttributes );
 
 	// copies the unicode string before validating object attributes struct
-	r = copy_from_user( &oa, ObjectAttributes, sizeof oa );
+	r = CopyFromUser( &oa, ObjectAttributes, sizeof oa );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -594,7 +594,7 @@ NTSTATUS NTAPI NtOpenKey(
 
 	if (r == STATUS_SUCCESS)
 	{
-		r = alloc_user_handle( key, DesiredAccess, KeyHandle );
+		r = AllocUserHandle( key, DesiredAccess, KeyHandle );
 		//release( event );
 	}
 
@@ -657,7 +657,7 @@ NTSTATUS NTAPI NtQueryValueKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = verify_for_write( ResultLength, sizeof *ResultLength );
+	r = VerifyForWrite( ResultLength, sizeof *ResultLength );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -670,7 +670,7 @@ NTSTATUS NTAPI NtQueryValueKey(
 	r = reg_query_value( val, KeyValueInformationClass, KeyValueInformation,
 						 KeyValueInformationLength, len );
 
-	copy_to_user( ResultLength, &len, sizeof len );
+	CopyToUser( ResultLength, &len, sizeof len );
 
 	return r;
 }
@@ -701,7 +701,7 @@ NTSTATUS NTAPI NtSetValueKey(
 		val = new regval_t( &us, Type, DataSize );
 		if (val)
 		{
-			r = copy_from_user( val->data, Data, DataSize );
+			r = CopyFromUser( val->data, Data, DataSize );
 			if (r == STATUS_SUCCESS)
 			{
 				delete_value( key, &us );
@@ -736,7 +736,7 @@ NTSTATUS NTAPI NtEnumerateValueKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = verify_for_write( ResultLength, sizeof *ResultLength );
+	r = VerifyForWrite( ResultLength, sizeof *ResultLength );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -750,7 +750,7 @@ NTSTATUS NTAPI NtEnumerateValueKey(
 	r = reg_query_value( i, KeyValueInformationClass, KeyValueInformation,
 						 KeyValueInformationLength, len );
 
-	copy_to_user( ResultLength, &len, sizeof len );
+	CopyToUser( ResultLength, &len, sizeof len );
 
 	return r;
 }
@@ -888,7 +888,7 @@ NTSTATUS NTAPI NtEnumerateKey(
 
 	if (ResultLength)
 	{
-		r = verify_for_write( ResultLength, sizeof *ResultLength );
+		r = VerifyForWrite( ResultLength, sizeof *ResultLength );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -953,7 +953,7 @@ NTSTATUS NTAPI NtQueryKey(
 		return STATUS_INVALID_INFO_CLASS;
 
 	NTSTATUS r;
-	r = verify_for_write( ReturnLength, sizeof *ReturnLength );
+	r = VerifyForWrite( ReturnLength, sizeof *ReturnLength );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -994,11 +994,11 @@ NTSTATUS regkey_t::query(
 		if (sz > KeyInformationLength)
 			return STATUS_INFO_LENGTH_MISMATCH;
 
-		r = copy_to_user( KeyInformation, &info, sz );
+		r = CopyToUser( KeyInformation, &info, sz );
 		if (r < STATUS_SUCCESS)
 			break;
 
-		r = copy_to_user( (BYTE*)KeyInformation + FIELD_OFFSET( KEY_BASIC_INFORMATION, Name ), keyname.Buffer, keyname.Length );
+		r = CopyToUser( (BYTE*)KeyInformation + FIELD_OFFSET( KEY_BASIC_INFORMATION, Name ), keyname.Buffer, keyname.Length );
 
 		break;
 
@@ -1008,12 +1008,12 @@ NTSTATUS regkey_t::query(
 		if (sz > KeyInformationLength)
 			return STATUS_INFO_LENGTH_MISMATCH;
 
-		r = copy_to_user( KeyInformation, &info, sz );
+		r = CopyToUser( KeyInformation, &info, sz );
 		if (r < STATUS_SUCCESS)
 			break;
 
 		trace("keycls = %pus\n", &keycls);
-		r = copy_to_user( (BYTE*)KeyInformation + FIELD_OFFSET( KEY_FULL_INFORMATION, Class ), keycls.Buffer, keycls.Length );
+		r = CopyToUser( (BYTE*)KeyInformation + FIELD_OFFSET( KEY_FULL_INFORMATION, Class ), keycls.Buffer, keycls.Length );
 
 		break;
 
@@ -1024,7 +1024,7 @@ NTSTATUS regkey_t::query(
 	}
 
 	if (r == STATUS_SUCCESS)
-		copy_to_user( ReturnLength, &sz, sizeof sz );
+		CopyToUser( ReturnLength, &sz, sizeof sz );
 
 	return r;
 }
@@ -1216,7 +1216,7 @@ void load_reg_key( regkey_t *parent, xmlNode *node )
 	}
 }
 
-void init_registry( void )
+void InitRegistry( void )
 {
 	xmlDoc *doc;
 	xmlNode *root;
@@ -1236,7 +1236,7 @@ void init_registry( void )
 	xmlFreeDoc( doc );
 }
 
-void free_registry( void )
+void FreeRegistry( void )
 {
 	release( root_key );
 	root_key = NULL;

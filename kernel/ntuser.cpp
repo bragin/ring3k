@@ -296,7 +296,7 @@ bool message_map_on_access( BYTE *address, ULONG eip )
 		if (ofs > message_maps[i].MaxMessage/8)
 			continue;
 		fprintf(stderr, "%04lx: accessed message map[%ld][%04lx] from %08lx\n",
-				current->TraceId(), i, ofs, eip);
+				Current->TraceId(), i, ofs, eip);
 		return true;
 	}
 	return false;
@@ -334,7 +334,7 @@ void NTUSERSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 			break;
 		}
 		fprintf(stderr, "%04lx: accessed ushm[%04lx]%s from %08lx\n",
-				current->TraceId(), ofs, name, eip);
+				Current->TraceId(), ofs, name, eip);
 		return;
 	}
 
@@ -345,7 +345,7 @@ void NTUSERSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 		return;
 
 	fprintf(stderr, "%04lx: accessed ushm[%04lx] from %08lx\n",
-			current->TraceId(), ofs, eip);
+			Current->TraceId(), ofs, eip);
 }
 
 static NTUSERSHM_TRACER ntusershm_trace;
@@ -381,7 +381,7 @@ void NTUSERHANDLE_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 	}
 
 	fprintf(stderr, "%04lx: accessed user handle[%04lx]+%s (%ld) from %08lx\n",
-			current->TraceId(), number, field, ofs%sz, eip);
+			Current->TraceId(), number, field, ofs%sz, eip);
 }
 static NTUSERHANDLE_TRACER ntuserhandle_trace;
 
@@ -402,7 +402,7 @@ NTUSERINFO *alloc_user_info()
 	NTUSERINFO *info = (NTUSERINFO*) user_shared_bitmap.Alloc( sizeof (NTUSERINFO) );
 	info->DesktopWindow = desktop_window;
 	ULONG ofs = (BYTE*)info - (BYTE*)user_shared;
-	return (NTUSERINFO*) (current->process->win32k_info->user_shared_mem + ofs);
+	return (NTUSERINFO*) (Current->process->win32k_info->user_shared_mem + ofs);
 }
 
 void create_desktop_window()
@@ -421,7 +421,7 @@ void create_desktop_window()
 	desktop_window->rcWnd.bottom = 480;
 	desktop_window->rcClient = desktop_window->rcWnd;
 
-	desktop_window->handle = (HWND) alloc_user_handle( desktop_window, USER_HANDLE_WINDOW, current->process );
+	desktop_window->handle = (HWND) alloc_user_handle( desktop_window, USER_HANDLE_WINDOW, Current->process );
 }
 
 // should be called from NtGdiInit to map the user32 shared memory
@@ -446,7 +446,7 @@ NTSTATUS map_user_shared_memory( PROCESS *proc )
 	if (r < STATUS_SUCCESS)
 		return STATUS_UNSUCCESSFUL;
 
-	if (option_trace)
+	if (OptionTrace)
 	{
 		proc->vm->SetTracer( user_shared_mem, ntusershm_trace );
 		proc->vm->SetTracer( user_handles, ntuserhandle_trace );
@@ -466,17 +466,17 @@ NTSTATUS map_user_shared_memory( PROCESS *proc )
 BOOLEAN do_gdi_init()
 {
 	NTSTATUS r;
-	r = map_user_shared_memory( current->process );
+	r = map_user_shared_memory( Current->process );
 	if (r < STATUS_SUCCESS)
 		return FALSE;
 
 	// check set the offset
-	BYTE*& user_shared_mem = current->process->win32k_info->user_shared_mem;
-	current->GetTEB()->KernelUserPointerOffset = (BYTE*) user_shared - user_shared_mem;
+	BYTE*& user_shared_mem = Current->process->win32k_info->user_shared_mem;
+	Current->GetTEB()->KernelUserPointerOffset = (BYTE*) user_shared - user_shared_mem;
 
 	// create the desktop window for alloc_user_info
 	create_desktop_window();
-	current->GetTEB()->NtUserInfo = alloc_user_info();
+	Current->GetTEB()->NtUserInfo = alloc_user_info();
 
 	return TRUE;
 }
@@ -502,7 +502,7 @@ NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSi
 		return STATUS_UNSUCCESSFUL;
 	}
 
-	r = copy_from_user( &info, Buffer, BufferSize );
+	r = CopyFromUser( &info, Buffer, BufferSize );
 	if (r < STATUS_SUCCESS)
 		return STATUS_UNSUCCESSFUL;
 
@@ -514,7 +514,7 @@ NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSi
 
 
 	// check if we're already connected
-	r = win32k_process_init( proc );
+	r = Win32kProcessInit( proc );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -538,7 +538,7 @@ NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSi
 	alloc_message_bitmap( proc, info.win2k.MessageMap[0x1c], 0x400 );
 	message_maps[0x1c] = info.win2k.MessageMap[0x1c];
 
-	r = copy_to_user( Buffer, &info, BufferSize );
+	r = CopyToUser( Buffer, &info, BufferSize );
 	if (r < STATUS_SUCCESS)
 		return STATUS_UNSUCCESSFUL;
 
@@ -561,13 +561,13 @@ BOOLEAN NTAPI NtUserInitializeClientPfnArrays(
 {
 	NTSTATUS r;
 
-	r = copy_from_user( &g_funcs, Funcs, sizeof g_funcs );
+	r = CopyFromUser( &g_funcs, Funcs, sizeof g_funcs );
 	if (r < 0)
 		return r;
-	r = copy_from_user( &g_funcsW, FuncsW, sizeof g_funcsW );
+	r = CopyFromUser( &g_funcsW, FuncsW, sizeof g_funcsW );
 	if (r < 0)
 		return r;
-	r = copy_from_user( &g_funcsA, FuncsA, sizeof g_funcsA );
+	r = CopyFromUser( &g_funcsA, FuncsA, sizeof g_funcsA );
 	if (r < 0)
 		return r;
 	return 0;
@@ -620,8 +620,8 @@ BOOLEAN NtReleaseDC( HANDLE hdc )
 BOOLEAN NtPostQuitMessage( ULONG ret )
 {
 	trace("%08lx\n", ret );
-	if (current->queue)
-		current->queue->post_quit_message( ret );
+	if (Current->queue)
+		Current->queue->post_quit_message( ret );
 	return TRUE;
 }
 
@@ -775,7 +775,7 @@ HANDLE NTAPI NtUserFindExistingCursorIcon(PUNICODE_STRING Library, PUNICODE_STRI
 	if (r == STATUS_SUCCESS)
 		trace("str2=\'%pus\'\n", &us);
 
-	r = copy_from_user( &index, p_arg3, sizeof index );
+	r = CopyFromUser( &index, p_arg3, sizeof index );
 	if (r == STATUS_SUCCESS)
 		trace("index = %lu\n", index);
 
@@ -864,7 +864,7 @@ ATOM NTAPI NtUserRegisterClassExWOW(
 	NTWNDCLASSEX clsinfo;
 
 	NTSTATUS r;
-	r = copy_from_user( &clsinfo, ClassInfo, sizeof clsinfo );
+	r = CopyFromUser( &clsinfo, ClassInfo, sizeof clsinfo );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -878,7 +878,7 @@ ATOM NTAPI NtUserRegisterClassExWOW(
 
 	// for some reason, a structure with three of the same name is passed...
 	NTCLASSMENUNAMES menu_strings;
-	r = copy_from_user( &menu_strings, MenuNames, sizeof menu_strings );
+	r = CopyFromUser( &menu_strings, MenuNames, sizeof menu_strings );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -932,7 +932,7 @@ HANDLE NTAPI NtUserCreateWindowStation(
 	OBJECT_ATTRIBUTES oa;
 
 	NTSTATUS r;
-	r = copy_from_user( &oa, WindowStationName, sizeof oa );
+	r = CopyFromUser( &oa, WindowStationName, sizeof oa );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -983,14 +983,14 @@ HANDLE NTAPI NtUserOpenDesktop(POBJECT_ATTRIBUTES DesktopName, ULONG, ACCESS_MAS
 BOOLEAN NTAPI NtUserSetProcessWindowStation(HANDLE WindowStation)
 {
 	trace("\n");
-	current->process->window_station = WindowStation;
+	Current->process->window_station = WindowStation;
 	return TRUE;
 }
 
 HANDLE NTAPI NtUserGetProcessWindowStation(void)
 {
 	trace("\n");
-	return current->process->window_station;
+	return Current->process->window_station;
 }
 
 BOOLEAN NTAPI NtUserSetThreadDesktop(HANDLE Desktop)
@@ -1066,7 +1066,7 @@ public:
 NTSTATUS user32_unicode_string_t::copy_from_user( PUSER32_UNICODE_STRING String )
 {
 	USER32_UNICODE_STRING str;
-	NTSTATUS r = ::copy_from_user( &str, String, sizeof str );
+	NTSTATUS r = ::CopyFromUser( &str, String, sizeof str );
 	if (r < STATUS_SUCCESS)
 		return r;
 	return copy_wstr_from_user( str.Buffer, str.Length );
@@ -1150,7 +1150,7 @@ bool window_tt::on_access( BYTE *address, ULONG eip )
 		f( 0x60, wndcls )
 #undef f
 	}
-	fprintf(stderr, "%04lx: accessed window[%p][%04lx] %s from %08lx\n", current->TraceId(), handle, ofs, field, eip);
+	fprintf(stderr, "%04lx: accessed window[%p][%04lx] %s from %08lx\n", Current->TraceId(), handle, ofs, field, eip);
 	return true;
 }
 
@@ -1169,7 +1169,7 @@ window_tt::~window_tt()
 PWND window_tt::get_wininfo()
 {
 	ULONG ofs = (BYTE*)this - (BYTE*)user_shared;
-	return (PWND) (current->process->win32k_info->user_shared_mem + ofs);
+	return (PWND) (Current->process->win32k_info->user_shared_mem + ofs);
 }
 
 NTSTATUS window_tt::send( MESSAGE& msg )
@@ -1237,7 +1237,7 @@ HANDLE NTAPI NtUserCreateWindowEx(
 
 	user32_unicode_string_t window_name;
 #if 0
-	r = window_name.copy_from_user( WindowName );
+	r = window_name.CopyFromUser( WindowName );
 	if (r < STATUS_SUCCESS)
 		return 0;
 #endif
@@ -1306,7 +1306,7 @@ window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, 
 	if (!win)
 		return NULL;
 
-	win->get_win_thread() = current;
+	win->get_win_thread() = Current;
 	win->self = win;
 	win->wndcls = wndcls;
 	win->style = cs.style;
@@ -1319,12 +1319,12 @@ window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, 
 
 	win->link_window( parent_win );
 
-	win->handle = (HWND) alloc_user_handle( win, USER_HANDLE_WINDOW, current->process );
+	win->handle = (HWND) alloc_user_handle( win, USER_HANDLE_WINDOW, Current->process );
 	win->wndproc = wndcls->get_wndproc();
 
 	// create a thread message queue if necessary
-	if (!current->queue)
-		current->queue = new thread_message_queue_tt;
+	if (!Current->queue)
+		Current->queue = new thread_message_queue_tt;
 
 	region_tt*& region = win->get_invalid_region();
 	region = region_tt::alloc();
@@ -1633,7 +1633,7 @@ BOOLEAN NTAPI NtUserRedrawWindow( HWND Window, RECT *Update, HANDLE Region, UINT
 	RECT rect;
 	if (Update)
 	{
-		NTSTATUS r = copy_from_user( &rect, Update );
+		NTSTATUS r = CopyFromUser( &rect, Update );
 		if (r < STATUS_SUCCESS)
 			return FALSE;
 	}
@@ -1657,7 +1657,7 @@ LRESULT NTAPI NtUserDispatchMessage( PMSG Message )
 {
 	MSG msg;
 	NTSTATUS r;
-	r = copy_from_user( &msg, Message );
+	r = CopyFromUser( &msg, Message );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -1692,7 +1692,7 @@ BOOLEAN NTAPI NtUserInvalidateRect( HWND Window, const RECT* Rectangle, BOOLEAN 
 	RECT rect;
 	if (Rectangle)
 	{
-		NTSTATUS r = copy_from_user( &rect, Rectangle );
+		NTSTATUS r = CopyFromUser( &rect, Rectangle );
 		if (r < STATUS_SUCCESS)
 			return FALSE;
 	}
@@ -1743,7 +1743,7 @@ HDC NTAPI NtUserBeginPaint( HWND Window, PAINTSTRUCT* pps)
 	ps.rcPaint.top = 0;
 	ps.rcPaint.bottom = win->rcClient.bottom - win->rcClient.top;
 	ps.rcPaint.right = win->rcClient.right - win->rcClient.left;
-	NTSTATUS r = copy_to_user( pps, &ps );
+	NTSTATUS r = CopyToUser( pps, &ps );
 	if (r < STATUS_SUCCESS)
 		return NULL;
 

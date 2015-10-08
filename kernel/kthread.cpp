@@ -200,7 +200,7 @@ int SECURITY_REFERENCE_MONITOR::Run()
 {
 	const int maxlen = 0x100;
 	//trace("starting kthread %p p = %p\n", this, process);
-	current = static_cast<THREAD*>( this );
+	Current = static_cast<THREAD*>( this );
 	//trace("current->process = %p\n", current->process);
 	object_attributes_t rm_oa( (PCWSTR) L"\\SeRmCommandPort" );
 	HANDLE port = 0, client = 0;
@@ -291,7 +291,7 @@ int PLUG_AND_PLAY::Run()
 	HANDLE pipe = 0;
 	NTSTATUS r;
 	LARGE_INTEGER timeout;
-	current = static_cast<THREAD*>( this );
+	Current = static_cast<THREAD*>( this );
 
 	unicode_string_t pipename;
 	pipename.copy( "\\Device\\NamedPipe\\ntsvcs" );

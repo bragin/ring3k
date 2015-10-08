@@ -23,22 +23,22 @@
 
 // FIXME: the following should go in a different file
 
-void init_syscalls(bool xp);
-NTSTATUS do_nt_syscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr);
-NTSTATUS copy_to_user( void *dest, const void *src, size_t len );
-NTSTATUS copy_from_user( void *dest, const void *src, size_t len );
-NTSTATUS verify_for_write( void *dest, size_t len );
+void InitSyscalls(bool xp);
+NTSTATUS DoNtSyscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr);
+NTSTATUS CopyToUser( void *dest, const void *src, size_t len );
+NTSTATUS CopyFromUser( void *dest, const void *src, size_t len );
+NTSTATUS VerifyForWrite( void *dest, size_t len );
 
 template <typename T>
-NTSTATUS copy_to_user( T* dest, const T* src )
+NTSTATUS CopyToUser( T* dest, const T* src )
 {
-	return copy_to_user( dest, src, sizeof (T) );
+	return CopyToUser( dest, src, sizeof (T) );
 }
 
 template <typename T>
-NTSTATUS copy_from_user( T* dest, const T* src )
+NTSTATUS CopyFromUser( T* dest, const T* src )
 {
-	return copy_from_user( dest, src, sizeof (T) );
+	return CopyFromUser( dest, src, sizeof (T) );
 }
 
 class ADDRESS_SPACE;
@@ -47,44 +47,44 @@ class PROCESS;
 
 #include "list.h"
 
-typedef LIST_ANCHOR<PROCESS,0> process_list_t;
-typedef LIST_ITER<PROCESS,0> process_iter_t;
-typedef LIST_ELEMENT<PROCESS> process_element_t;
+typedef LIST_ANCHOR<PROCESS,0> PROCESS_LIST;
+typedef LIST_ITER<PROCESS,0> PROCESS_ITER;
+typedef LIST_ELEMENT<PROCESS> PROCESS_ELEMENT;
 
 #include "thread.h"
 #include "process.h"
 
-extern THREAD *current;
-extern process_list_t processes;
-ULONG allocate_id();
-extern OBJECT *ntdll_section;
+extern THREAD *Current;
+extern PROCESS_LIST Processes;
+ULONG AllocateId();
+extern OBJECT *NtDLLSection;
 
-NTSTATUS copy_oa_from_user( OBJECT_ATTRIBUTES *koa, UNICODE_STRING *kus, const OBJECT_ATTRIBUTES *uoa );
-void free_oa( OBJECT_ATTRIBUTES *oa );
-void free_us( UNICODE_STRING *us );
+NTSTATUS CopyOAFromUser( OBJECT_ATTRIBUTES *koa, UNICODE_STRING *kus, const OBJECT_ATTRIBUTES *uoa );
+void FreeOA( OBJECT_ATTRIBUTES *oa );
+void FreeUS( UNICODE_STRING *us );
 
-NTSTATUS process_from_handle( HANDLE handle, PROCESS **process );
-NTSTATUS thread_from_handle( HANDLE handle, THREAD **thread );
-THREAD *find_thread_by_client_id( CLIENT_ID *id );
+NTSTATUS ProcessFromHandle( HANDLE handle, PROCESS **process );
+NTSTATUS ThreadFromHandle( HANDLE handle, THREAD **thread );
+THREAD *FindThreadByClientId( CLIENT_ID *id );
 
-NTSTATUS process_alloc_user_handle( PROCESS *process, OBJECT *obj, ACCESS_MASK access, HANDLE *out, HANDLE *copy );
+NTSTATUS ProcessAllocUserHandle( PROCESS *process, OBJECT *obj, ACCESS_MASK access, HANDLE *out, HANDLE *copy );
 
-static inline NTSTATUS alloc_user_handle( OBJECT *obj, ACCESS_MASK access, HANDLE *out )
+static inline NTSTATUS AllocUserHandle( OBJECT *obj, ACCESS_MASK access, HANDLE *out )
 {
-	return process_alloc_user_handle( current->process, obj, access, out, 0 );
+	return ProcessAllocUserHandle( Current->process, obj, access, out, 0 );
 }
 
-static inline NTSTATUS alloc_user_handle( OBJECT *obj, ACCESS_MASK access, HANDLE *out, HANDLE *copy )
+static inline NTSTATUS AllocUserHandle( OBJECT *obj, ACCESS_MASK access, HANDLE *out, HANDLE *copy )
 {
-	return process_alloc_user_handle( current->process, obj, access, out, copy );
+	return ProcessAllocUserHandle( Current->process, obj, access, out, copy );
 }
 
 // from reg.cpp
-void init_registry( void );
-void free_registry( void );
+void InitRegistry( void );
+void FreeRegistry( void );
 
 // from main.cpp
-extern int& option_trace;
+extern int& OptionTrace;
 bool TraceIsEnabled( const char *name );
 
 extern ULONG KiIntSystemCall;
@@ -101,25 +101,25 @@ protected:
 extern SLEEPER* Sleeper;
 
 // from section.cpp
-const char *get_section_symbol( OBJECT *section, ULONG address );
+const char *GetSectionSymbol( OBJECT *section, ULONG address );
 
 // from random.cpp
-void init_random();
+void InitRandom();
 
 // from pipe.cpp
 void InitPipeDevice();
 
 // from ntgdi.cpp
-void ntgdi_fini();
-void list_graphics_drivers();
-bool set_graphics_driver( const char *driver );
+void NtGdiFini();
+void ListGraphicsDrivers();
+bool SetGraphicsDriver( const char *driver );
 
 #define GDI_SHARED_HANDLE_TABLE_ADDRESS ((BYTE*)0x00370000)
 #define GDI_SHARED_HANDLE_TABLE_SIZE 0x60000
 
 // from ntgdi.cpp
-NTSTATUS win32k_process_init(PROCESS *p);
-NTSTATUS win32k_thread_init(THREAD *t);
+NTSTATUS Win32kProcessInit(PROCESS *p);
+NTSTATUS Win32kThreadInit(THREAD *t);
 
 // from kthread.cpp
 void CreateKThread(void);
