@@ -124,11 +124,11 @@ void NTGDISHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 			sprintf(unk, "unk_%04lx", ofs);
 		}
 		fprintf(stderr, "%04lx: accessed gdi handle[%04lx]:%s from %08lx\n",
-				current->trace_id(), ofs>>4, field, eip);
+				current->TraceId(), ofs>>4, field, eip);
 	}
 	else
 		fprintf(stderr, "%04lx: accessed gshm[%04lx] from %08lx\n",
-				current->trace_id(), ofs, eip);
+				current->TraceId(), ofs, eip);
 }
 
 static NTGDISHM_TRACER ntgdishm_trace;
@@ -358,7 +358,7 @@ NTSTATUS win32k_thread_init(THREAD *thread)
 {
 	NTSTATUS r;
 
-	if (thread->win32k_init_complete())
+	if (thread->Win32kInitComplete())
 		return STATUS_SUCCESS;
 
 	r = win32k_process_init( thread->process );
@@ -367,7 +367,7 @@ NTSTATUS win32k_thread_init(THREAD *thread)
 
 	ULONG size = 0;
 	PVOID buffer = 0;
-	r = thread->do_user_callback( NTWIN32_THREAD_INIT_CALLBACK, size, buffer );
+	r = thread->DoUserCallback( NTWIN32_THREAD_INIT_CALLBACK, size, buffer );
 
 	return r;
 }
@@ -493,13 +493,13 @@ void gdishm_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 		gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
 		ULONG ofs = address - (BYTE*) table[n].user_info;
 		fprintf(stderr, "%04lx: accessed gdishm[%04lx][%04lx] from %08lx\n",
-				current->trace_id(), n, ofs, eip);
+				current->TraceId(), n, ofs, eip);
 	}
 	else
 	{
 		ULONG ofs = address - mb->GetBaseAddress();
 		fprintf(stderr, "%04lx: accessed gdishm[%04lx] from %08lx\n",
-				current->trace_id(), ofs, eip);
+				current->TraceId(), ofs, eip);
 	}
 }
 

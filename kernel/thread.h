@@ -104,31 +104,31 @@ public:
 public:
 	THREAD( PROCESS *p );
 	virtual ~THREAD();
-	virtual ULONG trace_id();
-	ULONG get_id()
+	virtual ULONG TraceId();
+	ULONG GetID()
 	{
 		return id;
 	}
-	virtual void get_client_id( CLIENT_ID *id );
-	virtual void wait();
-	virtual void stop();
+	virtual void GetClientID( CLIENT_ID *id );
+	virtual void Wait();
+	virtual void Stop();
 
 public:
-	virtual void get_context( CONTEXT& c ) = 0;
-	virtual bool win32k_init_complete() = 0;
-	virtual NTSTATUS do_user_callback( ULONG index, ULONG& length, PVOID& buffer) = 0;
-	virtual NTSTATUS terminate( NTSTATUS Status ) = 0;
-	virtual bool is_terminated() = 0;
-	virtual void register_terminate_port( OBJECT *port ) = 0;
-	virtual NTSTATUS queue_apc_thread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, PVOID Arg2, PVOID Arg3) = 0;
-	virtual token_t* get_token() = 0;
-	virtual NTSTATUS resume( PULONG count ) = 0;
-	virtual NTSTATUS copy_to_user( void *dest, const void *src, size_t count ) = 0;
-	virtual NTSTATUS copy_from_user( void *dest, const void *src, size_t count ) = 0;
-	virtual NTSTATUS verify_for_write( void *dest, size_t count ) = 0;
-	virtual void* push( ULONG count ) = 0;
-	virtual void pop( ULONG count ) = 0;
-	virtual PTEB get_teb() = 0;
+	virtual void GetContext( CONTEXT& c ) = 0;
+	virtual bool Win32kInitComplete() = 0;
+	virtual NTSTATUS DoUserCallback( ULONG index, ULONG& length, PVOID& buffer) = 0;
+	virtual NTSTATUS Terminate( NTSTATUS Status ) = 0;
+	virtual bool IsTerminated() = 0;
+	virtual void RegisterTerminatePort( OBJECT *port ) = 0;
+	virtual NTSTATUS QueueApcThread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, PVOID Arg2, PVOID Arg3) = 0;
+	virtual token_t* GetToken() = 0;
+	virtual NTSTATUS Resume( PULONG count ) = 0;
+	virtual NTSTATUS CopyToUser( void *dest, const void *src, size_t count ) = 0;
+	virtual NTSTATUS CopyFromUser( void *dest, const void *src, size_t count ) = 0;
+	virtual NTSTATUS VerifyForWrite( void *dest, size_t count ) = 0;
+	virtual void* Push( ULONG count ) = 0;
+	virtual void Pop( ULONG count ) = 0;
+	virtual PTEB GetTEB() = 0;
 };
 
 NTSTATUS create_thread( THREAD **pthread, PROCESS *p, PCLIENT_ID id, CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended );

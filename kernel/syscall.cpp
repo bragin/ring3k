@@ -164,7 +164,7 @@ NTSTATUS do_nt_syscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
 			ULONG r2 = 0;
 			CONTEXT ctx;
 			ctx.ContextFlags = CONTEXT_CONTROL;
-			current->get_context( ctx );
+			current->GetContext( ctx );
 			r = copy_from_user( &r2, (const void*) ctx.Esp, sizeof r2);
 			if (r == STATUS_SUCCESS)
 				retaddr = r2;

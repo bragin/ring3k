@@ -89,7 +89,7 @@ void COMPLETION_WAITER::Stop(
 {
 	waiter_list.append(this);
 	//thread->set_timeout( timeout );
-	thread->wait();
+	thread->Wait();
 	//thread->set_timeout( 0 );
 }
 

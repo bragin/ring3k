@@ -296,7 +296,7 @@ bool message_map_on_access( BYTE *address, ULONG eip )
 		if (ofs > message_maps[i].MaxMessage/8)
 			continue;
 		fprintf(stderr, "%04lx: accessed message map[%ld][%04lx] from %08lx\n",
-				current->trace_id(), i, ofs, eip);
+				current->TraceId(), i, ofs, eip);
 		return true;
 	}
 	return false;
@@ -334,7 +334,7 @@ void NTUSERSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 			break;
 		}
 		fprintf(stderr, "%04lx: accessed ushm[%04lx]%s from %08lx\n",
-				current->trace_id(), ofs, name, eip);
+				current->TraceId(), ofs, name, eip);
 		return;
 	}
 
@@ -345,7 +345,7 @@ void NTUSERSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 		return;
 
 	fprintf(stderr, "%04lx: accessed ushm[%04lx] from %08lx\n",
-			current->trace_id(), ofs, eip);
+			current->TraceId(), ofs, eip);
 }
 
 static NTUSERSHM_TRACER ntusershm_trace;
@@ -381,7 +381,7 @@ void NTUSERHANDLE_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 	}
 
 	fprintf(stderr, "%04lx: accessed user handle[%04lx]+%s (%ld) from %08lx\n",
-			current->trace_id(), number, field, ofs%sz, eip);
+			current->TraceId(), number, field, ofs%sz, eip);
 }
 static NTUSERHANDLE_TRACER ntuserhandle_trace;
 
@@ -472,11 +472,11 @@ BOOLEAN do_gdi_init()
 
 	// check set the offset
 	BYTE*& user_shared_mem = current->process->win32k_info->user_shared_mem;
-	current->get_teb()->KernelUserPointerOffset = (BYTE*) user_shared - user_shared_mem;
+	current->GetTEB()->KernelUserPointerOffset = (BYTE*) user_shared - user_shared_mem;
 
 	// create the desktop window for alloc_user_info
 	create_desktop_window();
-	current->get_teb()->NtUserInfo = alloc_user_info();
+	current->GetTEB()->NtUserInfo = alloc_user_info();
 
 	return TRUE;
 }
@@ -1150,7 +1150,7 @@ bool window_tt::on_access( BYTE *address, ULONG eip )
 		f( 0x60, wndcls )
 #undef f
 	}
-	fprintf(stderr, "%04lx: accessed window[%p][%04lx] %s from %08lx\n", current->trace_id(), handle, ofs, field, eip);
+	fprintf(stderr, "%04lx: accessed window[%p][%04lx] %s from %08lx\n", current->TraceId(), handle, ofs, field, eip);
 	return true;
 }
 
@@ -1175,10 +1175,10 @@ PWND window_tt::get_wininfo()
 NTSTATUS window_tt::send( message_tt& msg )
 {
 	THREAD*& thread = get_win_thread();
-	if (thread->is_terminated())
+	if (thread->IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
 
-	PTEB teb = thread->get_teb();
+	PTEB teb = thread->GetTEB();
 	teb->CachedWindowHandle = handle;
 	teb->CachedWindowPointer = get_wininfo();
 
@@ -1186,7 +1186,7 @@ NTSTATUS window_tt::send( message_tt& msg )
 
 	msg.set_window_info( this );
 
-	void *address = thread->push( msg.get_size() );
+	void *address = thread->Push( msg.get_size() );
 
 	NTSTATUS r = msg.copy_to_user( address );
 	if (r >= STATUS_SUCCESS)
@@ -1194,13 +1194,13 @@ NTSTATUS window_tt::send( message_tt& msg )
 		ULONG ret_len = 0;
 		PVOID ret_buf = 0;
 
-		r = thread->do_user_callback( msg.get_callback_num(), ret_len, ret_buf );
+		r = thread->DoUserCallback( msg.get_callback_num(), ret_len, ret_buf );
 	}
 
-	if (thread->is_terminated())
+	if (thread->IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
 
-	thread->pop( msg.get_size() );
+	thread->Pop( msg.get_size() );
 	teb->CachedWindowHandle = 0;
 	teb->CachedWindowPointer = 0;
 

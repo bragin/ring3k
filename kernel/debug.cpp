@@ -374,7 +374,7 @@ void Debugger( void )
 	CONTEXT ctx;
 
 	ctx.ContextFlags = context_all;
-	current->get_context( ctx );
+	current->GetContext( ctx );
 	BYTE *d_address = (BYTE*) ctx.Esp;
 	BYTE *u_address = (BYTE*) ctx.Eip;
 	char buf[100];

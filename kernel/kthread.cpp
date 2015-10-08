@@ -46,33 +46,33 @@ class KERNEL_THREAD :
 	public THREAD
 {
 public:
-	bool terminated;
+	bool Terminated;
 public:
 	KERNEL_THREAD( PROCESS *p );
 	virtual ~KERNEL_THREAD();
-	virtual void get_context( CONTEXT& c );
-	virtual bool win32k_init_complete();
-	virtual NTSTATUS do_user_callback( ULONG index, ULONG& length, PVOID& buffer);
-	virtual NTSTATUS terminate( NTSTATUS Status );
-	virtual bool is_terminated();
-	virtual void register_terminate_port( OBJECT *port );
-	//virtual void wait();
-	virtual NTSTATUS queue_apc_thread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, PVOID Arg2, PVOID Arg3);
-	virtual token_t* get_token();
-	virtual NTSTATUS resume( PULONG count );
-	virtual NTSTATUS copy_to_user( void *dest, const void *src, size_t count );
-	virtual NTSTATUS copy_from_user( void *dest, const void *src, size_t count );
-	virtual NTSTATUS verify_for_write( void *dest, size_t count );
+	virtual void GetContext( CONTEXT& c );
+	virtual bool Win32kInitComplete();
+	virtual NTSTATUS DoUserCallback( ULONG index, ULONG& length, PVOID& buffer);
+	virtual NTSTATUS Terminate( NTSTATUS Status );
+	virtual bool IsTerminated();
+	virtual void RegisterTerminatePort( OBJECT *port );
+	//virtual void Wait();
+	virtual NTSTATUS QueueApcThread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, PVOID Arg2, PVOID Arg3);
+	virtual token_t* GetToken();
+	virtual NTSTATUS Resume( PULONG count );
+	virtual NTSTATUS CopyToUser( void *dest, const void *src, size_t count );
+	virtual NTSTATUS CopyFromUser( void *dest, const void *src, size_t count );
+	virtual NTSTATUS VerifyForWrite( void *dest, size_t count );
 	virtual int Run() = 0;
 	virtual BOOLEAN IsSignalled( void );
-	virtual void* push( ULONG count );
-	virtual void pop( ULONG count );
-	virtual PTEB get_teb();
+	virtual void* Push( ULONG count );
+	virtual void Pop( ULONG count );
+	virtual PTEB GetTEB();
 };
 
 KERNEL_THREAD::KERNEL_THREAD( PROCESS *p ) :
 	THREAD( p ),
-	terminated( false )
+	Terminated( false )
 {
 }
 
@@ -82,69 +82,69 @@ KERNEL_THREAD::~KERNEL_THREAD()
 
 BOOLEAN KERNEL_THREAD::IsSignalled()
 {
-	return terminated;
+	return Terminated;
 }
 
-void KERNEL_THREAD::get_context( CONTEXT& c )
+void KERNEL_THREAD::GetContext( CONTEXT& c )
 {
 	assert(0);
 }
 
-bool KERNEL_THREAD::win32k_init_complete()
-{
-	assert(0);
-	return 0;
-}
-
-NTSTATUS KERNEL_THREAD::do_user_callback( ULONG index, ULONG& length, PVOID& buffer)
+bool KERNEL_THREAD::Win32kInitComplete()
 {
 	assert(0);
 	return 0;
 }
 
-NTSTATUS KERNEL_THREAD::terminate( NTSTATUS Status )
+NTSTATUS KERNEL_THREAD::DoUserCallback( ULONG index, ULONG& length, PVOID& buffer)
 {
-	if (terminated)
+	assert(0);
+	return 0;
+}
+
+NTSTATUS KERNEL_THREAD::Terminate( NTSTATUS Status )
+{
+	if (Terminated)
 		return 0;
-	terminated = true;
+	Terminated = true;
 	Start();
 	return 0;
 }
 
-bool KERNEL_THREAD::is_terminated()
+bool KERNEL_THREAD::IsTerminated()
 {
-	return terminated;
+	return Terminated;
 }
 
-void KERNEL_THREAD::register_terminate_port( OBJECT *port )
+void KERNEL_THREAD::RegisterTerminatePort( OBJECT *port )
 {
 	assert(0);
 }
 
-/*void KERNEL_THREAD::wait()
+/*void KERNEL_THREAD::Wait()
 {
 	assert(0);
 }*/
 
-NTSTATUS KERNEL_THREAD::queue_apc_thread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, PVOID Arg2, PVOID Arg3)
+NTSTATUS KERNEL_THREAD::QueueApcThread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, PVOID Arg2, PVOID Arg3)
 {
 	assert(0);
 	return 0;
 }
 
-token_t* KERNEL_THREAD::get_token()
+token_t* KERNEL_THREAD::GetToken()
 {
 	assert(0);
 	return 0;
 }
 
-NTSTATUS KERNEL_THREAD::resume( PULONG count )
+NTSTATUS KERNEL_THREAD::Resume( PULONG count )
 {
 	assert(0);
 	return 0;
 }
 
-NTSTATUS KERNEL_THREAD::copy_to_user( void *dest, const void *src, size_t count )
+NTSTATUS KERNEL_THREAD::CopyToUser( void *dest, const void *src, size_t count )
 {
 	if (!dest)
 		return STATUS_ACCESS_VIOLATION;
@@ -152,7 +152,7 @@ NTSTATUS KERNEL_THREAD::copy_to_user( void *dest, const void *src, size_t count 
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS KERNEL_THREAD::copy_from_user( void *dest, const void *src, size_t count )
+NTSTATUS KERNEL_THREAD::CopyFromUser( void *dest, const void *src, size_t count )
 {
 	if (!dest)
 		return STATUS_ACCESS_VIOLATION;
@@ -160,25 +160,25 @@ NTSTATUS KERNEL_THREAD::copy_from_user( void *dest, const void *src, size_t coun
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS KERNEL_THREAD::verify_for_write( void *dest, size_t count )
+NTSTATUS KERNEL_THREAD::VerifyForWrite( void *dest, size_t count )
 {
 	if (!dest)
 		return STATUS_ACCESS_VIOLATION;
 	return STATUS_SUCCESS;
 }
 
-void* KERNEL_THREAD::push( ULONG count )
+void* KERNEL_THREAD::Push( ULONG count )
 {
 	assert(0);
 	return 0;
 }
 
-void KERNEL_THREAD::pop( ULONG count )
+void KERNEL_THREAD::Pop( ULONG count )
 {
 	assert(0);
 }
 
-PTEB KERNEL_THREAD::get_teb()
+PTEB KERNEL_THREAD::GetTEB()
 {
 	assert(0);
 	return 0;
@@ -246,7 +246,7 @@ int SECURITY_REFERENCE_MONITOR::Run()
 	if (r < STATUS_SUCCESS)
 		Die("NtConnectPort(SeLsaCommandPort) failed r = %08lx\n", r);
 
-	while (!terminated)
+	while (!Terminated)
 	{
 		ULONG client_handle;
 
@@ -312,8 +312,8 @@ int PLUG_AND_PLAY::Run()
 	if (r < STATUS_SUCCESS)
 		trace("failed to create ntsvcs %08lx\n", r);
 
-	if (terminated)
-		stop();
+	if (Terminated)
+		Stop();
 
 	r = NtFsControlFile( pipe, 0, 0, 0, &iosb, FSCTL_PIPE_LISTEN, 0, 0, 0, 0 );
 	if (r == STATUS_THREAD_IS_TERMINATING)
@@ -321,34 +321,34 @@ int PLUG_AND_PLAY::Run()
 	if (r < STATUS_SUCCESS)
 		trace("failed to connect ntsvcs %08lx\n", r);
 
-	stop();
+	Stop();
 	return 0;
 }
 
-static PROCESS *kernel_process;
-static KERNEL_THREAD* srm;
-static KERNEL_THREAD* plugnplay;
+static PROCESS *KernelProcess;
+static KERNEL_THREAD* SRM;
+static KERNEL_THREAD* PlugnPlay;
 
-void create_kthread(void)
+void CreateKThread(void)
 {
 	// process is for the handle table
-	kernel_process = new PROCESS;
-	srm = new SECURITY_REFERENCE_MONITOR( kernel_process );
-	plugnplay = new PLUG_AND_PLAY( kernel_process );
+	KernelProcess = new PROCESS;
+	SRM = new SECURITY_REFERENCE_MONITOR( KernelProcess );
+	PlugnPlay = new PLUG_AND_PLAY( KernelProcess );
 	//release( kernel_process );
 
-	srm->Start();
-	plugnplay->Start();
+	SRM->Start();
+	PlugnPlay->Start();
 }
 
-void shutdown_kthread(void)
+void ShutdownKThread(void)
 {
-	srm->terminate( 0 );
-	plugnplay->terminate( 0 );
+	SRM->Terminate( 0 );
+	PlugnPlay->Terminate( 0 );
 
 	// run the threads until they complete
 	while (!FIBER::LastFiber())
 		FIBER::Yield();
 
-	delete kernel_process;
+	delete KernelProcess;
 }

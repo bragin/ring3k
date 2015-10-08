@@ -122,7 +122,7 @@ NTSTATUS win32k_process_init(PROCESS *p);
 NTSTATUS win32k_thread_init(THREAD *t);
 
 // from kthread.cpp
-void create_kthread(void);
-void shutdown_kthread(void);
+void CreateKThread(void);
+void ShutdownKThread(void);
 
 #endif // __NTCALL_H__

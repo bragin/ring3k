@@ -240,7 +240,7 @@ void do_cleanup( void )
 			THREAD *t = ti;
 			if (t->IsSignalled())
 				continue;
-			fprintf(stderr, "\tthread %04lx\n", t->trace_id());
+			fprintf(stderr, "\tthread %04lx\n", t->TraceId());
 			num_threads++;
 		}
 	}
@@ -257,7 +257,7 @@ static void backtrace_and_quit()
 	ULONG id = 0;
 
 	if (current)
-		id = current->trace_id();
+		id = current->TraceId();
 
 	size = backtrace(bt, max_frames);
 	names = backtrace_symbols(bt, size);
@@ -507,7 +507,7 @@ int main(int argc, char **argv)
 	CreateSyncEvent( (PWSTR) L"\\KernelObjects\\CritSecOutOfMemoryEvent" );
 	InitDrives();
 	init_ntdll();
-	create_kthread();
+	CreateKThread();
 
 	us.copy( exename );
 
@@ -523,7 +523,7 @@ int main(int argc, char **argv)
 	//fprintf(stderr, "process exited (%08x)\n", r);
 	release( initial_thread );
 
-	shutdown_kthread();
+	ShutdownKThread();
 	do_cleanup();
 
 	free_root();

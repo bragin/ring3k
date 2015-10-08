@@ -236,7 +236,7 @@ void send_terminate_message(
 	msg->req.MessageSize = msg_size;
 	msg->req.MessageType = LPC_CLIENT_DIED;
 	msg->req.DataSize = data_size;
-	thread->get_client_id( &msg->req.ClientId );
+	thread->GetClientID( &msg->req.ClientId );
 	msg->req.MessageId = unique_message_id++;
 	memcpy( &msg->req.Data, &create_time, sizeof create_time );
 
@@ -273,7 +273,7 @@ bool send_exception( THREAD *thread, EXCEPTION_RECORD& rec )
 		msg->req.MessageSize = 0x78;
 		msg->req.MessageType = LPC_EXCEPTION;
 		msg->req.DataSize = 0x5c;
-		thread->get_client_id( &msg->req.ClientId );
+		thread->GetClientID( &msg->req.ClientId );
 		msg->req.MessageId = unique_message_id++;
 
 		exception_msg_data_t *x;
@@ -296,7 +296,7 @@ bool send_exception( THREAD *thread, EXCEPTION_RECORD& rec )
 		case DBG_EXCEPTION_HANDLED:
 			return false;
 		case DBG_TERMINATE_THREAD:
-			thread->terminate(rec.ExceptionCode);
+			thread->Terminate(rec.ExceptionCode);
 			return true;
 		case DBG_TERMINATE_PROCESS:
 			thread->process->terminate(rec.ExceptionCode);
@@ -398,7 +398,7 @@ void port_t::send_close_message( void )
 	msg->req.MessageSize = msg_size;
 	msg->req.MessageType = LPC_PORT_CLOSED;
 	msg->req.DataSize = data_size;
-	current->get_client_id( &msg->req.ClientId );
+	current->GetClientID( &msg->req.ClientId );
 	msg->req.MessageId = unique_message_id++;
 
 	send_message( msg );
@@ -499,7 +499,7 @@ MESSAGE *port_queue_t::find_connection_request()
 NTSTATUS port_t::send_reply( MESSAGE *reply )
 {
 	reply->req.MessageType = LPC_REPLY;
-	current->get_client_id( &reply->req.ClientId );
+	current->GetClientID( &reply->req.ClientId );
 
 	reply->dump();
 
@@ -552,8 +552,8 @@ void port_t::listen( MESSAGE *&msg )
 		// Block until somebody connects to this port.
 		listener_t l( this, current, TRUE, 0 );
 
-		current->wait();
-		if (current->is_terminated())
+		current->Wait();
+		if (current->IsTerminated())
 			return;
 
 		msg = queue->find_connection_request();
@@ -628,7 +628,7 @@ NTSTATUS connect_port(
 	// expect to be restarted by NtCompleteConnectPort when t->port is set
 	assert( 0 == current->port);
 	current->port = port;
-	current->wait();
+	current->Wait();
 	assert( current->port == 0 );
 	if (port->received_msg)
 	{
@@ -761,7 +761,7 @@ NTSTATUS port_t::send_request( MESSAGE *msg )
 {
 	// queue a message into the port
 	//msg->req.MessageSize = FIELD_OFFSET(LPC_MESSAGE, Data);
-	current->get_client_id( &msg->req.ClientId );
+	current->GetClientID( &msg->req.ClientId );
 	msg->req.MessageId = unique_message_id++;
 	msg->req.SectionSize = 0;
 	msg->destination_id = identifier;
@@ -782,7 +782,7 @@ void port_t::request_wait_reply( MESSAGE *msg, MESSAGE *&reply )
 
 	// put the thread to sleep while we wait for a reply
 	assert( received_msg == 0 );
-	current->wait();
+	current->Wait();
 	reply = received_msg;
 	received_msg = 0;
 	assert( !reply->is_linked() );
@@ -804,12 +804,12 @@ NTSTATUS port_t::reply_wait_receive( MESSAGE *reply, MESSAGE *& received )
 	{
 		listener_t l( this, current, FALSE, 0 );
 
-		current->wait();
+		current->Wait();
 		received = queue->messages.head();
 	}
 	if (!received)
 		return STATUS_THREAD_IS_TERMINATING;
-	if (current->is_terminated())
+	if (current->IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
 	queue->messages.unlink(received);
 	assert( !received->is_linked() );
@@ -878,7 +878,7 @@ NTSTATUS NTAPI NtListenPort(
 
 	MESSAGE *msg = 0;
 	port->listen( msg );
-	if (current->is_terminated())
+	if (current->IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
 	r = copy_msg_to_user( ConnectionRequest, msg );
 	delete msg;
@@ -997,7 +997,7 @@ NTSTATUS NTAPI NtSecureConnectPort(
 	msg->req.DataSize = info_length;
 	msg->req.MessageSize = FIELD_OFFSET(LPC_MESSAGE, Data) + info_length;
 	msg->req.MessageType = LPC_CONNECTION_REQUEST;
-	current->get_client_id( &msg->req.ClientId );
+	current->GetClientID( &msg->req.ClientId );
 	msg->req.MessageId = unique_message_id++;
 	msg->req.SectionSize = write_sec.ViewSize;
 
@@ -1288,7 +1288,7 @@ NTSTATUS NTAPI NtRegisterThreadTerminatePort(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	current->register_terminate_port( port );
+	current->RegisterTerminatePort( port );
 
 	return r;
 }

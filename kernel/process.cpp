@@ -203,7 +203,7 @@ void kshm_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 	}
 
 	fprintf(stderr, "%04lx: accessed kshm[%04lx]%s from %08lx\n",
-			current->trace_id(), ofs, field, eip);
+			current->TraceId(), ofs, field, eip);
 }
 
 kshm_tracer kshm_trace;
@@ -261,7 +261,7 @@ THREAD *find_thread_by_client_id( CLIENT_ID *id )
 			for ( sibling_iter_t j(p->threads); j; j.next() )
 			{
 				THREAD *t = j;
-				if (t->get_id() == (ULONG)id->UniqueThread)
+				if (t->GetID() == (ULONG)id->UniqueThread)
 					return t;
 			}
 		}
@@ -286,7 +286,7 @@ BOOLEAN PROCESS::IsSignalled( void )
 	for ( sibling_iter_t i(threads); i; i.next() )
 	{
 		THREAD *t = i;
-		if (!t->is_terminated())
+		if (!t->IsTerminated())
 			return FALSE;
 	}
 
@@ -427,7 +427,7 @@ void peb_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 	}
 
 	fprintf(stderr, "%04lx: accessed peb[%04lx]%s from %08lx\n",
-			current->trace_id(), ofs, field, eip);
+			current->TraceId(), ofs, field, eip);
 }
 
 peb_tracer peb_trace;
@@ -901,7 +901,7 @@ NTSTATUS NTAPI NtTerminateProcess(
 	{
 		THREAD *t = i;
 		i.next();
-		t->terminate( Status );
+		t->Terminate( Status );
 	}
 
 	return STATUS_SUCCESS;

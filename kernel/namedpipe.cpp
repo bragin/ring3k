@@ -327,7 +327,7 @@ NTSTATUS PIPE_DEVICE::wait_server_available( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, UL
 	if (!server)
 	{
 		//FIXME: timeout
-		current->wait();
+		current->Wait();
 	}
 
 	return STATUS_SUCCESS;
@@ -458,8 +458,8 @@ NTSTATUS PIPE_SERVER::Read( PVOID buffer, ULONG length, ULONG *read )
 	{
 		// wait for a message
 		thread = current;
-		current->wait();
-		if (current->is_terminated())
+		current->Wait();
+		if (current->IsTerminated())
 			return STATUS_THREAD_IS_TERMINATING;
 		assert( thread == NULL );
 		msg = received_messages.head();
@@ -520,8 +520,8 @@ NTSTATUS PIPE_SERVER::connect()
 	if (!is_connected())
 	{
 		thread = current;
-		current->wait();
-		if (current->is_terminated())
+		current->Wait();
+		if (current->IsTerminated())
 			return STATUS_THREAD_IS_TERMINATING;
 		assert( thread == NULL );
 		assert( is_connected() );
@@ -607,8 +607,8 @@ NTSTATUS PIPE_CLIENT::Read( PVOID buffer, ULONG length, ULONG *read )
 	{
 		// wait for a message
 		thread = current;
-		current->wait();
-		if (current->is_terminated())
+		current->Wait();
+		if (current->IsTerminated())
 			return STATUS_THREAD_IS_TERMINATING;
 		assert( thread == NULL );
 		msg = server->sent_messages.head();

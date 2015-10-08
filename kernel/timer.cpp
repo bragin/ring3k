@@ -271,7 +271,7 @@ BOOLEAN nttimer_t::Satisfy( void )
 {
 	// FIXME: user correct time values
 	if (apc_routine)
-		thread->queue_apc_thread( apc_routine, apc_context, 0, 0 );
+		thread->QueueApcThread( apc_routine, apc_context, 0, 0 );
 
 	// restart the timer
 	if (interval)

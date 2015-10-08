@@ -346,9 +346,9 @@ BOOLEAN thread_message_queue_tt::get_message(
 	// a thread sending a message will restart us
 	msg_waiter_tt wait( Message );
 	waiter_list.append( &wait );
-	current->stop();
+	current->Stop();
 
-	return !current->is_terminated();
+	return !current->IsTerminated();
 }
 
 BOOLEAN NTAPI NtUserGetMessage(PMSG Message, HWND Window, ULONG MinMessage, ULONG MaxMessage)
@@ -369,7 +369,7 @@ BOOLEAN NTAPI NtUserGetMessage(PMSG Message, HWND Window, ULONG MinMessage, ULON
 
 	if (option_trace)
 	{
-		fprintf(stderr, "%04lx: %s\n", current->trace_id(), __FUNCTION__);
+		fprintf(stderr, "%04lx: %s\n", current->TraceId(), __FUNCTION__);
 		fprintf(stderr, " msg.hwnd    = %p\n", msg.hwnd);
 		fprintf(stderr, " msg.message = %08x (%s)\n", msg.message, get_message_name(msg.message));
 		fprintf(stderr, " msg.wParam  = %08x\n", msg.wParam);

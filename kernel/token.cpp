@@ -786,7 +786,7 @@ NTSTATUS NTAPI NtOpenThreadToken(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	token_t *tok = t->get_token();
+	token_t *tok = t->GetToken();
 	if (tok == 0)
 		return STATUS_NO_TOKEN;
 

@@ -36,17 +36,17 @@
 
 NTSTATUS copy_to_user( void *dest, const void *src, size_t len )
 {
-	return current->copy_to_user( dest, src, len );
+	return current->CopyToUser( dest, src, len );
 }
 
 NTSTATUS copy_from_user( void *dest, const void *src, size_t len )
 {
-	return current->copy_from_user( dest, src, len );
+	return current->CopyFromUser( dest, src, len );
 }
 
 NTSTATUS verify_for_write( void *dest, size_t len )
 {
-	return current->verify_for_write( dest, len );
+	return current->VerifyForWrite( dest, len );
 }
 
 // print with white on blue - appologies for the lame hack ;)
