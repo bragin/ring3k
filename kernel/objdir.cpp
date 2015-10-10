@@ -34,7 +34,7 @@
 #include "ntcall.h"
 #include "symlink.h"
 
-static OBJECT_DIR_IMPL *root = 0;
+static OBJECT_DIR_IMPL *Root = 0;
 
 OBJECT_DIR::OBJECT_DIR()
 {
@@ -44,7 +44,7 @@ OBJECT_DIR::~OBJECT_DIR()
 {
 }
 
-void OBJECT_DIR::set_obj_parent( OBJECT *child, OBJECT_DIR *dir )
+void OBJECT_DIR::SetObjParent( OBJECT *child, OBJECT_DIR *dir )
 {
 	child->parent = dir;
 }
@@ -61,22 +61,22 @@ OBJECT_DIR_IMPL::~OBJECT_DIR_IMPL()
 	{
 		OBJECT *obj = i;
 		i.Next();
-		unlink( obj );
+		Unlink( obj );
 	}
 }
 
-void OBJECT_DIR_IMPL::unlink( OBJECT *obj )
+void OBJECT_DIR_IMPL::Unlink( OBJECT *obj )
 {
 	assert( obj );
 	object_list.Unlink( obj );
-	set_obj_parent( obj, 0 );
+	SetObjParent( obj, 0 );
 }
 
-void OBJECT_DIR_IMPL::append( OBJECT *obj )
+void OBJECT_DIR_IMPL::Append( OBJECT *obj )
 {
 	assert( obj );
 	object_list.Append( obj );
-	set_obj_parent( obj, this );
+	SetObjParent( obj, this );
 }
 
 bool OBJECT_DIR_IMPL::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
@@ -87,7 +87,7 @@ bool OBJECT_DIR_IMPL::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 						 DIRECTORY_ALL_ACCESS );
 }
 
-OBJECT *OBJECT_DIR_IMPL::lookup( UNICODE_STRING& name, bool ignore_case )
+OBJECT *OBJECT_DIR_IMPL::Lookup( UNICODE_STRING& name, bool ignore_case )
 {
 	//trace("searching for %pus\n", &name );
 	for( object_iter_t i(object_list); i; i.Next() )
@@ -116,17 +116,17 @@ NTSTATUS OBJECT_DIR_FACTORY::AllocObject(OBJECT** obj)
 	return STATUS_SUCCESS;
 }
 
-OBJECT *create_directory_object( PCWSTR name )
+OBJECT *CreateDirectoryObject( PCWSTR name )
 {
 	OBJECT_DIR_IMPL *obj = new OBJECT_DIR_IMPL;
 
 	if (name && name[0] == '\\' && name[1] == 0)
 	{
-		if (!root)
-			root = obj;
+		if (!Root)
+			Root = obj;
 		else
 			delete obj;
-		return root;
+		return Root;
 	}
 
 	unicode_string_t us;
@@ -136,7 +136,7 @@ OBJECT *create_directory_object( PCWSTR name )
 	oa.Length = sizeof oa;
 	oa.Attributes = OBJ_CASE_INSENSITIVE;
 	oa.ObjectName = &us;
-	NTSTATUS r = name_object( obj, &oa );
+	NTSTATUS r = NameObject( obj, &oa );
 	if (r < STATUS_SUCCESS)
 	{
 		release( obj );
@@ -145,7 +145,7 @@ OBJECT *create_directory_object( PCWSTR name )
 	return obj;
 }
 
-NTSTATUS open_root( OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS OpenRoot( OBJECT*& obj, OPEN_INFO& info )
 {
 	// look each directory in the path and make sure it exists
 	OBJECT_DIR *dir = 0;
@@ -168,7 +168,7 @@ NTSTATUS open_root( OBJECT*& obj, OPEN_INFO& info )
 		// absolute path
 		if (info.path.Buffer[0] != '\\')
 			return STATUS_OBJECT_PATH_SYNTAX_BAD;
-		dir = root;
+		dir = Root;
 		info.path.Buffer++;
 		info.path.Length -= 2;
 	}
@@ -200,7 +200,7 @@ NTSTATUS OBJECT_DIR_IMPL::Open( OBJECT*& obj, OPEN_INFO& info )
 	segment.Length = n * 2;
 	segment.MaximumLength = 0;
 
-	obj = lookup( segment, info.case_insensitive() );
+	obj = Lookup( segment, info.case_insensitive() );
 
 	if (n == path.Length/2)
 		return info.OnOpen( this, obj, info );
@@ -240,7 +240,7 @@ NTSTATUS FIND_OBJECT::OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS find_object_by_name( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
+NTSTATUS FindObjectByName( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 {
 	// no name
 	if (!oa || !oa->ObjectName || !oa->ObjectName->Buffer)
@@ -259,7 +259,7 @@ NTSTATUS find_object_by_name( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 	oi.root = oa->RootDirectory;
 	oi.path.set( *oa->ObjectName );
 
-	return open_root( *out, oi );
+	return OpenRoot( *out, oi );
 }
 
 class NAME_OBJECT : public OPEN_INFO
@@ -292,12 +292,12 @@ NTSTATUS NAME_OBJECT::OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	dir->append( obj );
+	dir->Append( obj );
 
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS name_object( OBJECT *obj, const OBJECT_ATTRIBUTES *oa )
+NTSTATUS NameObject( OBJECT *obj, const OBJECT_ATTRIBUTES *oa )
 {
 	if (!oa)
 		return STATUS_SUCCESS;
@@ -317,10 +317,10 @@ NTSTATUS name_object( OBJECT *obj, const OBJECT_ATTRIBUTES *oa )
 	oi.root = oa->RootDirectory;
 	oi.path.set( *oa->ObjectName );
 
-	return open_root( obj, oi );
+	return OpenRoot( obj, oi );
 }
 
-NTSTATUS get_named_object( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
+NTSTATUS GetNamedObject( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 {
 	OBJECT *obj;
 	NTSTATUS r;
@@ -328,7 +328,7 @@ NTSTATUS get_named_object( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 	if (!oa || !oa->ObjectName || !oa->ObjectName->Buffer || !oa->ObjectName->Buffer[0])
 		return STATUS_OBJECT_PATH_SYNTAX_BAD;
 
-	r = find_object_by_name( &obj, oa );
+	r = FindObjectByName( &obj, oa );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -336,13 +336,13 @@ NTSTATUS get_named_object( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 	return STATUS_SUCCESS;
 }
 
-void init_root()
+void InitRoot()
 {
-	root = new OBJECT_DIR_IMPL;
-	assert( root );
+	Root = new OBJECT_DIR_IMPL;
+	assert( Root );
 }
 
-void free_root()
+void FreeRoot()
 {
 	//delete root;
 }

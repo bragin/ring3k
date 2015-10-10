@@ -27,14 +27,14 @@ class OBJECT_DIR : virtual public OBJECT
 {
 protected:
 	friend class OBJECT;
-	static void set_obj_parent( OBJECT *child, OBJECT_DIR *dir );
-	virtual void unlink( OBJECT *child ) = 0;
+	static void SetObjParent( OBJECT *child, OBJECT_DIR *dir );
+	virtual void Unlink( OBJECT *child ) = 0;
 public:
 	OBJECT_DIR();
 	virtual ~OBJECT_DIR();
 	virtual bool AccessAllowed( ACCESS_MASK access, ACCESS_MASK handle_access ) = 0;
-	virtual OBJECT *lookup( UNICODE_STRING& name, bool ignore_case ) = 0;
-	virtual void append( OBJECT *child ) = 0;
+	virtual OBJECT *Lookup( UNICODE_STRING& name, bool ignore_case ) = 0;
+	virtual void Append( OBJECT *child ) = 0;
 };
 
 class OBJECT_DIR_IMPL : public OBJECT_DIR
@@ -44,15 +44,15 @@ public:
 	OBJECT_DIR_IMPL();
 	virtual ~OBJECT_DIR_IMPL();
 	virtual bool AccessAllowed( ACCESS_MASK access, ACCESS_MASK handle_access );
-	virtual void unlink( OBJECT *child );
-	virtual void append( OBJECT *child );
+	virtual void Unlink( OBJECT *child );
+	virtual void Append( OBJECT *child );
 public:
-	OBJECT *lookup( UNICODE_STRING& name, bool ignore_case );
-	NTSTATUS add( OBJECT *obj, UNICODE_STRING& name, bool ignore_case );
+	OBJECT *Lookup( UNICODE_STRING& name, bool ignore_case );
+	NTSTATUS Add( OBJECT *obj, UNICODE_STRING& name, bool ignore_case );
 	virtual NTSTATUS Open( OBJECT*& obj, OPEN_INFO& info );
 };
 
-OBJECT *create_directory_object( PCWSTR name );
-NTSTATUS parse_path( const OBJECT_ATTRIBUTES& oa, OBJECT_DIR*& dir, UNICODE_STRING& file );
+OBJECT *CreateDirectoryObject( PCWSTR name );
+NTSTATUS ParsePath( const OBJECT_ATTRIBUTES& oa, OBJECT_DIR*& dir, UNICODE_STRING& file );
 
 #endif // __NTNATIVE_OBJDIR_H__

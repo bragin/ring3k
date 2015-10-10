@@ -153,14 +153,14 @@ static inline void release( OBJECT *obj )
 	OBJECT::release( obj );
 }
 
-void init_root();
-void free_root();
+void InitRoot();
+void FreeRoot();
 
-NTSTATUS name_object( OBJECT *obj, const OBJECT_ATTRIBUTES *oa );
-NTSTATUS get_named_object( OBJECT **out, const OBJECT_ATTRIBUTES *oa );
-NTSTATUS find_object_by_name( OBJECT **out, const OBJECT_ATTRIBUTES *oa );
+NTSTATUS NameObject( OBJECT *obj, const OBJECT_ATTRIBUTES *oa );
+NTSTATUS GetNamedObject( OBJECT **out, const OBJECT_ATTRIBUTES *oa );
+NTSTATUS FindObjectByName( OBJECT **out, const OBJECT_ATTRIBUTES *oa );
 
-NTSTATUS open_root( OBJECT*& obj, OPEN_INFO& info );
+NTSTATUS OpenRoot( OBJECT*& obj, OPEN_INFO& info );
 
 template<typename T> NTSTATUS object_from_handle(T*& out, HANDLE handle, ACCESS_MASK access);
 

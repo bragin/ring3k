@@ -259,7 +259,7 @@ void *init_user_shared_memory()
 									 user_shared_mem_size - user_shared_mem_reserve );
 
 		// create the window stations directory too
-		create_directory_object( (PWSTR) L"\\Windows\\WindowStations" );
+		CreateDirectoryObject( (PWSTR) L"\\Windows\\WindowStations" );
 
 		// see wine/dlls/user32/sysparams.c
 		user_shared->ButtonHilight = RGB(255,255,255);

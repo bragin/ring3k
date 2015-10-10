@@ -199,7 +199,7 @@ NTSTATUS OBJECT_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info 
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	dir->append( obj );
+	dir->Append( obj );
 
 	return STATUS_SUCCESS;
 }
@@ -207,7 +207,7 @@ NTSTATUS OBJECT_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info 
 NTSTATUS OBJECT_FACTORY::create_kernel( OBJECT*& obj, UNICODE_STRING& us )
 {
 	path.set( us );
-	return open_root( obj, *this );
+	return OpenRoot( obj, *this );
 }
 
 NTSTATUS OBJECT_FACTORY::create(
@@ -237,7 +237,7 @@ NTSTATUS OBJECT_FACTORY::create(
 		path.set( *oa.ObjectName );
 		root = oa.RootDirectory;
 		Attributes = oa.Attributes;
-		r = open_root( obj, *this );
+		r = OpenRoot( obj, *this );
 	}
 	else
 	{
@@ -271,7 +271,7 @@ OBJECT::OBJECT() :
 OBJECT::~OBJECT()
 {
 	if (parent)
-		parent->unlink( this );
+		parent->Unlink( this );
 }
 
 bool OBJECT::check_access( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK read, ACCESS_MASK write, ACCESS_MASK all )

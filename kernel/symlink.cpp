@@ -70,7 +70,7 @@ NTSTATUS symlink_t::Open( OBJECT *&out, OPEN_INFO& info )
 
 		OBJECT *target_object;
 		NTSTATUS r;
-		r = open_root( target_object, target_info );
+		r = OpenRoot( target_object, target_info );
 		if (r < STATUS_SUCCESS)
 			return r;
 
@@ -85,7 +85,7 @@ NTSTATUS symlink_t::Open( OBJECT *&out, OPEN_INFO& info )
 	}
 
 	info.path.set( target );
-	return open_root( out, info );
+	return OpenRoot( out, info );
 }
 
 class symlink_factory_t : public OBJECT_FACTORY

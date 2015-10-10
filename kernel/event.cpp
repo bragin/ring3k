@@ -189,7 +189,7 @@ EVENT* CreateSyncEvent( PWSTR name, BOOL InitialState )
 		oa.Attributes = OBJ_CASE_INSENSITIVE;
 		oa.ObjectName = &us;
 
-		NTSTATUS r = name_object( event, &oa );
+		NTSTATUS r = NameObject( event, &oa );
 		if (r < STATUS_SUCCESS)
 		{
 			trace("name_object failed\n");

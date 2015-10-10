@@ -550,7 +550,7 @@ NTSTATUS open_process( OBJECT **process, OBJECT_ATTRIBUTES *oa )
 	PROCESS *p;
 	NTSTATUS r;
 
-	r = get_named_object( &obj, oa );
+	r = GetNamedObject( &obj, oa );
 	if (r < STATUS_SUCCESS)
 		return r;
 

@@ -28,7 +28,7 @@ template<class T> NTSTATUS nt_open_object(
 
 	OBJECT *object = NULL;
 
-	r = get_named_object( &object, &oa );
+	r = GetNamedObject( &object, &oa );
 	if (r != STATUS_SUCCESS)
 		return r;
 

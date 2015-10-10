@@ -193,7 +193,7 @@ NTSTATUS PIPE_DEVICE::Open( OBJECT *&out, OPEN_INFO& info )
 
 	// appears to be a flat namespace under the pipe device
 	trace("pipe = %pus\n", &info.path );
-	out = lookup( info.path, info.case_insensitive() );
+	out = Lookup( info.path, info.case_insensitive() );
 
 	// not the NtCreateNamedPipeFile case?
 	if (out && dynamic_cast<PIPE_FACTORY*>(&info) == NULL)
@@ -312,7 +312,7 @@ NTSTATUS PIPE_DEVICE::WaitServerAvailable( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULON
 
 	info.Dump();
 
-	OBJECT* obj = lookup( info.Name, true );
+	OBJECT* obj = Lookup( info.Name, true );
 	if (!obj)
 	{
 		trace("no pipe server (%pus)\n", &info.Name );
@@ -709,7 +709,7 @@ NTSTATUS PIPE_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 		if (r < STATUS_SUCCESS)
 			return r;
 
-		dir->append( container );
+		dir->Append( container );
 	}
 	else
 	{

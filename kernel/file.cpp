@@ -782,7 +782,7 @@ NTSTATUS OpenFile( CFILE *&file, UNICODE_STRING& name )
 	info.path.set( name );
 	info.Attributes = OBJ_CASE_INSENSITIVE;
 	OBJECT *obj = 0;
-	NTSTATUS r = open_root( obj, info );
+	NTSTATUS r = OpenRoot( obj, info );
 	if (r < STATUS_SUCCESS)
 		return r;
 	file = dynamic_cast<CFILE*>( obj );
@@ -861,7 +861,7 @@ NTSTATUS NTAPI NtCreateFile(
 	info.Attributes = oa.Attributes;
 
 	OBJECT *obj = 0;
-	r = open_root( obj, info );
+	r = OpenRoot( obj, info );
 	if (r >= STATUS_SUCCESS)
 	{
 		r = AllocUserHandle( obj, DesiredAccess, FileHandle );
@@ -1019,7 +1019,7 @@ NTSTATUS NTAPI NtQueryAttributesFile(
 	FILE_CREATE_INFO open_info( 0, 0, FILE_OPEN );
 	open_info.path.set( *oa.ObjectName );
 	open_info.Attributes = oa.Attributes;
-	r = open_root( obj, open_info );
+	r = OpenRoot( obj, open_info );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1112,7 +1112,7 @@ NTSTATUS NTAPI NtDeleteFile(
 	FILE_CREATE_INFO open_info( 0, 0, FILE_OPEN );
 	open_info.path.set( *oa.ObjectName );
 	open_info.Attributes = oa.Attributes;
-	r = open_root( obj, open_info );
+	r = OpenRoot( obj, open_info );
 	if (r < STATUS_SUCCESS)
 		return r;
 

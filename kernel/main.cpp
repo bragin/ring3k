@@ -486,24 +486,24 @@ int main(int argc, char **argv)
 
 	InitRegistry();
 	FIBER::FibersInit();
-	init_root();
-	create_directory_object( (PWSTR) L"\\" );
-	create_directory_object( (PWSTR) L"\\??" );
+	InitRoot();
+	CreateDirectoryObject( (PWSTR) L"\\" );
+	CreateDirectoryObject( (PWSTR) L"\\??" );
 	unicode_string_t link_name, link_target;
 	link_name.set( L"\\DosDevices" );
 	link_target.copy( L"\\??" );
 	create_symlink( link_name, link_target );
-	create_directory_object( (PWSTR) L"\\Device" );
-	create_directory_object( (PWSTR) L"\\Device\\MailSlot" );
-	create_directory_object( (PWSTR) L"\\Security" );
+	CreateDirectoryObject( (PWSTR) L"\\Device" );
+	CreateDirectoryObject( (PWSTR) L"\\Device\\MailSlot" );
+	CreateDirectoryObject( (PWSTR) L"\\Security" );
 	//create_directory_object( (PWSTR) L"\\DosDevices" );
-	create_directory_object( (PWSTR) L"\\BaseNamedObjects" );
+	CreateDirectoryObject( (PWSTR) L"\\BaseNamedObjects" );
 	CreateSyncEvent( (PWSTR) L"\\Security\\LSA_AUTHENTICATION_INITIALIZED" );
 	CreateSyncEvent( (PWSTR) L"\\SeLsaInitEvent" );
 	InitRandom();
 	InitPipeDevice();
 	// XP
-	create_directory_object( (PWSTR) L"\\KernelObjects" );
+	CreateDirectoryObject( (PWSTR) L"\\KernelObjects" );
 	CreateSyncEvent( (PWSTR) L"\\KernelObjects\\CritSecOutOfMemoryEvent" );
 	InitDrives();
 	InitNtDLL();
@@ -526,7 +526,7 @@ int main(int argc, char **argv)
 	ShutdownKThread();
 	DoCleanup();
 
-	free_root();
+	FreeRoot();
 	FIBER::FibersFinish();
 	FreeRegistry();
 	FreeNtDLL();

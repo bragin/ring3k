@@ -472,7 +472,7 @@ NTSTATUS create_named_port(
 	port->queue = new port_queue_t( max_connect, max_data );
 	if (port->queue)
 	{
-		r = name_object( port, oa );
+		r = NameObject( port, oa );
 		if (r == STATUS_SUCCESS)
 		{
 			addref( port );
@@ -585,7 +585,7 @@ NTSTATUS connect_port(
 	oa.SecurityDescriptor = 0;
 	oa.SecurityQualityOfService = 0;
 
-	r = get_named_object( &obj, &oa );
+	r = GetNamedObject( &obj, &oa );
 	if (r < STATUS_SUCCESS)
 		return r;
 
