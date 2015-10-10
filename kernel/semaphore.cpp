@@ -29,70 +29,70 @@
 #include "ntcall.h"
 #include "object.inl"
 
-class semaphore_t : public SYNC_OBJECT
+class SEMAPHORE : public SYNC_OBJECT
 {
 protected:
-	ULONG count;
-	ULONG max_count;
+	ULONG Count;
+	ULONG MaxCount;
 public:
-	semaphore_t( ULONG Initial, ULONG Maximum );
-	virtual ~semaphore_t();
+	SEMAPHORE( ULONG Initial, ULONG Maximum );
+	virtual ~SEMAPHORE();
 	virtual BOOLEAN IsSignalled();
 	virtual BOOLEAN Satisfy();
 	NTSTATUS release( ULONG count, ULONG& prev );
 };
 
-semaphore_t::semaphore_t( ULONG Initial, ULONG Maximum ) :
-	count(Initial),
-	max_count(Maximum)
+SEMAPHORE::SEMAPHORE( ULONG Initial, ULONG Maximum ) :
+	Count(Initial),
+	MaxCount(Maximum)
 {
 }
 
-semaphore_t::~semaphore_t()
+SEMAPHORE::~SEMAPHORE()
 {
 }
 
-BOOLEAN semaphore_t::IsSignalled()
+BOOLEAN SEMAPHORE::IsSignalled()
 {
-	return (count>0);
+	return (Count>0);
 }
 
-BOOLEAN semaphore_t::Satisfy()
+BOOLEAN SEMAPHORE::Satisfy()
 {
-	count--;
+	Count--;
 	return TRUE;
 }
 
-NTSTATUS semaphore_t::release( ULONG release_count, ULONG& prev )
+NTSTATUS SEMAPHORE::release( ULONG release_count, ULONG& prev )
 {
-	prev = count;
-	if ((count + release_count) > max_count)
+	prev = Count;
+	if ((Count + release_count) > MaxCount)
 		return STATUS_SEMAPHORE_LIMIT_EXCEEDED;
 	// FIXME: will this wake release_count watchers exactly?
-	if (!count)
+	if (!Count)
 		NotifyWatchers();
-	count += release_count;
+	Count += release_count;
 	return STATUS_SUCCESS;
 }
 
-semaphore_t* semaphore_from_obj( OBJECT* obj )
+SEMAPHORE* SemaphoreFromObj( OBJECT* obj )
 {
-	return dynamic_cast<semaphore_t*>(obj);
+	return dynamic_cast<SEMAPHORE*>(obj);
 }
 
-class semaphore_factory : public OBJECT_FACTORY
+class SEMAPHORE_FACTORY : public OBJECT_FACTORY
 {
 private:
 	ULONG InitialCount;
 	ULONG MaximumCount;
 public:
-	semaphore_factory(ULONG init, ULONG max) : InitialCount(init), MaximumCount(max) {}
+	SEMAPHORE_FACTORY(ULONG init, ULONG max) : InitialCount(init), MaximumCount(max) {}
 	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS semaphore_factory::AllocObject(OBJECT** obj)
+NTSTATUS SEMAPHORE_FACTORY::AllocObject(OBJECT** obj)
 {
-	*obj = new semaphore_t( InitialCount, MaximumCount );
+	*obj = new SEMAPHORE( InitialCount, MaximumCount );
 	if (!*obj)
 		return STATUS_NO_MEMORY;
 	return STATUS_SUCCESS;
@@ -108,7 +108,7 @@ NTSTATUS NTAPI NtCreateSemaphore(
 	trace("%p %08lx %p %lu %lu\n", SemaphoreHandle, DesiredAccess,
 		  ObjectAttributes, InitialCount, MaximumCount);
 
-	semaphore_factory factory(InitialCount, MaximumCount);
+	SEMAPHORE_FACTORY factory(InitialCount, MaximumCount);
 	return factory.Create( SemaphoreHandle, DesiredAccess, ObjectAttributes );
 }
 
@@ -124,7 +124,7 @@ NTSTATUS NTAPI NtReleaseSemaphore(
 	if (ReleaseCount<1)
 		return STATUS_INVALID_PARAMETER;
 
-	semaphore_t *semaphore = 0;
+	SEMAPHORE *semaphore = 0;
 	r = ObjectFromHandle( semaphore, SemaphoreHandle, SEMAPHORE_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
