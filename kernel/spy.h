@@ -22,6 +22,6 @@
 #ifndef __RING3K_SPY__
 #define __RING3K_SPY__
 
-const char *get_message_name( UINT message );
+const char *GetMessageName( UINT message );
 
 #endif // __RING3K_SPY__

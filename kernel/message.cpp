@@ -64,7 +64,7 @@ void GENERIC_MESSAGE<Pack>::SetWindowInfo( window_tt *win )
 template<class Pack>
 const char *GENERIC_MESSAGE<Pack>::Description()
 {
-	return get_message_name( Info.msg );
+	return GetMessageName( Info.msg );
 }
 
 NCCREATE_MESSAGE::NCCREATE_MESSAGE( NTCREATESTRUCT& cs, const UNICODE_STRING& cls, const UNICODE_STRING& name ) :

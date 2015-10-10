@@ -371,7 +371,7 @@ BOOLEAN NTAPI NtUserGetMessage(PMSG Message, HWND Window, ULONG MinMessage, ULON
 	{
 		fprintf(stderr, "%04lx: %s\n", Current->TraceId(), __FUNCTION__);
 		fprintf(stderr, " msg.hwnd    = %p\n", msg.hwnd);
-		fprintf(stderr, " msg.message = %08x (%s)\n", msg.message, get_message_name(msg.message));
+		fprintf(stderr, " msg.message = %08x (%s)\n", msg.message, GetMessageName(msg.message));
 		fprintf(stderr, " msg.wParam  = %08x\n", msg.wParam);
 		fprintf(stderr, " msg.lParam  = %08lx\n", msg.lParam);
 		fprintf(stderr, " msg.time    = %08lx\n", msg.time);

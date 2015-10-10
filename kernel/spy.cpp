@@ -695,7 +695,7 @@ static const char * const MessageTypeNames[SPY_MAX_MSGNUM + 1] =
 	"WM_USER"                   /* 0x0400 */
 };
 
-const char *get_message_name( UINT message )
+const char *GetMessageName( UINT message )
 {
 	if (message > WM_USER)
 		return NULL;
