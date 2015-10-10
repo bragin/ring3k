@@ -29,45 +29,45 @@
 #include "file.h"
 #include "debug.h"
 
-class random_dev_t : public IO_OBJECT
+class RANDOM_DEV : public IO_OBJECT
 {
 public:
-	random_dev_t();
+	RANDOM_DEV();
 	virtual NTSTATUS Read( PVOID Buffer, ULONG Length, ULONG *read );
 	virtual NTSTATUS Write( PVOID Buffer, ULONG Length, ULONG *written );
 };
 
-random_dev_t::random_dev_t()
+RANDOM_DEV::RANDOM_DEV()
 {
 }
 
-NTSTATUS random_dev_t::Read( PVOID Buffer, ULONG Length, ULONG *read )
+NTSTATUS RANDOM_DEV::Read( PVOID Buffer, ULONG Length, ULONG *read )
 {
-	trace("random_dev_t\n");
+	trace("RANDOM_DEV::Read\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS random_dev_t::Write( PVOID Buffer, ULONG Length, ULONG *written )
+NTSTATUS RANDOM_DEV::Write( PVOID Buffer, ULONG Length, ULONG *written )
 {
-	trace("random_dev_t\n");
+	trace("RANDOM_DEV::Write\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-class random_dev_factory_t: public OBJECT_FACTORY
+class RANDOM_DEV_FACTORY: public OBJECT_FACTORY
 {
 public:
 	NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS random_dev_factory_t::AllocObject(OBJECT** obj)
+NTSTATUS RANDOM_DEV_FACTORY::AllocObject(OBJECT** obj)
 {
-	*obj = new random_dev_t;
+	*obj = new RANDOM_DEV;
 	return STATUS_SUCCESS;
 }
 
 void InitRandom()
 {
-	random_dev_factory_t factory;
+	RANDOM_DEV_FACTORY factory;
 	unicode_string_t rand;
 	rand.copy("\\Device\\KsecDD");
 	OBJECT *obj = 0;
