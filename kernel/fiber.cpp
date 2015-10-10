@@ -155,7 +155,7 @@ FIBER::FIBER( unsigned sz ) :
 {
 	assert(current_fiber);
 
-	stack = ::mmap_anon(0, stack_size + guard_size*2, PROT_NONE);
+	stack = ::MmapAnon(0, stack_size + guard_size*2, PROT_NONE);
 	if (stack == (void*) -1)
 	{
 		fprintf(stderr,"failed to allocate stack\n");
@@ -163,7 +163,7 @@ FIBER::FIBER( unsigned sz ) :
 	}
 
 	/* remap fixed */
-	stack = ::mmap_anon( (unsigned char*)stack + guard_size, stack_size, PROT_READ|PROT_WRITE|PROT_EXEC, 1 );
+	stack = ::MmapAnon( (unsigned char*)stack + guard_size, stack_size, PROT_READ|PROT_WRITE|PROT_EXEC, 1 );
 	assert (stack != (void*) -1);
 
 	char *stack_end = (char*) stack + stack_size;

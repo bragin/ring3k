@@ -145,7 +145,7 @@ pid_t skas3_address_space_impl::create_tracee(void)
 
 	// clone this process
 	const int stack_size = 0x1000;
-	void *stack = mmap_anon( 0, stack_size, PROT_READ | PROT_WRITE );
+	void *stack = MmapAnon( 0, stack_size, PROT_READ | PROT_WRITE );
 	pid = clone( do_fork_child, (char*) stack + stack_size,
 				 CLONE_FILES | CLONE_STOPPED | SIGCHLD, NULL );
 	if (pid == -1)

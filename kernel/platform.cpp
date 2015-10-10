@@ -24,7 +24,7 @@
 #include <sys/mman.h>
 #include "platform.h"
 
-void* mmap_anon(void *addr, size_t len, int prot, int fixed)
+void* MmapAnon(void *addr, size_t len, int prot, int fixed)
 {
 	int flags = MAP_PRIVATE | MAP_ANON;
 	if (fixed)

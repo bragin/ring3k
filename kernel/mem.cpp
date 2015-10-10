@@ -176,7 +176,7 @@ bool ADDRESS_SPACE_IMPL::Init(BYTE *high)
 	assert( high > (lowest_address + guard_size) );
 
 	num_pages = ((unsigned long)high)>>12;
-	xlate = (MBLOCK**) ::mmap_anon( 0, num_pages * sizeof (MBLOCK*), PROT_READ | PROT_WRITE );
+	xlate = (MBLOCK**) ::MmapAnon( 0, num_pages * sizeof (MBLOCK*), PROT_READ | PROT_WRITE );
 	if (xlate == (MBLOCK**) -1)
 		Die("failed to allocate page translation table\n");
 
