@@ -40,50 +40,50 @@
 
 #include "list.h"
 
-struct regval_t;
-struct regkey_t;
+struct REGVAL;
+struct REGKEY;
 
-typedef LIST_ANCHOR<regval_t,0> regval_anchor, regval_anchor_t;
-typedef LIST_ANCHOR<regkey_t,0> regkey_anchor, regkey_anchor_t;
-typedef LIST_ITER<regval_t,0> regval_iter, regval_iter_t;
-typedef LIST_ITER<regkey_t,0> regkey_iter, regkey_iter_t;
-typedef LIST_ELEMENT<regval_t> regval_element, regval_element_t;
-typedef LIST_ELEMENT<regkey_t> regkey_element, regkey_element_t;
+typedef LIST_ANCHOR<REGVAL,0> REGVAL_ANCHOR;
+typedef LIST_ANCHOR<REGKEY,0> REGKEY_ANCHOR;
+typedef LIST_ITER<REGVAL,0> REGVAL_ITER;
+typedef LIST_ITER<REGKEY,0> REGKEY_ITER;
+typedef LIST_ELEMENT<REGVAL> REGVAL_ELEMENT;
+typedef LIST_ELEMENT<REGKEY> REGKEY_ELEMENT;
 
-struct regval_t
+struct REGVAL
 {
-	regval_element Entry[1];
-	unicode_string_t name;
-	ULONG type;
-	ULONG size;
-	BYTE *data;
+	REGVAL_ELEMENT Entry[1];
+	unicode_string_t Name;
+	ULONG Type;
+	ULONG Size;
+	BYTE *Data;
 public:
-	regval_t( UNICODE_STRING *name, ULONG _type, ULONG _size );
-	~regval_t();
+	REGVAL( UNICODE_STRING *name, ULONG _type, ULONG _size );
+	~REGVAL();
 };
 
-struct regkey_t : public OBJECT
+struct REGKEY : public OBJECT
 {
-	regkey_t *parent;
-	unicode_string_t name;
-	unicode_string_t cls;
-	regkey_element Entry[1];
-	regkey_anchor children;
-	regval_anchor values;
+	REGKEY *Parent;
+	unicode_string_t Name;
+	unicode_string_t Cls;
+	REGKEY_ELEMENT Entry[1];
+	REGKEY_ANCHOR Children;
+	REGVAL_ANCHOR Values;
 public:
-	regkey_t( regkey_t *_parent, UNICODE_STRING *_name );
-	~regkey_t();
-	void query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls );
-	void query( KEY_BASIC_INFORMATION& info, UNICODE_STRING& namestr );
-	ULONG num_values(ULONG& max_name_len, ULONG& max_data_len);
-	ULONG num_subkeys(ULONG& max_name_len, ULONG& max_class_len);
-	void delkey();
-	regkey_t *get_child( ULONG Index );
-	NTSTATUS query(KEY_INFORMATION_CLASS KeyInformationClass, PVOID KeyInformation, ULONG KeyInformationLength, PULONG ReturnLength);
+	REGKEY( REGKEY *_parent, UNICODE_STRING *_name );
+	~REGKEY();
+	void Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls );
+	void Query( KEY_BASIC_INFORMATION& info, UNICODE_STRING& namestr );
+	ULONG NumValues(ULONG& max_name_len, ULONG& max_data_len);
+	ULONG NumSubkeys(ULONG& max_name_len, ULONG& max_class_len);
+	void Delkey();
+	REGKEY *GetChild( ULONG Index );
+	NTSTATUS Query(KEY_INFORMATION_CLASS KeyInformationClass, PVOID KeyInformation, ULONG KeyInformationLength, PULONG ReturnLength);
 	virtual bool AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle );
 };
 
-regkey_t *root_key;
+REGKEY *RootKey;
 
 // FIXME: should use windows case table
 INT strncmpW( WCHAR *a, WCHAR *b, ULONG n )
@@ -102,7 +102,7 @@ INT strncmpW( WCHAR *a, WCHAR *b, ULONG n )
 	return 0;
 }
 
-BOOLEAN unicode_string_equal( PUNICODE_STRING a, PUNICODE_STRING b, BOOLEAN case_insensitive )
+BOOLEAN UnicodeStringEqual( PUNICODE_STRING a, PUNICODE_STRING b, BOOLEAN case_insensitive )
 {
 	if (a->Length != b->Length)
 		return FALSE;
@@ -111,37 +111,37 @@ BOOLEAN unicode_string_equal( PUNICODE_STRING a, PUNICODE_STRING b, BOOLEAN case
 	return (0 == memcmp( a->Buffer, b->Buffer, a->Length ));
 }
 
-regkey_t::regkey_t( regkey_t *_parent, UNICODE_STRING *_name ) :
-	parent( _parent)
+REGKEY::REGKEY( REGKEY *_parent, UNICODE_STRING *_name ) :
+	Parent( _parent)
 {
-	name.copy( _name );
-	if (parent)
-		parent->children.Append( this );
+	Name.copy( _name );
+	if (Parent)
+		Parent->Children.Append( this );
 }
 
-regkey_t::~regkey_t()
+REGKEY::~REGKEY()
 {
-	regkey_iter i(children);
+	REGKEY_ITER i(Children);
 	while (i)
 	{
-		regkey_t *tmp = i;
+		REGKEY *tmp = i;
 		i.Next();
-		tmp->parent = NULL;
-		children.Unlink( tmp );
+		tmp->Parent = NULL;
+		Children.Unlink( tmp );
 		Release( tmp );
 	}
 
-	regval_iter j(values);
+	REGVAL_ITER j(Values);
 	while (j)
 	{
-		regval_t *tmp = j;
+		REGVAL *tmp = j;
 		j.Next();
-		values.Unlink( tmp );
+		Values.Unlink( tmp );
 		delete tmp;
 	}
 }
 
-bool regkey_t::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
+bool REGKEY::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
 	return CheckAccess( required, handle,
 						 KEY_QUERY_VALUE|KEY_ENUMERATE_SUB_KEYS|KEY_NOTIFY,
@@ -149,76 +149,76 @@ bool regkey_t::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 						 KEY_ALL_ACCESS );
 }
 
-ULONG regkey_t::num_values(ULONG& max_name_len, ULONG& max_data_len)
+ULONG REGKEY::NumValues(ULONG& max_name_len, ULONG& max_data_len)
 {
 	ULONG n = 0;
-	regval_iter i(values);
+	REGVAL_ITER i(Values);
 	max_name_len = 0;
 	max_data_len = 0;
 	while (i)
 	{
-		regval_t *val = i;
-		max_name_len = max(max_name_len, val->name.Length );
-		max_data_len = max(max_data_len, val->size );
+		REGVAL *val = i;
+		max_name_len = max(max_name_len, val->Name.Length );
+		max_data_len = max(max_data_len, val->Size );
 		i.Next();
 		n++;
 	}
 	return n;
 }
 
-ULONG regkey_t::num_subkeys(ULONG& max_name_len, ULONG& max_class_len)
+ULONG REGKEY::NumSubkeys(ULONG& max_name_len, ULONG& max_class_len)
 {
 	ULONG n = 0;
-	regkey_iter i(children);
+	REGKEY_ITER i(Children);
 	max_name_len = 0;
 	while (i)
 	{
-		regkey_t *subkey = i;
-		max_name_len = max(max_name_len, subkey->name.Length );
-		max_class_len = max(max_class_len, subkey->cls.Length );
+		REGKEY *subkey = i;
+		max_name_len = max(max_name_len, subkey->Name.Length );
+		max_class_len = max(max_class_len, subkey->Cls.Length );
 		i.Next();
 		n++;
 	}
 	return n;
 }
 
-void regkey_t::query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls )
+void REGKEY::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls )
 {
 	trace("full information\n");
 	info.LastWriteTime.QuadPart = 0LL;
 	info.TitleIndex = 0;
 	info.ClassOffset = FIELD_OFFSET( KEY_FULL_INFORMATION, Class );
-	info.ClassLength = cls.Length;
-	info.SubKeys = num_subkeys(info.MaxNameLen, info.MaxClassLen);
-	info.Values = num_values(info.MaxValueNameLen, info.MaxValueDataLen);
-	keycls = cls;
-	trace("class = %pus\n", &cls );
+	info.ClassLength = Cls.Length;
+	info.SubKeys = NumSubkeys(info.MaxNameLen, info.MaxClassLen);
+	info.Values = NumValues(info.MaxValueNameLen, info.MaxValueDataLen);
+	keycls = Cls;
+	trace("class = %pus\n", &Cls );
 }
 
-void regkey_t::query( KEY_BASIC_INFORMATION& info, UNICODE_STRING& namestr )
+void REGKEY::Query( KEY_BASIC_INFORMATION& info, UNICODE_STRING& namestr )
 {
 	trace("basic information\n");
 	info.LastWriteTime.QuadPart = 0LL;
 	info.TitleIndex = 0;
-	info.NameLength = name.Length;
+	info.NameLength = Name.Length;
 
-	namestr = name;
+	namestr = Name;
 }
 
-void regkey_t::delkey()
+void REGKEY::Delkey()
 {
-	if ( parent )
+	if ( Parent )
 	{
-		parent->children.Unlink( this );
-		parent = NULL;
+		Parent->Children.Unlink( this );
+		Parent = NULL;
 		Release( this );
 	}
 }
 
-regkey_t *regkey_t::get_child( ULONG Index )
+REGKEY *REGKEY::GetChild( ULONG Index )
 {
-	regkey_iter_t i(children);
-	regkey_t *child;
+	REGKEY_ITER i(Children);
+	REGKEY *child;
 	while ((child = i) && Index)
 	{
 		i.Next();
@@ -227,20 +227,20 @@ regkey_t *regkey_t::get_child( ULONG Index )
 	return child;
 }
 
-regval_t::regval_t( UNICODE_STRING *_name, ULONG _type, ULONG _size ) :
-	type(_type),
-	size(_size)
+REGVAL::REGVAL( UNICODE_STRING *_name, ULONG _type, ULONG _size ) :
+	Type(_type),
+	Size(_size)
 {
-	name.copy(_name);
-	data = new BYTE[size];
+	Name.copy(_name);
+	Data = new BYTE[Size];
 }
 
-regval_t::~regval_t()
+REGVAL::~REGVAL()
 {
-	delete[] data;
+	delete[] Data;
 }
 
-ULONG skip_slashes( UNICODE_STRING *str )
+ULONG SkipSlashes( UNICODE_STRING *str )
 {
 	ULONG len;
 
@@ -255,7 +255,7 @@ ULONG skip_slashes( UNICODE_STRING *str )
 	return len;
 }
 
-ULONG get_next_segment( UNICODE_STRING *str )
+ULONG GetNextSegment( UNICODE_STRING *str )
 {
 	ULONG n = 0;
 
@@ -265,29 +265,29 @@ ULONG get_next_segment( UNICODE_STRING *str )
 	return n * sizeof (WCHAR);
 }
 
-ULONG do_open_subkey( regkey_t *&key, UNICODE_STRING *name, bool case_insensitive )
+ULONG DoOpenSubkey( REGKEY *&key, UNICODE_STRING *name, bool case_insensitive )
 {
 	ULONG len;
 
-	skip_slashes( name );
+	SkipSlashes( name );
 
-	len = get_next_segment( name );
+	len = GetNextSegment( name );
 	if (!len)
 		return len;
 
-	for (regkey_iter i(key->children); i; i.Next())
+	for (REGKEY_ITER i(key->Children); i; i.Next())
 	{
-		regkey_t *subkey = i;
-		if (len != subkey->name.Length)
+		REGKEY *subkey = i;
+		if (len != subkey->Name.Length)
 			continue;
 		if (case_insensitive)
 		{
-			if (strncmpW( name->Buffer, subkey->name.Buffer, len/sizeof(WCHAR) ))
+			if (strncmpW( name->Buffer, subkey->Name.Buffer, len/sizeof(WCHAR) ))
 				continue;
 		}
 		else
 		{
-			if (memcmp( name->Buffer, subkey->name.Buffer, len/sizeof(WCHAR) ))
+			if (memcmp( name->Buffer, subkey->Name.Buffer, len/sizeof(WCHAR) ))
 				continue;
 		}
 
@@ -301,15 +301,15 @@ ULONG do_open_subkey( regkey_t *&key, UNICODE_STRING *name, bool case_insensitiv
 	return 0;
 }
 
-NTSTATUS open_parse_key( regkey_t *&key, UNICODE_STRING *name, bool case_insensitive  )
+NTSTATUS OpenParseKey( REGKEY *&key, UNICODE_STRING *name, bool case_insensitive  )
 {
-	while (name->Length && do_open_subkey( key, name, case_insensitive ))
+	while (name->Length && DoOpenSubkey( key, name, case_insensitive ))
 		/* repeat */ ;
 
 	if (name->Length)
 	{
 		trace("remaining = %pus\n", name);
-		if (name->Length == get_next_segment( name ))
+		if (name->Length == GetNextSegment( name ))
 			return STATUS_OBJECT_NAME_NOT_FOUND;
 
 		return STATUS_OBJECT_PATH_NOT_FOUND;
@@ -318,9 +318,9 @@ NTSTATUS open_parse_key( regkey_t *&key, UNICODE_STRING *name, bool case_insensi
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS create_parse_key( regkey_t *&key, UNICODE_STRING *name, bool& opened_existing )
+NTSTATUS CreateParseKey( REGKEY *&key, UNICODE_STRING *name, bool& opened_existing )
 {
-	while (name->Length && do_open_subkey( key, name, true ))
+	while (name->Length && DoOpenSubkey( key, name, true ))
 		/* repeat */ ;
 
 	opened_existing = (name->Length == 0);
@@ -329,12 +329,12 @@ NTSTATUS create_parse_key( regkey_t *&key, UNICODE_STRING *name, bool& opened_ex
 	{
 		UNICODE_STRING seg;
 
-		skip_slashes( name );
+		SkipSlashes( name );
 
-		seg.Length = get_next_segment( name );
+		seg.Length = GetNextSegment( name );
 		seg.Buffer = name->Buffer;
 
-		key = new regkey_t( key, &seg );
+		key = new REGKEY( key, &seg );
 		if (!key)
 			return STATUS_NO_MEMORY;
 
@@ -345,10 +345,10 @@ NTSTATUS create_parse_key( regkey_t *&key, UNICODE_STRING *name, bool& opened_ex
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS open_key( regkey_t **out, OBJECT_ATTRIBUTES *oa )
+NTSTATUS OpenKey( REGKEY **out, OBJECT_ATTRIBUTES *oa )
 {
 	UNICODE_STRING parsed_name;
-	regkey_t *key = root_key;
+	REGKEY *key = RootKey;
 	NTSTATUS r;
 
 	if (oa->RootDirectory)
@@ -358,10 +358,10 @@ NTSTATUS open_key( regkey_t **out, OBJECT_ATTRIBUTES *oa )
 			return r;
 	}
 	else
-		key = root_key;
+		key = RootKey;
 
 	memcpy( &parsed_name, oa->ObjectName, sizeof parsed_name );
-	r = open_parse_key( key, &parsed_name, oa->Attributes & OBJ_CASE_INSENSITIVE );
+	r = OpenParseKey( key, &parsed_name, oa->Attributes & OBJ_CASE_INSENSITIVE );
 
 	if (r == STATUS_SUCCESS)
 		*out = key;
@@ -369,10 +369,10 @@ NTSTATUS open_key( regkey_t **out, OBJECT_ATTRIBUTES *oa )
 	return r;
 }
 
-NTSTATUS create_key( regkey_t **out, OBJECT_ATTRIBUTES *oa, bool& opened_existing )
+NTSTATUS CreateKey( REGKEY **out, OBJECT_ATTRIBUTES *oa, bool& opened_existing )
 {
 	UNICODE_STRING parsed_name;
-	regkey_t *key = root_key;
+	REGKEY *key = RootKey;
 	NTSTATUS r;
 
 	if (!oa->ObjectName)
@@ -385,10 +385,10 @@ NTSTATUS create_key( regkey_t **out, OBJECT_ATTRIBUTES *oa, bool& opened_existin
 			return r;
 	}
 	else
-		key = root_key;
+		key = RootKey;
 
 	memcpy( &parsed_name, oa->ObjectName, sizeof parsed_name );
-	r = create_parse_key( key, &parsed_name, opened_existing );
+	r = CreateParseKey( key, &parsed_name, opened_existing );
 
 	if (r == STATUS_SUCCESS)
 		*out = key;
@@ -396,38 +396,38 @@ NTSTATUS create_key( regkey_t **out, OBJECT_ATTRIBUTES *oa, bool& opened_existin
 	return r;
 }
 
-regval_t *key_find_value( regkey_t *key, UNICODE_STRING *us )
+REGVAL *KeyFindValue( REGKEY *key, UNICODE_STRING *us )
 {
 
-	for (regval_iter i(key->values); i; i.Next())
+	for (REGVAL_ITER i(key->Values); i; i.Next())
 	{
-		regval_t *val = i;
-		if (unicode_string_equal( &val->name, us, TRUE ))
+		REGVAL *val = i;
+		if (UnicodeStringEqual( &val->Name, us, TRUE ))
 			return val;
 	}
 
 	return NULL;
 }
 
-NTSTATUS delete_value( regkey_t *key, UNICODE_STRING *us )
+NTSTATUS DeleteValue( REGKEY *key, UNICODE_STRING *us )
 {
-	regval_t *val;
+	REGVAL *val;
 
 	//trace("%p %pus\n", key, us);
 
-	val = key_find_value( key, us );
+	val = KeyFindValue( key, us );
 	if (!val)
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 
-	trace("deleting %pus\n", &val->name);
-	key->values.Unlink( val );
+	trace("deleting %pus\n", &val->Name);
+	key->Values.Unlink( val );
 	delete val;
 	return STATUS_SUCCESS;
 }
 
 /* this doesn't set STATUS_MORE_DATA */
-NTSTATUS reg_query_value(
-	regval_t* val,
+NTSTATUS RegQueryValue(
+	REGVAL* val,
 	ULONG KeyValueInformationClass,
 	PVOID KeyValueInformation,
 	ULONG KeyValueInformationLength,
@@ -443,7 +443,7 @@ NTSTATUS reg_query_value(
 
 	len = 0;
 
-	trace("%pus\n", &val->name );
+	trace("%pus\n", &val->Name );
 
 	memset( &info, 0, sizeof info );
 
@@ -451,15 +451,15 @@ NTSTATUS reg_query_value(
 	{
 	case KeyValueFullInformation:
 		info_sz = FIELD_OFFSET( KEY_VALUE_FULL_INFORMATION, Name );
-		// include nul terminator at the end of the name
-		info.full.DataOffset = info_sz + val->name.Length + 2;
-		len = info.full.DataOffset + val->size;
+		// include nul terminator at the end of the Name
+		info.full.DataOffset = info_sz + val->Name.Length + 2;
+		len = info.full.DataOffset + val->Size;
 		if (KeyValueInformationLength < info_sz)
 			return STATUS_BUFFER_TOO_SMALL;
 
-		info.full.Type = val->type;
-		info.full.DataLength = val->size;
-		info.full.NameLength = val->name.Length;
+		info.full.Type = val->Type;
+		info.full.DataLength = val->Size;
+		info.full.NameLength = val->Name.Length;
 
 		r = CopyToUser( KeyValueInformation, &info.full, info_sz );
 		if (r < STATUS_SUCCESS)
@@ -469,22 +469,22 @@ NTSTATUS reg_query_value(
 			return STATUS_BUFFER_OVERFLOW;
 
 		r = CopyToUser( (BYTE*)KeyValueInformation + info_sz,
-						  val->name.Buffer, val->name.Length );
+						  val->Name.Buffer, val->Name.Length );
 		if (r < STATUS_SUCCESS)
 			break;
 
 		r = CopyToUser( (BYTE*)KeyValueInformation + info.full.DataOffset,
-						  val->data, val->size );
+						  val->Data, val->Size );
 		break;
 
 	case KeyValuePartialInformation:
 		info_sz = FIELD_OFFSET( KEY_VALUE_PARTIAL_INFORMATION, Data );
-		len = info_sz + val->size;
+		len = info_sz + val->Size;
 		if (KeyValueInformationLength < info_sz)
 			return STATUS_BUFFER_TOO_SMALL;
 
-		info.partial.Type = val->type;
-		info.partial.DataLength = val->size;
+		info.partial.Type = val->Type;
+		info.partial.DataLength = val->Size;
 
 		r = CopyToUser( KeyValueInformation, &info.partial, info_sz );
 		if (r < STATUS_SUCCESS)
@@ -493,7 +493,7 @@ NTSTATUS reg_query_value(
 		if (len > KeyValueInformationLength)
 			return STATUS_BUFFER_OVERFLOW;
 
-		r = CopyToUser( (BYTE*)KeyValueInformation + info_sz, val->data, val->size );
+		r = CopyToUser( (BYTE*)KeyValueInformation + info_sz, val->Data, val->Size );
 		break;
 
 	case KeyValueBasicInformation:
@@ -517,7 +517,7 @@ NTSTATUS NTAPI NtCreateKey(
 {
 	object_attributes_t oa;
 	NTSTATUS r;
-	regkey_t *key = NULL;
+	REGKEY *key = NULL;
 
 	trace("%p %08lx %p %lu %p %lu %p\n", KeyHandle, DesiredAccess,
 		  ObjectAttributes, TitleIndex, Class, CreateOptions, Disposition );
@@ -545,7 +545,7 @@ NTSTATUS NTAPI NtCreateKey(
 	}
 
 	bool opened_existing = false;
-	r = create_key( &key, &oa, opened_existing );
+	r = CreateKey( &key, &oa, opened_existing );
 	if (r == STATUS_SUCCESS)
 	{
 		if (Disposition)
@@ -553,7 +553,7 @@ NTSTATUS NTAPI NtCreateKey(
 			ULONG dispos = opened_existing ? REG_OPENED_EXISTING_KEY : REG_CREATED_NEW_KEY;
 			CopyToUser( Disposition, &dispos, sizeof *Disposition );
 		}
-		key->cls.copy( &cls );
+		key->Cls.copy( &cls );
 		r = AllocUserHandle( key, DesiredAccess, KeyHandle );
 		//release( event );
 	}
@@ -568,7 +568,7 @@ NTSTATUS NTAPI NtOpenKey(
 	OBJECT_ATTRIBUTES oa;
 	unicode_string_t us;
 	NTSTATUS r;
-	regkey_t *key = NULL;
+	REGKEY *key = NULL;
 
 	trace("%p %08lx %p\n", KeyHandle, DesiredAccess, ObjectAttributes );
 
@@ -588,9 +588,9 @@ NTSTATUS NTAPI NtOpenKey(
 	trace("len %08lx root %p attr %08lx %pus\n",
 		  oa.Length, oa.RootDirectory, oa.Attributes, oa.ObjectName);
 
-	r = open_key( &key, &oa );
+	r = OpenKey( &key, &oa );
 
-	trace("open_key returned %08lx\n", r);
+	trace("OpenKey returned %08lx\n", r);
 
 	if (r == STATUS_SUCCESS)
 	{
@@ -639,8 +639,8 @@ NTSTATUS NTAPI NtQueryValueKey(
 	unicode_string_t us;
 	NTSTATUS r;
 	ULONG len;
-	regkey_t *key;
-	regval_t *val;
+	REGKEY *key;
+	REGVAL *val;
 
 	trace("%p %p %d %p %lu %p\n", KeyHandle, ValueName, KeyValueInformationClass,
 		  KeyValueInformation, KeyValueInformationLength, ResultLength );
@@ -663,11 +663,11 @@ NTSTATUS NTAPI NtQueryValueKey(
 
 	trace("%pus\n", &us );
 
-	val = key_find_value( key, &us );
+	val = KeyFindValue( key, &us );
 	if (!val)
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 
-	r = reg_query_value( val, KeyValueInformationClass, KeyValueInformation,
+	r = RegQueryValue( val, KeyValueInformationClass, KeyValueInformation,
 						 KeyValueInformationLength, len );
 
 	CopyToUser( ResultLength, &len, sizeof len );
@@ -684,7 +684,7 @@ NTSTATUS NTAPI NtSetValueKey(
 	ULONG DataSize )
 {
 	unicode_string_t us;
-	regkey_t *key;
+	REGKEY *key;
 	NTSTATUS r;
 
 	trace("%p %p %lu %lu %p %lu\n", KeyHandle, ValueName, TitleIndex, Type, Data, DataSize );
@@ -696,16 +696,16 @@ NTSTATUS NTAPI NtSetValueKey(
 	r = us.copy_from_user( ValueName );
 	if (r == STATUS_SUCCESS)
 	{
-		regval_t *val;
+		REGVAL *val;
 
-		val = new regval_t( &us, Type, DataSize );
+		val = new REGVAL( &us, Type, DataSize );
 		if (val)
 		{
-			r = CopyFromUser( val->data, Data, DataSize );
+			r = CopyFromUser( val->Data, Data, DataSize );
 			if (r == STATUS_SUCCESS)
 			{
-				delete_value( key, &us );
-				key->values.Append( val );
+				DeleteValue( key, &us );
+				key->Values.Append( val );
 			}
 			else
 				delete val;
@@ -725,7 +725,7 @@ NTSTATUS NTAPI NtEnumerateValueKey(
 	ULONG KeyValueInformationLength,
 	PULONG ResultLength )
 {
-	regkey_t *key;
+	REGKEY *key;
 	ULONG len = 0;
 	NTSTATUS r = STATUS_SUCCESS;
 
@@ -740,14 +740,14 @@ NTSTATUS NTAPI NtEnumerateValueKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	regval_iter i(key->values);
+	REGVAL_ITER i(key->Values);
 	for ( ; i && Index; i.Next())
 		Index--;
 
 	if (!i)
 		return STATUS_NO_MORE_ENTRIES;
 
-	r = reg_query_value( i, KeyValueInformationClass, KeyValueInformation,
+	r = RegQueryValue( i, KeyValueInformationClass, KeyValueInformation,
 						 KeyValueInformationLength, len );
 
 	CopyToUser( ResultLength, &len, sizeof len );
@@ -761,7 +761,7 @@ NTSTATUS NTAPI NtDeleteValueKey(
 {
 	unicode_string_t us;
 	NTSTATUS r;
-	regkey_t *key;
+	REGKEY *key;
 
 	trace("%p %p\n", KeyHandle, ValueName);
 
@@ -772,7 +772,7 @@ NTSTATUS NTAPI NtDeleteValueKey(
 	r = ObjectFromHandle( key, KeyHandle, KEY_SET_VALUE );
 	if (r < STATUS_SUCCESS)
 		return r;
-	r = delete_value( key, &us );
+	r = DeleteValue( key, &us );
 
 	return r;
 }
@@ -781,12 +781,12 @@ NTSTATUS NTAPI NtDeleteKey(
 	HANDLE KeyHandle)
 {
 	NTSTATUS r;
-	regkey_t *key = 0;
+	REGKEY *key = 0;
 	r = ObjectFromHandle( key, KeyHandle, DELETE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	key->delkey();
+	key->Delkey();
 
 	return r;
 }
@@ -794,7 +794,7 @@ NTSTATUS NTAPI NtDeleteKey(
 NTSTATUS NTAPI NtFlushKey(
 	HANDLE KeyHandle)
 {
-	regkey_t *key = 0;
+	REGKEY *key = 0;
 	NTSTATUS r = ObjectFromHandle( key, KeyHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -861,7 +861,7 @@ NTSTATUS NTAPI NtReplaceKey(
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-bool key_info_class_valid( KEY_INFORMATION_CLASS cls )
+bool KeyInfoClassValid( KEY_INFORMATION_CLASS cls )
 {
 	switch (cls)
 	{
@@ -881,7 +881,7 @@ NTSTATUS NTAPI NtEnumerateKey(
 	ULONG KeyInformationLength,
 	PULONG ResultLength)
 {
-	regkey_t *key = 0;
+	REGKEY *key = 0;
 	NTSTATUS r = ObjectFromHandle( key, KeyHandle, KEY_ENUMERATE_SUB_KEYS );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -893,14 +893,14 @@ NTSTATUS NTAPI NtEnumerateKey(
 			return r;
 	}
 
-	if (!key_info_class_valid(KeyInformationClass))
+	if (!KeyInfoClassValid(KeyInformationClass))
 		return STATUS_INVALID_INFO_CLASS;
 
-	regkey_t *child = key->get_child( Index );
+	REGKEY *child = key->GetChild( Index );
 	if (!child)
 		return STATUS_NO_MORE_ENTRIES;
 
-	return child->query( KeyInformationClass, KeyInformation, KeyInformationLength, ResultLength );
+	return child->Query( KeyInformationClass, KeyInformation, KeyInformationLength, ResultLength );
 }
 
 NTSTATUS NTAPI NtNotifyChangeKey(
@@ -915,7 +915,7 @@ NTSTATUS NTAPI NtNotifyChangeKey(
 	ULONG BufferLength,
 	BOOLEAN Asynchronous)
 {
-	regkey_t *key = 0;
+	REGKEY *key = 0;
 	NTSTATUS r = ObjectFromHandle( key, KeyHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -949,7 +949,7 @@ NTSTATUS NTAPI NtQueryKey(
 	ULONG KeyInformationLength,
 	PULONG ReturnLength)
 {
-	if (!key_info_class_valid(KeyInformationClass))
+	if (!KeyInfoClassValid(KeyInformationClass))
 		return STATUS_INVALID_INFO_CLASS;
 
 	NTSTATUS r;
@@ -957,15 +957,15 @@ NTSTATUS NTAPI NtQueryKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	regkey_t *key = 0;
+	REGKEY *key = 0;
 	r = ObjectFromHandle( key, KeyHandle, KEY_QUERY_VALUE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	return key->query( KeyInformationClass, KeyInformation, KeyInformationLength, ReturnLength );
+	return key->Query( KeyInformationClass, KeyInformation, KeyInformationLength, ReturnLength );
 }
 
-NTSTATUS regkey_t::query(
+NTSTATUS REGKEY::Query(
 	KEY_INFORMATION_CLASS KeyInformationClass,
 	PVOID KeyInformation,
 	ULONG KeyInformationLength,
@@ -989,7 +989,7 @@ NTSTATUS regkey_t::query(
 	switch (KeyInformationClass)
 	{
 	case KeyBasicInformation:
-		query( info.basic, keyname );
+		Query( info.basic, keyname );
 		sz = sizeof info.basic + keyname.Length;
 		if (sz > KeyInformationLength)
 			return STATUS_INFO_LENGTH_MISMATCH;
@@ -1003,7 +1003,7 @@ NTSTATUS regkey_t::query(
 		break;
 
 	case KeyFullInformation:
-		query( info.full, keycls );
+		Query( info.full, keycls );
 		sz = sizeof info.full + keycls.Length;
 		if (sz > KeyInformationLength)
 			return STATUS_INFO_LENGTH_MISMATCH;
@@ -1029,18 +1029,18 @@ NTSTATUS regkey_t::query(
 	return r;
 }
 
-regkey_t *build_key( regkey_t *root, unicode_string_t *name )
+REGKEY *BuildKey( REGKEY *root, unicode_string_t *name )
 {
-	regkey_t *key;
+	REGKEY *key;
 
 	key = root;
 	bool opened_existing;
-	create_parse_key( key, name, opened_existing );
+	CreateParseKey( key, name, opened_existing );
 
 	return key;
 }
 
-BYTE hexchar( xmlChar x )
+BYTE HexChar( xmlChar x )
 {
 	if (x>='0' && x<='9') return x - '0';
 	if (x>='A' && x<='F') return x - 'A' + 10;
@@ -1048,7 +1048,7 @@ BYTE hexchar( xmlChar x )
 	return 0xff;
 }
 
-ULONG hex_to_binary( xmlChar *str, ULONG len, BYTE *buf )
+ULONG HexToBinary( xmlChar *str, ULONG len, BYTE *buf )
 {
 	unsigned int i, n;
 	BYTE msb, lsb;
@@ -1057,10 +1057,10 @@ ULONG hex_to_binary( xmlChar *str, ULONG len, BYTE *buf )
 	n = 0;
 	while (str[i] && str[i+1])
 	{
-		msb = hexchar( str[i++] );
+		msb = HexChar( str[i++] );
 		if (msb == 0xff)
 			break;
-		lsb = hexchar( str[i++] );
+		lsb = HexChar( str[i++] );
 		if (lsb == 0xff)
 			break;
 		if (buf)
@@ -1073,7 +1073,7 @@ ULONG hex_to_binary( xmlChar *str, ULONG len, BYTE *buf )
 	return n;
 }
 
-void number_to_binary( xmlChar *str, ULONG len, BYTE *buf )
+void NumberToBinary( xmlChar *str, ULONG len, BYTE *buf )
 {
 	char *valstr = (char*) str;
 	ULONG base = 0;
@@ -1102,7 +1102,7 @@ void number_to_binary( xmlChar *str, ULONG len, BYTE *buf )
 
 	while (str[i])
 	{
-		ch = hexchar(str[i]);
+		ch = HexChar(str[i]);
 		if (ch >= base)
 			Die("invalid registry value %s\n", valstr);
 		val *= base;
@@ -1113,34 +1113,34 @@ void number_to_binary( xmlChar *str, ULONG len, BYTE *buf )
 	*((ULONG*) buf) = val;
 }
 
-void dump_val( regval_t *val )
+void DumpVal( REGVAL *val )
 {
 	ULONG i;
 
-	trace("%pus = ", &val->name );
-	switch( val->type )
+	trace("%pus = ", &val->Name );
+	switch( val->Type )
 	{
 	case 7:
-		for (i=0; i<val->size; i+=2)
+		for (i=0; i<val->Size; i+=2)
 		{
-			if ((val->size - i)>1 && !val->data[i+1] &&
-				val->data[i] >= 0x20 && val->data[i]<0x80)
+			if ((val->Size - i)>1 && !val->Data[i+1] &&
+				val->Data[i] >= 0x20 && val->Data[i]<0x80)
 			{
-				fprintf(stderr,"%c", val->data[i]);
+				fprintf(stderr,"%c", val->Data[i]);
 				continue;
 			}
-			fprintf(stderr,"\\%02x%02x", val->data[i+1], val->data[i]);
+			fprintf(stderr,"\\%02x%02x", val->Data[i+1], val->Data[i]);
 		}
 		fprintf(stderr,"\n");
 		break;
 	case 1:
 	case 2:
-		trace("%pws\n", val->data );
+		trace("%pws\n", val->Data );
 		break;
 	}
 }
 
-void load_reg_key( regkey_t *parent, xmlNode *node )
+void LoadRegKey( REGKEY *parent, xmlNode *node )
 {
 	xmlAttr *e;
 	xmlChar *contents = NULL;
@@ -1148,9 +1148,9 @@ void load_reg_key( regkey_t *parent, xmlNode *node )
 	const char *keycls = NULL;
 	unicode_string_t name, data;
 	xmlNode *n;
-	regval_t *val;
+	REGVAL *val;
 	ULONG size;
-	regkey_t *key;
+	REGKEY *key;
 
 	if (!node->name[0] || node->name[1])
 		return;
@@ -1173,44 +1173,44 @@ void load_reg_key( regkey_t *parent, xmlNode *node )
 	switch (node->name[0])
 	{
 	case 'x': // value stored as hex
-		// default type is binary
+		// default Type is binary
 		if (type == NULL)
 			type = "3";
 		contents = xmlNodeGetContent( node );
-		size = hex_to_binary( contents, 0, NULL );
-		val = new regval_t( &name, atoi(type), size );
-		hex_to_binary( contents, size, val->data );
-		parent->values.Append( val );
+		size = HexToBinary( contents, 0, NULL );
+		val = new REGVAL( &name, atoi(type), size );
+		HexToBinary( contents, size, val->Data );
+		parent->Values.Append( val );
 		break;
 
 	case 'n': // number
-		// default type is REG_DWORD
+		// default Type is REG_DWORD
 		if (type == NULL)
 			type = "4";
 		contents = xmlNodeGetContent( node );
 		size = sizeof (ULONG);
-		val = new regval_t( &name, atoi(type), size );
-		number_to_binary( contents, size, val->data );
-		parent->values.Append( val );
+		val = new REGVAL( &name, atoi(type), size );
+		NumberToBinary( contents, size, val->Data );
+		parent->Values.Append( val );
 		break;
 
 	case 's': // value stored as a string
-		// default type is REG_SZ
+		// default Type is REG_SZ
 		if (type == NULL)
 			type = "1";
 
 		data.copy( xmlNodeGetContent( node ) );
-		val = new regval_t( &name, atoi(type), data.Length + 2 );
-		memcpy( val->data, data.Buffer, data.Length );
-		memset( val->data + data.Length, 0, 2 );
-		parent->values.Append( val );
+		val = new REGVAL( &name, atoi(type), data.Length + 2 );
+		memcpy( val->Data, data.Buffer, data.Length );
+		memset( val->Data + data.Length, 0, 2 );
+		parent->Values.Append( val );
 		break;
 
 	case 'k': // key
-		key = build_key( parent, &name );
-		key->cls.copy( keycls );
+		key = BuildKey( parent, &name );
+		key->Cls.copy( keycls );
 		for (n = node->children; n; n = n->next)
-			load_reg_key( key, n );
+			LoadRegKey( key, n );
 
 		break;
 	}
@@ -1224,20 +1224,20 @@ void InitRegistry( void )
 	UNICODE_STRING name;
 
 	memset( &name, 0, sizeof name );
-	root_key = new regkey_t( NULL, &name );
+	RootKey = new REGKEY( NULL, &name );
 
 	doc = xmlReadFile( regfile, NULL, 0 );
 	if (!doc)
 		Die("failed to load registry (%s)\n", regfile );
 
 	root = xmlDocGetRootElement( doc );
-	load_reg_key( root_key, root );
+	LoadRegKey( RootKey, root );
 
 	xmlFreeDoc( doc );
 }
 
 void FreeRegistry( void )
 {
-	Release( root_key );
-	root_key = NULL;
+	Release( RootKey );
+	RootKey = NULL;
 }
