@@ -72,7 +72,7 @@ EVENT_IMPL::EVENT_IMPL( BOOLEAN _state ) :
 
 bool EVENT_IMPL::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
-	return check_access( required, handle,
+	return CheckAccess( required, handle,
 						 EVENT_QUERY_STATE,
 						 EVENT_MODIFY_STATE,
 						 EVENT_ALL_ACCESS );
@@ -129,7 +129,7 @@ void EVENT_IMPL::Set( PULONG prev )
 	*prev = state;
 	state = 1;
 
-	notify_watchers();
+	NotifyWatchers();
 }
 
 void EVENT_IMPL::Reset( PULONG prev )
@@ -193,7 +193,7 @@ EVENT* CreateSyncEvent( PWSTR name, BOOL InitialState )
 		if (r < STATUS_SUCCESS)
 		{
 			trace("name_object failed\n");
-			release( event );
+			Release( event );
 			event = 0;
 		}
 	}
@@ -211,7 +211,7 @@ NTSTATUS NTAPI NtCreateEvent(
 		  ObjectAttributes, EventType, InitialState);
 
 	EVENT_FACTORY factory( EventType, InitialState );
-	return factory.create( EventHandle, DesiredAccess, ObjectAttributes );
+	return factory.Create( EventHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtOpenEvent(
@@ -220,7 +220,7 @@ NTSTATUS NTAPI NtOpenEvent(
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
 	trace("%p %08lx %p\n", EventHandle, DesiredAccess, ObjectAttributes );
-	return nt_open_object<EVENT>( EventHandle, DesiredAccess, ObjectAttributes );
+	return NtOpenObject<EVENT>( EventHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS Nteventfunc( HANDLE Handle, PULONG PreviousState, void (EVENT::*fn)(PULONG) )
@@ -236,7 +236,7 @@ NTSTATUS Nteventfunc( HANDLE Handle, PULONG PreviousState, void (EVENT::*fn)(PUL
 	}
 
 	EVENT *event = 0;
-	r = object_from_handle( event, Handle, EVENT_MODIFY_STATE );
+	r = ObjectFromHandle( event, Handle, EVENT_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -277,7 +277,7 @@ NTSTATUS NTAPI NtClearEvent(
 
 	trace("%p\n", Handle);
 
-	r = object_from_handle( event, Handle, EVENT_MODIFY_STATE );
+	r = ObjectFromHandle( event, Handle, EVENT_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -296,7 +296,7 @@ NTSTATUS NTAPI NtQueryEvent(
 	EVENT *event;
 	NTSTATUS r;
 
-	r = object_from_handle( event, Handle, EVENT_QUERY_STATE );
+	r = ObjectFromHandle( event, Handle, EVENT_QUERY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -398,7 +398,7 @@ NTSTATUS EventPairOperation( HANDLE handle, NTSTATUS (EVENT_PAIR::*op)() )
 {
 	EVENT_PAIR *eventpair = 0;
 	NTSTATUS r;
-	r = object_from_handle( eventpair, handle, GENERIC_WRITE );
+	r = ObjectFromHandle( eventpair, handle, GENERIC_WRITE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -426,7 +426,7 @@ NTSTATUS NTAPI NtCreateEventPair(
 {
 	trace("%p %08lx %p\n", EventPairHandle, DesiredAccess, ObjectAttributes);
 	EVENT_PAIR_FACTORY factory;
-	return factory.create( EventPairHandle, DesiredAccess, ObjectAttributes );
+	return factory.Create( EventPairHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtOpenEventPair(
@@ -435,7 +435,7 @@ NTSTATUS NTAPI NtOpenEventPair(
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
 	trace("%p %08lx %p\n", EventPairHandle, DesiredAccess, ObjectAttributes );
-	return nt_open_object<EVENT_PAIR>( EventPairHandle, DesiredAccess, ObjectAttributes );
+	return NtOpenObject<EVENT_PAIR>( EventPairHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtSetHighEventPair(
@@ -498,5 +498,5 @@ NTSTATUS NTAPI NtOpenKeyedEvent(
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
 	// hack: just open an event for the moment
-	return nt_open_object<EVENT>( EventHandle, DesiredAccess, ObjectAttributes );
+	return NtOpenObject<EVENT>( EventHandle, DesiredAccess, ObjectAttributes );
 }

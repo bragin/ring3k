@@ -3,7 +3,7 @@
 
 #include "ntcall.h"
 
-template<class T> NTSTATUS nt_open_object(
+template<class T> NTSTATUS NtOpenObject(
 	PHANDLE Handle,
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes)
@@ -39,17 +39,17 @@ template<class T> NTSTATUS nt_open_object(
 	else
 		r = STATUS_OBJECT_TYPE_MISMATCH;
 
-	release( object );
+	Release( object );
 
 	return r;
 }
 
-template<typename T> NTSTATUS object_from_handle(T*& out, HANDLE handle, ACCESS_MASK access)
+template<typename T> NTSTATUS ObjectFromHandle(T*& out, HANDLE handle, ACCESS_MASK access)
 {
 	NTSTATUS r;
 	OBJECT *obj = 0;
 
-	r = Current->process->handle_table.object_from_handle( obj, handle, access );
+	r = Current->process->handle_table.ObjectFromHandle( obj, handle, access );
 	if (r != STATUS_SUCCESS)
 		return r;
 

@@ -128,7 +128,7 @@ regkey_t::~regkey_t()
 		i.Next();
 		tmp->parent = NULL;
 		children.Unlink( tmp );
-		release( tmp );
+		Release( tmp );
 	}
 
 	regval_iter j(values);
@@ -143,7 +143,7 @@ regkey_t::~regkey_t()
 
 bool regkey_t::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
-	return check_access( required, handle,
+	return CheckAccess( required, handle,
 						 KEY_QUERY_VALUE|KEY_ENUMERATE_SUB_KEYS|KEY_NOTIFY,
 						 KEY_SET_VALUE|KEY_CREATE_SUB_KEY|KEY_CREATE_LINK,
 						 KEY_ALL_ACCESS );
@@ -211,7 +211,7 @@ void regkey_t::delkey()
 	{
 		parent->children.Unlink( this );
 		parent = NULL;
-		release( this );
+		Release( this );
 	}
 }
 
@@ -353,7 +353,7 @@ NTSTATUS open_key( regkey_t **out, OBJECT_ATTRIBUTES *oa )
 
 	if (oa->RootDirectory)
 	{
-		r = object_from_handle( key, oa->RootDirectory, 0 );
+		r = ObjectFromHandle( key, oa->RootDirectory, 0 );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -380,7 +380,7 @@ NTSTATUS create_key( regkey_t **out, OBJECT_ATTRIBUTES *oa, bool& opened_existin
 
 	if (oa->RootDirectory)
 	{
-		r = object_from_handle( key, oa->RootDirectory, 0 );
+		r = ObjectFromHandle( key, oa->RootDirectory, 0 );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -649,7 +649,7 @@ NTSTATUS NTAPI NtQueryValueKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = object_from_handle( key, KeyHandle, KEY_QUERY_VALUE );
+	r = ObjectFromHandle( key, KeyHandle, KEY_QUERY_VALUE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -689,7 +689,7 @@ NTSTATUS NTAPI NtSetValueKey(
 
 	trace("%p %p %lu %lu %p %lu\n", KeyHandle, ValueName, TitleIndex, Type, Data, DataSize );
 
-	r = object_from_handle( key, KeyHandle, KEY_SET_VALUE );
+	r = ObjectFromHandle( key, KeyHandle, KEY_SET_VALUE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -732,7 +732,7 @@ NTSTATUS NTAPI NtEnumerateValueKey(
 	trace("%p %lu %u %p %lu %p\n", KeyHandle, Index, KeyValueInformationClass,
 		  KeyValueInformation, KeyValueInformationLength, ResultLength );
 
-	r = object_from_handle( key, KeyHandle, KEY_QUERY_VALUE );
+	r = ObjectFromHandle( key, KeyHandle, KEY_QUERY_VALUE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -769,7 +769,7 @@ NTSTATUS NTAPI NtDeleteValueKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = object_from_handle( key, KeyHandle, KEY_SET_VALUE );
+	r = ObjectFromHandle( key, KeyHandle, KEY_SET_VALUE );
 	if (r < STATUS_SUCCESS)
 		return r;
 	r = delete_value( key, &us );
@@ -782,7 +782,7 @@ NTSTATUS NTAPI NtDeleteKey(
 {
 	NTSTATUS r;
 	regkey_t *key = 0;
-	r = object_from_handle( key, KeyHandle, DELETE );
+	r = ObjectFromHandle( key, KeyHandle, DELETE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -795,7 +795,7 @@ NTSTATUS NTAPI NtFlushKey(
 	HANDLE KeyHandle)
 {
 	regkey_t *key = 0;
-	NTSTATUS r = object_from_handle( key, KeyHandle, 0 );
+	NTSTATUS r = ObjectFromHandle( key, KeyHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 	trace("flush!\n");
@@ -882,7 +882,7 @@ NTSTATUS NTAPI NtEnumerateKey(
 	PULONG ResultLength)
 {
 	regkey_t *key = 0;
-	NTSTATUS r = object_from_handle( key, KeyHandle, KEY_ENUMERATE_SUB_KEYS );
+	NTSTATUS r = ObjectFromHandle( key, KeyHandle, KEY_ENUMERATE_SUB_KEYS );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -916,7 +916,7 @@ NTSTATUS NTAPI NtNotifyChangeKey(
 	BOOLEAN Asynchronous)
 {
 	regkey_t *key = 0;
-	NTSTATUS r = object_from_handle( key, KeyHandle, 0 );
+	NTSTATUS r = ObjectFromHandle( key, KeyHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -958,7 +958,7 @@ NTSTATUS NTAPI NtQueryKey(
 		return r;
 
 	regkey_t *key = 0;
-	r = object_from_handle( key, KeyHandle, KEY_QUERY_VALUE );
+	r = ObjectFromHandle( key, KeyHandle, KEY_QUERY_VALUE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1238,6 +1238,6 @@ void InitRegistry( void )
 
 void FreeRegistry( void )
 {
-	release( root_key );
+	Release( root_key );
 	root_key = NULL;
 }

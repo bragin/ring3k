@@ -165,7 +165,7 @@ BOOLEAN COMPLETION_PORT_IMPL::IsSignalled()
 
 bool COMPLETION_PORT_IMPL::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
-	return check_access( required, handle,
+	return CheckAccess( required, handle,
 						 IO_COMPLETION_QUERY_STATE,
 						 IO_COMPLETION_MODIFY_STATE,
 						 IO_COMPLETION_ALL_ACCESS );
@@ -324,7 +324,7 @@ NTSTATUS NTAPI NtCreateIoCompletion(
 	trace("%p %08lx %p %ld\n", IoCompletionHandle, DesiredAccess,
 		  ObjectAttributes, NumberOfConcurrentThreads);
 	COMPLETION_FACTORY factory( NumberOfConcurrentThreads );
-	return factory.create( IoCompletionHandle, DesiredAccess, ObjectAttributes );
+	return factory.Create( IoCompletionHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtOpenIoCompletion(
@@ -334,7 +334,7 @@ NTSTATUS NTAPI NtOpenIoCompletion(
 {
 	trace("%p %08lx %p\n", IoCompletionHandle, AccessMask,
 		  ObjectAttributes);
-	return nt_open_object<COMPLETION_PORT>( IoCompletionHandle, AccessMask, ObjectAttributes );
+	return NtOpenObject<COMPLETION_PORT>( IoCompletionHandle, AccessMask, ObjectAttributes );
 }
 
 // blocking
@@ -351,7 +351,7 @@ NTSTATUS NTAPI NtRemoveIoCompletion(
 		  IoCompletionValue, IoStatusBlock, TimeOut);
 
 	COMPLETION_PORT_IMPL *port = 0;
-	r = object_from_handle( port, IoCompletionHandle, IO_COMPLETION_MODIFY_STATE );
+	r = ObjectFromHandle( port, IoCompletionHandle, IO_COMPLETION_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -418,7 +418,7 @@ NTSTATUS NTAPI NtSetIoCompletion(
 		  IoCompletionValue, Status, Information);
 
 	COMPLETION_PORT_IMPL *port = 0;
-	r = object_from_handle( port, IoCompletionHandle, IO_COMPLETION_MODIFY_STATE );
+	r = ObjectFromHandle( port, IoCompletionHandle, IO_COMPLETION_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
 

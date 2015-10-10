@@ -41,7 +41,7 @@
 
 OPEN_INFO::OPEN_INFO() :
 	Attributes( 0 ),
-	root( 0 )
+	Root( 0 )
 {
 }
 
@@ -49,16 +49,16 @@ OPEN_INFO::~OPEN_INFO()
 {
 }
 
-void OBJECT::addref( OBJECT *obj )
+void OBJECT::AddRef( OBJECT *obj )
 {
-	obj->refcount ++;
+	obj->RefCount ++;
 	//trace("%p has %ld refs\n", obj, obj->refcount);
 }
 
-void OBJECT::release( OBJECT *obj )
+void OBJECT::Release( OBJECT *obj )
 {
 	//trace("%p has %ld refs left\n", obj, obj->refcount - 1);
-	if (!--obj->refcount)
+	if (!--obj->RefCount)
 	{
 		//trace("destroying %p\n", obj);
 		delete obj;
@@ -67,44 +67,44 @@ void OBJECT::release( OBJECT *obj )
 
 NTSTATUS OBJECT::Open( OBJECT *&out, OPEN_INFO& info )
 {
-	if (info.path.Length != 0)
+	if (info.Path.Length != 0)
 	{
 		trace("length not zero\n");
 		return STATUS_OBJECT_PATH_NOT_FOUND;
 	}
-	addref( this );
+	AddRef( this );
 	out = this;
 	return STATUS_SUCCESS;
 }
 
-HANDLE HANDLE_TABLE::index_to_handle( ULONG index )
+HANDLE HANDLE_TABLE::IndexToHandle( ULONG index )
 {
 	return (HANDLE)((index+1)*4);
 }
 
-ULONG HANDLE_TABLE::handle_to_index( HANDLE handle )
+ULONG HANDLE_TABLE::HandleToIndex( HANDLE handle )
 {
 	return ((ULONG)handle)/4 - 1;
 }
 
-HANDLE HANDLE_TABLE::alloc_handle( OBJECT *obj, ACCESS_MASK access )
+HANDLE HANDLE_TABLE::AllocHandle( OBJECT *obj, ACCESS_MASK access )
 {
 	ULONG i;
 
-	for (i=0; i<max_handles; i++)
+	for (i=0; i<MaxHandles; i++)
 	{
-		if (!info[i].object)
+		if (!Info[i].Object)
 		{
-			info[i].object = obj;
-			info[i].access = access;
-			addref( obj );
-			return index_to_handle( i );
+			Info[i].Object = obj;
+			Info[i].Access = access;
+			AddRef( obj );
+			return IndexToHandle( i );
 		}
 	}
 	return 0;
 }
 
-NTSTATUS HANDLE_TABLE::free_handle( HANDLE handle )
+NTSTATUS HANDLE_TABLE::FreeHandle( HANDLE handle )
 {
 	OBJECT *obj;
 	ULONG n;
@@ -115,22 +115,22 @@ NTSTATUS HANDLE_TABLE::free_handle( HANDLE handle )
 	if (n&3)
 		return STATUS_INVALID_HANDLE;
 
-	n = handle_to_index( handle );
-	if (n >= max_handles)
+	n = HandleToIndex( handle );
+	if (n >= MaxHandles)
 		return STATUS_INVALID_HANDLE;
 
-	obj = info[n].object;
+	obj = Info[n].Object;
 	if (!obj)
 		return STATUS_INVALID_HANDLE;
 
-	release( obj );
-	info[n].object = NULL;
-	info[n].access = 0;
+	Release( obj );
+	Info[n].Object = NULL;
+	Info[n].Access = 0;
 
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS HANDLE_TABLE::object_from_handle( OBJECT*& obj, HANDLE handle, ACCESS_MASK access )
+NTSTATUS HANDLE_TABLE::ObjectFromHandle( OBJECT*& obj, HANDLE handle, ACCESS_MASK access )
 {
 	if (handle == NtCurrentThread())
 	{
@@ -147,35 +147,35 @@ NTSTATUS HANDLE_TABLE::object_from_handle( OBJECT*& obj, HANDLE handle, ACCESS_M
 		return STATUS_INVALID_HANDLE;
 	if (n&3)
 		return STATUS_INVALID_HANDLE;
-	n = handle_to_index( handle );
-	if (n >= max_handles)
+	n = HandleToIndex( handle );
+	if (n >= MaxHandles)
 		return STATUS_INVALID_HANDLE;
-	if (!info[n].object)
+	if (!Info[n].Object)
 		return STATUS_INVALID_HANDLE;
-	if (!info[n].object->AccessAllowed( access, info[n].access ))
+	if (!Info[n].Object->AccessAllowed( access, Info[n].Access ))
 		return STATUS_ACCESS_DENIED;
-	obj = info[n].object;
+	obj = Info[n].Object;
 	return STATUS_SUCCESS;
 }
 
 HANDLE_TABLE::~HANDLE_TABLE()
 {
-	free_all_handles();
+	FreeAllHandles();
 }
 
-void HANDLE_TABLE::free_all_handles()
+void HANDLE_TABLE::FreeAllHandles()
 {
 	OBJECT *obj;
 	ULONG i;
 
-	for ( i=0; i<max_handles; i++ )
+	for ( i=0; i<MaxHandles; i++ )
 	{
-		obj = info[i].object;
+		obj = Info[i].Object;
 		if (!obj)
 			continue;
 
-		release( obj );
-		info[i].object = NULL;
+		Release( obj );
+		Info[i].Object = NULL;
 	}
 }
 
@@ -186,7 +186,7 @@ NTSTATUS OBJECT_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info 
 	{
 		if (!(info.Attributes & OBJ_OPENIF))
 			return STATUS_OBJECT_NAME_COLLISION;
-		addref( obj );
+		AddRef( obj );
 		return STATUS_OBJECT_NAME_EXISTS;
 	}
 
@@ -195,7 +195,7 @@ NTSTATUS OBJECT_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info 
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = obj->name.copy( &info.path );
+	r = obj->Name.copy( &info.Path );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -204,13 +204,13 @@ NTSTATUS OBJECT_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info 
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS OBJECT_FACTORY::create_kernel( OBJECT*& obj, UNICODE_STRING& us )
+NTSTATUS OBJECT_FACTORY::CreateKernel( OBJECT*& obj, UNICODE_STRING& us )
 {
-	path.set( us );
+	Path.set( us );
 	return OpenRoot( obj, *this );
 }
 
-NTSTATUS OBJECT_FACTORY::create(
+NTSTATUS OBJECT_FACTORY::Create(
 	PHANDLE Handle,
 	ACCESS_MASK AccessMask,
 	POBJECT_ATTRIBUTES ObjectAttributes)
@@ -234,8 +234,8 @@ NTSTATUS OBJECT_FACTORY::create(
 
 	if (oa.ObjectName && oa.ObjectName->Length)
 	{
-		path.set( *oa.ObjectName );
-		root = oa.RootDirectory;
+		Path.set( *oa.ObjectName );
+		Root = oa.RootDirectory;
 		Attributes = oa.Attributes;
 		r = OpenRoot( obj, *this );
 	}
@@ -252,7 +252,7 @@ NTSTATUS OBJECT_FACTORY::create(
 	if (r2 == STATUS_SUCCESS && (oa.Attributes & OBJ_PERMANENT ))
 		trace("permanent object\n");
 	else
-		release( obj );
+		Release( obj );
 
 	return r;
 }
@@ -262,19 +262,19 @@ OBJECT_FACTORY::~OBJECT_FACTORY()
 }
 
 OBJECT::OBJECT() :
-	refcount( 1 ),
-	attr( 0 ),
-	parent( 0 )
+	RefCount( 1 ),
+	Attr( 0 ),
+	Parent( 0 )
 {
 }
 
 OBJECT::~OBJECT()
 {
-	if (parent)
-		parent->Unlink( this );
+	if (Parent)
+		Parent->Unlink( this );
 }
 
-bool OBJECT::check_access( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK read, ACCESS_MASK write, ACCESS_MASK all )
+bool OBJECT::CheckAccess( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK read, ACCESS_MASK write, ACCESS_MASK all )
 {
 	ACCESS_MASK effective = handle & 0xffffff; // all standard + specific rights
 	if (handle & MAXIMUM_ALLOWED)
@@ -300,31 +300,31 @@ SYNC_OBJECT::SYNC_OBJECT()
 
 SYNC_OBJECT::~SYNC_OBJECT()
 {
-	assert( watchers.Empty() );
+	assert( Watchers.Empty() );
 }
 
-void SYNC_OBJECT::notify_watchers()
+void SYNC_OBJECT::NotifyWatchers()
 {
-	watch_iter_t i(watchers);
+	WATCH_ITER i(Watchers);
 	while (i)
 	{
-		watch_t *w = i;
+		WATCH *w = i;
 		i.Next();
-		w->notify();
+		w->Notify();
 	}
 }
 
-void SYNC_OBJECT::add_watch( watch_t *watch )
+void SYNC_OBJECT::AddWatch( WATCH *watch )
 {
-	watchers.Append( watch );
+	Watchers.Append( watch );
 }
 
-void SYNC_OBJECT::remove_watch( watch_t *watch )
+void SYNC_OBJECT::RemoveWatch( WATCH *watch )
 {
-	watchers.Unlink( watch );
+	Watchers.Unlink( watch );
 }
 
-watch_t::~watch_t()
+WATCH::~WATCH()
 {
 }
 
@@ -336,7 +336,7 @@ BOOLEAN SYNC_OBJECT::Satisfy( void )
 NTSTATUS NTAPI NtClose( HANDLE Handle )
 {
 	trace("%p\n", Handle );
-	return Current->process->handle_table.free_handle( Handle );
+	return Current->process->handle_table.FreeHandle( Handle );
 }
 
 NTSTATUS NTAPI NtQueryObject(
@@ -373,7 +373,7 @@ NTSTATUS NTAPI NtQueryObject(
 
 	NTSTATUS r;
 	OBJECT *obj = 0;
-	r = object_from_handle( obj, Object, 0 );
+	r = ObjectFromHandle( obj, Object, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -428,7 +428,7 @@ NTSTATUS NTAPI NtSetInformationObject(
 
 	NTSTATUS r;
 	OBJECT *obj = 0;
-	r = object_from_handle( obj, Object, 0 );
+	r = ObjectFromHandle( obj, Object, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -470,17 +470,17 @@ NTSTATUS NTAPI NtDuplicateObject(
 	trace("source process %p\n", sp );
 
 	OBJECT *obj = 0;
-	r = sp->handle_table.object_from_handle( obj, SourceHandle, DesiredAccess );
+	r = sp->handle_table.ObjectFromHandle( obj, SourceHandle, DesiredAccess );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	// don't lose the object if it's closed
-	addref( obj );
+	AddRef( obj );
 
 	// FIXME: handle other options
 	if (Options & DUPLICATE_CLOSE_SOURCE)
 	{
-		sp->handle_table.free_handle( SourceHandle );
+		sp->handle_table.FreeHandle( SourceHandle );
 	}
 
 	// put the object into the target process's handle table
@@ -494,7 +494,7 @@ NTSTATUS NTAPI NtDuplicateObject(
 		trace("new handle is %p\n", handle );
 	}
 
-	release( obj );
+	Release( obj );
 
 	return r;
 }
@@ -514,7 +514,7 @@ NTSTATUS NTAPI NtQuerySecurityObject(
 		return r;
 
 	OBJECT *obj = 0;
-	r = object_from_handle( obj, ObjectHandle, 0 );
+	r = ObjectFromHandle( obj, ObjectHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 

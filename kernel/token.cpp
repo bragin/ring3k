@@ -753,7 +753,7 @@ NTSTATUS NTAPI NtOpenProcessToken(
 		return r;
 
 	PROCESS *p = 0;
-	r = object_from_handle( p, Process, 0 );
+	r = ObjectFromHandle( p, Process, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -762,7 +762,7 @@ NTSTATUS NTAPI NtOpenProcessToken(
 		return STATUS_NO_MEMORY;
 
 	r = AllocUserHandle( token, DesiredAccess, Token );
-	release( token );
+	Release( token );
 
 	return r;
 }
@@ -782,7 +782,7 @@ NTSTATUS NTAPI NtOpenThreadToken(
 		return r;
 
 	THREAD *t = 0;
-	r = object_from_handle( t, Thread, DesiredAccess );
+	r = ObjectFromHandle( t, Thread, DesiredAccess );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -824,7 +824,7 @@ NTSTATUS NTAPI NtAdjustPrivilegesToken(
 		mask |= TOKEN_QUERY;
 
 	token_t *token = 0;
-	r = object_from_handle( token, TokenHandle, mask );
+	r = ObjectFromHandle( token, TokenHandle, mask );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -890,7 +890,7 @@ NTSTATUS NTAPI NtQueryInformationToken(
 	trace("%p %u %p %lu %p\n", TokenHandle, TokenInformationClass,
 		  TokenInformation, TokenInformationLength, ReturnLength );
 
-	r = object_from_handle( token, TokenHandle, TOKEN_QUERY );
+	r = ObjectFromHandle( token, TokenHandle, TOKEN_QUERY );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -982,7 +982,7 @@ NTSTATUS NTAPI NtDuplicateToken(
 {
 	token_t *existing = 0;
 
-	NTSTATUS r = object_from_handle( existing, ExistingToken, TOKEN_QUERY );
+	NTSTATUS r = ObjectFromHandle( existing, ExistingToken, TOKEN_QUERY );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -991,7 +991,7 @@ NTSTATUS NTAPI NtDuplicateToken(
 		return STATUS_NO_MEMORY;
 
 	r = AllocUserHandle( token, DesiredAccess, TokenHandle );
-	release( token );
+	Release( token );
 
 	return r;
 }
@@ -1028,7 +1028,7 @@ NTSTATUS NtPrivilegeCheck(
 {
 	token_t *token = 0;
 
-	NTSTATUS r = object_from_handle( token, TokenHandle, TOKEN_QUERY );
+	NTSTATUS r = ObjectFromHandle( token, TokenHandle, TOKEN_QUERY );
 	if (r < STATUS_SUCCESS)
 		return r;
 

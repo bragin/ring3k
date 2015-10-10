@@ -39,7 +39,7 @@ public:
 
 class OBJECT_DIR_IMPL : public OBJECT_DIR
 {
-	object_list_t object_list;
+	OBJECT_LIST object_list;
 public:
 	OBJECT_DIR_IMPL();
 	virtual ~OBJECT_DIR_IMPL();

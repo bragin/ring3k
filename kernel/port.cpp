@@ -214,7 +214,7 @@ port_t *port_from_obj( OBJECT *obj )
 
 NTSTATUS port_from_handle( HANDLE handle, port_t *& port )
 {
-	return object_from_handle( port, handle, 0 );
+	return ObjectFromHandle( port, handle, 0 );
 }
 
 void send_terminate_message(
@@ -241,7 +241,7 @@ void send_terminate_message(
 	memcpy( &msg->req.Data, &create_time, sizeof create_time );
 
 	port->send_message( msg );
-	release(terminate_port);
+	Release(terminate_port);
 }
 
 NTSTATUS set_exception_port( PROCESS *process, OBJECT *obj )
@@ -316,7 +316,7 @@ listener_t::listener_t(port_t *p, THREAD *t, BOOLEAN connect, ULONG id) :
 	want_connect(connect),
 	message_id(id)
 {
-	addref( t );
+	AddRef( t );
 	port->queue->listeners.Append( this );
 }
 
@@ -325,7 +325,7 @@ listener_t::~listener_t()
 	// maybe still linked if the thread was terminated
 	if (IsLinked())
 		port->queue->listeners.Unlink( this );
-	release( thread );
+	Release( thread );
 }
 
 static inline ULONG round_up( ULONG len )
@@ -420,15 +420,15 @@ port_t::~port_t()
 	if (our_section_base)
 		thread->process->vm->UnmapView( our_section_base );
 	if (section)
-		release(section);
+		Release(section);
 	if (other)
 	{
 		other->other = 0;
 		other = 0;
 		send_close_message();
 	}
-	release( queue );
-	release( thread );
+	Release( queue );
+	Release( thread );
 }
 
 port_t::port_t( BOOLEAN s, THREAD *t, port_queue_t *q ) :
@@ -444,8 +444,8 @@ port_t::port_t( BOOLEAN s, THREAD *t, port_queue_t *q ) :
 	received_msg(0)
 {
 	if (q)
-		addref(q);
-	addref(thread);
+		AddRef(q);
+	AddRef(thread);
 }
 
 port_queue_t::port_queue_t( ULONG _max_connect, ULONG _max_data ) :
@@ -475,11 +475,11 @@ NTSTATUS create_named_port(
 		r = NameObject( port, oa );
 		if (r == STATUS_SUCCESS)
 		{
-			addref( port );
+			AddRef( port );
 			*obj = port;
 		}
 	}
-	release( port );
+	Release( port );
 
 	return r;
 }
@@ -597,7 +597,7 @@ NTSTATUS connect_port(
 	if (!port)
 		return STATUS_OBJECT_TYPE_MISMATCH;
 	queue = port->queue;
-	release(port);
+	Release(port);
 
 	// check the connect data isn't too big
 	if (queue->max_connect < msg->req.DataSize)
@@ -613,10 +613,10 @@ NTSTATUS connect_port(
 	// FIXME: use the section properly
 	if (write_sec->SectionHandle)
 	{
-		r = object_from_handle( port->section, write_sec->SectionHandle, 0 );
+		r = ObjectFromHandle( port->section, write_sec->SectionHandle, 0 );
 		if (r < STATUS_SUCCESS)
 			return r;
-		addref(port->section);
+		AddRef(port->section);
 	}
 	port->view_size = write_sec->ViewSize;
 	port->send_message( msg );
@@ -639,12 +639,12 @@ NTSTATUS connect_port(
 	// failing to fill the "other" port is a connection refusal
 	if (port->other == 0)
 	{
-		release( port );
+		Release( port );
 		return STATUS_PORT_CONNECTION_REFUSED;
 	}
 
 	r = AllocUserHandle( port, 0, out_handle );
-	release( port );
+	Release( port );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -710,10 +710,10 @@ NTSTATUS port_t::accept_connect(
 	// map our section into the other process
 	if (server_write_sec->SectionHandle)
 	{
-		r = object_from_handle( section, server_write_sec->SectionHandle, 0 );
+		r = ObjectFromHandle( section, server_write_sec->SectionHandle, 0 );
 		if (r < STATUS_SUCCESS)
 			return r;
-		addref(section);
+		AddRef(section);
 		view_size = server_write_sec->ViewSize;
 
 		// map our section into their process
@@ -850,7 +850,7 @@ NTSTATUS NTAPI NtCreatePort(
 	if (r == STATUS_SUCCESS)
 	{
 		r = AllocUserHandle( p, 0, Port );
-		release( p );
+		Release( p );
 	}
 
 	return r;
@@ -964,7 +964,7 @@ NTSTATUS NTAPI NtSecureConnectPort(
 	if (ClientSharedMemory)
 	{
 		section_t* sec = 0;
-		r = object_from_handle( sec, write_sec.SectionHandle, 0 );
+		r = ObjectFromHandle( sec, write_sec.SectionHandle, 0 );
 		if (r < STATUS_SUCCESS)
 			return STATUS_INVALID_HANDLE;
 	}
@@ -1229,7 +1229,7 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 	else
 		port->other->identifier = (ULONG) handle;
 
-	release( port );
+	Release( port );
 
 	return r;
 }

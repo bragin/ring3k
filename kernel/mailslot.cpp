@@ -112,6 +112,6 @@ NTSTATUS NTAPI NtCreateMailslotFile(
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 
 	MAILSLOT_FACTORY factory;
-	return factory.create( MailslotHandle, AccessMask, ObjectAttributes );
+	return factory.Create( MailslotHandle, AccessMask, ObjectAttributes );
 }
 

@@ -237,7 +237,7 @@ MBLOCK::MBLOCK( BYTE *address, size_t size ) :
 MBLOCK::~MBLOCK()
 {
 	if (Section)
-		release( Section );
+		Release( Section );
 	assert( IsFree() );
 }
 
@@ -433,9 +433,9 @@ bool MBLOCK::SetTraced( ADDRESS_SPACE *vm, bool traced )
 void MBLOCK::SetSection( OBJECT *s )
 {
 	if (Section)
-		release( Section );
+		Release( Section );
 	Section = s;
-	addref( Section );
+	AddRef( Section );
 }
 
 void BLOCK_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG Eip )

@@ -188,12 +188,12 @@ public:
 
 NTSTATUS PIPE_DEVICE::Open( OBJECT *&out, OPEN_INFO& info )
 {
-	if (info.path.Length == 0)
+	if (info.Path.Length == 0)
 		return OBJECT_DIR_IMPL::Open( out, info );
 
 	// appears to be a flat namespace under the pipe device
-	trace("pipe = %pus\n", &info.path );
-	out = Lookup( info.path, info.case_insensitive() );
+	trace("pipe = %pus\n", &info.Path );
+	out = Lookup( info.Path, info.CaseInsensitive() );
 
 	// not the NtCreateNamedPipeFile case?
 	if (out && dynamic_cast<PIPE_FACTORY*>(&info) == NULL)
@@ -204,7 +204,7 @@ NTSTATUS PIPE_DEVICE::Open( OBJECT *&out, OPEN_INFO& info )
 
 NTSTATUS PIPE_CONTAINER::Open( OBJECT *&out, OPEN_INFO& info )
 {
-	trace("allocating pipe client = %pus\n", &info.path );
+	trace("allocating pipe client = %pus\n", &info.Path );
 	PIPE_CLIENT *pipe = 0;
 	NTSTATUS r = CreateClient( pipe );
 	if (r < STATUS_SUCCESS)
@@ -229,7 +229,7 @@ void InitPipeDevice()
 
 	NTSTATUS r;
 	OBJECT *obj = 0;
-	r = factory.create_kernel( obj, name );
+	r = factory.CreateKernel( obj, name );
 	if (r < STATUS_SUCCESS)
 		Die("failed to create named pipe\n");
 }
@@ -369,7 +369,7 @@ NTSTATUS PIPE_CONTAINER::CreateServer( PIPE_SERVER *& pipe, ULONG max_inst )
 	pipe = new PIPE_SERVER( this );
 
 	servers.Append( pipe );
-	addref( this );
+	AddRef( this );
 
 	return STATUS_SUCCESS;
 }
@@ -430,7 +430,7 @@ PIPE_SERVER::~PIPE_SERVER()
 		delete msg;
 	}
 	Container->Unlink( this );
-	release( Container );
+	Release( Container );
 }
 
 NTSTATUS PIPE_SERVER::Open( OBJECT *&out, OPEN_INFO& info )
@@ -705,7 +705,7 @@ NTSTATUS PIPE_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 		if (!container)
 			return STATUS_NO_MEMORY;
 
-		r = container->name.copy( &info.path );
+		r = container->Name.copy( &info.Path );
 		if (r < STATUS_SUCCESS)
 			return r;
 
@@ -779,5 +779,5 @@ NTSTATUS NTAPI NtCreateNamedPipeFile(
 
 	PIPE_FACTORY factory( MaxInstances );
 
-	return factory.create( PipeHandle, AccessMask, ObjectAttributes );
+	return factory.Create( PipeHandle, AccessMask, ObjectAttributes );
 }

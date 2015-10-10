@@ -150,7 +150,7 @@ NTSTATUS map_locale_data( ADDRESS_SPACE *vm, const char *name, void **addr )
 		Die("locale data %s missing from system directory (%08lx)\n", name, r);
 
 	r = create_section( &section, file, 0, SEC_FILE, PAGE_EXECUTE_READWRITE );
-	release( file );
+	Release( file );
 	if (r < STATUS_SUCCESS)
 		Die("failed to create section for locale data\n");
 
@@ -295,7 +295,7 @@ BOOLEAN PROCESS::IsSignalled( void )
 
 NTSTATUS ProcessFromHandle( HANDLE handle, PROCESS **process )
 {
-	return object_from_handle( *process, handle, 0 );
+	return ObjectFromHandle( *process, handle, 0 );
 }
 
 
@@ -316,7 +316,7 @@ NTSTATUS ProcessAllocUserHandle(
 	HANDLE handle;
 	NTSTATUS r;
 
-	handle = p->handle_table.alloc_handle( obj, access );
+	handle = p->handle_table.AllocHandle( obj, access );
 	if (!handle)
 	{
 		trace("out of handles?\n");
@@ -330,7 +330,7 @@ NTSTATUS ProcessAllocUserHandle(
 	if (r < STATUS_SUCCESS)
 	{
 		trace("write to %p failed\n", out);
-		p->handle_table.free_handle( handle );
+		p->handle_table.FreeHandle( handle );
 	}
 
 	if (copy)
@@ -387,15 +387,15 @@ PROCESS::~PROCESS()
 
 void PROCESS::terminate( NTSTATUS status )
 {
-	notify_watchers();
+	NotifyWatchers();
 	// now release the process...
-	handle_table.free_all_handles();
+	handle_table.FreeAllHandles();
 	if (win32k_info)
 		free_user32_handles( this );
 	ExitStatus = status;
 	delete vm;
 	vm = NULL;
-	release( exe );
+	Release( exe );
 	exe = NULL;
 }
 
@@ -447,7 +447,7 @@ NTSTATUS create_process( PROCESS **pprocess, OBJECT *section )
 	if (!p->vm)
 		Die("create_address_space failed\n");
 
-	addref( section );
+	AddRef( section );
 	p->exe = section;
 
 	// FIXME: use section->mapit, get rid of mapit(section, ...)
@@ -530,7 +530,7 @@ NTSTATUS NTAPI NtCreateProcess(
 		  ObjectAttributes, InheritFromProcessHandle, InheritHandles,
 		  SectionHandle, DebugPort, ExceptionPort );
 
-	r = object_from_handle( section, SectionHandle, SECTION_MAP_EXECUTE );
+	r = ObjectFromHandle( section, SectionHandle, SECTION_MAP_EXECUTE );
 	if (r < STATUS_SUCCESS)
 		return STATUS_INVALID_HANDLE;
 
@@ -538,7 +538,7 @@ NTSTATUS NTAPI NtCreateProcess(
 	if (r == STATUS_SUCCESS)
 	{
 		r = AllocUserHandle( p, DesiredAccess, ProcessHandle );
-		release( p );
+		Release( p );
 	}
 
 	return r;
@@ -557,7 +557,7 @@ NTSTATUS open_process( OBJECT **process, OBJECT_ATTRIBUTES *oa )
 	p = dynamic_cast<PROCESS*>( obj );
 	if (!p)
 	{
-		release( obj );
+		Release( obj );
 		return STATUS_OBJECT_TYPE_MISMATCH;
 	}
 
@@ -622,7 +622,7 @@ NTSTATUS NTAPI NtOpenProcess(
 		}
 		else
 			return STATUS_INVALID_PARAMETER;
-		addref( process );
+		AddRef( process );
 	}
 	else
 	{
@@ -647,7 +647,7 @@ NTSTATUS NTAPI NtOpenProcess(
 	{
 		r = AllocUserHandle( process, DesiredAccess, ProcessHandle );
 	}
-	release( process );
+	Release( process );
 
 	return r;
 }
@@ -723,7 +723,7 @@ NTSTATUS NTAPI NtSetInformationProcess(
 		case ProcessExceptionPort:
 		{
 			OBJECT *port = 0;
-			r = object_from_handle( port, info.port_handle, 0 );
+			r = ObjectFromHandle( port, info.port_handle, 0 );
 			if (r < STATUS_SUCCESS)
 				return r;
 			return set_exception_port( p, port );

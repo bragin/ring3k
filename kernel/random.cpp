@@ -72,7 +72,7 @@ void InitRandom()
 	rand.copy("\\Device\\KsecDD");
 	OBJECT *obj = 0;
 	NTSTATUS r;
-	r = factory.create_kernel( obj, rand );
+	r = factory.CreateKernel( obj, rand );
 	if (r < STATUS_SUCCESS)
 		Die("failed to create random device\n");
 }

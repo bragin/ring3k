@@ -113,7 +113,7 @@ NTSTATUS NTAPI NtCreateMutant(
 		  AccessMask, ObjectAttributes, InitialOwner);
 
 	MUTANT_FACTORY factory( InitialOwner );
-	return factory.create( MutantHandle, AccessMask, ObjectAttributes );
+	return factory.Create( MutantHandle, AccessMask, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtReleaseMutant(
@@ -126,7 +126,7 @@ NTSTATUS NTAPI NtReleaseMutant(
 
 	trace("%p %p\n", MutantHandle, PreviousState);
 
-	r = object_from_handle( mutant, MutantHandle, MUTEX_MODIFY_STATE );
+	r = ObjectFromHandle( mutant, MutantHandle, MUTEX_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -150,7 +150,7 @@ NTSTATUS NTAPI NtOpenMutant(
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
 	trace("%p %08lx %p\n", MutantHandle, DesiredAccess, ObjectAttributes );
-	return nt_open_object<MUTANT>( MutantHandle, DesiredAccess, ObjectAttributes );
+	return NtOpenObject<MUTANT>( MutantHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtQueryMutant(

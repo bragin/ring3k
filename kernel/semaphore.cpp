@@ -70,7 +70,7 @@ NTSTATUS semaphore_t::release( ULONG release_count, ULONG& prev )
 		return STATUS_SEMAPHORE_LIMIT_EXCEEDED;
 	// FIXME: will this wake release_count watchers exactly?
 	if (!count)
-		notify_watchers();
+		NotifyWatchers();
 	count += release_count;
 	return STATUS_SUCCESS;
 }
@@ -109,7 +109,7 @@ NTSTATUS NTAPI NtCreateSemaphore(
 		  ObjectAttributes, InitialCount, MaximumCount);
 
 	semaphore_factory factory(InitialCount, MaximumCount);
-	return factory.create( SemaphoreHandle, DesiredAccess, ObjectAttributes );
+	return factory.Create( SemaphoreHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtReleaseSemaphore(
@@ -125,7 +125,7 @@ NTSTATUS NTAPI NtReleaseSemaphore(
 		return STATUS_INVALID_PARAMETER;
 
 	semaphore_t *semaphore = 0;
-	r = object_from_handle( semaphore, SemaphoreHandle, SEMAPHORE_MODIFY_STATE );
+	r = ObjectFromHandle( semaphore, SemaphoreHandle, SEMAPHORE_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
 

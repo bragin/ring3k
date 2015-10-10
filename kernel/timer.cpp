@@ -254,7 +254,7 @@ nttimer_t::nttimer_t() :
 nttimer_t::~nttimer_t()
 {
 	if (thread)
-		release( thread );
+		Release( thread );
 }
 
 nttimer_t *nttimer_from_obj( OBJECT *obj )
@@ -286,7 +286,7 @@ BOOLEAN nttimer_t::Satisfy( void )
 void nttimer_t::signal_timeout()
 {
 	expired = TRUE;
-	notify_watchers();
+	NotifyWatchers();
 }
 
 NTSTATUS nttimer_t::set(
@@ -302,7 +302,7 @@ NTSTATUS nttimer_t::set(
 	prev = expired;
 	interval = Period;
 	thread = Current;
-	addref( thread );
+	AddRef( thread );
 	apc_routine = apc;
 	apc_context = context;
 
@@ -375,7 +375,7 @@ NTSTATUS NTAPI NtCreateTimer(
 	trace("%p %08lx %p %u\n", TimerHandle, AccessMask, ObjectAttributes, Type );
 
 	timer_factory factory( Type );
-	return factory.create( TimerHandle, AccessMask, ObjectAttributes );
+	return factory.Create( TimerHandle, AccessMask, ObjectAttributes );
 }
 
 NTSTATUS NtOpenTimer(
@@ -384,7 +384,7 @@ NTSTATUS NtOpenTimer(
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
 	trace("\n");
-	return nt_open_object<nttimer_t>( TimerHandle, AccessMask, ObjectAttributes );
+	return NtOpenObject<nttimer_t>( TimerHandle, AccessMask, ObjectAttributes );
 }
 
 NTSTATUS NtCancelTimer(
@@ -394,7 +394,7 @@ NTSTATUS NtCancelTimer(
 	NTSTATUS r;
 
 	nttimer_t* timer = 0;
-	r = object_from_handle( timer, TimerHandle, TIMER_MODIFY_STATE );
+	r = ObjectFromHandle( timer, TimerHandle, TIMER_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -432,7 +432,7 @@ NTSTATUS NtSetTimer(
 	trace("due = %llx\n", due.QuadPart);
 
 	nttimer_t* timer = 0;
-	r = object_from_handle( timer, TimerHandle, TIMER_MODIFY_STATE );
+	r = ObjectFromHandle( timer, TimerHandle, TIMER_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -461,7 +461,7 @@ NTSTATUS NTAPI NtQueryTimer(
 	NTSTATUS r;
 
 	nttimer_t* timer = 0;
-	r = object_from_handle( timer, TimerHandle, TIMER_MODIFY_STATE );
+	r = ObjectFromHandle( timer, TimerHandle, TIMER_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
 

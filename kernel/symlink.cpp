@@ -53,19 +53,19 @@ NTSTATUS symlink_opener::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info 
 {
 	if (!obj)
 		return STATUS_OBJECT_PATH_NOT_FOUND;
-	addref( obj );
+	AddRef( obj );
 	return STATUS_SUCCESS;
 }
 
 NTSTATUS symlink_t::Open( OBJECT *&out, OPEN_INFO& info )
 {
-	if (info.path.Length != 0)
+	if (info.Path.Length != 0)
 	{
 		// follow the link
 		trace("following %pus\n", &target );
 		symlink_opener target_info;
 		target_info.Attributes = info.Attributes;
-		target_info.path.set( target );
+		target_info.Path.set( target );
 		//target_info.root = parent;
 
 		OBJECT *target_object;
@@ -84,7 +84,7 @@ NTSTATUS symlink_t::Open( OBJECT *&out, OPEN_INFO& info )
 		return STATUS_INVALID_PARAMETER;
 	}
 
-	info.path.set( target );
+	info.Path.set( target );
 	return OpenRoot( out, info );
 }
 
@@ -131,14 +131,14 @@ NTSTATUS NTAPI NtCreateSymbolicLinkObject(
 		return r;
 
 	symlink_factory_t factory( target );
-	return factory.create( SymbolicLinkHandle, DesiredAccess, ObjectAttributes );
+	return factory.Create( SymbolicLinkHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS create_symlink( UNICODE_STRING& name, UNICODE_STRING& target )
 {
 	OBJECT *obj = 0;
 	symlink_factory_t factory( target );
-	return factory.create_kernel( obj, name );
+	return factory.CreateKernel( obj, name );
 }
 
 NTSTATUS NTAPI NtOpenSymbolicLinkObject(
@@ -146,7 +146,7 @@ NTSTATUS NTAPI NtOpenSymbolicLinkObject(
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes )
 {
-	return nt_open_object<symlink_t>( SymlinkHandle, DesiredAccess, ObjectAttributes );
+	return NtOpenObject<symlink_t>( SymlinkHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtQuerySymbolicLinkObject(
@@ -174,7 +174,7 @@ NTSTATUS NTAPI NtQuerySymbolicLinkObject(
 	}
 
 	symlink_t *symlink = 0;
-	r = object_from_handle( symlink, SymbolicLinkHandle, 0 );
+	r = ObjectFromHandle( symlink, SymbolicLinkHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 

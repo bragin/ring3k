@@ -27,9 +27,9 @@
 class OBJECT;
 class OBJECT_DIR;
 
-typedef LIST_ANCHOR<OBJECT, 0> object_list_t;
-typedef LIST_ELEMENT<OBJECT> object_entry_t;
-typedef LIST_ITER<OBJECT, 0> object_iter_t;
+typedef LIST_ANCHOR<OBJECT, 0> OBJECT_LIST;
+typedef LIST_ELEMENT<OBJECT> OBJECT_ENTRY;
+typedef LIST_ITER<OBJECT, 0> OBJECT_ITER;
 
 class OBJECT_FACTORY;
 class OPEN_INFO;
@@ -38,11 +38,11 @@ class OPEN_INFO
 {
 public:
 	ULONG Attributes;
-	HANDLE root;
-	unicode_string_t path;
+	HANDLE Root;
+	unicode_string_t Path;
 public:
 	OPEN_INFO();
-	bool case_insensitive()
+	bool CaseInsensitive()
 	{
 		return Attributes & OBJ_CASE_INSENSITIVE;
 	}
@@ -55,25 +55,25 @@ class OBJECT
 	friend class LIST_ANCHOR<OBJECT, 0>;
 	friend class LIST_ELEMENT<OBJECT>;
 	friend class LIST_ITER<OBJECT, 0>;
-	object_entry_t Entry[1];
-	ULONG refcount;
+	OBJECT_ENTRY Entry[1];
+	ULONG RefCount;
 public:
-	ULONG attr;
-	OBJECT_DIR *parent;
-	unicode_string_t name;
+	ULONG Attr;
+	OBJECT_DIR *Parent;
+	unicode_string_t Name;
 	friend class OBJECT_DIR;
-	void set_parent( OBJECT_DIR *dir );
-	unicode_string_t& get_name()
+	void SetParent( OBJECT_DIR *dir );
+	unicode_string_t& GetName()
 	{
-		return name;
+		return Name;
 	}
 public:
 	OBJECT();
 	virtual bool AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle );
 	virtual ~OBJECT();
-	static bool check_access( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK read, ACCESS_MASK write, ACCESS_MASK all );
-	static void addref( OBJECT *obj );
-	static void release( OBJECT *obj );
+	static bool CheckAccess( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK read, ACCESS_MASK write, ACCESS_MASK all );
+	static void AddRef( OBJECT *obj );
+	static void Release( OBJECT *obj );
 	virtual NTSTATUS Open( OBJECT *&out, OPEN_INFO& info );
 };
 
@@ -83,74 +83,74 @@ protected:
 	virtual NTSTATUS AllocObject(OBJECT** obj) = 0;
 	virtual NTSTATUS OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
 public:
-	NTSTATUS create(
+	NTSTATUS Create(
 		PHANDLE Handle,
 		ACCESS_MASK AccessMask,
 		POBJECT_ATTRIBUTES ObjectAttributes);
-	NTSTATUS create_kernel( OBJECT*& obj, UNICODE_STRING& us );
+	NTSTATUS CreateKernel( OBJECT*& obj, UNICODE_STRING& us );
 	virtual ~OBJECT_FACTORY();
 };
 
-class watch_t;
+class WATCH;
 
-typedef LIST_ANCHOR<watch_t, 0> watch_list_t;
-typedef LIST_ELEMENT<watch_t> watch_entry_t;
-typedef LIST_ITER<watch_t, 0> watch_iter_t;
+typedef LIST_ANCHOR<WATCH, 0> WATCH_LIST;
+typedef LIST_ELEMENT<WATCH> WATCH_ENTRY;
+typedef LIST_ITER<WATCH, 0> WATCH_ITER;
 
-class watch_t
+class WATCH
 {
 public:
-	watch_entry_t Entry[1];
-	virtual void notify() = 0;
-	virtual ~watch_t();
+	WATCH_ENTRY Entry[1];
+	virtual void Notify() = 0;
+	virtual ~WATCH();
 };
 
 class SYNC_OBJECT : virtual public OBJECT
 {
 private:
-	watch_list_t watchers;
+	WATCH_LIST Watchers;
 public:
 	SYNC_OBJECT();
 	virtual ~SYNC_OBJECT();
 	virtual BOOLEAN IsSignalled( void ) = 0;
 	virtual BOOLEAN Satisfy( void );
-	void add_watch( watch_t* watcher );
-	void remove_watch( watch_t* watcher );
-	void notify_watchers();
+	void AddWatch( WATCH* watcher );
+	void RemoveWatch( WATCH* watcher );
+	void NotifyWatchers();
 };
 
-class object_info_t
+class OBJECT_INFO
 {
 public:
-	OBJECT *object;
-	ACCESS_MASK access;
+	OBJECT *Object;
+	ACCESS_MASK Access;
 };
 
 class HANDLE_TABLE
 {
-	static const unsigned int max_handles = 0x100;
+	static const unsigned int MaxHandles = 0x100;
 
 	//int num_objects;
-	object_info_t info[max_handles];
+	OBJECT_INFO Info[MaxHandles];
 protected:
-	static HANDLE index_to_handle( ULONG index );
-	static ULONG handle_to_index( HANDLE handle );
+	static HANDLE IndexToHandle( ULONG index );
+	static ULONG HandleToIndex( HANDLE handle );
 public:
 	~HANDLE_TABLE();
-	void free_all_handles();
-	HANDLE alloc_handle( OBJECT *obj, ACCESS_MASK access );
-	NTSTATUS free_handle( HANDLE handle );
-	NTSTATUS object_from_handle( OBJECT*& obj, HANDLE handle, ACCESS_MASK access );
+	void FreeAllHandles();
+	HANDLE AllocHandle( OBJECT *obj, ACCESS_MASK access );
+	NTSTATUS FreeHandle( HANDLE handle );
+	NTSTATUS ObjectFromHandle( OBJECT*& obj, HANDLE handle, ACCESS_MASK access );
 };
 
-static inline void addref( OBJECT *obj )
+static inline void AddRef( OBJECT *obj )
 {
-	OBJECT::addref( obj );
+	OBJECT::AddRef( obj );
 }
 
-static inline void release( OBJECT *obj )
+static inline void Release( OBJECT *obj )
 {
-	OBJECT::release( obj );
+	OBJECT::Release( obj );
 }
 
 void InitRoot();
@@ -162,6 +162,6 @@ NTSTATUS FindObjectByName( OBJECT **out, const OBJECT_ATTRIBUTES *oa );
 
 NTSTATUS OpenRoot( OBJECT*& obj, OPEN_INFO& info );
 
-template<typename T> NTSTATUS object_from_handle(T*& out, HANDLE handle, ACCESS_MASK access);
+template<typename T> NTSTATUS ObjectFromHandle(T*& out, HANDLE handle, ACCESS_MASK access);
 
 #endif //__OBJECT_H__

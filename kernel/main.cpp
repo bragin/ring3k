@@ -143,13 +143,13 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 
 	/* load the executable and ntdll */
 	r = create_section( &section, file, 0, SEC_IMAGE, PAGE_EXECUTE_READWRITE );
-	release( file );
+	Release( file );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	/* create the initial process */
 	r = create_process( &p, section );
-	release( section );
+	Release( section );
 	section = NULL;
 
 	if (r < STATUS_SUCCESS)
@@ -183,7 +183,7 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 	if (r == STATUS_SUCCESS)
 		r = create_thread( t, p, &id, &ctx, &init_teb, FALSE );
 
-	release( p );
+	Release( p );
 
 	return r;
 }
@@ -213,14 +213,14 @@ NTSTATUS InitNtDLL( void )
 	trace("KiIntSystemCall = %08lx\n", KiIntSystemCall);
 	InitSyscalls(KiIntSystemCall != 0);
 
-	release( file );
+	Release( file );
 
 	return r;
 }
 
 void FreeNtDLL( void )
 {
-	release( NtDLLSection );
+	Release( NtDLLSection );
 	NtDLLSection = NULL;
 }
 
@@ -521,7 +521,7 @@ int main(int argc, char **argv)
 	NtGdiFini();
 	r = initial_thread->process->ExitStatus;
 	//fprintf(stderr, "process exited (%08x)\n", r);
-	release( initial_thread );
+	Release( initial_thread );
 
 	ShutdownKThread();
 	DoCleanup();

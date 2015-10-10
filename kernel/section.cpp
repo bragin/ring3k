@@ -70,12 +70,12 @@ int section_t::GetFD()
 
 void section_t::AddRef()
 {
-	::addref( this );
+	::AddRef( this );
 }
 
 void section_t::Release()
 {
-	::release( this );
+	::Release( this );
 }
 
 NTSTATUS section_t::mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG prot )
@@ -707,7 +707,7 @@ NTSTATUS NTAPI NtCreateSection(
 		if (!FileHandle)
 			return STATUS_INVALID_FILE_FOR_SECTION;
 
-		r = object_from_handle( file, FileHandle, 0 );
+		r = ObjectFromHandle( file, FileHandle, 0 );
 		if (r < STATUS_SUCCESS)
 			return r;
 
@@ -731,7 +731,7 @@ NTSTATUS NTAPI NtCreateSection(
 
 		if (FileHandle)
 		{
-			r = object_from_handle( file, FileHandle, 0 );
+			r = ObjectFromHandle( file, FileHandle, 0 );
 			if (r < STATUS_SUCCESS)
 				return r;
 		}
@@ -748,7 +748,7 @@ NTSTATUS NTAPI NtCreateSection(
 	}
 
 	section_factory factory( file, SectionSize, Attributes, Protect );
-	return factory.create( SectionHandle, DesiredAccess, ObjectAttributes );
+	return factory.Create( SectionHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtOpenSection(
@@ -756,7 +756,7 @@ NTSTATUS NTAPI NtOpenSection(
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes )
 {
-	return nt_open_object<section_t>( SectionHandle, DesiredAccess, ObjectAttributes );
+	return NtOpenObject<section_t>( SectionHandle, DesiredAccess, ObjectAttributes );
 }
 
 // pg 108
@@ -785,7 +785,7 @@ NTSTATUS NTAPI NtMapViewOfSection(
 		return r;
 
 	section_t *section = 0;
-	r = object_from_handle( section, SectionHandle, 0 );
+	r = ObjectFromHandle( section, SectionHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -849,7 +849,7 @@ NTSTATUS NTAPI NtQuerySection(
 		  SectionInformation, SectionInformationLength, ResultLength );
 
 	section_t *section = 0;
-	r = object_from_handle( section, SectionHandle, SECTION_QUERY );
+	r = ObjectFromHandle( section, SectionHandle, SECTION_QUERY );
 	if (r < STATUS_SUCCESS)
 		return r;
 

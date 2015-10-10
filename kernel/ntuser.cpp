@@ -492,7 +492,7 @@ NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSi
 	NTSTATUS r;
 
 	PROCESS *proc = 0;
-	r = object_from_handle( proc, Process, 0 );
+	r = ObjectFromHandle( proc, Process, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 

@@ -46,7 +46,7 @@ OBJECT_DIR::~OBJECT_DIR()
 
 void OBJECT_DIR::SetObjParent( OBJECT *child, OBJECT_DIR *dir )
 {
-	child->parent = dir;
+	child->Parent = dir;
 }
 
 OBJECT_DIR_IMPL::OBJECT_DIR_IMPL()
@@ -56,7 +56,7 @@ OBJECT_DIR_IMPL::OBJECT_DIR_IMPL()
 OBJECT_DIR_IMPL::~OBJECT_DIR_IMPL()
 {
 	//trace("destroying directory %pus\n", &name );
-	object_iter_t i(object_list);
+	OBJECT_ITER i(object_list);
 	while( i )
 	{
 		OBJECT *obj = i;
@@ -81,7 +81,7 @@ void OBJECT_DIR_IMPL::Append( OBJECT *obj )
 
 bool OBJECT_DIR_IMPL::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 {
-	return check_access( required, handle,
+	return CheckAccess( required, handle,
 						 DIRECTORY_QUERY | DIRECTORY_TRAVERSE,
 						 DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY,
 						 DIRECTORY_ALL_ACCESS );
@@ -90,10 +90,10 @@ bool OBJECT_DIR_IMPL::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 OBJECT *OBJECT_DIR_IMPL::Lookup( UNICODE_STRING& name, bool ignore_case )
 {
 	//trace("searching for %pus\n", &name );
-	for( object_iter_t i(object_list); i; i.Next() )
+	for( OBJECT_ITER i(object_list); i; i.Next() )
 	{
 		OBJECT *obj = i;
-		unicode_string_t& entry_name  = obj->get_name();
+		unicode_string_t& entry_name  = obj->GetName();
 		//trace("checking %pus\n", &entry_name );
 		if (!entry_name.compare( &name, ignore_case ))
 			continue;
@@ -139,7 +139,7 @@ OBJECT *CreateDirectoryObject( PCWSTR name )
 	NTSTATUS r = NameObject( obj, &oa );
 	if (r < STATUS_SUCCESS)
 	{
-		release( obj );
+		Release( obj );
 		obj = 0;
 	}
 	return obj;
@@ -153,27 +153,27 @@ NTSTATUS OpenRoot( OBJECT*& obj, OPEN_INFO& info )
 	NTSTATUS r;
 
 	// parse the root directory
-	if (info.root)
+	if (info.Root)
 	{
 		// relative path
-		if (info.path.Buffer[0] == '\\')
+		if (info.Path.Buffer[0] == '\\')
 			return STATUS_OBJECT_PATH_SYNTAX_BAD;
 
-		r = object_from_handle( dir, info.root, DIRECTORY_QUERY );
+		r = ObjectFromHandle( dir, info.Root, DIRECTORY_QUERY );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
 	else
 	{
 		// absolute path
-		if (info.path.Buffer[0] != '\\')
+		if (info.Path.Buffer[0] != '\\')
 			return STATUS_OBJECT_PATH_SYNTAX_BAD;
 		dir = Root;
-		info.path.Buffer++;
-		info.path.Length -= 2;
+		info.Path.Buffer++;
+		info.Path.Length -= 2;
 	}
 
-	if (info.path.Length == 0)
+	if (info.Path.Length == 0)
 	{
 		obj = dir;
 		return info.OnOpen( 0, obj, info );
@@ -185,7 +185,7 @@ NTSTATUS OpenRoot( OBJECT*& obj, OPEN_INFO& info )
 NTSTATUS OBJECT_DIR_IMPL::Open( OBJECT*& obj, OPEN_INFO& info )
 {
 	ULONG n = 0;
-	UNICODE_STRING& path = info.path;
+	UNICODE_STRING& path = info.Path;
 
 	trace("path = %pus\n", &path );
 
@@ -200,7 +200,7 @@ NTSTATUS OBJECT_DIR_IMPL::Open( OBJECT*& obj, OPEN_INFO& info )
 	segment.Length = n * 2;
 	segment.MaximumLength = 0;
 
-	obj = Lookup( segment, info.case_insensitive() );
+	obj = Lookup( segment, info.CaseInsensitive() );
 
 	if (n == path.Length/2)
 		return info.OnOpen( this, obj, info );
@@ -223,7 +223,7 @@ public:
 
 NTSTATUS FIND_OBJECT::OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 {
-	trace("FIND_OBJECT::on_open %pus %s\n", &info.path,
+	trace("FIND_OBJECT::on_open %pus %s\n", &info.Path,
 		  obj ? "exists" : "doesn't exist");
 	if (!obj)
 		return STATUS_OBJECT_NAME_NOT_FOUND;
@@ -235,7 +235,7 @@ NTSTATUS FIND_OBJECT::OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 		return STATUS_INVALID_PARAMETER;
 	}
 
-	addref( obj );
+	AddRef( obj );
 
 	return STATUS_SUCCESS;
 }
@@ -256,8 +256,8 @@ NTSTATUS FindObjectByName( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 
 	FIND_OBJECT oi;
 	oi.Attributes = oa->Attributes;
-	oi.root = oa->RootDirectory;
-	oi.path.set( *oa->ObjectName );
+	oi.Root = oa->RootDirectory;
+	oi.Path.set( *oa->ObjectName );
 
 	return OpenRoot( *out, oi );
 }
@@ -277,7 +277,7 @@ NAME_OBJECT::NAME_OBJECT( OBJECT *in ) :
 
 NTSTATUS NAME_OBJECT::OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 {
-	trace("NAME_OBJECT::on_open %pus\n", &info.path);
+	trace("NAME_OBJECT::on_open %pus\n", &info.Path);
 
 	if (obj)
 	{
@@ -288,7 +288,7 @@ NTSTATUS NAME_OBJECT::OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 	obj = obj_to_name;
 
 	NTSTATUS r;
-	r = obj->name.copy( &info.path );
+	r = obj->Name.copy( &info.Path );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -302,7 +302,7 @@ NTSTATUS NameObject( OBJECT *obj, const OBJECT_ATTRIBUTES *oa )
 	if (!oa)
 		return STATUS_SUCCESS;
 
-	obj->attr = oa->Attributes;
+	obj->Attr = oa->Attributes;
 	if (!oa->ObjectName)
 		return STATUS_SUCCESS;
 	if (!oa->ObjectName->Buffer)
@@ -314,8 +314,8 @@ NTSTATUS NameObject( OBJECT *obj, const OBJECT_ATTRIBUTES *oa )
 
 	NAME_OBJECT oi( obj );
 	oi.Attributes = oa->Attributes;
-	oi.root = oa->RootDirectory;
-	oi.path.set( *oa->ObjectName );
+	oi.Root = oa->RootDirectory;
+	oi.Path.set( *oa->ObjectName );
 
 	return OpenRoot( obj, oi );
 }
@@ -355,7 +355,7 @@ NTSTATUS NTAPI NtCreateDirectoryObject(
 	trace("%p %08lx %p\n", DirectoryHandle, DesiredAccess, ObjectAttributes );
 
 	OBJECT_DIR_FACTORY factory;
-	return factory.create( DirectoryHandle, DesiredAccess, ObjectAttributes );
+	return factory.Create( DirectoryHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtOpenDirectoryObject(
@@ -363,7 +363,7 @@ NTSTATUS NTAPI NtOpenDirectoryObject(
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes )
 {
-	return nt_open_object<OBJECT_DIR>( DirectoryObjectHandle, DesiredAccess, ObjectAttributes );
+	return NtOpenObject<OBJECT_DIR>( DirectoryObjectHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtQueryDirectoryObject(
@@ -384,7 +384,7 @@ NTSTATUS NTAPI NtQueryDirectoryObject(
 		return r;
 
 	OBJECT_DIR* dir = 0;
-	r = object_from_handle( dir, DirectoryHandle, DIRECTORY_QUERY );
+	r = ObjectFromHandle( dir, DirectoryHandle, DIRECTORY_QUERY );
 	if (r < STATUS_SUCCESS)
 		return r;
 

@@ -66,7 +66,7 @@ void IO_OBJECT::SetCompletionPort( COMPLETION_PORT *port, ULONG key )
 {
 	if (completion_port)
 	{
-		release( completion_port );
+		Release( completion_port );
 		completion_port = 0;
 	}
 	completion_port = port;
@@ -762,14 +762,14 @@ NTSTATUS DIRECTORY::Open( OBJECT *&out, OPEN_INFO& info )
 {
 	CFILE *file = 0;
 
-	trace("DIRECTORY::open %pus\n", &info.path );
+	trace("DIRECTORY::open %pus\n", &info.Path );
 
 	FILE_CREATE_INFO *file_info = dynamic_cast<FILE_CREATE_INFO*>( &info );
 	if (!file_info)
 		return STATUS_OBJECT_TYPE_MISMATCH;
 
-	NTSTATUS r = OpenFile( file, info.path, file_info->Attributes, file_info->CreateOptions,
-							file_info->CreateDisposition, file_info->created, info.case_insensitive() );
+	NTSTATUS r = OpenFile( file, info.Path, file_info->Attributes, file_info->CreateOptions,
+							file_info->CreateDisposition, file_info->created, info.CaseInsensitive() );
 	if (r < STATUS_SUCCESS)
 		return r;
 	out = file;
@@ -779,7 +779,7 @@ NTSTATUS DIRECTORY::Open( OBJECT *&out, OPEN_INFO& info )
 NTSTATUS OpenFile( CFILE *&file, UNICODE_STRING& name )
 {
 	FILE_CREATE_INFO info( 0, 0, FILE_OPEN );
-	info.path.set( name );
+	info.Path.set( name );
 	info.Attributes = OBJ_CASE_INSENSITIVE;
 	OBJECT *obj = 0;
 	NTSTATUS r = OpenRoot( obj, info );
@@ -800,7 +800,7 @@ void InitDrives()
 	dirname.copy( L"\\Device\\HarddiskVolume1" );
 	OBJECT *obj = 0;
 	NTSTATUS r;
-	r = factory.create_kernel( obj, dirname );
+	r = factory.CreateKernel( obj, dirname );
 	if (r < STATUS_SUCCESS)
 	{
 		trace( "failed to create %pus\n", &dirname);
@@ -857,7 +857,7 @@ NTSTATUS NTAPI NtCreateFile(
 
 	FILE_CREATE_INFO info( Attributes, CreateOptions, CreateDisposition );
 
-	info.path.set( *oa.ObjectName );
+	info.Path.set( *oa.ObjectName );
 	info.Attributes = oa.Attributes;
 
 	OBJECT *obj = 0;
@@ -865,7 +865,7 @@ NTSTATUS NTAPI NtCreateFile(
 	if (r >= STATUS_SUCCESS)
 	{
 		r = AllocUserHandle( obj, DesiredAccess, FileHandle );
-		release( obj );
+		Release( obj );
 	}
 
 	iosb.Status = r;
@@ -909,7 +909,7 @@ NTSTATUS NTAPI NtFsControlFile(
 	EVENT *event = 0;
 	NTSTATUS r;
 
-	r = object_from_handle( io, FileHandle, 0 );
+	r = ObjectFromHandle( io, FileHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -920,7 +920,7 @@ NTSTATUS NTAPI NtFsControlFile(
 #if 0
 	if (EventHandle)
 	{
-		r = object_from_handle( event, EventHandle, SYNCHRONIZE );
+		r = ObjectFromHandle( event, EventHandle, SYNCHRONIZE );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -972,7 +972,7 @@ NTSTATUS NTAPI NtWriteFile(
 	IO_OBJECT *io = 0;
 	NTSTATUS r;
 
-	r = object_from_handle( io, FileHandle, 0 );
+	r = ObjectFromHandle( io, FileHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1017,7 +1017,7 @@ NTSTATUS NTAPI NtQueryAttributesFile(
 	// FIXME: use oa.RootDirectory
 	OBJECT *obj = 0;
 	FILE_CREATE_INFO open_info( 0, 0, FILE_OPEN );
-	open_info.path.set( *oa.ObjectName );
+	open_info.Path.set( *oa.ObjectName );
 	open_info.Attributes = oa.Attributes;
 	r = OpenRoot( obj, open_info );
 	if (r < STATUS_SUCCESS)
@@ -1032,7 +1032,7 @@ NTSTATUS NTAPI NtQueryAttributesFile(
 	}
 	else
 		r = STATUS_OBJECT_TYPE_MISMATCH;
-	release( obj );
+	Release( obj );
 
 	return r;
 }
@@ -1067,7 +1067,7 @@ NTSTATUS NTAPI NtReadFile(
 	NTSTATUS r;
 	IO_OBJECT *io = 0;
 
-	r = object_from_handle( io, FileHandle, GENERIC_READ );
+	r = ObjectFromHandle( io, FileHandle, GENERIC_READ );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1110,7 +1110,7 @@ NTSTATUS NTAPI NtDeleteFile(
 	// FIXME: use oa.RootDirectory
 	OBJECT *obj = 0;
 	FILE_CREATE_INFO open_info( 0, 0, FILE_OPEN );
-	open_info.path.set( *oa.ObjectName );
+	open_info.Path.set( *oa.ObjectName );
 	open_info.Attributes = oa.Attributes;
 	r = OpenRoot( obj, open_info );
 	if (r < STATUS_SUCCESS)
@@ -1121,7 +1121,7 @@ NTSTATUS NTAPI NtDeleteFile(
 		r = file->Remove();
 	else
 		r = STATUS_OBJECT_TYPE_MISMATCH;
-	release( obj );
+	Release( obj );
 	return r;
 }
 
@@ -1159,7 +1159,7 @@ NTSTATUS NTAPI NtSetInformationFile(
 		FILE_PIPE_INFORMATION pipe;
 	} info;
 
-	r = object_from_handle( file, FileHandle, 0 );
+	r = ObjectFromHandle( file, FileHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1194,7 +1194,7 @@ NTSTATUS NTAPI NtSetInformationFile(
 		trace("delete = %d\n", info.dispos.DeleteFile);
 		break;
 	case FileCompletionInformation:
-		r = object_from_handle( completion_port, info.completion.CompletionPort, IO_COMPLETION_MODIFY_STATE );
+		r = ObjectFromHandle( completion_port, info.completion.CompletionPort, IO_COMPLETION_MODIFY_STATE );
 		if (r < STATUS_SUCCESS)
 			return r;
 		file->SetCompletionPort( completion_port, info.completion.CompletionKey );
@@ -1225,7 +1225,7 @@ NTSTATUS NTAPI NtQueryInformationFile(
 	CFILE *file = 0;
 	NTSTATUS r;
 
-	r = object_from_handle( file, FileHandle, 0 );
+	r = ObjectFromHandle( file, FileHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1327,7 +1327,7 @@ NTSTATUS NTAPI NtQueryDirectoryFile(
 	NTSTATUS r;
 
 	DIRECTORY *dir = 0;
-	r = object_from_handle( dir, DirectoryHandle, 0 );
+	r = ObjectFromHandle( dir, DirectoryHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 

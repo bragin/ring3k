@@ -47,14 +47,14 @@ typedef LIST_ANCHOR<thread_obj_wait_t, 0> thread_obj_wait_list_t;
 typedef LIST_ELEMENT<thread_obj_wait_t> thread_obj_wait_element_t;
 typedef LIST_ITER<thread_obj_wait_t, 0> thread_obj_wait_iter_t;
 
-struct thread_obj_wait_t : public watch_t
+struct thread_obj_wait_t : public WATCH
 {
 	thread_obj_wait_element_t Entry[1];
 	SYNC_OBJECT *obj;
 	THREAD_IMPL *thread;
 public:
 	thread_obj_wait_t( THREAD_IMPL* t, SYNC_OBJECT* o);
-	virtual void notify();
+	virtual void Notify();
 	virtual ~thread_obj_wait_t();
 	BOOLEAN IsSignalled()
 	{
@@ -268,7 +268,7 @@ void THREAD_IMPL::set_state( THREAD_STATE state )
 		runlist_add();
 		break;
 	case StateTerminated:
-		notify_watchers();
+		NotifyWatchers();
 		if (prev_state == StateRunning)
 			runlist_remove();
 		break;
@@ -807,8 +807,8 @@ NTSTATUS THREAD_IMPL::zero_tls_cells( ULONG index )
 void THREAD_IMPL::RegisterTerminatePort( OBJECT *port )
 {
 	if (terminate_port)
-		release(terminate_port);
-	addref( port );
+		Release(terminate_port);
+	AddRef( port );
 	terminate_port = port;
 }
 
@@ -942,7 +942,7 @@ THREAD::THREAD(PROCESS *p) :
 	queue(0)
 {
 	id = AllocateId();
-	addref( process );
+	AddRef( process );
 	process->threads.Append( this );
 }
 
@@ -951,7 +951,7 @@ THREAD::~THREAD()
 	if (queue)
 		delete queue;
 	process->threads.Unlink( this );
-	release( process );
+	Release( process );
 }
 
 THREAD_IMPL::THREAD_IMPL( PROCESS *p ) :
@@ -1043,7 +1043,7 @@ NTSTATUS NTAPI NtResumeThread(
 
 	trace("%p %p\n", ThreadHandle, PreviousSuspendCount );
 
-	r = object_from_handle( thread, ThreadHandle, 0 );
+	r = ObjectFromHandle( thread, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1067,11 +1067,11 @@ thread_obj_wait_t::thread_obj_wait_t( THREAD_IMPL* t, SYNC_OBJECT* o):
 	obj(o),
 	thread(t)
 {
-	addref(obj);
-	obj->add_watch( this );
+	AddRef(obj);
+	obj->AddWatch( this );
 }
 
-void thread_obj_wait_t::notify()
+void thread_obj_wait_t::Notify()
 {
 	//trace("waking %p\n", thread);
 	thread->notify();
@@ -1109,8 +1109,8 @@ NTSTATUS THREAD_IMPL::check_wait()
 
 thread_obj_wait_t::~thread_obj_wait_t()
 {
-	obj->remove_watch( this );
-	release(obj);
+	obj->RemoveWatch( this );
+	Release(obj);
 }
 
 NTSTATUS THREAD_IMPL::wait_on( SYNC_OBJECT *obj )
@@ -1210,7 +1210,7 @@ NTSTATUS THREAD_IMPL::wait_on_handles(
 	{
 		trace("handle[%ld] = %08lx\n", i, (ULONG) handles[i]);
 		OBJECT *any = 0;
-		r = object_from_handle( any, handles[i], SYNCHRONIZE );
+		r = ObjectFromHandle( any, handles[i], SYNCHRONIZE );
 		if (r < STATUS_SUCCESS)
 		{
 			end_wait();
@@ -1289,7 +1289,7 @@ NTSTATUS NTAPI NtWaitForSingleObject(
 	trace("%p %d %p\n", Handle, Alertable, Timeout);
 
 	OBJECT *any = 0;
-	r = object_from_handle( any, Handle, SYNCHRONIZE );
+	r = ObjectFromHandle( any, Handle, SYNCHRONIZE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1393,14 +1393,14 @@ NTSTATUS create_thread( THREAD **pthread, PROCESS *p, PCLIENT_ID id, CONTEXT *ct
 	if (r < STATUS_SUCCESS)
 	{
 		trace("releasing partially built thread\n");
-		release( t );
+		Release( t );
 		t = 0;
 	}
 	else
 	{
 		*pthread = t;
 		// FIXME: does a thread die when its last handle is closed?
-		addref( t );
+		AddRef( t );
 
 		t->GetClientID( id );
 	}
@@ -1536,7 +1536,7 @@ NTSTATUS NTAPI NtCreateThread(
 	if (r == STATUS_SUCCESS)
 	{
 		r = AllocUserHandle( t, DesiredAccess, Thread );
-		release( t );
+		Release( t );
 	}
 
 	if (r == STATUS_SUCCESS)
@@ -1588,7 +1588,7 @@ NTSTATUS NTAPI NtTerminateThread(
 		t = Current;
 	else
 	{
-		r = object_from_handle( t, ThreadHandle, 0 );
+		r = ObjectFromHandle( t, ThreadHandle, 0 );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -1649,7 +1649,7 @@ NTSTATUS NTAPI NtQueryInformationThread(
 
 	memset( &info, 0, sizeof info );
 
-	r = object_from_handle( t, ThreadHandle, 0 );
+	r = ObjectFromHandle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1691,7 +1691,7 @@ NTSTATUS NTAPI NtAlertThread(
 
 	trace("%p\n", ThreadHandle);
 
-	r = object_from_handle( t, ThreadHandle, 0 );
+	r = ObjectFromHandle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1728,8 +1728,8 @@ NTSTATUS THREAD_IMPL::test_alert()
 void THREAD_IMPL::set_token( token_t *tok )
 {
 	if (token)
-		release( token );
-	addref( tok );
+		Release( token );
+	AddRef( tok );
 	token = tok;
 }
 
@@ -1753,7 +1753,7 @@ NTSTATUS NTAPI NtSetInformationThread(
 		  ThreadInformation, ThreadInformationLength);
 
 	THREAD_IMPL *t = 0;
-	NTSTATUS r = object_from_handle( t, ThreadHandle, 0 );
+	NTSTATUS r = ObjectFromHandle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1772,7 +1772,7 @@ NTSTATUS NTAPI NtSetInformationThread(
 			if (r < STATUS_SUCCESS)
 				return r;
 			token_t *token = 0;
-			r = object_from_handle(token, TokenHandle, 0);
+			r = ObjectFromHandle(token, TokenHandle, 0);
 			if (r < STATUS_SUCCESS)
 				return r;
 			t->set_token( token );
@@ -1810,7 +1810,7 @@ NTSTATUS NTAPI NtQueueApcThread(
 	trace("%p %p %p %p %p\n", ThreadHandle, ApcRoutine, Arg1, Arg2, Arg3);
 
 	THREAD *t = 0;
-	NTSTATUS r = object_from_handle( t, ThreadHandle, 0 );
+	NTSTATUS r = ObjectFromHandle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1921,7 +1921,7 @@ NTSTATUS NTAPI NtGetContextThread(
 	trace("%p %p\n", ThreadHandle, Context );
 
 	THREAD *t = 0;
-	NTSTATUS r = object_from_handle( t, ThreadHandle, 0 );
+	NTSTATUS r = ObjectFromHandle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1943,7 +1943,7 @@ NTSTATUS NTAPI NtSetContextThread(
 	trace("%p %p\n", ThreadHandle, Context );
 
 	THREAD_IMPL *t = 0;
-	NTSTATUS r = object_from_handle( t, ThreadHandle, 0 );
+	NTSTATUS r = ObjectFromHandle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1989,12 +1989,12 @@ NTSTATUS NTAPI NtImpersonateThread(
 	trace("\n");
 
 	THREAD *t = 0;
-	NTSTATUS r = object_from_handle( t, ThreadHandle, 0 );
+	NTSTATUS r = ObjectFromHandle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	THREAD *target = 0;
-	r = object_from_handle( target, TargetThreadHandle, THREAD_DIRECT_IMPERSONATION );
+	r = ObjectFromHandle( target, TargetThreadHandle, THREAD_DIRECT_IMPERSONATION );
 	if (r < STATUS_SUCCESS)
 		return r;
 
