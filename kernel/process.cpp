@@ -726,7 +726,7 @@ NTSTATUS NTAPI NtSetInformationProcess(
 			r = ObjectFromHandle( port, info.port_handle, 0 );
 			if (r < STATUS_SUCCESS)
 				return r;
-			return set_exception_port( p, port );
+			return SetExceptionPort( p, port );
 		}
 		case ProcessBasePriority:
 			p->priority = info.priority;

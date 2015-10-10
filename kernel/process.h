@@ -75,6 +75,6 @@ public:
 extern PROCESS_LIST Processes;
 
 NTSTATUS create_process( PROCESS **pprocess, OBJECT *section );
-NTSTATUS set_exception_port( PROCESS *process, OBJECT *obj );
+NTSTATUS SetExceptionPort( PROCESS *process, OBJECT *obj );
 
 #endif // __PROCESS_H__

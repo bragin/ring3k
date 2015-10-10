@@ -36,7 +36,7 @@ typedef LIST_ANCHOR<THREAD,0> sibling_list_t;
 typedef LIST_ITER<THREAD,0> sibling_iter_t;
 typedef LIST_ELEMENT<THREAD> thread_element_t;
 
-struct port_t;
+struct PORT;
 struct PROCESS;
 
 struct exception_stack_frame
@@ -97,7 +97,7 @@ public:
 
 	// LPC information
 	ULONG MessageId;
-	port_t *port;
+	PORT *port;
 
 	thread_message_queue_tt* queue;
 
@@ -136,7 +136,7 @@ int run_thread(FIBER *arg);
 
 extern THREAD *Current;
 
-void send_terminate_message( THREAD *thread, OBJECT *port, LARGE_INTEGER& create_time );
-bool send_exception( THREAD *thread, EXCEPTION_RECORD &rec );
+void SendTerminateMessage( THREAD *thread, OBJECT *port, LARGE_INTEGER& create_time );
+bool SendException( THREAD *thread, EXCEPTION_RECORD &rec );
 
 #endif // __THREAD_H__

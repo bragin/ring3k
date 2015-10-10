@@ -459,7 +459,7 @@ void THREAD_IMPL::start_exception_handler(exception_stack_frame& info)
 		trace("NumberParameters %ld\n", info.rec.NumberParameters);
 	}
 
-	if (send_exception( this, info.rec ))
+	if (SendException( this, info.rec ))
 		return;
 
 	info.ctx.ContextFlags = context_all;
@@ -828,7 +828,7 @@ NTSTATUS THREAD_IMPL::Terminate( NTSTATUS status )
 	// send the thread terminate message if necessary
 	if (terminate_port)
 	{
-		send_terminate_message( this, terminate_port, times.CreateTime );
+		SendTerminateMessage( this, terminate_port, times.CreateTime );
 		terminate_port = 0;
 	}
 

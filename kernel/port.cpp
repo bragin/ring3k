@@ -43,7 +43,7 @@ typedef LIST_ITER<MESSAGE, 0> MESSAGE_ITER;
 class MESSAGE
 {
 public:
-	ULONG destination_id;
+	ULONG DestinationId;
 protected:
 	friend class LIST_ANCHOR<MESSAGE, 0>;
 	friend class LIST_ITER<MESSAGE, 0>;
@@ -57,81 +57,81 @@ public:
 		return Entry[0].IsLinked();
 	}
 	~MESSAGE();
-	void dump();
-	const char* msg_type();
+	void Dump();
+	const char* MsgType();
 public:
-	LPC_MESSAGE req;
+	LPC_MESSAGE Req;
 };
 
-struct listener_t;
-struct port_queue_t;
+struct LISTENER;
+struct PORT_QUEUE;
 
-typedef LIST_ANCHOR<listener_t, 0> listener_list_t;
-typedef LIST_ELEMENT<listener_t> listener_entry_t;
-typedef LIST_ITER<listener_t, 0> listener_iter_t;
+typedef LIST_ANCHOR<LISTENER, 0> LISTENER_LIST;
+typedef LIST_ELEMENT<LISTENER> LISTENER_ENTRY;
+typedef LIST_ITER<LISTENER, 0> LISTENER_ITER;
 
-struct listener_t
+struct LISTENER
 {
-	listener_entry_t Entry[1];
-	port_t *port;
-	THREAD *thread;
-	BOOLEAN want_connect;
-	ULONG message_id;
+	LISTENER_ENTRY Entry[1];
+	PORT *Port;
+	THREAD *Thread;
+	BOOLEAN WantConnect;
+	ULONG MessageId;
 public:
-	explicit listener_t(port_t *p, THREAD *t, BOOLEAN wc, ULONG id);
-	~listener_t();
+	explicit LISTENER(PORT *p, THREAD *t, BOOLEAN wc, ULONG id);
+	~LISTENER();
 	bool IsLinked()
 	{
 		return Entry[0].IsLinked();
 	}
 };
 
-struct port_queue_t : public OBJECT
+struct PORT_QUEUE : public OBJECT
 {
-	ULONG refs;
-	ULONG max_connect;
-	ULONG max_data;
-	MESSAGE_LIST messages;
-	listener_list_t listeners;
+	ULONG Refs;
+	ULONG MaxConnect;
+	ULONG MaxData;
+	MESSAGE_LIST Messages;
+	LISTENER_LIST Listeners;
 public:
-	explicit port_queue_t( ULONG max_connect, ULONG max_data );
-	~port_queue_t();
-	MESSAGE *find_connection_request();
+	explicit PORT_QUEUE( ULONG max_connect, ULONG max_data );
+	~PORT_QUEUE();
+	MESSAGE *FindConnectionRequest();
 };
 
-struct port_t : public OBJECT
+struct PORT: public OBJECT
 {
-	port_queue_t *queue;
-	BOOLEAN server;
-	THREAD *thread;
-	port_t *other;
-	section_t *section; // our section
-	BYTE *other_section_base;	// mapped address of other port's section
-	BYTE *our_section_base;	// mapped address of other port's section
-	ULONG view_size;
-	ULONG identifier;
-	MESSAGE *received_msg;
+	PORT_QUEUE *Queue;
+	BOOLEAN Server;
+	THREAD *Thread;
+	PORT *Other;
+	section_t *Section; // our Section
+	BYTE *OtherSectionBase;	// mapped address of Other Port's Section
+	BYTE *OurSectionBase;	// mapped address of Our Port's Section
+	ULONG ViewSize;
+	ULONG Identifier;
+	MESSAGE *ReceivedMsg;
 public:
-	explicit port_t( BOOLEAN s, THREAD *t, port_queue_t *q );
-	~port_t();
-	void send_message( MESSAGE *msg );
-	void send_close_message( void );
-	NTSTATUS send_reply( MESSAGE *reply );
-	void listen( MESSAGE *&msg );
-	NTSTATUS send_request( MESSAGE *msg );
-	void request_wait_reply( MESSAGE *msg, MESSAGE *&reply );
-	NTSTATUS reply_wait_receive( MESSAGE *reply, MESSAGE *&received );
-	NTSTATUS accept_connect( THREAD *t, MESSAGE *reply, PLPC_SECTION_WRITE server_write_sec );
+	explicit PORT( BOOLEAN s, THREAD *t, PORT_QUEUE *q );
+	~PORT();
+	void SendMessage( MESSAGE *msg );
+	void SendCloseMessage( void );
+	NTSTATUS SendReply( MESSAGE *reply );
+	void Listen( MESSAGE *&msg );
+	NTSTATUS SendRequest( MESSAGE *msg );
+	void RequestWaitReply( MESSAGE *msg, MESSAGE *&reply );
+	NTSTATUS ReplyWaitReceive( MESSAGE *reply, MESSAGE *&received );
+	NTSTATUS AcceptConnect( THREAD *t, MESSAGE *reply, PLPC_SECTION_WRITE server_write_sec );
 };
 
-struct exception_msg_data_t
+struct EXCEPTION_MSG_DATA
 {
 	ULONG EventCode;
 	ULONG Status;
 	EXCEPTION_RECORD ExceptionRecord;
 };
 
-static int unique_message_id = 0x101;
+static int UniqueMessageId = 0x101;
 
 void *MESSAGE::operator new(size_t msg_size, size_t extra)
 {
@@ -144,9 +144,9 @@ void MESSAGE::operator delete(void* ptr)
 }
 
 MESSAGE::MESSAGE() :
-	destination_id(0)
+	DestinationId(0)
 {
-	memset( &req, 0, sizeof req );
+	memset( &Req, 0, sizeof Req );
 }
 
 MESSAGE::~MESSAGE()
@@ -154,14 +154,14 @@ MESSAGE::~MESSAGE()
 	assert( !IsLinked() );
 }
 
-void unlink_and_free_message( MESSAGE_LIST *list, MESSAGE *msg )
+void UnlinkAndFreeMessage( MESSAGE_LIST *list, MESSAGE *msg )
 {
 	assert( msg->IsLinked() );
 	list->Unlink( msg );
 	delete msg;
 }
 
-void msg_free_unlinked( MESSAGE *msg )
+void MsgFreeUnlinked( MESSAGE *msg )
 {
 	if (!msg)
 		return;
@@ -170,9 +170,9 @@ void msg_free_unlinked( MESSAGE *msg )
 	delete msg;
 }
 
-const char* MESSAGE::msg_type()
+const char* MESSAGE::MsgType()
 {
-	switch (req.MessageType)
+	switch (Req.MessageType)
 	{
 #define M(x) case x: return #x;
 		M(LPC_NEW_MESSAGE)
@@ -192,61 +192,61 @@ const char* MESSAGE::msg_type()
 	}
 }
 
-void MESSAGE::dump()
+void MESSAGE::Dump()
 {
 	if (!OptionTrace)
 		return;
-	trace("DataSize    = %d\n", req.DataSize);
-	trace("MessageSize = %d\n", req.MessageSize);
-	trace("MessageType = %d (%s)\n", req.MessageType, msg_type());
-	trace("Offset      = %d\n", req.VirtualRangesOffset);
+	trace("DataSize    = %d\n", Req.DataSize);
+	trace("MessageSize = %d\n", Req.MessageSize);
+	trace("MessageType = %d (%s)\n", Req.MessageType, MsgType());
+	trace("Offset      = %d\n", Req.VirtualRangesOffset);
 	trace("ClientId    = %04x, %04x\n",
-		  (int)req.ClientId.UniqueProcess, (int)req.ClientId.UniqueThread);
-	trace("MessageId   = %ld\n", req.MessageId);
-	trace("SectionSize = %08lx\n", req.SectionSize);
-	DumpMem(&req.Data, req.DataSize);
+		  (int)Req.ClientId.UniqueProcess, (int)Req.ClientId.UniqueThread);
+	trace("MessageId   = %ld\n", Req.MessageId);
+	trace("SectionSize = %08lx\n", Req.SectionSize);
+	DumpMem(&Req.Data, Req.DataSize);
 }
 
-port_t *port_from_obj( OBJECT *obj )
+PORT *PortFromObj( OBJECT *obj )
 {
-	return dynamic_cast<port_t*>( obj );
+	return dynamic_cast<PORT*>( obj );
 }
 
-NTSTATUS port_from_handle( HANDLE handle, port_t *& port )
+NTSTATUS PortFromHandle( HANDLE handle, PORT *& port )
 {
 	return ObjectFromHandle( port, handle, 0 );
 }
 
-void send_terminate_message(
+void SendTerminateMessage(
 	THREAD *thread,
 	OBJECT *terminate_port,
 	LARGE_INTEGER& create_time )
 {
-	port_t *port = dynamic_cast<port_t*>( terminate_port );
+	PORT *port = dynamic_cast<PORT*>( terminate_port );
 	assert(port);
 	create_time.QuadPart = 0;
 
-	trace("thread = %p port = %p\n", thread, port);
+	trace("Thread = %p Port = %p\n", thread, port);
 
 	ULONG data_size = sizeof create_time;
 	ULONG msg_size = FIELD_OFFSET(LPC_MESSAGE, Data) + data_size;
 
 	MESSAGE *msg = new(msg_size) MESSAGE;
 
-	msg->req.MessageSize = msg_size;
-	msg->req.MessageType = LPC_CLIENT_DIED;
-	msg->req.DataSize = data_size;
-	thread->GetClientID( &msg->req.ClientId );
-	msg->req.MessageId = unique_message_id++;
-	memcpy( &msg->req.Data, &create_time, sizeof create_time );
+	msg->Req.MessageSize = msg_size;
+	msg->Req.MessageType = LPC_CLIENT_DIED;
+	msg->Req.DataSize = data_size;
+	thread->GetClientID( &msg->Req.ClientId );
+	msg->Req.MessageId = UniqueMessageId++;
+	memcpy( &msg->Req.Data, &create_time, sizeof create_time );
 
-	port->send_message( msg );
+	port->SendMessage( msg );
 	Release(terminate_port);
 }
 
-NTSTATUS set_exception_port( PROCESS *process, OBJECT *obj )
+NTSTATUS SetExceptionPort( PROCESS *process, OBJECT *obj )
 {
-	port_t *port = port_from_obj( obj );
+	PORT *port = PortFromObj( obj );
 	if (!port)
 		return STATUS_OBJECT_TYPE_MISMATCH;
 	if (process->exception_port)
@@ -256,37 +256,37 @@ NTSTATUS set_exception_port( PROCESS *process, OBJECT *obj )
 	return STATUS_SUCCESS;
 }
 
-bool send_exception( THREAD *thread, EXCEPTION_RECORD& rec )
+bool SendException( THREAD *thread, EXCEPTION_RECORD& rec )
 {
 	if (!thread->process->exception_port)
 		return false;
 
-	port_t *port = static_cast<port_t*>(thread->process->exception_port);
+	PORT *port = static_cast<PORT*>(thread->process->exception_port);
 
-	trace("thread = %p port = %p\n", thread, port);
+	trace("Thread = %p Port = %p\n", thread, port);
 
 	ULONG status = STATUS_PENDING;
 	while (1)
 	{
 		MESSAGE *msg = new(0x78) MESSAGE;
 
-		msg->req.MessageSize = 0x78;
-		msg->req.MessageType = LPC_EXCEPTION;
-		msg->req.DataSize = 0x5c;
-		thread->GetClientID( &msg->req.ClientId );
-		msg->req.MessageId = unique_message_id++;
+		msg->Req.MessageSize = 0x78;
+		msg->Req.MessageType = LPC_EXCEPTION;
+		msg->Req.DataSize = 0x5c;
+		thread->GetClientID( &msg->Req.ClientId );
+		msg->Req.MessageId = UniqueMessageId++;
 
-		exception_msg_data_t *x;
+		EXCEPTION_MSG_DATA *x;
 
-		x = (typeof x) &msg->req.Data[0];
+		x = (typeof x) &msg->Req.Data[0];
 		x->Status = status;
 		x->EventCode = 0;
 		x->ExceptionRecord = rec;
 
 		// send the message and block waiting for a response
 		MESSAGE *reply = 0;
-		port->request_wait_reply( msg, reply );
-		x = (typeof x) &reply->req.Data[0];
+		port->RequestWaitReply( msg, reply );
+		x = (typeof x) &reply->Req.Data[0];
 		status = x->Status;
 		delete reply;
 
@@ -310,30 +310,30 @@ bool send_exception( THREAD *thread, EXCEPTION_RECORD& rec )
 	return false;
 }
 
-listener_t::listener_t(port_t *p, THREAD *t, BOOLEAN connect, ULONG id) :
-	port(p),
-	thread(t),
-	want_connect(connect),
-	message_id(id)
+LISTENER::LISTENER(PORT *p, THREAD *t, BOOLEAN connect, ULONG id) :
+	Port(p),
+	Thread(t),
+	WantConnect(connect),
+	MessageId(id)
 {
 	AddRef( t );
-	port->queue->listeners.Append( this );
+	Port->Queue->Listeners.Append( this );
 }
 
-listener_t::~listener_t()
+LISTENER::~LISTENER()
 {
-	// maybe still linked if the thread was terminated
+	// maybe still linked if the Thread was terminated
 	if (IsLinked())
-		port->queue->listeners.Unlink( this );
-	Release( thread );
+		Port->Queue->Listeners.Unlink( this );
+	Release( Thread );
 }
 
-static inline ULONG round_up( ULONG len )
+static inline ULONG RoundUp( ULONG len )
 {
 	return (len + 3) & ~3;
 }
 
-NTSTATUS copy_msg_from_user( MESSAGE **message, LPC_MESSAGE *Reply, ULONG max_data )
+NTSTATUS CopyMsgFromUser( MESSAGE **message, LPC_MESSAGE *Reply, ULONG max_data )
 {
 	LPC_MESSAGE reply_hdr;
 	MESSAGE *msg;
@@ -349,13 +349,13 @@ NTSTATUS copy_msg_from_user( MESSAGE **message, LPC_MESSAGE *Reply, ULONG max_da
 	if (reply_hdr.MessageSize > max_data)
 		return STATUS_PORT_MESSAGE_TOO_LONG;
 
-	ULONG len = round_up(reply_hdr.DataSize);
+	ULONG len = RoundUp(reply_hdr.DataSize);
 	msg = new(len) MESSAGE;
 	if (!msg)
 		return STATUS_NO_MEMORY;
 
-	memcpy( &msg->req, &reply_hdr, sizeof reply_hdr );
-	r = CopyFromUser( &msg->req.Data, &Reply->Data[0], len );
+	memcpy( &msg->Req, &reply_hdr, sizeof reply_hdr );
+	r = CopyFromUser( &msg->Req.Data, &Reply->Data[0], len );
 	if (r < STATUS_SUCCESS)
 		delete msg;
 	else
@@ -364,24 +364,24 @@ NTSTATUS copy_msg_from_user( MESSAGE **message, LPC_MESSAGE *Reply, ULONG max_da
 	return r;
 }
 
-NTSTATUS copy_msg_to_user( LPC_MESSAGE *addr, MESSAGE *msg )
+NTSTATUS CopyMsgToUser( LPC_MESSAGE *addr, MESSAGE *msg )
 {
-	return CopyToUser( addr, &msg->req, round_up(msg->req.MessageSize) );
+	return CopyToUser( addr, &msg->Req, RoundUp(msg->Req.MessageSize) );
 }
 
-port_queue_t::~port_queue_t()
+PORT_QUEUE::~PORT_QUEUE()
 {
 	MESSAGE *m;
 
 	//trace("%p\n", this);
 
-	while ((m = messages.Head() ))
-		unlink_and_free_message( &messages, m );
+	while ((m = Messages.Head() ))
+		UnlinkAndFreeMessage( &Messages, m );
 
-	assert( listeners.Empty() );
+	assert( Listeners.Empty() );
 }
 
-void port_t::send_close_message( void )
+void PORT::SendCloseMessage( void )
 {
 	MESSAGE *msg;
 
@@ -391,23 +391,23 @@ void port_t::send_close_message( void )
 
 	msg = new(data_size) MESSAGE;
 
-	// FIXME: Should we queue the message?
+	// FIXME: Should we Queue the message?
 	//		What if new() fails?
 	//		Should we send the message to every listener?
 
-	msg->req.MessageSize = msg_size;
-	msg->req.MessageType = LPC_PORT_CLOSED;
-	msg->req.DataSize = data_size;
-	Current->GetClientID( &msg->req.ClientId );
-	msg->req.MessageId = unique_message_id++;
+	msg->Req.MessageSize = msg_size;
+	msg->Req.MessageType = LPC_PORT_CLOSED;
+	msg->Req.DataSize = data_size;
+	Current->GetClientID( &msg->Req.ClientId );
+	msg->Req.MessageId = UniqueMessageId++;
 
-	send_message( msg );
+	SendMessage( msg );
 	//msg_free_unlinked( msg );
 }
 
-port_t::~port_t()
+PORT::~PORT()
 {
-	// check if this is the exception port for any processes
+	// check if this is the exception Port for any processes
 	for ( PROCESS_ITER i(Processes); i; i.Next() )
 	{
 		PROCESS *p = i;
@@ -415,62 +415,62 @@ port_t::~port_t()
 			p->exception_port = 0;
 	}
 
-	if (other_section_base)
-		thread->process->vm->UnmapView( other_section_base );
-	if (our_section_base)
-		thread->process->vm->UnmapView( our_section_base );
-	if (section)
-		Release(section);
-	if (other)
+	if (OtherSectionBase)
+		Thread->process->vm->UnmapView( OtherSectionBase );
+	if (OurSectionBase)
+		Thread->process->vm->UnmapView( OurSectionBase );
+	if (Section)
+		Release(Section);
+	if (Other)
 	{
-		other->other = 0;
-		other = 0;
-		send_close_message();
+		Other->Other = 0;
+		Other = 0;
+		SendCloseMessage();
 	}
-	Release( queue );
-	Release( thread );
+	Release( Queue );
+	Release( Thread );
 }
 
-port_t::port_t( BOOLEAN s, THREAD *t, port_queue_t *q ) :
-	queue(q),
-	server(s),
-	thread(t),
-	other(0),
-	section(0),
-	other_section_base(0),
-	our_section_base(0),
-	view_size(0),
-	identifier(0),
-	received_msg(0)
+PORT::PORT( BOOLEAN s, THREAD *t, PORT_QUEUE *q ) :
+	Queue(q),
+	Server(s),
+	Thread(t),
+	Other(0),
+	Section(0),
+	OtherSectionBase(0),
+	OurSectionBase(0),
+	ViewSize(0),
+	Identifier(0),
+	ReceivedMsg(0)
 {
 	if (q)
 		AddRef(q);
-	AddRef(thread);
+	AddRef(Thread);
 }
 
-port_queue_t::port_queue_t( ULONG _max_connect, ULONG _max_data ) :
-	max_connect( _max_connect ),
-	max_data( _max_data )
+PORT_QUEUE::PORT_QUEUE( ULONG _max_connect, ULONG _max_data ) :
+	MaxConnect( _max_connect ),
+	MaxData( _max_data )
 {
 }
 
-NTSTATUS create_named_port(
+NTSTATUS CreateNamedPort(
 	OBJECT **obj,
 	OBJECT_ATTRIBUTES *oa,
 	ULONG max_connect,
 	ULONG max_data )
 {
-	port_t *port;
+	PORT *port;
 	NTSTATUS r = STATUS_SUCCESS;
 
 	*obj = NULL;
 
-	port = new port_t( TRUE, Current, 0 );
+	port = new PORT( TRUE, Current, 0 );
 	if (!port)
 		return STATUS_NO_MEMORY;
 
-	port->queue = new port_queue_t( max_connect, max_data );
-	if (port->queue)
+	port->Queue = new PORT_QUEUE( max_connect, max_data );
+	if (port->Queue)
 	{
 		r = NameObject( port, oa );
 		if (r == STATUS_SUCCESS)
@@ -484,85 +484,85 @@ NTSTATUS create_named_port(
 	return r;
 }
 
-MESSAGE *port_queue_t::find_connection_request()
+MESSAGE *PORT_QUEUE::FindConnectionRequest()
 {
 	// check for existing connect requests
-	for ( MESSAGE_ITER i(messages); i ; i.Next() )
+	for ( MESSAGE_ITER i(Messages); i ; i.Next() )
 	{
 		MESSAGE *msg = i;
-		if (msg->req.MessageType == LPC_CONNECTION_REQUEST)
+		if (msg->Req.MessageType == LPC_CONNECTION_REQUEST)
 			return msg;
 	}
 	return 0;
 }
 
-NTSTATUS port_t::send_reply( MESSAGE *reply )
+NTSTATUS PORT::SendReply( MESSAGE *reply )
 {
-	reply->req.MessageType = LPC_REPLY;
-	Current->GetClientID( &reply->req.ClientId );
+	reply->Req.MessageType = LPC_REPLY;
+	Current->GetClientID( &reply->Req.ClientId );
 
-	reply->dump();
+	reply->Dump();
 
-	for (listener_iter_t i(queue->listeners); i; i.Next())
+	for (LISTENER_ITER i(Queue->Listeners); i; i.Next())
 	{
-		listener_t *l = i;
+		LISTENER *l = i;
 
-		if (l->want_connect)
+		if (l->WantConnect)
 			continue;
 
-		if (l->message_id == reply->req.MessageId)
+		if (l->MessageId == reply->Req.MessageId)
 		{
-			l->port->received_msg = reply;
-			queue->listeners.Unlink( l );
-			l->thread->Start();
+			l->Port->ReceivedMsg = reply;
+			Queue->Listeners.Unlink( l );
+			l->Thread->Start();
 			return STATUS_SUCCESS;
 		}
 	}
 	return STATUS_REPLY_MESSAGE_MISMATCH;
 }
 
-// Wake a thread that called NtListenPort or NtReplyWaitReceive
-void port_t::send_message( MESSAGE *msg )
+// Wake a Thread that called NtListenPort or NtReplyWaitReceive
+void PORT::SendMessage( MESSAGE *msg )
 {
-	msg->dump();
+	msg->Dump();
 
-	msg->destination_id = identifier;
-	queue->messages.Append( msg );
+	msg->DestinationId = Identifier;
+	Queue->Messages.Append( msg );
 
-	for (listener_iter_t i(queue->listeners); i; i.Next())
+	for (LISTENER_ITER i(Queue->Listeners); i; i.Next())
 	{
-		listener_t *l = i;
-		if (l->message_id)
+		LISTENER *l = i;
+		if (l->MessageId)
 			continue;
-		if (!l->want_connect || msg->req.MessageType == LPC_CONNECTION_REQUEST)
+		if (!l->WantConnect || msg->Req.MessageType == LPC_CONNECTION_REQUEST)
 		{
-			//trace("queue %p has listener %p\n", queue, l->thread);
-			queue->listeners.Unlink( l );
-			l->thread->Start();
+			//trace("Queue %p has listener %p\n", Queue, l->Thread);
+			Queue->Listeners.Unlink( l );
+			l->Thread->Start();
 			return;
 		}
 	}
 }
 
-void port_t::listen( MESSAGE *&msg )
+void PORT::Listen( MESSAGE *&msg )
 {
-	msg = queue->find_connection_request();
+	msg = Queue->FindConnectionRequest();
 	if (!msg)
 	{
-		// Block until somebody connects to this port.
-		listener_t l( this, Current, TRUE, 0 );
+		// Block until somebody connects to this Port.
+		LISTENER l( this, Current, TRUE, 0 );
 
 		Current->Wait();
 		if (Current->IsTerminated())
 			return;
 
-		msg = queue->find_connection_request();
+		msg = Queue->FindConnectionRequest();
 		assert(msg);
 	}
-	queue->messages.Unlink(msg);
+	Queue->Messages.Unlink(msg);
 }
 
-NTSTATUS connect_port(
+NTSTATUS ConnectPort(
 	PHANDLE out_handle,
 	UNICODE_STRING *name,
 	MESSAGE *msg,
@@ -574,7 +574,7 @@ NTSTATUS connect_port(
 	OBJECT_ATTRIBUTES oa;
 	NTSTATUS r;
 	OBJECT *obj = NULL;
-	port_t *port;
+	PORT *port;
 
 	trace("%pus\n", name);
 
@@ -589,55 +589,55 @@ NTSTATUS connect_port(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	// maybe the object should just be a queue...
+	// maybe the object should just be a Queue...
 	// try a test using ntconnectport on a result of itself
-	port_queue_t *queue;
+	PORT_QUEUE *queue;
 
-	port = port_from_obj( obj );
+	port = PortFromObj( obj );
 	if (!port)
 		return STATUS_OBJECT_TYPE_MISMATCH;
-	queue = port->queue;
+	queue = port->Queue;
 	Release(port);
 
 	// check the connect data isn't too big
-	if (queue->max_connect < msg->req.DataSize)
+	if (queue->MaxConnect < msg->Req.DataSize)
 		return STATUS_INVALID_PARAMETER;
 
-	// set the thread's MessageId so that complete_connect can find it
-	Current->MessageId = msg->req.MessageId;
+	// set the Thread's MessageId so that complete_connect can find it
+	Current->MessageId = msg->Req.MessageId;
 
-	port = new port_t( FALSE, Current, queue );
+	port = new PORT( FALSE, Current, queue );
 	if (!port)
 		return STATUS_NO_MEMORY;
 
-	// FIXME: use the section properly
+	// FIXME: use the Section properly
 	if (write_sec->SectionHandle)
 	{
-		r = ObjectFromHandle( port->section, write_sec->SectionHandle, 0 );
+		r = ObjectFromHandle( port->Section, write_sec->SectionHandle, 0 );
 		if (r < STATUS_SUCCESS)
 			return r;
-		AddRef(port->section);
+		AddRef(port->Section);
 	}
-	port->view_size = write_sec->ViewSize;
-	port->send_message( msg );
+	port->ViewSize = write_sec->ViewSize;
+	port->SendMessage( msg );
 
-	// port_t::accept_connect will set the port->other pointer
-	assert(port->other == 0);
-	assert(port->received_msg == 0);
+	// port_t::accept_connect will set the Port->Other pointer
+	assert(port->Other == 0);
+	assert(port->ReceivedMsg == 0);
 
-	// expect to be restarted by NtCompleteConnectPort when t->port is set
+	// expect to be restarted by NtCompleteConnectPort when t->Port is set
 	assert( 0 == Current->port);
 	Current->port = port;
 	Current->Wait();
 	assert( Current->port == 0 );
-	if (port->received_msg)
+	if (port->ReceivedMsg)
 	{
-		reply = port->received_msg;
-		port->received_msg = 0;
+		reply = port->ReceivedMsg;
+		port->ReceivedMsg = 0;
 	}
 
-	// failing to fill the "other" port is a connection refusal
-	if (port->other == 0)
+	// failing to fill the "Other" Port is a connection refusal
+	if (port->Other == 0)
 	{
 		Release( port );
 		return STATUS_PORT_CONNECTION_REFUSED;
@@ -655,163 +655,163 @@ NTSTATUS connect_port(
 
 		// Length seems to be always set to zero on output...
 		read_sec.Length = 0;
-		read_sec.ViewBase = port->other_section_base;
-		read_sec.ViewSize = port->other->view_size;
+		read_sec.ViewBase = port->OtherSectionBase;
+		read_sec.ViewSize = port->Other->ViewSize;
 
 		CopyToUser( ServerSharedMemory, &read_sec, sizeof read_sec );
 	}
 
-	write_sec->ViewBase = port->our_section_base;
-	write_sec->TargetViewBase = port->other->other_section_base;
+	write_sec->ViewBase = port->OurSectionBase;
+	write_sec->TargetViewBase = port->Other->OtherSectionBase;
 
 	if (MaximumMessageLength)
-		CopyToUser( MaximumMessageLength, &port->queue->max_data, sizeof (ULONG));
+		CopyToUser( MaximumMessageLength, &port->Queue->MaxData, sizeof (ULONG));
 
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS complete_connect_port( port_t *port )
+NTSTATUS CompleteConnectPort( PORT *port )
 {
-	//trace("%p\n", port);
+	//trace("%p\n", Port);
 
-	if (port->server)
+	if (port->Server)
 		return STATUS_INVALID_PORT_HANDLE;
 
-	if (!port->other)
+	if (!port->Other)
 		return STATUS_INVALID_PARAMETER;
 
-	// allow starting threads where t->port is set
-	THREAD *t = port->other->thread;
+	// allow starting threads where t->Port is set
+	THREAD *t = port->Other->Thread;
 	if (!t->port)
 		return STATUS_INVALID_PARAMETER;
 
-	// make sure we don't try restart the thread twice
+	// make sure we don't try restart the Thread twice
 	t->port = 0;
 
-	// restart the thread that was blocked on connect
+	// restart the Thread that was blocked on connect
 	t->Start();
 
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS port_t::accept_connect(
+NTSTATUS PORT::AcceptConnect(
 	THREAD *t,
 	MESSAGE *reply,
 	PLPC_SECTION_WRITE server_write_sec )
 {
 	//trace("%p %p %08lx\n", req->ClientId.UniqueProcess, req->ClientId.UniqueThread, req->MessageId);
 
-	// set the other pointer for connect_port
-	other = t->port;
-	other->other = this;
-	other->received_msg = reply;
+	// set the Other pointer for connect_port
+	Other = t->port;
+	Other->Other = this;
+	Other->ReceivedMsg = reply;
 
 	NTSTATUS r;
 	// map our section into the other process
 	if (server_write_sec->SectionHandle)
 	{
-		r = ObjectFromHandle( section, server_write_sec->SectionHandle, 0 );
+		r = ObjectFromHandle( Section, server_write_sec->SectionHandle, 0 );
 		if (r < STATUS_SUCCESS)
 			return r;
-		AddRef(section);
-		view_size = server_write_sec->ViewSize;
+		AddRef(Section);
+		ViewSize = server_write_sec->ViewSize;
 
-		// map our section into their process
-		assert(t->port->other_section_base == 0);
-		r = section->mapit( t->process->vm, t->port->other_section_base, 0,
+		// map our Section into their process
+		assert(t->port->OtherSectionBase == 0);
+		r = Section->mapit( t->process->vm, t->port->OtherSectionBase, 0,
 							MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
-		// map our section into our process
-		assert(our_section_base == 0);
-		r = section->mapit( Current->process->vm, our_section_base, 0,
+		// map our Section into our process
+		assert(OurSectionBase == 0);
+		r = Section->mapit( Current->process->vm, OurSectionBase, 0,
 							MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
-		trace("ours=%p theirs=%p\n", t->port->other_section_base, our_section_base);
+		trace("ours=%p theirs=%p\n", t->port->OtherSectionBase, OurSectionBase);
 	}
 
-	// map the other side's section into our process
-	if (other->section)
+	// map the Other side's Section into our process
+	if (Other->Section)
 	{
-		assert(other_section_base == 0);
-		// map their section into our process
-		r = other->section->mapit( Current->process->vm, other_section_base, 0,
+		assert(OtherSectionBase == 0);
+		// map their Section into our process
+		r = Other->Section->mapit( Current->process->vm, OtherSectionBase, 0,
 								   MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
-		// map their section into their process
-		r = other->section->mapit( t->process->vm, t->port->our_section_base, 0,
+		// map their Section into their process
+		r = Other->Section->mapit( t->process->vm, t->port->OurSectionBase, 0,
 								   MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
-		trace("theirs=%p ours=%p\n", other_section_base, t->port->our_section_base);
+		trace("theirs=%p ours=%p\n", OtherSectionBase, t->port->OurSectionBase);
 	}
 
-	server_write_sec->ViewBase = our_section_base;
-	server_write_sec->TargetViewBase = other->other_section_base;
+	server_write_sec->ViewBase = OurSectionBase;
+	server_write_sec->TargetViewBase = Other->OtherSectionBase;
 
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS port_t::send_request( MESSAGE *msg )
+NTSTATUS PORT::SendRequest( MESSAGE *msg )
 {
-	// queue a message into the port
+	// Queue a message into the Port
 	//msg->req.MessageSize = FIELD_OFFSET(LPC_MESSAGE, Data);
-	Current->GetClientID( &msg->req.ClientId );
-	msg->req.MessageId = unique_message_id++;
-	msg->req.SectionSize = 0;
-	msg->destination_id = identifier;
+	Current->GetClientID( &msg->Req.ClientId );
+	msg->Req.MessageId = UniqueMessageId++;
+	msg->Req.SectionSize = 0;
+	msg->DestinationId = Identifier;
 
-	Current->MessageId = msg->req.MessageId;
+	Current->MessageId = msg->Req.MessageId;
 
-	send_message( msg );
+	SendMessage( msg );
 	// receiver frees the message
 
 	return STATUS_SUCCESS;
 }
 
-void port_t::request_wait_reply( MESSAGE *msg, MESSAGE *&reply )
+void PORT::RequestWaitReply( MESSAGE *msg, MESSAGE *&reply )
 {
-	send_request( msg );
+	SendRequest( msg );
 
-	listener_t l( this, Current, FALSE, msg->req.MessageId );
+	LISTENER l( this, Current, FALSE, msg->Req.MessageId );
 
-	// put the thread to sleep while we wait for a reply
-	assert( received_msg == 0 );
+	// put the Thread to sleep while we wait for a reply
+	assert( ReceivedMsg == 0 );
 	Current->Wait();
-	reply = received_msg;
-	received_msg = 0;
+	reply = ReceivedMsg;
+	ReceivedMsg = 0;
 	assert( !reply->IsLinked() );
 }
 
-NTSTATUS port_t::reply_wait_receive( MESSAGE *reply, MESSAGE *& received )
+NTSTATUS PORT::ReplyWaitReceive( MESSAGE *reply, MESSAGE *& received )
 {
 	trace("%p %p %p\n", this, reply, received );
 
 	if (reply)
 	{
-		NTSTATUS r = send_reply( reply );
+		NTSTATUS r = SendReply( reply );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
 
-	received = queue->messages.Head();
+	received = Queue->Messages.Head();
 	if (!received)
 	{
-		listener_t l( this, Current, FALSE, 0 );
+		LISTENER l( this, Current, FALSE, 0 );
 
 		Current->Wait();
-		received = queue->messages.Head();
+		received = Queue->Messages.Head();
 	}
 	if (!received)
 		return STATUS_THREAD_IS_TERMINATING;
 	if (Current->IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
-	queue->messages.Unlink(received);
+	Queue->Messages.Unlink(received);
 	assert( !received->IsLinked() );
 
 	return STATUS_SUCCESS;
@@ -844,9 +844,9 @@ NTSTATUS NTAPI NtCreatePort(
 	if (MaxConnectInfoLength > 0x104)
 		return STATUS_INVALID_PARAMETER_3;
 
-	trace("root = %p port = %pus\n", oa.RootDirectory, oa.ObjectName );
+	trace("root = %p Port = %pus\n", oa.RootDirectory, oa.ObjectName );
 
-	r = create_named_port( &p, &oa, MaxConnectInfoLength, MaxDataLength );
+	r = CreateNamedPort( &p, &oa, MaxConnectInfoLength, MaxDataLength );
 	if (r == STATUS_SUCCESS)
 	{
 		r = AllocUserHandle( p, 0, Port );
@@ -860,12 +860,12 @@ NTSTATUS NTAPI NtListenPort(
 	HANDLE PortHandle,
 	PLPC_MESSAGE ConnectionRequest )
 {
-	port_t *port = 0;
+	PORT *port = 0;
 	NTSTATUS r;
 
 	trace("%p %p\n", PortHandle, ConnectionRequest);
 
-	r = port_from_handle( PortHandle, port );
+	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -877,10 +877,10 @@ NTSTATUS NTAPI NtListenPort(
 		return r;
 
 	MESSAGE *msg = 0;
-	port->listen( msg );
+	port->Listen( msg );
 	if (Current->IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
-	r = copy_msg_to_user( ConnectionRequest, msg );
+	r = CopyMsgToUser( ConnectionRequest, msg );
 	delete msg;
 
 	return r;
@@ -994,18 +994,18 @@ NTSTATUS NTAPI NtSecureConnectPort(
 	if (info_length > 0x104)
 		info_length = 0x108;
 
-	msg->req.DataSize = info_length;
-	msg->req.MessageSize = FIELD_OFFSET(LPC_MESSAGE, Data) + info_length;
-	msg->req.MessageType = LPC_CONNECTION_REQUEST;
-	Current->GetClientID( &msg->req.ClientId );
-	msg->req.MessageId = unique_message_id++;
-	msg->req.SectionSize = write_sec.ViewSize;
+	msg->Req.DataSize = info_length;
+	msg->Req.MessageSize = FIELD_OFFSET(LPC_MESSAGE, Data) + info_length;
+	msg->Req.MessageType = LPC_CONNECTION_REQUEST;
+	Current->GetClientID( &msg->Req.ClientId );
+	msg->Req.MessageId = UniqueMessageId++;
+	msg->Req.SectionSize = write_sec.ViewSize;
 
-	r = CopyFromUser( msg->req.Data, ConnectionInfo, info_length );
+	r = CopyFromUser( msg->Req.Data, ConnectionInfo, info_length );
 	if (r == STATUS_SUCCESS)
 	{
 		MESSAGE *reply = 0;
-		r = connect_port( ClientPortHandle, &name, msg, reply, MaximumMessageLength, &write_sec, ServerSharedMemory );
+		r = ConnectPort( ClientPortHandle, &name, msg, reply, MaximumMessageLength, &write_sec, ServerSharedMemory );
 		if (r == STATUS_SUCCESS && ClientSharedMemory)
 			CopyToUser( ClientSharedMemory, &write_sec, sizeof write_sec );
 
@@ -1016,10 +1016,10 @@ NTSTATUS NTAPI NtSecureConnectPort(
 			{
 				// the buffer can't be assumed to be bigger info_length
 				// so truncate the received data
-				if (info_length > reply->req.DataSize)
-					info_length = reply->req.DataSize;
+				if (info_length > reply->Req.DataSize)
+					info_length = reply->Req.DataSize;
 				if (ConnectionInfo)
-					CopyToUser( ConnectionInfo, reply->req.Data, info_length );
+					CopyToUser( ConnectionInfo, reply->Req.Data, info_length );
 				CopyToUser( ConnectionInfoLength, &info_length, sizeof info_length );
 			}
 			delete reply;
@@ -1035,13 +1035,13 @@ NTSTATUS NTAPI NtReplyWaitReceivePort(
 	PLPC_MESSAGE Reply,
 	PLPC_MESSAGE IncomingRequest )
 {
-	port_t *port = 0;
+	PORT *port = 0;
 	MESSAGE *reply_msg = NULL;
 	NTSTATUS r;
 
 	trace("%p %p %p %p\n", PortHandle, ReceivePortHandle, Reply, IncomingRequest);
 
-	r = port_from_handle( PortHandle, port );
+	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1054,7 +1054,7 @@ NTSTATUS NTAPI NtReplyWaitReceivePort(
 
 	if (Reply)
 	{
-		r = copy_msg_from_user( &reply_msg, Reply, port->queue->max_data );
+		r = CopyMsgFromUser( &reply_msg, Reply, port->Queue->MaxData );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -1067,15 +1067,15 @@ NTSTATUS NTAPI NtReplyWaitReceivePort(
 	}
 
 	MESSAGE *received = 0;
-	r = port->reply_wait_receive( reply_msg, received );
+	r = port->ReplyWaitReceive( reply_msg, received );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_msg_to_user( IncomingRequest, received );
+	r = CopyMsgToUser( IncomingRequest, received );
 	if (r == STATUS_SUCCESS)
 	{
 		if (ReceivePortHandle)
-			CopyToUser( ReceivePortHandle, &received->destination_id, sizeof (ULONG) );
+			CopyToUser( ReceivePortHandle, &received->DestinationId, sizeof (ULONG) );
 		delete received;
 	}
 
@@ -1088,25 +1088,25 @@ NTSTATUS NTAPI NtRequestWaitReplyPort(
 	PLPC_MESSAGE Reply )
 {
 	MESSAGE *msg = NULL;
-	port_t *port = 0;
+	PORT *port = 0;
 	NTSTATUS r;
 
 	trace("%p %p %p\n", PortHandle, Request, Reply );
 
-	r = port_from_handle( PortHandle, port );
+	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_msg_from_user( &msg, Request, port->queue->max_data );
+	r = CopyMsgFromUser( &msg, Request, port->Queue->MaxData );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	msg->req.MessageType = LPC_REQUEST;
+	msg->Req.MessageType = LPC_REQUEST;
 
 	MESSAGE *reply_msg = 0;
-	port->request_wait_reply( msg, reply_msg );
+	port->RequestWaitReply( msg, reply_msg );
 
-	r = copy_msg_to_user( Reply, reply_msg );
+	r = CopyMsgToUser( Reply, reply_msg );
 	if (r == STATUS_SUCCESS)
 		delete reply_msg;
 
@@ -1127,7 +1127,7 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 		  ConnectionReply, AcceptConnection, ServerSharedMemory, ClientSharedMemory );
 
 	MESSAGE *reply = 0;
-	r = copy_msg_from_user( &reply, ConnectionReply, 0x148 );
+	r = CopyMsgFromUser( &reply, ConnectionReply, 0x148 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1159,12 +1159,12 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 			return r;
 	}
 
-	THREAD *t = FindThreadByClientId( &reply->req.ClientId );
+	THREAD *t = FindThreadByClientId( &reply->Req.ClientId );
 	if (!t)
 		return STATUS_INVALID_CID;
 
-	trace("%08lx %08lx\n", t->MessageId, reply->req.MessageId);
-	if (t->MessageId != reply->req.MessageId)
+	trace("%08lx %08lx\n", t->MessageId, reply->Req.MessageId);
+	if (t->MessageId != reply->Req.MessageId)
 	{
 		trace("reply message mismatch\n");
 		return STATUS_REPLY_MESSAGE_MISMATCH;
@@ -1173,27 +1173,27 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 	// avoid accepting the same connection twice
 	if (!t->port)
 		return STATUS_REPLY_MESSAGE_MISMATCH;
-	if (t->port->other)
+	if (t->port->Other)
 		return STATUS_REPLY_MESSAGE_MISMATCH;
 
 	if (!AcceptConnection)
 	{
-		// restart the thread that was blocked on connect
+		// restart the Thread that was blocked on connect
 		t->port = 0;
 		t->Start();
 		return STATUS_SUCCESS;
 	}
 
 	assert( t->port );
-	assert( !t->port->other );
-	assert( t->port->queue );
+	assert( !t->port->Other );
+	assert( t->port->Queue );
 
-	port_t *port = new port_t( FALSE, Current, t->port->queue );
+	PORT *port = new PORT( FALSE, Current, t->port->Queue );
 	if (!port)
 		return STATUS_NO_MEMORY;
 
 	// tie the ports together
-	r = port->accept_connect( t, reply, &write_sec );
+	r = port->AcceptConnect( t, reply, &write_sec );
 	if (r < STATUS_SUCCESS)
 	{
 		delete port;
@@ -1209,11 +1209,11 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 	{
 		LPC_SECTION_READ read_sec;
 
-		if (port->other->section)
+		if (port->Other->Section)
 		{
 			read_sec.Length = sizeof read_sec;
-			read_sec.ViewBase = port->other_section_base;
-			read_sec.ViewSize = port->other->view_size;
+			read_sec.ViewBase = port->OtherSectionBase;
+			read_sec.ViewSize = port->Other->ViewSize;
 		}
 		else
 			memset( &read_sec, 0, sizeof read_sec);
@@ -1223,11 +1223,11 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 	if (ServerSharedMemory)
 		CopyToUser( ServerSharedMemory, &write_sec, sizeof write_sec );
 
-	// use the port's handle as its identifier
+	// use the Port's handle as its identifier
 	if (PortIdentifier)
-		port->other->identifier = PortIdentifier;
+		port->Other->Identifier = PortIdentifier;
 	else
-		port->other->identifier = (ULONG) handle;
+		port->Other->Identifier = (ULONG) handle;
 
 	Release( port );
 
@@ -1237,41 +1237,41 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 NTSTATUS NTAPI NtCompleteConnectPort(
 	HANDLE PortHandle )
 {
-	port_t *port = 0;
+	PORT *port = 0;
 	NTSTATUS r;
 
 	trace("%p\n", PortHandle);
 
-	r = port_from_handle( PortHandle, port );
+	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	return complete_connect_port( port );
+	return CompleteConnectPort( port );
 }
 
 NTSTATUS NTAPI NtReplyPort(
 	HANDLE PortHandle,
 	PLPC_MESSAGE reply )
 {
-	port_t *port = 0;
+	PORT *port = 0;
 	MESSAGE *msg = NULL;
 	NTSTATUS r;
 
 	trace("%p %p\n", PortHandle, reply );
 
-	r = port_from_handle( PortHandle, port );
+	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = copy_msg_from_user( &msg, reply, port->queue->max_data );
+	r = CopyMsgFromUser( &msg, reply, port->Queue->MaxData );
 	if (r < STATUS_SUCCESS)
 		goto error;
 
-	r = port->send_reply( msg );
+	r = port->SendReply( msg );
 
 error:
 	if (r < STATUS_SUCCESS)
-		msg_free_unlinked( msg );
+		MsgFreeUnlinked( msg );
 
 	return r;
 }
@@ -1279,12 +1279,12 @@ error:
 NTSTATUS NTAPI NtRegisterThreadTerminatePort(
 	HANDLE PortHandle)
 {
-	port_t *port = 0;
+	PORT *port = 0;
 	NTSTATUS r;
 
 	trace("%p\n", PortHandle);
 
-	r = port_from_handle( PortHandle, port );
+	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1297,33 +1297,33 @@ NTSTATUS NTAPI NtRequestPort(
 	HANDLE PortHandle,
 	PLPC_MESSAGE Request )
 {
-	port_t *port = 0;
+	PORT *port = 0;
 	NTSTATUS r;
 
 	trace("%p %p\n", PortHandle, Request);
 
-	r = port_from_handle( PortHandle, port );
+	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	MESSAGE *msg = 0;
-	r = copy_msg_from_user( &msg, Request, port->queue->max_data );
+	r = CopyMsgFromUser( &msg, Request, port->Queue->MaxData );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	msg->req.MessageType = LPC_DATAGRAM;
-	return port->send_request( msg );
+	msg->Req.MessageType = LPC_DATAGRAM;
+	return port->SendRequest( msg );
 }
 
 NTSTATUS NTAPI NtSetDefaultHardErrorPort(
 	HANDLE PortHandle )
 {
-	port_t *port = 0;
+	PORT *port = 0;
 	NTSTATUS r;
 
 	trace("%p\n", PortHandle );
 
-	r = port_from_handle( PortHandle, port );
+	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1340,12 +1340,12 @@ NTSTATUS NTAPI NtQueryInformationPort(
 	ULONG Length,
 	PULONG ReturnLength )
 {
-	port_t *port = 0;
+	PORT *port = 0;
 	NTSTATUS r;
 
 	trace("%p\n", PortHandle );
 
-	r = port_from_handle( PortHandle, port );
+	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
 		return r;
 
