@@ -49,7 +49,7 @@
 
 #include "ptrace_base.h"
 
-class skas3_address_space_impl: public ptrace_address_space_impl
+class skas3_address_space_impl: public PTRACE_ADRESS_SPACE_IMPL
 {
 	static int num_address_spaces;
 	int fd;
@@ -57,14 +57,14 @@ class skas3_address_space_impl: public ptrace_address_space_impl
 public:
 	static pid_t child_pid;
 	skas3_address_space_impl(int _fd);
-	virtual pid_t get_child_pid();
+	virtual pid_t GetChildPid();
 	virtual ~skas3_address_space_impl();
 	virtual int Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset );
 	virtual int Munmap( BYTE *address, size_t length );
 	virtual void Run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, EXECUTION_CONTEXT *exec );
 	static pid_t create_tracee(void);
 	static void init_fs(void);
-	virtual unsigned short get_userspace_fs();
+	virtual unsigned short GetUserspaceFs();
 };
 
 pid_t skas3_address_space_impl::child_pid = -1;
@@ -72,7 +72,7 @@ int skas3_address_space_impl::num_address_spaces;
 unsigned short skas3_address_space_impl::user_fs;
 
 // target for timer signals
-pid_t skas3_address_space_impl::get_child_pid()
+pid_t skas3_address_space_impl::GetChildPid()
 {
 	return child_pid;
 }
@@ -131,7 +131,7 @@ void skas3_address_space_impl::init_fs(void)
 	user_fs = (ldt.entry_number << 3) | 3;
 }
 
-unsigned short skas3_address_space_impl::get_userspace_fs()
+unsigned short skas3_address_space_impl::GetUserspaceFs()
 {
 	return user_fs;
 }
@@ -182,7 +182,7 @@ void skas3_address_space_impl::Run( void *TebBaseAddress, PCONTEXT ctx, int sing
 	if (r < 0)
 		Die("ptrace_set_address_space failed %d (%d)\n", r, errno);
 
-	ptrace_address_space_impl::Run( TebBaseAddress, ctx, single_step, timeout, exec );
+	PTRACE_ADRESS_SPACE_IMPL::Run( TebBaseAddress, ctx, single_step, timeout, exec );
 }
 
 skas3_address_space_impl::~skas3_address_space_impl()
@@ -235,7 +235,7 @@ bool InitSkas()
 	}
 	close( fd );
 	trace("using skas3\n");
-	ptrace_address_space_impl::set_signals();
+	PTRACE_ADRESS_SPACE_IMPL::SetSignals();
 	pCreateAddressSpace = &create_skas3_address_space;
 	return true;
 }

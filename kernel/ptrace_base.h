@@ -23,28 +23,28 @@
 
 #include "config.h"
 
-class ptrace_address_space_impl: public ADDRESS_SPACE_IMPL
+class PTRACE_ADRESS_SPACE_IMPL: public ADDRESS_SPACE_IMPL
 {
 protected:
-	static ptrace_address_space_impl *sig_target;
-	static void cancel_timer();
-	static void sigitimer_handler(int signal);
-	int get_context( PCONTEXT ctx );
-	int set_context( PCONTEXT ctx );
-	int ptrace_run( PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout );
-	virtual pid_t get_child_pid() = 0;
-	virtual void handle( int signal );
+	static PTRACE_ADRESS_SPACE_IMPL *SigTarget;
+	static void CancelTimer();
+	static void SigitimerHandler(int signal);
+	int GetContext( PCONTEXT ctx );
+	int SetContext( PCONTEXT ctx );
+	int PtraceRun( PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout );
+	virtual pid_t GetChildPid() = 0;
+	virtual void Handle( int signal );
 	virtual void Run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, EXECUTION_CONTEXT *exec );
-	virtual void alarm_timeout(LARGE_INTEGER& timeout);
-	virtual int set_userspace_fs(void *TebBaseAddress, ULONG fs);
+	virtual void AlarmTimeout(LARGE_INTEGER& timeout);
+	virtual int SetUserspaceFs(void *TebBaseAddress, ULONG fs);
 	virtual void InitContext( CONTEXT& ctx );
-	virtual unsigned short get_userspace_fs() = 0;
-	virtual unsigned short get_userspace_data_seg();
-	virtual unsigned short get_userspace_code_seg();
+	virtual unsigned short GetUserspaceFs() = 0;
+	virtual unsigned short GetUserspaceDataSeg();
+	virtual unsigned short GetUserspaceCodeSeg();
 	virtual int GetFaultInfo( void *& addr );
-	void wait_for_signal( pid_t pid, int signal );
+	void WaitForSignal( pid_t pid, int signal );
 public:
-	static void set_signals();
+	static void SetSignals();
 };
 
 

@@ -54,7 +54,7 @@
 const char stub_name[] = "ring3k-client";
 char stub_path[MAX_PATH];
 
-class tt_address_space_impl: public ptrace_address_space_impl
+class tt_address_space_impl: public PTRACE_ADRESS_SPACE_IMPL
 {
 	long stub_regs[FRAME_SIZE];
 	pid_t child_pid;
@@ -62,14 +62,14 @@ protected:
 	int userside_req( int type );
 public:
 	tt_address_space_impl();
-	virtual pid_t get_child_pid();
+	virtual pid_t GetChildPid();
 	virtual ~tt_address_space_impl();
 	virtual int Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset );
 	virtual int Munmap( BYTE *address, size_t length );
-	virtual unsigned short get_userspace_fs();
+	virtual unsigned short GetUserspaceFs();
 };
 
-pid_t tt_address_space_impl::get_child_pid()
+pid_t tt_address_space_impl::GetChildPid()
 {
 	return child_pid;
 }
@@ -92,13 +92,13 @@ tt_address_space_impl::tt_address_space_impl()
 	}
 
 	// trace through exec after traceme
-	wait_for_signal( pid, SIGTRAP );
+	WaitForSignal( pid, SIGTRAP );
 	r = ::ptrace( PTRACE_CONT, pid, 0, 0 );
 	if (r < 0)
 		Die("PTRACE_CONT failed (%d)\n", errno);
 
 	// client should hit a breakpoint
-	wait_for_signal( pid, SIGTRAP );
+	WaitForSignal( pid, SIGTRAP );
 	r = ptrace_get_regs( pid, stub_regs );
 	if (r < 0)
 		Die("constructor: ptrace_get_regs failed (%d)\n", errno);
@@ -108,7 +108,7 @@ tt_address_space_impl::tt_address_space_impl()
 
 tt_address_space_impl::~tt_address_space_impl()
 {
-	assert( sig_target == 0 );
+	assert( SigTarget == 0 );
 	//trace(stderr,"~tt_address_space_impl()\n");
 	Destroy();
 	ptrace( PTRACE_KILL, child_pid, 0, 0 );
@@ -139,7 +139,7 @@ int tt_address_space_impl::userside_req( int type )
 	if (r < 0)
 		Die("ptrace( PTRACE_CONT ) failed\n");
 
-	wait_for_signal( child_pid, SIGTRAP );
+	WaitForSignal( child_pid, SIGTRAP );
 	r = ptrace_get_regs( child_pid, stub_regs );
 	if (r < 0)
 		Die("ptrace_get_regs failed (%d)\n", errno);
@@ -171,7 +171,7 @@ int tt_address_space_impl::Munmap( BYTE *address, size_t length )
 	return userside_req( tt_req_umap );
 }
 
-unsigned short tt_address_space_impl::get_userspace_fs()
+unsigned short tt_address_space_impl::GetUserspaceFs()
 {
 	return stub_regs[FS];
 }
@@ -213,7 +213,7 @@ bool InitTt( const char *kernel_path )
 	get_stub_path( kernel_path );
 	check_proc();
 	trace("using thread tracing, kernel %s, client %s\n", kernel_path, stub_path );
-	ptrace_address_space_impl::set_signals();
+	PTRACE_ADRESS_SPACE_IMPL::SetSignals();
 	pCreateAddressSpace = &create_tt_address_space;
 	return true;
 }
