@@ -249,19 +249,19 @@ NTSTATUS SetExceptionPort( PROCESS *process, OBJECT *obj )
 	PORT *port = PortFromObj( obj );
 	if (!port)
 		return STATUS_OBJECT_TYPE_MISMATCH;
-	if (process->exception_port)
+	if (process->ExceptionPort)
 		return STATUS_PORT_ALREADY_SET;
 	// no addref here, destructors searchs processes...
-	process->exception_port = port;
+	process->ExceptionPort = port;
 	return STATUS_SUCCESS;
 }
 
 bool SendException( THREAD *thread, EXCEPTION_RECORD& rec )
 {
-	if (!thread->process->exception_port)
+	if (!thread->process->ExceptionPort)
 		return false;
 
-	PORT *port = static_cast<PORT*>(thread->process->exception_port);
+	PORT *port = static_cast<PORT*>(thread->process->ExceptionPort);
 
 	trace("Thread = %p Port = %p\n", thread, port);
 
@@ -299,7 +299,7 @@ bool SendException( THREAD *thread, EXCEPTION_RECORD& rec )
 			thread->Terminate(rec.ExceptionCode);
 			return true;
 		case DBG_TERMINATE_PROCESS:
-			thread->process->terminate(rec.ExceptionCode);
+			thread->process->Terminate(rec.ExceptionCode);
 			return true;
 		default:
 			trace("status = %08lx\n", status);
@@ -411,14 +411,14 @@ PORT::~PORT()
 	for ( PROCESS_ITER i(Processes); i; i.Next() )
 	{
 		PROCESS *p = i;
-		if (p->exception_port == this)
-			p->exception_port = 0;
+		if (p->ExceptionPort == this)
+			p->ExceptionPort = 0;
 	}
 
 	if (OtherSectionBase)
-		Thread->process->vm->UnmapView( OtherSectionBase );
+		Thread->process->Vm->UnmapView( OtherSectionBase );
 	if (OurSectionBase)
-		Thread->process->vm->UnmapView( OurSectionBase );
+		Thread->process->Vm->UnmapView( OurSectionBase );
 	if (Section)
 		Release(Section);
 	if (Other)
@@ -718,14 +718,14 @@ NTSTATUS PORT::AcceptConnect(
 
 		// map our Section into their process
 		assert(t->port->OtherSectionBase == 0);
-		r = Section->mapit( t->process->vm, t->port->OtherSectionBase, 0,
+		r = Section->mapit( t->process->Vm, t->port->OtherSectionBase, 0,
 							MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
 		// map our Section into our process
 		assert(OurSectionBase == 0);
-		r = Section->mapit( Current->process->vm, OurSectionBase, 0,
+		r = Section->mapit( Current->process->Vm, OurSectionBase, 0,
 							MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
@@ -738,13 +738,13 @@ NTSTATUS PORT::AcceptConnect(
 	{
 		assert(OtherSectionBase == 0);
 		// map their Section into our process
-		r = Other->Section->mapit( Current->process->vm, OtherSectionBase, 0,
+		r = Other->Section->mapit( Current->process->Vm, OtherSectionBase, 0,
 								   MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
 		// map their Section into their process
-		r = Other->Section->mapit( t->process->vm, t->port->OurSectionBase, 0,
+		r = Other->Section->mapit( t->process->Vm, t->port->OurSectionBase, 0,
 								   MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;

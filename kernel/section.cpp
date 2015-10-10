@@ -602,16 +602,16 @@ void *get_entry_point( PROCESS *p )
 	ULONG entry = 0;
 	NTSTATUS r;
 
-	PPEB ppeb = (PPEB) p->peb_section->get_kernel_address();
+	PPEB ppeb = (PPEB) p->PebSection->get_kernel_address();
 	dos = (IMAGE_DOS_HEADER*) ppeb->ImageBaseAddress;
 
-	r = p->vm->CopyFromUser( &ofs, &dos->e_lfanew, sizeof dos->e_lfanew );
+	r = p->Vm->CopyFromUser( &ofs, &dos->e_lfanew, sizeof dos->e_lfanew );
 	if (r < STATUS_SUCCESS)
 		return NULL;
 
 	nt = (IMAGE_NT_HEADERS*) ((BYTE*) dos + ofs);
 
-	r = p->vm->CopyFromUser( &entry, &nt->OptionalHeader.AddressOfEntryPoint,
+	r = p->Vm->CopyFromUser( &entry, &nt->OptionalHeader.AddressOfEntryPoint,
 							   sizeof nt->OptionalHeader.AddressOfEntryPoint );
 	if (r < STATUS_SUCCESS)
 		return NULL;
@@ -800,7 +800,7 @@ NTSTATUS NTAPI NtMapViewOfSection(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = section->mapit( p->vm, addr, ZeroBits,
+	r = section->mapit( p->Vm, addr, ZeroBits,
 						MEM_COMMIT | (AllocationType&MEM_TOP_DOWN), Protect );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -825,7 +825,7 @@ NTSTATUS NTAPI NtUnmapViewOfSection(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = p->vm->UnmapView( BaseAddress );
+	r = p->Vm->UnmapView( BaseAddress );
 
 	return r;
 }

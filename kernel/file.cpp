@@ -136,7 +136,7 @@ NTSTATUS CFILE::Read( PVOID Buffer, ULONG Length, ULONG *bytes_read )
 		BYTE *p = (BYTE*)Buffer+ofs;
 		size_t len = Length - ofs;
 
-		r = Current->process->vm->GetKernelAddress( &p, &len );
+		r = Current->process->Vm->GetKernelAddress( &p, &len );
 		if (r < STATUS_SUCCESS)
 			break;
 
@@ -164,7 +164,7 @@ NTSTATUS CFILE::Write( PVOID Buffer, ULONG Length, ULONG *written )
 		BYTE *p = (BYTE*)Buffer+ofs;
 		size_t len = Length - ofs;
 
-		NTSTATUS r = Current->process->vm->GetKernelAddress( &p, &len );
+		NTSTATUS r = Current->process->Vm->GetKernelAddress( &p, &len );
 		if (r < STATUS_SUCCESS)
 			break;
 

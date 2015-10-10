@@ -115,11 +115,11 @@ public:
 	template<typename T> static T* kernel_to_user( T* kernel_ptr )
 	{
 		ULONG ofs = (BYTE*) kernel_ptr - (BYTE*) g_gdi_shared_memory;
-		return (T*) (Current->process->win32k_info->dc_shared_mem + ofs);
+		return (T*) (Current->process->Win32kInfo->dc_shared_mem + ofs);
 	}
 	template<typename T> static T* user_to_kernel( T* user_ptr )
 	{
-		ULONG ofs = (BYTE*) user_ptr - (BYTE*) Current->process->win32k_info->dc_shared_mem;
+		ULONG ofs = (BYTE*) user_ptr - (BYTE*) Current->process->Win32kInfo->dc_shared_mem;
 		return (T*) (g_gdi_shared_memory + ofs);
 	}
 	BYTE *GetUserSharedMem() const;

@@ -148,19 +148,19 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 		return r;
 
 	/* create the initial process */
-	r = create_process( &p, section );
+	r = CreateProcess( &p, section );
 	Release( section );
 	section = NULL;
 
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	PPEB ppeb = (PPEB) p->peb_section->get_kernel_address();
-	p->create_exe_ppb( &ppeb->ProcessParameters, us );
+	PPEB ppeb = (PPEB) p->PebSection->get_kernel_address();
+	p->CreateExePPB( &ppeb->ProcessParameters, us );
 
 	/* map the stack */
 	pstack = NULL;
-	r = p->vm->AllocateVirtualMemory( &pstack, 0, stack_size, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE );
+	r = p->Vm->AllocateVirtualMemory( &pstack, 0, stack_size, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -171,14 +171,14 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 	init_teb.StackCommitMax = (BYTE*)init_teb.StackCommit - PAGE_SIZE;
 
 	/* initialize the first thread's context */
-	p->vm->InitContext( ctx );
+	p->Vm->InitContext( ctx );
 	ctx.Eip = (DWORD) get_entry_point( p );
 	ctx.Esp = (DWORD) pstack + stack_size - 8;
 
 	trace("entry point = %08lx\n", ctx.Eip);
 
 	/* when starting nt processes, make the PEB the first arg of NtProcessStartup */
-	r = p->vm->CopyToUser( (BYTE*) ctx.Esp + 4, &p->PebBaseAddress, sizeof p->PebBaseAddress );
+	r = p->Vm->CopyToUser( (BYTE*) ctx.Esp + 4, &p->PebBaseAddress, sizeof p->PebBaseAddress );
 
 	if (r == STATUS_SUCCESS)
 		r = create_thread( t, p, &id, &ctx, &init_teb, FALSE );
@@ -234,8 +234,8 @@ void DoCleanup( void )
 		if (p->IsSignalled())
 			continue;
 		num_processes++;
-		fprintf(stderr, "process %04lx\n", p->id);
-		for ( sibling_iter_t ti(p->threads); ti; ti.Next() )
+		fprintf(stderr, "process %04lx\n", p->Id);
+		for ( sibling_iter_t ti(p->Threads); ti; ti.Next() )
 		{
 			THREAD *t = ti;
 			if (t->IsSignalled())

@@ -801,7 +801,7 @@ NTSTATUS NTAPI NtAllocateVirtualMemory(
 		return STATUS_INVALID_PARAMETER_2;
 	addr = mem_round_addr( addr );
 
-	r = process->vm->AllocateVirtualMemory( &addr, ZeroBits, size, AllocationType, Protect );
+	r = process->Vm->AllocateVirtualMemory( &addr, ZeroBits, size, AllocationType, Protect );
 
 	trace("returns  %p %08lx  %08lx\n", addr, size, r);
 
@@ -850,7 +850,7 @@ NTSTATUS NTAPI NtQueryVirtualMemory(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = p->vm->Query( (BYTE*) BaseAddress, &info );
+	r = p->Vm->Query( (BYTE*) BaseAddress, &info );
 	if (r)
 		return r;
 
@@ -923,11 +923,11 @@ NTSTATUS NTAPI NtWriteVirtualMemory(
 		src = (BYTE*)Buffer;
 		dest = (BYTE*)BaseAddress;
 
-		r = Current->process->vm->GetKernelAddress( &src, &len );
+		r = Current->process->Vm->GetKernelAddress( &src, &len );
 		if (r < STATUS_SUCCESS)
 			break;
 
-		r = p->vm->GetKernelAddress( &dest, &len );
+		r = p->Vm->GetKernelAddress( &dest, &len );
 		if (r < STATUS_SUCCESS)
 			break;
 
@@ -993,7 +993,7 @@ NTSTATUS NTAPI NtFreeVirtualMemory(
 		return STATUS_INVALID_PARAMETER_2;
 	addr = mem_round_addr( addr );
 
-	r = process->vm->FreeVirtualMemory( addr, size, FreeType );
+	r = process->Vm->FreeVirtualMemory( addr, size, FreeType );
 
 	r = CopyFromUser( &size, RegionSize, sizeof (ULONG) );
 	if (r)

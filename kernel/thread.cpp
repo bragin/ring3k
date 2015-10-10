@@ -236,7 +236,7 @@ ULONG runlist_entry_t::num_active_threads()
 
 int THREAD_IMPL::set_initial_regs( void *start, void *stack)
 {
-	process->vm->InitContext( ctx );
+	process->Vm->InitContext( ctx );
 
 	ctx.Eip = (DWORD) start;
 	ctx.Esp = (DWORD) stack;
@@ -322,7 +322,7 @@ ULONG THREAD::TraceId()
 {
 	if (!process)
 		return id;
-	return id | (process->id<<8);
+	return id | (process->Id<<8);
 }
 
 NTSTATUS THREAD_IMPL::kernel_debugger_call( ULONG func, void *arg1, void *arg2 )
@@ -336,7 +336,7 @@ NTSTATUS THREAD_IMPL::kernel_debugger_call( ULONG func, void *arg1, void *arg2 )
 			break;
 		case 0x101:
 		{
-			const char *sym = process->vm->GetSymbol( (BYTE*) arg1 );
+			const char *sym = process->Vm->GetSymbol( (BYTE*) arg1 );
 			if (sym)
 				fprintf(stderr, "%04lx: %s called\n", TraceId(), sym);
 			else
@@ -411,11 +411,11 @@ bool THREAD_IMPL::traced_access()
 
 	// get the fault address
 	void* addr = 0;
-	if (0 != Current->process->vm->GetFaultInfo( addr ))
+	if (0 != Current->process->Vm->GetFaultInfo( addr ))
 		return false;
 
 	// confirm the memory is traced
-	if (!Current->process->vm->TracedAccess( addr, ctx.Eip ))
+	if (!Current->process->Vm->TracedAccess( addr, ctx.Eip ))
 		return false;
 
 	trace_accessed_address = addr;
@@ -495,7 +495,7 @@ void THREAD_IMPL::start_exception_handler(exception_stack_frame& info)
 
 	// get the address of the user side handler
 	// FIXME: this should be stored in the PROCESS structure
-	BYTE *pKiExceptionDispatcher = (BYTE*)process->pntdll +
+	BYTE *pKiExceptionDispatcher = (BYTE*)process->PNtDLL +
 								   get_proc_address( NtDLLSection, "KiUserExceptionDispatcher" );
 	if (!pKiExceptionDispatcher)
 		Die("failed to find KiExceptionDispatcher in ntdll\n");
@@ -594,7 +594,7 @@ NTSTATUS THREAD_IMPL::DoUserCallback( ULONG index, ULONG &length, PVOID &buffer)
 	callback_frame_t old_frame(this);
 
 	// setup the new execution context
-	BYTE *pKiUserCallbackDispatcher = (BYTE*)process->pntdll +
+	BYTE *pKiUserCallbackDispatcher = (BYTE*)process->PNtDLL +
 									  get_proc_address( NtDLLSection, "KiUserCallbackDispatcher" );
 
 	context_changed = 1;
@@ -693,7 +693,7 @@ BOOLEAN THREAD_IMPL::deliver_apc(NTSTATUS thread_return)
 		goto end;
 
 	void *pKiUserApcDispatcher;
-	pKiUserApcDispatcher = (BYTE*)process->pntdll + get_proc_address( NtDLLSection, "KiUserApcDispatcher" );
+	pKiUserApcDispatcher = (BYTE*)process->PNtDLL + get_proc_address( NtDLLSection, "KiUserApcDispatcher" );
 	if (!pKiUserApcDispatcher)
 		Die("failed to find KiUserApcDispatcher in ntdll\n");
 
@@ -774,26 +774,26 @@ void THREAD_IMPL::set_context( CONTEXT& c, bool override_return )
 
 NTSTATUS THREAD_IMPL::CopyToUser( void *dest, const void *src, size_t count )
 {
-	assert( process->is_valid() );
+	assert( process->IsValid() );
 	if (IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
-	return process->vm->CopyToUser( dest, src, count );
+	return process->Vm->CopyToUser( dest, src, count );
 }
 
 NTSTATUS THREAD_IMPL::CopyFromUser( void *dest, const void *src, size_t count )
 {
-	assert( process->is_valid() );
+	assert( process->IsValid() );
 	if (IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
-	return process->vm->CopyFromUser( dest, src, count );
+	return process->Vm->CopyFromUser( dest, src, count );
 }
 
 NTSTATUS THREAD_IMPL::VerifyForWrite( void *dest, size_t count )
 {
-	assert( process->is_valid() );
+	assert( process->IsValid() );
 	if (IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
-	return process->vm->VerifyForWrite( dest, count );
+	return process->Vm->VerifyForWrite( dest, count );
 }
 
 NTSTATUS THREAD_IMPL::zero_tls_cells( ULONG index )
@@ -836,7 +836,7 @@ NTSTATUS THREAD_IMPL::Terminate( NTSTATUS status )
 	if (process->IsSignalled())
 	{
 		trace("last thread in process exited %08lx\n", status);
-		process->terminate( status );
+		process->Terminate( status );
 	}
 
 	if (this == Current)
@@ -871,14 +871,14 @@ int THREAD_IMPL::Run()
 		LARGE_INTEGER timeout;
 		timeout.QuadPart = 10L; // 10ms
 
-		process->vm->Run( TebBaseAddress, &ctx, false, timeout, this );
+		process->Vm->Run( TebBaseAddress, &ctx, false, timeout, this );
 
 		if (trace_step_access)
 		{
 			// enable access to the memory, then single step over the access
-			process->vm->SetTraced( trace_accessed_address, false );
-			process->vm->Run( TebBaseAddress, &ctx, true, timeout, this );
-			process->vm->SetTraced( trace_accessed_address, true );
+			process->Vm->SetTraced( trace_accessed_address, false );
+			process->Vm->Run( TebBaseAddress, &ctx, true, timeout, this );
+			process->Vm->SetTraced( trace_accessed_address, true );
 			trace_step_access = false;
 		}
 
@@ -943,14 +943,14 @@ THREAD::THREAD(PROCESS *p) :
 {
 	id = AllocateId();
 	AddRef( process );
-	process->threads.Append( this );
+	process->Threads.Append( this );
 }
 
 THREAD::~THREAD()
 {
 	if (queue)
 		delete queue;
-	process->threads.Unlink( this );
+	process->Threads.Unlink( this );
 	Release( process );
 }
 
@@ -991,7 +991,7 @@ bool THREAD_IMPL::Win32kInitComplete()
 
 void THREAD::GetClientID( CLIENT_ID *client_id )
 {
-	client_id->UniqueProcess = (HANDLE) (process->id);
+	client_id->UniqueProcess = (HANDLE) (process->Id);
 	client_id->UniqueThread = (HANDLE) id;
 }
 
@@ -1433,7 +1433,7 @@ NTSTATUS THREAD_IMPL::create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspe
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = teb_section->mapit( process->vm, addr, 0, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE );
+	r = teb_section->mapit( process->Vm, addr, 0, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1457,11 +1457,11 @@ NTSTATUS THREAD_IMPL::create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspe
 	TebBaseAddress = pteb;
 
 	/* find entry points */
-	pLdrInitializeThunk = (BYTE*)process->pntdll + get_proc_address( NtDLLSection, "LdrInitializeThunk" );
+	pLdrInitializeThunk = (BYTE*)process->PNtDLL + get_proc_address( NtDLLSection, "LdrInitializeThunk" );
 	if (!pLdrInitializeThunk)
 		Die("failed to find LdrInitializeThunk in ntdll\n");
 
-	pKiUserApcDispatcher = (BYTE*)process->pntdll + get_proc_address( NtDLLSection, "KiUserApcDispatcher" );
+	pKiUserApcDispatcher = (BYTE*)process->PNtDLL + get_proc_address( NtDLLSection, "KiUserApcDispatcher" );
 	if (!pKiUserApcDispatcher)
 		Die("failed to find KiUserApcDispatcher in ntdll\n");
 
@@ -1479,21 +1479,21 @@ NTSTATUS THREAD_IMPL::create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspe
 		trace("set_initial_regs failed (%d)\n", err);
 
 	memset( &init_stack, 0, sizeof init_stack );
-	init_stack.pntdll = process->pntdll;  /* set to pexe if running a win32 program */
+	init_stack.pntdll = process->PNtDLL;  /* set to pexe if running a win32 program */
 	init_stack.pLdrInitializeThunk = pLdrInitializeThunk;
 
 	/* copy the context onto the stack for NtContinue */
 	memcpy( &init_stack.ctx, ctx, sizeof *ctx );
 	init_stack.ret  = (void*) 0xf00baa;
 
-	r = process->vm->CopyToUser( stack, &init_stack, sizeof init_stack );
+	r = process->Vm->CopyToUser( stack, &init_stack, sizeof init_stack );
 	if (r < STATUS_SUCCESS)
 		trace("failed to copy initial stack data\n");
 
 	if (!suspended)
 		Resume( NULL );
 
-	process->vm->SetTracer( addr, teb_trace );
+	process->Vm->SetTracer( addr, teb_trace );
 
 	return STATUS_SUCCESS;
 }
@@ -1599,7 +1599,7 @@ NTSTATUS NTAPI NtTerminateThread(
 
 ULONG THREAD_IMPL::is_last_thread()
 {
-	for ( sibling_iter_t i(process->threads); i; i.Next() )
+	for ( sibling_iter_t i(process->Threads); i; i.Next() )
 	{
 		THREAD *t = i;
 		if (t != this && !t->IsTerminated())

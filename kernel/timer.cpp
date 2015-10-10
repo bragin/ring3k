@@ -150,7 +150,7 @@ void timeout_t::remove()
 		g_timeouts.Unlink(this);
 }
 
-extern KUSER_SHARED_DATA *shared_memory_address;
+extern KUSER_SHARED_DATA *SharedMemoryAddress;
 
 // numbers from Wine's dlls/ntdll/time.c
 /* 1601 to 1970 is 369 years plus 89 leap days */
@@ -177,9 +177,9 @@ LARGE_INTEGER timeout_t::current_time()
 	// High1Time and High2Time need to be the same,
 	// as userspace loops waiting for them to be equal
 	// presumably to avoid a race when the LowPart overflows
-	if (shared_memory_address)
+	if (SharedMemoryAddress)
 	{
-		KSYSTEM_TIME& st = shared_memory_address->SystemTime;
+		KSYSTEM_TIME& st = SharedMemoryAddress->SystemTime;
 		st.LowPart = ret.LowPart;
 		st.High1Time = ret.HighPart;
 		st.High2Time = ret.HighPart;
@@ -187,8 +187,8 @@ LARGE_INTEGER timeout_t::current_time()
 		// http://uninformed.org/index.cgi?v=2&a=2&p=18
 		// milliseconds since boot (T)
 		// T = shr(TickCountLow * TickCountMultiplier, 24)
-		shared_memory_address->TickCountMultiplier = 0x100000;
-		shared_memory_address->TickCountLow = ((tick_count * 0x01000000LL)/shared_memory_address->TickCountMultiplier);
+		SharedMemoryAddress->TickCountMultiplier = 0x100000;
+		SharedMemoryAddress->TickCountLow = ((tick_count * 0x01000000LL)/SharedMemoryAddress->TickCountMultiplier);
 	}
 
 

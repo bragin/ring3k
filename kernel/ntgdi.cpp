@@ -292,7 +292,7 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 {
 	NTSTATUS r;
 
-	if (process->win32k_info)
+	if (process->Win32kInfo)
 		return STATUS_SUCCESS;
 
 	trace("\n");
@@ -311,9 +311,9 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 	if (!Win32kManager)
 		Die("failed to allocate graphics driver\n");
 
-	process->win32k_info = Win32kManager->AllocWin32kInfo();
+	process->Win32kInfo = Win32kManager->AllocWin32kInfo();
 
-	PPEB ppeb = (PPEB) process->peb_section->get_kernel_address();
+	PPEB ppeb = (PPEB) process->PebSection->get_kernel_address();
 
 	// only do this once per process
 	if (ppeb->GdiSharedHandleTable)
@@ -334,9 +334,9 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 	BYTE *p = GDI_SHARED_HANDLE_TABLE_ADDRESS;
 
 	// unreserve memory so mapit doesn't get a conflicting address
-	process->vm->FreeVirtualMemory( p, GDI_SHARED_HANDLE_TABLE_SIZE, MEM_FREE );
+	process->Vm->FreeVirtualMemory( p, GDI_SHARED_HANDLE_TABLE_SIZE, MEM_FREE );
 
-	r = gdi_ht_section->mapit( process->vm, p, 0, MEM_COMMIT, PAGE_READWRITE );
+	r = gdi_ht_section->mapit( process->Vm, p, 0, MEM_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 	{
 		trace("r = %08lx\n", r);
@@ -349,7 +349,7 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 	if (!Win32kManager->Init())
 		Die("unable to allocate screen\n");
 
-	process->vm->SetTracer( p, ntgdishm_trace );
+	process->Vm->SetTracer( p, ntgdishm_trace );
 
 	return r;
 }
@@ -422,7 +422,7 @@ HGDIOBJ AllocGdiHandle( BOOL stock, ULONG type, void *user_info, GDI_OBJECT* obj
 		type = GDI_OBJECT_BRUSH;
 
 	gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
-	table[index].ProcessId = Current->process->id;
+	table[index].ProcessId = Current->process->Id;
 	table[index].Type = type;
 	HGDIOBJ handle = makeHGDIOBJ(0,stock,reported_type,index);
 	table[index].Count = 0;
@@ -549,17 +549,17 @@ void GDI_OBJECT::InitGdiSharedMem()
 		g_gdi_shared_bitmap->SetArea( g_gdi_shared_memory, dc_shared_memory_size );
 	}
 
-	BYTE*& dc_shared_mem = Current->process->win32k_info->dc_shared_mem;
+	BYTE*& dc_shared_mem = Current->process->Win32kInfo->dc_shared_mem;
 	if (!dc_shared_mem)
 	{
-		r = g_gdi_section->mapit( Current->process->vm, dc_shared_mem, 0, MEM_COMMIT, PAGE_READWRITE );
+		r = g_gdi_section->mapit( Current->process->Vm, dc_shared_mem, 0, MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 		{
 			trace("failed to map shared memory\n");
 			assert( 0 );
 		}
 
-		Current->process->vm->SetTracer( dc_shared_mem, GdishmTrace );
+		Current->process->Vm->SetTracer( dc_shared_mem, GdishmTrace );
 	}
 }
 
@@ -1133,7 +1133,7 @@ HANDLE WIN32K_MANAGER::GetStockObject( ULONG Index )
 {
 	if (Index > STOCK_LAST)
 		return 0;
-	HANDLE& handle = Current->process->win32k_info->stock_object[Index];
+	HANDLE& handle = Current->process->Win32kInfo->stock_object[Index];
 	if (handle)
 		return handle;
 
@@ -1231,7 +1231,7 @@ BOOLEAN NTAPI NtGdiDeleteObjectApp(HGDIOBJ Object)
 	gdi_handle_table_entry *entry = GetHandleTableEntry(Object);
 	if (!entry)
 		return FALSE;
-	if (entry->ProcessId != Current->process->id)
+	if (entry->ProcessId != Current->process->Id)
 	{
 		trace("pirate deletion! %p\n", Object);
 		return FALSE;

@@ -46,7 +46,7 @@
 
 // constructs unicode strings suitable for the
 // PROCESS_PARAMS_FLAG_NORMALIZED flag in the PPB
-static void copy_ustring_to_block( RTL_USER_PROCESS_PARAMETERS* p,
+static void CopyUStringToBlock( RTL_USER_PROCESS_PARAMETERS* p,
 								   UNICODE_STRING *ustr, LPWSTR buffer, LPCWSTR str, ULONG maxlen )
 {
 	UINT len = strlenW( str );
@@ -59,14 +59,14 @@ static void copy_ustring_to_block( RTL_USER_PROCESS_PARAMETERS* p,
 
 struct INITIAL_PPB
 {
-	RTL_USER_PROCESS_PARAMETERS ppb;
+	RTL_USER_PROCESS_PARAMETERS PPB;
 	WCHAR CurrentDirectoryBuffer[MAX_PATH];
 	WCHAR DllPathBuffer[MAX_PATH];
 	WCHAR ImagePathNameBuffer[MAX_PATH];
 	WCHAR CommandLineBuffer[MAX_PATH];
 };
 
-NTSTATUS PROCESS::create_parameters(
+NTSTATUS PROCESS::CreateParameters(
 	RTL_USER_PROCESS_PARAMETERS **pparams, LPCWSTR ImageFile, LPCWSTR DllPath,
 	LPCWSTR CurrentDirectory, LPCWSTR CommandLine, LPCWSTR WindowTitle, LPCWSTR Desktop)
 {
@@ -77,7 +77,7 @@ NTSTATUS PROCESS::create_parameters(
 		'S','y','s','t','e','m','D','r','i','v','e','=','C',':','\0', 0
 	};
 	INITIAL_PPB init_ppb;
-	RTL_USER_PROCESS_PARAMETERS *ppb, *p = &init_ppb.ppb;;
+	RTL_USER_PROCESS_PARAMETERS *ppb, *p = &init_ppb.PPB;;
 	LPWSTR penv;
 	NTSTATUS r;
 
@@ -94,34 +94,34 @@ NTSTATUS PROCESS::create_parameters(
 	// to the base of the block.
 	// See RtlNormalizeProcessParams and RtlDeNormalizeProcessParams
 
-	copy_ustring_to_block( p, &p->ImagePathName,
+	CopyUStringToBlock( p, &p->ImagePathName,
 						   init_ppb.ImagePathNameBuffer, ImageFile, MAX_PATH );
-	copy_ustring_to_block( p, &p->DllPath,
+	CopyUStringToBlock( p, &p->DllPath,
 						   init_ppb.DllPathBuffer, DllPath, MAX_PATH );
-	copy_ustring_to_block( p, &p->CurrentDirectory.DosPath,
+	CopyUStringToBlock( p, &p->CurrentDirectory.DosPath,
 						   init_ppb.CurrentDirectoryBuffer, CurrentDirectory, MAX_PATH );
-	copy_ustring_to_block( p, &p->CommandLine,
+	CopyUStringToBlock( p, &p->CommandLine,
 						   init_ppb.CommandLineBuffer, CommandLine, MAX_PATH );
 
 	// process parameters block
 	ppb = NULL;
-	r = vm->AllocateVirtualMemory( (BYTE**) &ppb, 0, PAGE_SIZE, MEM_COMMIT, PAGE_READWRITE );
+	r = Vm->AllocateVirtualMemory( (BYTE**) &ppb, 0, PAGE_SIZE, MEM_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		Die("address_space_mmap failed\n");
 
 	// allocate the initial environment
 	penv = NULL;
-	r = vm->AllocateVirtualMemory( (BYTE**) &penv, 0, PAGE_SIZE, MEM_COMMIT, PAGE_READWRITE );
+	r = Vm->AllocateVirtualMemory( (BYTE**) &penv, 0, PAGE_SIZE, MEM_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		Die("address_space_mmap failed\n");
 
 	// write the initial environment
-	vm->CopyToUser( penv, initial_env, sizeof initial_env );
+	Vm->CopyToUser( penv, initial_env, sizeof initial_env );
 
 	// write the address of the environment string into the PPB
 	p->Environment = penv;
 
-	vm->CopyToUser( ppb, p, sizeof init_ppb );
+	Vm->CopyToUser( ppb, p, sizeof init_ppb );
 
 	// write the address of the process parameters into the PEB
 	*pparams = ppb;
@@ -132,7 +132,7 @@ NTSTATUS PROCESS::create_parameters(
 /*
  * map a file (the locale data) into a process's memory
  */
-NTSTATUS map_locale_data( ADDRESS_SPACE *vm, const char *name, void **addr )
+NTSTATUS MapLocaleData( ADDRESS_SPACE *vm, const char *name, void **addr )
 {
 	OBJECT *section = 0;
 	CFILE *file = 0;
@@ -164,23 +164,23 @@ NTSTATUS map_locale_data( ADDRESS_SPACE *vm, const char *name, void **addr )
 	return STATUS_SUCCESS;
 }
 
-section_t *shared_section;
-KUSER_SHARED_DATA *shared_memory_address;
+section_t *SharedSection;
+KUSER_SHARED_DATA *SharedMemoryAddress;
 
-class kshm_tracer : public BLOCK_TRACER
+class KSHM_TRACER : public BLOCK_TRACER
 {
 public:
 	virtual void OnAccess( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool Enabled() const;
 };
 
-bool kshm_tracer::Enabled() const
+bool KSHM_TRACER::Enabled() const
 {
 	// disable this, as it's noisy
 	return false;
 }
 
-void kshm_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
+void KSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->GetBaseAddress();
 	const char *field = "";
@@ -206,45 +206,45 @@ void kshm_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 			Current->TraceId(), ofs, field, eip);
 }
 
-kshm_tracer kshm_trace;
+KSHM_TRACER KSHM_TRACE;
 
-NTSTATUS get_shared_memory_block( PROCESS *p )
+NTSTATUS GetSharedMemoryBlock( PROCESS *p )
 {
 	BYTE *shm = NULL;
 	NTSTATUS r;
 	WCHAR ntdir[] = { 'C',':','\\','W','I','N','N','T',0 };
 
-	if (!shared_section)
+	if (!SharedSection)
 	{
 		LARGE_INTEGER sz;
 		sz.QuadPart = 0x10000;
-		r = create_section( &shared_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
+		r = create_section( &SharedSection, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
 		// set the nt directory
-		shared_memory_address = (KUSER_SHARED_DATA*) shared_section->get_kernel_address();
-		memcpy( shared_memory_address->WindowsDirectory, ntdir, sizeof ntdir );
+		SharedMemoryAddress = (KUSER_SHARED_DATA*) SharedSection->get_kernel_address();
+		memcpy( SharedMemoryAddress->WindowsDirectory, ntdir, sizeof ntdir );
 
 		// mark the product type as valid
-		shared_memory_address->ProductIsValid = TRUE;
-		shared_memory_address->NtProductType = 1;
-		shared_memory_address->NtMajorVersion = 5;
-		shared_memory_address->NtMinorVersion = 0;
-		shared_memory_address->ImageNumberLow = 0x14c;
-		shared_memory_address->ImageNumberHigh = 0x14c;
+		SharedMemoryAddress->ProductIsValid = TRUE;
+		SharedMemoryAddress->NtProductType = 1;
+		SharedMemoryAddress->NtMajorVersion = 5;
+		SharedMemoryAddress->NtMinorVersion = 0;
+		SharedMemoryAddress->ImageNumberLow = 0x14c;
+		SharedMemoryAddress->ImageNumberHigh = 0x14c;
 
 		// Windows XP's ntdll needs the system call address in shared memory
-		ULONG kisc = (ULONG) p->pntdll + KiIntSystemCall;
+		ULONG kisc = (ULONG) p->PNtDLL + KiIntSystemCall;
 		if (KiIntSystemCall)
-			shared_memory_address->SystemCall = kisc;
+			SharedMemoryAddress->SystemCall = kisc;
 	}
 
-	r = shared_section->mapit( p->vm, shm, 0, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READONLY );
+	r = SharedSection->mapit( p->Vm, shm, 0, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READONLY );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	p->vm->SetTracer( shm, kshm_trace );
+	p->Vm->SetTracer( shm, KSHM_TRACE );
 
 	assert( shm == (BYTE*) 0x7ffe0000 );
 
@@ -256,9 +256,9 @@ THREAD *FindThreadByClientId( CLIENT_ID *id )
 	for ( PROCESS_ITER i(Processes); i; i.Next() )
 	{
 		PROCESS *p = i;
-		if (p->id == (ULONG)id->UniqueProcess)
+		if (p->Id == (ULONG)id->UniqueProcess)
 		{
-			for ( sibling_iter_t j(p->threads); j; j.Next() )
+			for ( sibling_iter_t j(p->Threads); j; j.Next() )
 			{
 				THREAD *t = j;
 				if (t->GetID() == (ULONG)id->UniqueThread)
@@ -270,12 +270,12 @@ THREAD *FindThreadByClientId( CLIENT_ID *id )
 	return 0;
 }
 
-PROCESS *find_process_by_id( HANDLE UniqueProcess )
+PROCESS *FindProcessById( HANDLE UniqueProcess )
 {
 	for ( PROCESS_ITER i(Processes); i; i.Next() )
 	{
 		PROCESS *p = i;
-		if (p->id == (ULONG)UniqueProcess)
+		if (p->Id == (ULONG)UniqueProcess)
 			return p;
 	}
 	return 0;
@@ -283,7 +283,7 @@ PROCESS *find_process_by_id( HANDLE UniqueProcess )
 
 BOOLEAN PROCESS::IsSignalled( void )
 {
-	for ( sibling_iter_t i(threads); i; i.Next() )
+	for ( sibling_iter_t i(Threads); i; i.Next() )
 	{
 		THREAD *t = i;
 		if (!t->IsTerminated())
@@ -316,7 +316,7 @@ NTSTATUS ProcessAllocUserHandle(
 	HANDLE handle;
 	NTSTATUS r;
 
-	handle = p->handle_table.AllocHandle( obj, access );
+	handle = p->HandleTable.AllocHandle( obj, access );
 	if (!handle)
 	{
 		trace("out of handles?\n");
@@ -330,7 +330,7 @@ NTSTATUS ProcessAllocUserHandle(
 	if (r < STATUS_SUCCESS)
 	{
 		trace("write to %p failed\n", out);
-		p->handle_table.FreeHandle( handle );
+		p->HandleTable.FreeHandle( handle );
 	}
 
 	if (copy)
@@ -339,7 +339,7 @@ NTSTATUS ProcessAllocUserHandle(
 	return r;
 }
 
-NTSTATUS PROCESS::create_exe_ppb( RTL_USER_PROCESS_PARAMETERS **pparams, UNICODE_STRING& name )
+NTSTATUS PROCESS::CreateExePPB( RTL_USER_PROCESS_PARAMETERS **pparams, UNICODE_STRING& name )
 {
 	WCHAR image[MAX_PATH], cmd[MAX_PATH];
 	NTSTATUS r;
@@ -359,60 +359,60 @@ NTSTATUS PROCESS::create_exe_ppb( RTL_USER_PROCESS_PARAMETERS **pparams, UNICODE
 	strcatW( cmd, image );
 	strcatW( cmd, (WCHAR*) L"\"" );
 
-	r = create_parameters( pparams, image, (WCHAR*) L"c:\\", (WCHAR*) L"c:\\", cmd, (WCHAR*) L"", (WCHAR*) L"WinSta0\\Default");
+	r = CreateParameters( pparams, image, (WCHAR*) L"c:\\", (WCHAR*) L"c:\\", cmd, (WCHAR*) L"", (WCHAR*) L"WinSta0\\Default");
 
 	return r;
 }
 
 PROCESS::PROCESS() :
-	exception_port(0),
-	priority(0),
-	hard_error_mode(1),
-	win32k_info(0),
-	window_station(0)
+	ExceptionPort(0),
+	Priority(0),
+	HardErrorMode(1),
+	Win32kInfo(0),
+	WindowStation(0)
 {
 	ExitStatus = STATUS_PENDING;
-	id = AllocateId();
-	memset( &handle_table, 0, sizeof handle_table );
+	Id = AllocateId();
+	memset( &HandleTable, 0, sizeof HandleTable );
 	Processes.Append( this );
 }
 
 PROCESS::~PROCESS()
 {
-	if (win32k_info)
-		delete win32k_info;
+	if (Win32kInfo)
+		delete Win32kInfo;
 	Processes.Unlink( this );
-	exception_port = 0;
+	ExceptionPort = 0;
 }
 
-void PROCESS::terminate( NTSTATUS status )
+void PROCESS::Terminate( NTSTATUS status )
 {
 	NotifyWatchers();
 	// now release the process...
-	handle_table.FreeAllHandles();
-	if (win32k_info)
+	HandleTable.FreeAllHandles();
+	if (Win32kInfo)
 		free_user32_handles( this );
 	ExitStatus = status;
-	delete vm;
-	vm = NULL;
-	Release( exe );
-	exe = NULL;
+	delete Vm;
+	Vm = NULL;
+	Release( Exe );
+	Exe = NULL;
 }
 
-class peb_tracer : public BLOCK_TRACER
+class PEB_TRACER : public BLOCK_TRACER
 {
 public:
 	virtual void OnAccess( MBLOCK *mb, BYTE *address, ULONG eip );
 	virtual bool Enabled() const;
 };
 
-bool peb_tracer::Enabled() const
+bool PEB_TRACER::Enabled() const
 {
 	// disable this, as it's noisy
 	return false;
 }
 
-void peb_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
+void PEB_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->GetBaseAddress();
 	const char *field = "";
@@ -430,9 +430,9 @@ void peb_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 			Current->TraceId(), ofs, field, eip);
 }
 
-peb_tracer peb_trace;
+PEB_TRACER PEB_TRACE;
 
-NTSTATUS create_process( PROCESS **pprocess, OBJECT *section )
+NTSTATUS CreateProcess( PROCESS **pprocess, OBJECT *section )
 {
 	PROCESS *p;
 	NTSTATUS r;
@@ -443,56 +443,56 @@ NTSTATUS create_process( PROCESS **pprocess, OBJECT *section )
 
 	/* create a new address space */
 	// FIXME: determine address space limits from exe
-	p->vm = CreateAddressSpace( (BYTE*) 0x80000000 );
-	if (!p->vm)
+	p->Vm = CreateAddressSpace( (BYTE*) 0x80000000 );
+	if (!p->Vm)
 		Die("create_address_space failed\n");
 
 	AddRef( section );
-	p->exe = section;
+	p->Exe = section;
 
 	// FIXME: use section->mapit, get rid of mapit(section, ...)
-	r = mapit( p->vm, p->exe, p->pexe );
+	r = mapit( p->Vm, p->Exe, p->PExe );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = mapit( p->vm, NtDLLSection, p->pntdll );
+	r = mapit( p->Vm, NtDLLSection, p->PNtDLL );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	/* map the NT shared memory block early, so it gets the right address */
-	r = get_shared_memory_block( p );
+	r = GetSharedMemoryBlock( p );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	LARGE_INTEGER sz;
 	sz.QuadPart = PAGE_SIZE;
-	r = create_section( &p->peb_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
+	r = create_section( &p->PebSection, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	/* reserve the GDI shared section */
 	BYTE *gdi_shared = GDI_SHARED_HANDLE_TABLE_ADDRESS;
 	ULONG size = GDI_SHARED_HANDLE_TABLE_SIZE;
-	r = p->vm->AllocateVirtualMemory( &gdi_shared, 0, size, MEM_RESERVE, PAGE_NOACCESS );
+	r = p->Vm->AllocateVirtualMemory( &gdi_shared, 0, size, MEM_RESERVE, PAGE_NOACCESS );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	/* allocate the PEB */
 	BYTE *peb_addr = 0;
-	r = p->peb_section->mapit( p->vm, peb_addr, 0, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE );
+	r = p->PebSection->mapit( p->Vm, peb_addr, 0, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	p->PebBaseAddress = (void*) peb_addr;
-	PPEB ppeb = (PPEB) p->peb_section->get_kernel_address();
+	PPEB ppeb = (PPEB) p->PebSection->get_kernel_address();
 
 	/* map the locale data (for LdrInitializeThunk) */
-	map_locale_data( p->vm, "l_intl.nls", &ppeb->UnicodeCaseTableData );
-	map_locale_data( p->vm, "c_850.nls", &ppeb->OemCodePageData );
-	map_locale_data( p->vm, "c_1252.nls", &ppeb->AnsiCodePageData );
+	MapLocaleData( p->Vm, "l_intl.nls", &ppeb->UnicodeCaseTableData );
+	MapLocaleData( p->Vm, "c_850.nls", &ppeb->OemCodePageData );
+	MapLocaleData( p->Vm, "c_1252.nls", &ppeb->AnsiCodePageData );
 
 	ppeb->NumberOfProcessors = 1;
-	ppeb->ImageBaseAddress = (HINSTANCE) p->pexe;
+	ppeb->ImageBaseAddress = (HINSTANCE) p->PExe;
 
 	// versions for Windows 2000
 	ppeb->OSMajorVersion = 5;
@@ -507,7 +507,7 @@ NTSTATUS create_process( PROCESS **pprocess, OBJECT *section )
 
 	*pprocess = p;
 
-	p->vm->SetTracer( peb_addr, peb_trace );
+	p->Vm->SetTracer( peb_addr, PEB_TRACE );
 
 	return r;
 }
@@ -534,7 +534,7 @@ NTSTATUS NTAPI NtCreateProcess(
 	if (r < STATUS_SUCCESS)
 		return STATUS_INVALID_HANDLE;
 
-	r = create_process( &p, section );
+	r = CreateProcess( &p, section );
 	if (r == STATUS_SUCCESS)
 	{
 		r = AllocUserHandle( p, DesiredAccess, ProcessHandle );
@@ -544,7 +544,7 @@ NTSTATUS NTAPI NtCreateProcess(
 	return r;
 }
 
-NTSTATUS open_process( OBJECT **process, OBJECT_ATTRIBUTES *oa )
+NTSTATUS OpenProcess( OBJECT **process, OBJECT_ATTRIBUTES *oa )
 {
 	OBJECT *obj = NULL;
 	PROCESS *p;
@@ -615,7 +615,7 @@ NTSTATUS NTAPI NtOpenProcess(
 		}
 		else if (id.UniqueProcess)
 		{
-			process = find_process_by_id( id.UniqueProcess );
+			process = FindProcessById( id.UniqueProcess );
 			if (!process)
 				return STATUS_INVALID_PARAMETER;
 				//return STATUS_INVALID_CID;
@@ -640,7 +640,7 @@ NTSTATUS NTAPI NtOpenProcess(
 		if (us.Length == 0)
 			return STATUS_OBJECT_PATH_SYNTAX_BAD;
 
-		r = open_process( &process, &oa );
+		r = OpenProcess( &process, &oa );
 	}
 
 	if (r == STATUS_SUCCESS)
@@ -729,12 +729,12 @@ NTSTATUS NTAPI NtSetInformationProcess(
 			return SetExceptionPort( p, port );
 		}
 		case ProcessBasePriority:
-			p->priority = info.priority;
+			p->Priority = info.priority;
 			break;
 
 		case ProcessSessionInformation:
 		{
-			PPEB ppeb = (PPEB) p->peb_section->get_kernel_address();
+			PPEB ppeb = (PPEB) p->PebSection->get_kernel_address();
 			ppeb->SessionId = info.session.SessionId;
 			break;
 		}
@@ -748,7 +748,7 @@ NTSTATUS NTAPI NtSetInformationProcess(
 			break;
 
 		case ProcessDefaultHardErrorMode:
-			p->hard_error_mode = info.hard_error_mode;
+			p->HardErrorMode = info.hard_error_mode;
 			trace("set ProcessDefaultHardErrorMode\n");
 			break;
 
@@ -766,7 +766,7 @@ NTSTATUS NTAPI NtSetInformationProcess(
 				  (info.execute_flags & MEM_EXECUTE_OPTION_DISABLE) ? "disable " : "",
 				  (info.execute_flags & MEM_EXECUTE_OPTION_ENABLE) ? "enable " : "",
 				  (info.execute_flags & MEM_EXECUTE_OPTION_PERMANENT) ? "permanent" : "");
-			p->execute_flags = info.execute_flags;
+			p->ExecuteFlags = info.execute_flags;
 			break;
 
 		default:
@@ -839,7 +839,7 @@ NTSTATUS NTAPI NtQueryInformationProcess(
 		case ProcessBasicInformation:
 			info.basic.ExitStatus = p->ExitStatus;
 			info.basic.PebBaseAddress = (PPEB)p->PebBaseAddress;
-			info.basic.UniqueProcessId = p->id;
+			info.basic.UniqueProcessId = p->Id;
 			break;
 
 		case ProcessDeviceMap:
@@ -849,17 +849,17 @@ NTSTATUS NTAPI NtQueryInformationProcess(
 
 		case ProcessSessionInformation:
 		{
-			PPEB ppeb = (PPEB) p->peb_section->get_kernel_address();
+			PPEB ppeb = (PPEB) p->PebSection->get_kernel_address();
 			info.session.SessionId = ppeb->SessionId;
 			break;
 		}
 
 		case ProcessDefaultHardErrorMode:
-			info.hard_error_mode = p->hard_error_mode;
+			info.hard_error_mode = p->HardErrorMode;
 			break;
 
 		case ProcessExecuteFlags:
-			info.execute_flags = p->execute_flags;
+			info.execute_flags = p->ExecuteFlags;
 			break;
 
 		default:
@@ -896,7 +896,7 @@ NTSTATUS NTAPI NtTerminateProcess(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	sibling_iter_t i(p->threads);
+	sibling_iter_t i(p->Threads);
 	while ( i )
 	{
 		THREAD *t = i;

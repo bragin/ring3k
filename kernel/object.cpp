@@ -336,7 +336,7 @@ BOOLEAN SYNC_OBJECT::Satisfy( void )
 NTSTATUS NTAPI NtClose( HANDLE Handle )
 {
 	trace("%p\n", Handle );
-	return Current->process->handle_table.FreeHandle( Handle );
+	return Current->process->HandleTable.FreeHandle( Handle );
 }
 
 NTSTATUS NTAPI NtQueryObject(
@@ -470,7 +470,7 @@ NTSTATUS NTAPI NtDuplicateObject(
 	trace("source process %p\n", sp );
 
 	OBJECT *obj = 0;
-	r = sp->handle_table.ObjectFromHandle( obj, SourceHandle, DesiredAccess );
+	r = sp->HandleTable.ObjectFromHandle( obj, SourceHandle, DesiredAccess );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -480,7 +480,7 @@ NTSTATUS NTAPI NtDuplicateObject(
 	// FIXME: handle other options
 	if (Options & DUPLICATE_CLOSE_SOURCE)
 	{
-		sp->handle_table.FreeHandle( SourceHandle );
+		sp->HandleTable.FreeHandle( SourceHandle );
 	}
 
 	// put the object into the target process's handle table

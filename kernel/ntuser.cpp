@@ -391,7 +391,7 @@ BYTE* alloc_message_bitmap( PROCESS* proc, MESSAGE_MAP_SHARED_MEMORY& map, ULONG
 	BYTE *msg_map = user_shared_bitmap.Alloc( sz );
 	memset( msg_map, 0, sz );
 	ULONG ofs = (BYTE*)msg_map - (BYTE*)user_shared;
-	map.Bitmap = (BYTE*) (proc->win32k_info->user_shared_mem + ofs);
+	map.Bitmap = (BYTE*) (proc->Win32kInfo->user_shared_mem + ofs);
 	map.MaxMessage = last_message;
 	trace("bitmap = %p last = %ld\n", map.Bitmap, map.MaxMessage);
 	return msg_map;
@@ -402,7 +402,7 @@ NTUSERINFO *alloc_user_info()
 	NTUSERINFO *info = (NTUSERINFO*) user_shared_bitmap.Alloc( sizeof (NTUSERINFO) );
 	info->DesktopWindow = desktop_window;
 	ULONG ofs = (BYTE*)info - (BYTE*)user_shared;
-	return (NTUSERINFO*) (Current->process->win32k_info->user_shared_mem + ofs);
+	return (NTUSERINFO*) (Current->process->Win32kInfo->user_shared_mem + ofs);
 }
 
 void create_desktop_window()
@@ -429,9 +429,9 @@ NTSTATUS map_user_shared_memory( PROCESS *proc )
 {
 	NTSTATUS r;
 
-	assert( proc->win32k_info );
-	BYTE*& user_shared_mem = proc->win32k_info->user_shared_mem;
-	BYTE*& user_handles = proc->win32k_info->user_handles;
+	assert( proc->Win32kInfo );
+	BYTE*& user_shared_mem = proc->Win32kInfo->user_shared_mem;
+	BYTE*& user_handles = proc->Win32kInfo->user_handles;
 
 	// map the user shared memory block into the process's memory
 	if (!init_user_shared_memory())
@@ -441,19 +441,19 @@ NTSTATUS map_user_shared_memory( PROCESS *proc )
 	if (user_shared_mem)
 		return STATUS_SUCCESS;
 
-	r = user_shared_section->mapit( proc->vm, user_shared_mem, 0,
+	r = user_shared_section->mapit( proc->Vm, user_shared_mem, 0,
 									MEM_COMMIT, PAGE_READONLY );
 	if (r < STATUS_SUCCESS)
 		return STATUS_UNSUCCESSFUL;
 
 	if (OptionTrace)
 	{
-		proc->vm->SetTracer( user_shared_mem, ntusershm_trace );
-		proc->vm->SetTracer( user_handles, ntuserhandle_trace );
+		proc->Vm->SetTracer( user_shared_mem, ntusershm_trace );
+		proc->Vm->SetTracer( user_handles, ntuserhandle_trace );
 	}
 
 	// map the shared handle table
-	r = user_handle_table_section->mapit( proc->vm, user_handles, 0,
+	r = user_handle_table_section->mapit( proc->Vm, user_handles, 0,
 										  MEM_COMMIT, PAGE_READONLY );
 	if (r < STATUS_SUCCESS)
 		return STATUS_UNSUCCESSFUL;
@@ -471,7 +471,7 @@ BOOLEAN do_gdi_init()
 		return FALSE;
 
 	// check set the offset
-	BYTE*& user_shared_mem = Current->process->win32k_info->user_shared_mem;
+	BYTE*& user_shared_mem = Current->process->Win32kInfo->user_shared_mem;
 	Current->GetTEB()->KernelUserPointerOffset = (BYTE*) user_shared - user_shared_mem;
 
 	// create the desktop window for alloc_user_info
@@ -522,8 +522,8 @@ NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSi
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	info.win2k.Ptr[0] = (void*)proc->win32k_info->user_shared_mem;
-	info.win2k.Ptr[1] = (void*)proc->win32k_info->user_handles;
+	info.win2k.Ptr[0] = (void*)proc->Win32kInfo->user_shared_mem;
+	info.win2k.Ptr[1] = (void*)proc->Win32kInfo->user_handles;
 	info.win2k.Ptr[2] = (void*)0xbee30000;
 	info.win2k.Ptr[3] = (void*)0xbee40000;
 
@@ -983,14 +983,14 @@ HANDLE NTAPI NtUserOpenDesktop(POBJECT_ATTRIBUTES DesktopName, ULONG, ACCESS_MAS
 BOOLEAN NTAPI NtUserSetProcessWindowStation(HANDLE WindowStation)
 {
 	trace("\n");
-	Current->process->window_station = WindowStation;
+	Current->process->WindowStation = WindowStation;
 	return TRUE;
 }
 
 HANDLE NTAPI NtUserGetProcessWindowStation(void)
 {
 	trace("\n");
-	return Current->process->window_station;
+	return Current->process->WindowStation;
 }
 
 BOOLEAN NTAPI NtUserSetThreadDesktop(HANDLE Desktop)
@@ -1169,7 +1169,7 @@ window_tt::~window_tt()
 PWND window_tt::get_wininfo()
 {
 	ULONG ofs = (BYTE*)this - (BYTE*)user_shared;
-	return (PWND) (Current->process->win32k_info->user_shared_mem + ofs);
+	return (PWND) (Current->process->Win32kInfo->user_shared_mem + ofs);
 }
 
 NTSTATUS window_tt::send( MESSAGE& msg )

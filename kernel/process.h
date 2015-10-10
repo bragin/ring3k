@@ -27,37 +27,37 @@ class WIN32K_INFO;
 
 struct PROCESS : public SYNC_OBJECT
 {
-	sibling_list_t threads;
-	ADDRESS_SPACE *vm;
-	OBJECT *exe;
-	BYTE *pntdll;
-	BYTE *pexe;
+	sibling_list_t Threads;
+	ADDRESS_SPACE *Vm;
+	OBJECT *Exe;
+	BYTE *PNtDLL;
+	BYTE *PExe;
 
 	// PROCESS_BASIC_INFORMATION
 	NTSTATUS ExitStatus;
-	section_t *peb_section;
+	section_t *PebSection;
 	void* PebBaseAddress;
-	ULONG id;
+	ULONG Id;
 
-	HANDLE_TABLE handle_table;
+	HANDLE_TABLE HandleTable;
 
 	PROCESS_ELEMENT Entry[1];
 
 	// exception handling
-	OBJECT *exception_port;
+	OBJECT *ExceptionPort;
 
-	KPRIORITY priority;
-	ULONG hard_error_mode;
+	KPRIORITY Priority;
+	ULONG HardErrorMode;
 
-	WIN32K_INFO *win32k_info;
+	WIN32K_INFO *Win32kInfo;
 
-	ULONG execute_flags;
+	ULONG ExecuteFlags;
 
-	HANDLE window_station;
+	HANDLE WindowStation;
 
 public:
-	NTSTATUS create_exe_ppb( RTL_USER_PROCESS_PARAMETERS **pparams, UNICODE_STRING& name );
-	NTSTATUS create_parameters(
+	NTSTATUS CreateExePPB( RTL_USER_PROCESS_PARAMETERS **pparams, UNICODE_STRING& name );
+	NTSTATUS CreateParameters(
 		RTL_USER_PROCESS_PARAMETERS **pparams, LPCWSTR ImageFile, LPCWSTR DllPath,
 		LPCWSTR CurrentDirectory, LPCWSTR CommandLine, LPCWSTR WindowTitle, LPCWSTR Desktop);
 
@@ -65,16 +65,16 @@ public:
 	PROCESS();
 	~PROCESS();
 	virtual BOOLEAN IsSignalled( void );
-	void terminate( NTSTATUS status );
-	bool is_valid()
+	void Terminate( NTSTATUS status );
+	bool IsValid()
 	{
-		return id != 0;
+		return Id != 0;
 	}
 };
 
 extern PROCESS_LIST Processes;
 
-NTSTATUS create_process( PROCESS **pprocess, OBJECT *section );
+NTSTATUS CreateProcess( PROCESS **pprocess, OBJECT *section );
 NTSTATUS SetExceptionPort( PROCESS *process, OBJECT *obj );
 
 #endif // __PROCESS_H__
