@@ -178,7 +178,7 @@ skas3_address_space_impl::skas3_address_space_impl(int _fd) :
 void skas3_address_space_impl::Run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, EXECUTION_CONTEXT *exec )
 {
 	/* load the process address space into the child process */
-	int r = ptrace_set_address_space( child_pid, fd );
+	int r = PtraceSetAddressSpace( child_pid, fd );
 	if (r < 0)
 		Die("ptrace_set_address_space failed %d (%d)\n", r, errno);
 
@@ -208,7 +208,7 @@ ADDRESS_SPACE_IMPL* create_skas3_address_space()
 		skas3_address_space_impl::child_pid = skas3_address_space_impl::create_tracee();
 	}
 
-	int fd = ptrace_alloc_address_space_fd();
+	int fd = PtraceAllocAddressSpaceFD();
 	if (fd < 0)
 		return NULL;
 
@@ -217,17 +217,17 @@ ADDRESS_SPACE_IMPL* create_skas3_address_space()
 
 int skas3_address_space_impl::Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset )
 {
-	return remote_mmap( fd, address, length, prot, flags, file, offset );
+	return RemoteMMap( fd, address, length, prot, flags, file, offset );
 }
 
 int skas3_address_space_impl::Munmap( BYTE *address, size_t length )
 {
-	return remote_munmap( fd, address, length );
+	return RemoteMUnmap( fd, address, length );
 }
 
 bool InitSkas()
 {
-	int fd = ptrace_alloc_address_space_fd();
+	int fd = PtraceAllocAddressSpaceFD();
 	if (fd < 0)
 	{
 		trace("skas3 patch not present\n");

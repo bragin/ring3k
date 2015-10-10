@@ -99,7 +99,7 @@ tt_address_space_impl::tt_address_space_impl()
 
 	// client should hit a breakpoint
 	WaitForSignal( pid, SIGTRAP );
-	r = ptrace_get_regs( pid, stub_regs );
+	r = PtraceGetRegs( pid, stub_regs );
 	if (r < 0)
 		Die("constructor: ptrace_get_regs failed (%d)\n", errno);
 
@@ -132,7 +132,7 @@ int tt_address_space_impl::userside_req( int type )
 
 	ptrace( PTRACE_POKEDATA, child_pid, &ureq->type, type );
 
-	r = ptrace_set_regs( child_pid, stub_regs );
+	r = PtraceSetRegs( child_pid, stub_regs );
 	if (r < 0)
 		Die("ptrace_set_regs failed\n");
 	r = ::ptrace( PTRACE_CONT, child_pid, 0, 0 );
@@ -140,7 +140,7 @@ int tt_address_space_impl::userside_req( int type )
 		Die("ptrace( PTRACE_CONT ) failed\n");
 
 	WaitForSignal( child_pid, SIGTRAP );
-	r = ptrace_get_regs( child_pid, stub_regs );
+	r = PtraceGetRegs( child_pid, stub_regs );
 	if (r < 0)
 		Die("ptrace_get_regs failed (%d)\n", errno);
 

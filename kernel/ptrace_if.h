@@ -150,22 +150,22 @@ struct proc_mm_op
 	} u;
 };
 
-int remote_mmap( int proc_fd, void *start, size_t length,
+int RemoteMMap( int proc_fd, void *start, size_t length,
 				 int prot, int flags, int fd, off_t offset);
-int remote_munmap( int proc_fd, void *start, size_t length );
-int remote_mprotect( int proc_fd, void *start, size_t length, int prot );
-int ptrace_set_user_ldt( pid_t pid, struct user_desc *ldt );
-int ptrace_set_thread_area( pid_t pid, struct user_desc *ldt );
-int ptrace_get_thread_area( pid_t pid, struct user_desc *ldt );
-int ptrace_arch_prctl( pid_t pid, void *address );
-int ptrace_set_regs( pid_t pid, long *regs );
-int ptrace_get_regs( pid_t pid, long *regs );
-int ptrace_set_fpregs( pid_t pid, struct user_i387_struct *fpregs );
-int ptrace_get_fpregs( pid_t pid, struct user_i387_struct *fpregs );
-int ptrace_get_exception_info( pid_t pid, struct ptrace_ex_faultinfo *info );
-int ptrace_get_signal_info( pid_t pid, siginfo_t *info);
-int ptrace_set_address_space( pid_t pid, int fd );
-int ptrace_alloc_address_space_fd( void );
+int RemoteMUnmap( int proc_fd, void *start, size_t length );
+int RemoteMProtect( int proc_fd, void *start, size_t length, int prot );
+int PtraceSetUserLDT( pid_t pid, struct user_desc *ldt );
+int PtraceSetThreadArea( pid_t pid, struct user_desc *ldt );
+int PtraceGetThreadArea( pid_t pid, struct user_desc *ldt );
+int PtraceArchPrctl( pid_t pid, void *address );
+int PtraceSetRegs( pid_t pid, long *regs );
+int PtraceGetRegs( pid_t pid, long *regs );
+int PtraceSetFPRegs( pid_t pid, struct user_i387_struct *fpregs );
+int PtraceGetFPRegs( pid_t pid, struct user_i387_struct *fpregs );
+int PtraceGetExceptionInfo( pid_t pid, struct ptrace_ex_faultinfo *info );
+int PtraceGetSignalInfo( pid_t pid, siginfo_t *info);
+int PtraceSetAddressSpace( pid_t pid, int fd );
+int PtraceAllocAddressSpaceFD( void );
 
 #ifdef __cplusplus
 }

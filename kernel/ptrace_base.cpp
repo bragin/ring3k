@@ -91,7 +91,7 @@ int PTRACE_ADRESS_SPACE_IMPL::SetContext( PCONTEXT ctx )
 	regs[SS] = GetUserspaceDataSeg();
 	regs[CS] = GetUserspaceCodeSeg();
 
-	return ptrace_set_regs( GetChildPid(), regs );
+	return PtraceSetRegs( GetChildPid(), regs );
 }
 
 int PTRACE_ADRESS_SPACE_IMPL::GetContext( PCONTEXT ctx )
@@ -101,7 +101,7 @@ int PTRACE_ADRESS_SPACE_IMPL::GetContext( PCONTEXT ctx )
 
 	memset( ctx, 0, sizeof *ctx );
 
-	r = ptrace_get_regs( GetChildPid(), regs );
+	r = PtraceGetRegs( GetChildPid(), regs );
 	if (r < 0)
 		return r;
 
@@ -353,7 +353,7 @@ void PTRACE_ADRESS_SPACE_IMPL::Run( void *TebBaseAddress, PCONTEXT ctx, int sing
 
 			siginfo_t siginfo;
 			memset(&siginfo, 0, sizeof siginfo);
-			int r = ptrace_get_signal_info( GetChildPid(), &siginfo );
+			int r = PtraceGetSignalInfo( GetChildPid(), &siginfo );
 			if (r < 0)
 				Die("ptrace_get_signal_info failed\n");
 			if (siginfo.si_code == 0x80)
@@ -395,7 +395,7 @@ int PTRACE_ADRESS_SPACE_IMPL::GetFaultInfo( void *& addr )
 {
 	siginfo_t info;
 	memset( &info, 0, sizeof info );
-	int r = ptrace_get_signal_info( GetChildPid(), &info );
+	int r = PtraceGetSignalInfo( GetChildPid(), &info );
 	addr = info.si_addr;
 	return r;
 }
@@ -436,7 +436,7 @@ int PTRACE_ADRESS_SPACE_IMPL::SetUserspaceFs(void *TebBaseAddress, ULONG fs)
 	ldt.limit = 0xfff;
 	ldt.seg_32bit = 1;
 
-	r = ptrace_set_thread_area( GetChildPid(), &ldt );
+	r = PtraceSetThreadArea( GetChildPid(), &ldt );
 	if (r<0)
 		Die("set %%fs failed, fs = %ld errno = %d child = %d\n", fs, errno, GetChildPid());
 	return r;
