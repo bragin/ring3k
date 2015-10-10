@@ -110,9 +110,9 @@ SOFTWARE.
 #include "win32mgr.h"
 #include "region.h"
 
-const int region_tt::RGN_DEFAULT_RECTS = 2;
+const int REGION::RGN_DEFAULT_RECTS = 2;
 
-void rect_tt::clear()
+void CRECT::Clear()
 {
 	left = 0;
 	top = 0;
@@ -120,7 +120,7 @@ void rect_tt::clear()
 	bottom = 0;
 }
 
-void rect_tt::set( int l, int t, int r, int b )
+void CRECT::Set( int l, int t, int r, int b )
 {
 	left = l;
 	top = t;
@@ -128,12 +128,12 @@ void rect_tt::set( int l, int t, int r, int b )
 	bottom = b;
 }
 
-void rect_tt::dump() const
+void CRECT::Dump() const
 {
 	trace("%ld,%ld-%ld,%ld\n", left, top, right, bottom);
 }
 
-void rect_tt::fix()
+void CRECT::Fix()
 {
 	if (left > right)
 		swap( left, right );
@@ -141,13 +141,13 @@ void rect_tt::fix()
 		swap( top, bottom );
 }
 
-BOOL rect_tt::equal( const RECT& other ) const
+BOOL CRECT::Equal( const RECT& other ) const
 {
 	return (left == other.left) && (right == other.right) &&
 		   (top == other.top) && (bottom == other.bottom);
 }
 
-void rect_tt::offset( INT x, INT y )
+void CRECT::Offset( INT x, INT y )
 {
 	left += x;
 	right += x;
@@ -155,59 +155,59 @@ void rect_tt::offset( INT x, INT y )
 	bottom += y;
 }
 
-BOOL rect_tt::overlaps( const RECT& other ) const
+BOOL CRECT::Overlaps( const RECT& other ) const
 {
 	return (right > other.left) && (left < other.right) &&
 		   (bottom > other.top) && (top < other.bottom);
 }
 
-BOOL rect_tt::contains_point( int x, int y ) const
+BOOL CRECT::ContainsPoint( int x, int y ) const
 {
 	return (top <= y) && (bottom > y) &&
 		   (left <= x) && (right > x);
 }
 
-void rect_tt::intersect( const RECT& other )
+void CRECT::Intersect( const RECT& other )
 {
 	top = max( top, other.top );
 	left = max( left, other.left );
 	bottom = min( bottom, other.bottom );
 	right = min( right, other.right );
 	if (top >= bottom || left >= right)
-		clear();
+		Clear();
 }
 
-bool rect_tt::is_empty() const
+bool CRECT::IsEmpty() const
 {
 	return (left == right || top == bottom);
 }
 
-region_tt::region_tt()
+REGION::REGION()
 {
 }
 
-region_tt::~region_tt()
+REGION::~REGION()
 {
-	FreeGdiSharedMemory( (BYTE*) rgn );
-	delete[] rects;
+	FreeGdiSharedMemory( (BYTE*) Rgn );
+	delete[] Rects;
 }
 
-void region_tt::empty_region()
+void REGION::EmptyRegion()
 {
-	numRects = 0;
-	rgn->extents.clear();
-	rgn->type = NULLREGION;
+	NumRects = 0;
+	Rgn->Extents.Clear();
+	Rgn->Type = NULLREGION;
 }
 
-region_tt* region_tt::alloc()
+REGION* REGION::Alloc()
 {
-	size_t len = sizeof (gdi_region_shared_tt);
+	size_t len = sizeof (GDI_REGION_SHARED);
 	BYTE *shm = AllocGdiSharedMemory( len );
 	if (!shm)
 		return NULL;
 	BYTE *user_shm = kernel_to_user( shm );
 
-	region_tt* region = new region_tt;
+	REGION* region = new REGION;
 	if (!region)
 		return NULL;
 	region->handle = AllocGdiHandle( FALSE, GDI_OBJECT_REGION, user_shm, region );
@@ -217,223 +217,223 @@ region_tt* region_tt::alloc()
 		return 0;
 	}
 
-	region->rgn = (gdi_region_shared_tt*) shm;
-	region->empty_region();
-	region->rgn->flags = 0;
-	region->rgn->type = 0;
-	region->maxRects = RGN_DEFAULT_RECTS;
-	region->rects = new rect_tt[ region->maxRects ];
+	region->Rgn = (CGDI_REGION_SHARED*) shm;
+	region->EmptyRegion();
+	region->Rgn->Flags = 0;
+	region->Rgn->Type = 0;
+	region->MaxRects = RGN_DEFAULT_RECTS;
+	region->Rects = new CRECT[ region->MaxRects ];
 
 	return region;
 }
 
-bool region_tt::validate()
+bool REGION::Validate()
 {
-	if ((rgn->flags & 0x11) != 0x10)
+	if ((Rgn->Flags & 0x11) != 0x10)
 		return false;
-	switch (rgn->type)
+	switch (Rgn->Type)
 	{
 	case NULLREGION:
-		numRects = 0;
+		NumRects = 0;
 		break;
 	case SIMPLEREGION:
-		numRects = 1;
-		rects[0] = rgn->extents;
+		NumRects = 1;
+		Rects[0] = Rgn->Extents;
 		break;
 	//default:
 		//return false;
 	}
-	rgn->flags &= ~0x20;
+	Rgn->Flags &= ~0x20;
 	return true;
 }
 
-region_tt* region_from_handle( HGDIOBJ handle )
+REGION* RegionFromHandle( HGDIOBJ handle )
 {
 	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
 	if (!entry)
 		return NULL;
 	if (entry->Type != GDI_OBJECT_REGION)
 		return NULL;
-	region_tt* region = (region_tt*) entry->kernel_info;
-	if (!region->validate())
+	REGION* region = (REGION*) entry->kernel_info;
+	if (!region->Validate())
 		return NULL;
 	return region;
 }
 
-INT region_tt::update_type()
+INT REGION::UpdateType()
 {
-	if (rgn->extents.is_empty())
+	if (Rgn->Extents.IsEmpty())
 	{
-		rgn->type = NULLREGION;
-		numRects = 0;
+		Rgn->Type = NULLREGION;
+		NumRects = 0;
 	}
 	else
-		rgn->type = SIMPLEREGION;
-	return get_region_type();
+		Rgn->Type = SIMPLEREGION;
+	return GetRegionType();
 }
 
-void region_tt::set_rect( const RECT& rect )
+void REGION::SetRect( const RECT& rect )
 {
-	return set_rect( rect.left, rect.top, rect.right, rect.bottom );
+	return SetRect( rect.left, rect.top, rect.right, rect.bottom );
 }
 
-void region_tt::set_rect( int left, int top, int right, int bottom )
+void REGION::SetRect( int left, int top, int right, int bottom )
 {
 	if ((left != right) && (top != bottom))
 	{
-		rgn->extents.set( left, top, right, bottom );
-		rgn->extents.fix();
-		numRects = 1;
-		rects[0] = rgn->extents;
-		update_type();
+		Rgn->Extents.Set( left, top, right, bottom );
+		Rgn->Extents.Fix();
+		NumRects = 1;
+		Rects[0] = Rgn->Extents;
+		UpdateType();
 	}
 	else
-		empty_region();
+		EmptyRegion();
 }
 
-INT region_tt::get_region_type() const
+INT REGION::GetRegionType() const
 {
-	return rgn->type;
+	return Rgn->Type;
 }
 
-INT region_tt::get_num_rects() const
+INT REGION::GetNumRects() const
 {
-	return numRects;
+	return NumRects;
 }
 
-rect_tt* region_tt::get_rects() const
+CRECT* REGION::GetRects() const
 {
-	return rects;
+	return Rects;
 }
 
-void region_tt::get_bounds_rect( RECT& rcBounds ) const
+void REGION::GetBoundsRect( RECT& rcBounds ) const
 {
-	rcBounds = rgn->extents;
+	rcBounds = Rgn->Extents;
 }
 
-INT region_tt::get_region_box( RECT* rect )
+INT REGION::GetRegionBox( RECT* rect )
 {
-	*rect = rgn->extents;
-	return get_region_type();
+	*rect = Rgn->Extents;
+	return GetRegionType();
 }
 
-BOOL region_tt::equal( region_tt *other )
+BOOL REGION::Equal( REGION *other )
 {
 
-	if (numRects != other->numRects)
+	if (NumRects != other->NumRects)
 		return FALSE;
 
-	if (numRects == 0)
+	if (NumRects == 0)
 		return TRUE;
 
-	if (!rgn->extents.equal( other->rgn->extents ))
+	if (!Rgn->Extents.Equal( other->Rgn->Extents ))
 		return FALSE;
 
-	for (ULONG i = 0; i < numRects; i++ )
-		if (!rects[i].equal( other->rects[i] ))
+	for (ULONG i = 0; i < NumRects; i++ )
+		if (!Rects[i].Equal( other->Rects[i] ))
 			return FALSE;
 
 	return TRUE;
 }
 
-INT region_tt::offset( INT x, INT y )
+INT REGION::Offset( INT x, INT y )
 {
-	ULONG nbox = numRects;
-	rect_tt *pbox = rects;
+	ULONG nbox = NumRects;
+	CRECT *pbox = Rects;
 
 	while (nbox--)
 	{
-		pbox->offset( x, y );
+		pbox->Offset( x, y );
 		pbox++;
 	}
-	rgn->extents.offset( x, y );
-	return get_region_type();
+	Rgn->Extents.Offset( x, y );
+	return GetRegionType();
 }
 
-BOOL region_tt::contains_point( int x, int y )
+BOOL REGION::ContainsPoint( int x, int y )
 {
-	if (numRects == 0)
+	if (NumRects == 0)
 		return FALSE;
 
-	if (!rgn->extents.contains_point( x, y ))
+	if (!Rgn->Extents.ContainsPoint( x, y ))
 		return FALSE;
 
-	for (ULONG i = 0; i < numRects; i++)
-		if (rects[i].contains_point( x, y ))
+	for (ULONG i = 0; i < NumRects; i++)
+		if (Rects[i].ContainsPoint( x, y ))
 			return TRUE;
 
 	return FALSE;
 }
 
-BOOL region_tt::overlaps_rect( const RECT& rect )
+BOOL REGION::OverlapsRect( const RECT& rect )
 {
-	if (numRects == 0)
+	if (NumRects == 0)
 		return FALSE;
 
-	if (!rgn->extents.overlaps( rect ))
+	if (!Rgn->Extents.Overlaps( rect ))
 		return FALSE;
 
-	for (ULONG i = 0; i < numRects; i++)
-		if (rects[i].overlaps( rect ))
+	for (ULONG i = 0; i < NumRects; i++)
+		if (Rects[i].Overlaps( rect ))
 			return TRUE;
 
 	return FALSE;
 }
 
-INT region_tt::intersect_rgn( region_tt *reg1, region_tt *reg2 )
+INT REGION::IntersectRgn( REGION *reg1, REGION *reg2 )
 {
-	trace("%ld %ld\n", reg1->numRects, reg2->numRects);
+	trace("%ld %ld\n", reg1->NumRects, reg2->NumRects);
 	/* check for trivial reject */
-	if ( !reg1->numRects || !reg2->numRects ||
-		!reg1->rgn->extents.overlaps( reg2->rgn->extents ))
+	if ( !reg1->NumRects || !reg2->NumRects ||
+		!reg1->Rgn->Extents.Overlaps( reg2->Rgn->Extents ))
 	{
-		empty_region();
-		return rgn->type;
+		EmptyRegion();
+		return Rgn->Type;
 	}
 
 	// FIXME: implement more complicated regions
-	assert(reg1->rgn->type == SIMPLEREGION);
-	assert(reg2->rgn->type == SIMPLEREGION);
+	assert(reg1->Rgn->Type == SIMPLEREGION);
+	assert(reg2->Rgn->Type == SIMPLEREGION);
 
-	rgn->extents = reg1->rgn->extents;
-	rgn->extents.dump();
-	rgn->extents.intersect( reg2->rgn->extents );
-	rgn->extents.dump();
+	Rgn->Extents = reg1->Rgn->Extents;
+	Rgn->Extents.Dump();
+	Rgn->Extents.Intersect( reg2->Rgn->Extents );
+	Rgn->Extents.Dump();
 
-	return update_type();
+	return UpdateType();
 }
 
-INT region_tt::union_rgn( region_tt *src1, region_tt *src2 )
+INT REGION::UnionRgn( REGION *src1, REGION *src2 )
 {
 	return ERROR;
 }
 
-INT region_tt::xor_rgn( region_tt *src1, region_tt *src2 )
+INT REGION::XorRgn( REGION *src1, REGION *src2 )
 {
 	return ERROR;
 }
 
-INT region_tt::diff_rgn( region_tt *src1, region_tt *src2 )
+INT REGION::DiffRgn( REGION *src1, REGION *src2 )
 {
 	return ERROR;
 }
 
-INT region_tt::combine( region_tt* src1, region_tt* src2, INT mode )
+INT REGION::Combine( REGION* src1, REGION* src2, INT mode )
 {
-	INT (region_tt::*op)( region_tt*, region_tt* );
+	INT (REGION::*op)( REGION*, REGION* );
 	switch (mode)
 	{
 	case RGN_AND:
-		op = &region_tt::intersect_rgn;
+		op = &REGION::IntersectRgn;
 		break;
 	case RGN_OR:
-		op = &region_tt::union_rgn;
+		op = &REGION::UnionRgn;
 		break;
 	case RGN_XOR:
-		op = &region_tt::xor_rgn;
+		op = &REGION::XorRgn;
 		break;
 	case RGN_DIFF:
-		op = &region_tt::diff_rgn;
+		op = &REGION::DiffRgn;
 		break;
 	default:
 		return ERROR;
@@ -443,7 +443,7 @@ INT region_tt::combine( region_tt* src1, region_tt* src2, INT mode )
 
 HRGN NTAPI NtGdiCreateRectRgn( int, int, int, int )
 {
-	region_tt* region = region_tt::alloc();
+	REGION* region = REGION::Alloc();
 	if (!region)
 		return 0;
 	return (HRGN) region->get_handle();
@@ -456,12 +456,12 @@ HRGN NTAPI NtGdiCreateEllipticRgn( int left, int top, int right, int bottom )
 
 int NTAPI NtGdiGetRgnBox( HRGN Region, PRECT Rect )
 {
-	region_tt* region = region_from_handle( Region );
+	REGION* region = RegionFromHandle( Region );
 	if (!region)
 		return ERROR;
 
 	RECT box;
-	int region_type = region->get_region_box( &box );
+	int region_type = region->GetRegionBox( &box );
 
 	NTSTATUS r;
 	r = CopyToUser( Rect, &box, sizeof box );
@@ -473,58 +473,58 @@ int NTAPI NtGdiGetRgnBox( HRGN Region, PRECT Rect )
 
 int NTAPI NtGdiCombineRgn( HRGN Dest, HRGN Source1, HRGN Source2, int CombineMode )
 {
-	region_tt* rgn_src1 = region_from_handle( Source1 );
+	REGION* rgn_src1 = RegionFromHandle( Source1 );
 	if (!rgn_src1)
 		return ERROR;
 
-	region_tt* rgn_src2 = region_from_handle( Source2 );
+	REGION* rgn_src2 = RegionFromHandle( Source2 );
 	if (!rgn_src2)
 		return ERROR;
 
-	region_tt* rgn_dst = region_from_handle( Dest );
+	REGION* rgn_dst = RegionFromHandle( Dest );
 	if (!rgn_dst)
 		return ERROR;
 
-	return rgn_dst->combine( rgn_src1, rgn_src2, CombineMode );
+	return rgn_dst->Combine( rgn_src1, rgn_src2, CombineMode );
 }
 
 BOOL NTAPI NtGdiEqualRgn( HRGN Source1, HRGN Source2 )
 {
-	region_tt* rgn1 = region_from_handle( Source1 );
+	REGION* rgn1 = RegionFromHandle( Source1 );
 	if (!rgn1)
 		return ERROR;
 
-	region_tt* rgn2 = region_from_handle( Source2 );
+	REGION* rgn2 = RegionFromHandle( Source2 );
 	if (!rgn2)
 		return ERROR;
 
-	return rgn1->equal( rgn2 );
+	return rgn1->Equal( rgn2 );
 }
 
 int NTAPI NtGdiOffsetRgn( HRGN Region, int x, int y )
 {
-	region_tt* region = region_from_handle( Region );
+	REGION* region = RegionFromHandle( Region );
 	if (!region)
 		return ERROR;
-	return region->offset( x, y );
+	return region->Offset( x, y );
 }
 
 BOOL NTAPI NtGdiSetRectRgn( HRGN Region, int left, int top, int right, int bottom )
 {
-	region_tt* region = region_from_handle( Region );
+	REGION* region = RegionFromHandle( Region );
 	if (!region)
 		return ERROR;
-	region->set_rect( left, top, right, bottom );
+	region->SetRect( left, top, right, bottom );
 	return TRUE;
 }
 
 ULONG NTAPI NtGdiGetRegionData( HRGN Region, ULONG Count, PRGNDATA Data )
 {
-	region_tt* region = region_from_handle( Region );
+	REGION* region = RegionFromHandle( Region );
 	if (!region)
 		return ERROR;
 
-	ULONG size = region->get_num_rects() * sizeof(RECT);
+	ULONG size = region->GetNumRects() * sizeof(RECT);
 	if (Count < (size + sizeof(RGNDATAHEADER)) || Data == NULL)
 	{
 		if (Data)	/* buffer is too small, signal it by return 0 */
@@ -537,16 +537,16 @@ ULONG NTAPI NtGdiGetRegionData( HRGN Region, ULONG Count, PRGNDATA Data )
 
 	rdh.dwSize = sizeof(RGNDATAHEADER);
 	rdh.iType = RDH_RECTANGLES;
-	rdh.nCount = region->get_num_rects();
+	rdh.nCount = region->GetNumRects();
 	rdh.nRgnSize = size;
-	region->get_bounds_rect( rdh.rcBound );
+	region->GetBoundsRect( rdh.rcBound );
 
 	NTSTATUS r;
 	r = CopyToUser( Data, &rdh, sizeof rdh );
 	if (r < STATUS_SUCCESS)
 		return ERROR;
 
-	r = CopyToUser( Data->Buffer, region->get_rects(), size );
+	r = CopyToUser( Data->Buffer, region->GetRects(), size );
 	if (r < STATUS_SUCCESS)
 		return ERROR;
 
@@ -555,26 +555,26 @@ ULONG NTAPI NtGdiGetRegionData( HRGN Region, ULONG Count, PRGNDATA Data )
 
 BOOLEAN NTAPI NtGdiPtInRegion( HRGN Region, int x, int y )
 {
-	region_tt* region = region_from_handle( Region );
+	REGION* region = RegionFromHandle( Region );
 	if (!region)
 		return ERROR;
 
-	return region->contains_point( x, y );
+	return region->ContainsPoint( x, y );
 }
 
 BOOLEAN NTAPI NtGdiRectInRegion( HRGN Region, const RECT *rect )
 {
-	region_tt* region = region_from_handle( Region );
+	REGION* region = RegionFromHandle( Region );
 	if (!region)
 		return ERROR;
 
-	rect_tt overlap;
+	CRECT overlap;
 	NTSTATUS r;
 	r = CopyFromUser( &overlap, rect, sizeof *rect );
 	if (r < STATUS_SUCCESS)
 		return ERROR;
 
-	overlap.fix();
+	overlap.Fix();
 
-	return region->overlaps_rect( overlap );
+	return region->OverlapsRect( overlap );
 }

@@ -88,9 +88,9 @@ public:
 	{
 		return (THREAD*&)unk1;
 	}
-	region_tt* &get_invalid_region()
+	REGION* &get_invalid_region()
 	{
-		return (region_tt*&)unk2;
+		return (REGION*&)unk2;
 	}
 	BOOLEAN show( INT Show );
 	void activate();

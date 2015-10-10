@@ -1326,9 +1326,9 @@ window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, 
 	if (!Current->queue)
 		Current->queue = new THREAD_MESSAGE_QUEUE;
 
-	region_tt*& region = win->get_invalid_region();
-	region = region_tt::alloc();
-	region->empty_region();
+	REGION*& region = win->get_invalid_region();
+	region = REGION::Alloc();
+	region->EmptyRegion();
 
 	// send WM_GETMINMAXINFO
 	GETMINMAXINFO_MESSAGE minmax;
@@ -1390,8 +1390,8 @@ window_tt* window_tt::find_window_to_repaint( window_tt* win, THREAD* thread )
 	// special case the desktop window for the moment
 	if (win->parent)
 	{
-		region_tt*& region = win->get_invalid_region();
-		if (region->get_region_type() != NULLREGION)
+		REGION*& region = win->get_invalid_region();
+		if (region->GetRegionType() != NULLREGION)
 			return win;
 	}
 
@@ -1414,8 +1414,8 @@ void window_tt::set_window_pos( UINT flags )
 	{
 		show( SW_SHOW );
 
-		region_tt*& rgn = get_invalid_region();
-		rgn->set_rect( rcClient );
+		REGION*& rgn = get_invalid_region();
+		rgn->SetRect( rcClient );
 	}
 
 	WINDOWPOS wp;
@@ -1642,8 +1642,8 @@ BOOLEAN NTAPI NtUserRedrawWindow( HWND Window, RECT *Update, HANDLE Region, UINT
 		rect = win->rcClient;
 	}
 
-	region_tt*& region = win->get_invalid_region();
-	region->set_rect( rect );
+	REGION*& region = win->get_invalid_region();
+	region->SetRect( rect );
 
 	return TRUE;
 }
@@ -1701,8 +1701,8 @@ BOOLEAN NTAPI NtUserInvalidateRect( HWND Window, const RECT* Rectangle, BOOLEAN 
 		rect = win->rcClient;
 	}
 
-	region_tt*& region = win->get_invalid_region();
-	region->set_rect( rect );
+	REGION*& region = win->get_invalid_region();
+	region->SetRect( rect );
 
 	return TRUE;
 }
@@ -1747,8 +1747,8 @@ HDC NTAPI NtUserBeginPaint( HWND Window, PAINTSTRUCT* pps)
 	if (r < STATUS_SUCCESS)
 		return NULL;
 
-	region_tt*& region = win->get_invalid_region();
-	region->empty_region();
+	REGION*& region = win->get_invalid_region();
+	region->EmptyRegion();
 
 	return (HDC) win->get_dc();
 }
@@ -1787,8 +1787,8 @@ HWND window_tt::from_point( POINT& pt )
 {
 	for (PWND win = first_child; win; win = win->next)
 	{
-		rect_tt r( win->rcWnd );
-		if (r.contains_point( pt ))
+		CRECT r( win->rcWnd );
+		if (r.ContainsPoint( pt ))
 			return win->handle;
 	}
 	return handle;

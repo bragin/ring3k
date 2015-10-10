@@ -106,76 +106,76 @@ SOFTWARE.
 
 #include "win32mgr.h"
 
-class rect_tt : public RECT
+class CRECT : public RECT
 {
 public:
-	rect_tt()
+	CRECT()
 	{
-		clear();
+		Clear();
 	}
-	rect_tt( RECT& r )
+	CRECT( RECT& r )
 	{
 		left = r.left;
 		top = r.top;
 		right = r.right;
 		bottom = r.bottom;
 	}
-	void clear();
-	void set( int left, int top, int right, int bottom );
-	BOOL equal( const RECT& other ) const;
-	BOOL contains_point( int x, int y ) const;
-	BOOL contains_point( POINT& pt ) const
+	void Clear();
+	void Set( int left, int top, int right, int bottom );
+	BOOL Equal( const RECT& other ) const;
+	BOOL ContainsPoint( int x, int y ) const;
+	BOOL ContainsPoint( POINT& pt ) const
 	{
-		return contains_point( pt.x, pt.y );
+		return ContainsPoint( pt.x, pt.y );
 	}
-	BOOL overlaps( const RECT& other ) const;
-	void offset( INT x, INT y );
-	void dump() const;
-	void fix();
-	void intersect( const RECT& other );
-	bool is_empty() const;
+	BOOL Overlaps( const RECT& other ) const;
+	void Offset( INT x, INT y );
+	void Dump() const;
+	void Fix();
+	void Intersect( const RECT& other );
+	bool IsEmpty() const;
 };
 
-class gdi_region_shared_tt
+class CGDI_REGION_SHARED
 {
 public:
 	// must be compatible with GDI_REGION_SHARED
-	ULONG flags;
-	ULONG type;
-	rect_tt extents;
+	ULONG Flags;
+	ULONG Type;
+	CRECT Extents;
 };
 
-class region_tt : public GDI_OBJECT
+class REGION : public GDI_OBJECT
 {
 	static const int RGN_DEFAULT_RECTS;
-	gdi_region_shared_tt *rgn;
-	ULONG numRects;
-	ULONG maxRects;
-	rect_tt *rects;
+	CGDI_REGION_SHARED *Rgn;
+	ULONG NumRects;
+	ULONG MaxRects;
+	CRECT *Rects;
 public:
-	region_tt();
-	~region_tt();
-	static region_tt* alloc();
-	void set_rect( int left, int top, int right, int bottom );
-	void set_rect( const RECT& rect );
-	INT get_region_box( RECT* rect );
-	INT get_region_type() const;
-	BOOL equal( region_tt *other );
-	INT offset( INT x, INT y );
-	INT get_num_rects() const;
-	rect_tt* get_rects() const;
-	void get_bounds_rect( RECT& rcBounds ) const;
-	BOOL contains_point( int x, int y );
-	BOOL overlaps_rect( const RECT& overlap );
-	void empty_region();
-	bool is_empty() const;
-	bool validate();
-	INT update_type();
-	INT combine( region_tt* src1, region_tt* src2, INT mode );
-	INT intersect_rgn( region_tt *src1, region_tt *src2 );
-	INT union_rgn( region_tt *src1, region_tt *src2 );
-	INT xor_rgn( region_tt *src1, region_tt *src2 );
-	INT diff_rgn( region_tt *src1, region_tt *src2 );
+	REGION();
+	~REGION();
+	static REGION* Alloc();
+	void SetRect( int left, int top, int right, int bottom );
+	void SetRect( const RECT& rect );
+	INT GetRegionBox( RECT* rect );
+	INT GetRegionType() const;
+	BOOL Equal( REGION *other );
+	INT Offset( INT x, INT y );
+	INT GetNumRects() const;
+	CRECT* GetRects() const;
+	void GetBoundsRect( RECT& rcBounds ) const;
+	BOOL ContainsPoint( int x, int y );
+	BOOL OverlapsRect( const RECT& overlap );
+	void EmptyRegion();
+	bool IsEmpty() const;
+	bool Validate();
+	INT UpdateType();
+	INT Combine( REGION* src1, REGION* src2, INT mode );
+	INT IntersectRgn( REGION *src1, REGION *src2 );
+	INT UnionRgn( REGION *src1, REGION *src2 );
+	INT XorRgn( REGION *src1, REGION *src2 );
+	INT DiffRgn( REGION *src1, REGION *src2 );
 };
 
 #endif // __RING3K_REGION__
