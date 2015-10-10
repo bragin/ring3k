@@ -216,7 +216,7 @@ void timeout_t::do_timeout()
 {
 	// remove first so we can be added again
 	remove();
-	signal_timeout();
+	SignalTimeout();
 }
 
 timeout_t::~timeout_t()
@@ -238,7 +238,7 @@ public:
 	NTSTATUS set(LARGE_INTEGER& DueTime, PKNORMAL_ROUTINE apc, PVOID context, BOOLEAN Resume, ULONG Period, BOOLEAN& prev);
 	virtual BOOLEAN IsSignalled( void );
 	virtual BOOLEAN Satisfy( void );
-	virtual void signal_timeout();
+	virtual void SignalTimeout();
 	void cancel( BOOLEAN& prev );
 };
 
@@ -283,7 +283,7 @@ BOOLEAN nttimer_t::Satisfy( void )
 	return TRUE;
 }
 
-void nttimer_t::signal_timeout()
+void nttimer_t::SignalTimeout()
 {
 	expired = TRUE;
 	NotifyWatchers();

@@ -64,7 +64,7 @@ struct kernel_debug_string_output
 
 struct section_t;
 class MBLOCK;
-class thread_message_queue_tt;
+class THREAD_MESSAGE_QUEUE;
 
 class runlist_entry_t
 {
@@ -99,7 +99,7 @@ public:
 	ULONG MessageId;
 	PORT *port;
 
-	thread_message_queue_tt* queue;
+	THREAD_MESSAGE_QUEUE* queue;
 
 public:
 	THREAD( PROCESS *p );

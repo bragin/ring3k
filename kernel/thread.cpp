@@ -192,7 +192,7 @@ public:
 	NTSTATUS check_wait_all();
 	NTSTATUS check_wait_any();
 	void end_wait();
-	virtual void signal_timeout(); // timeout_t
+	virtual void SignalTimeout(); // timeout_t
 	NTSTATUS delay_execution( LARGE_INTEGER& timeout );
 	void start();
 	void Wait();
@@ -1188,7 +1188,7 @@ void THREAD_IMPL::notify()
 	start();
 }
 
-void THREAD_IMPL::signal_timeout()
+void THREAD_IMPL::SignalTimeout()
 {
 	notify();
 }

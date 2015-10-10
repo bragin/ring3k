@@ -189,7 +189,7 @@ WIN32K_INFO *WIN32K_MANAGER::AllocWin32kInfo()
 
 void WIN32K_MANAGER::SendInput(INPUT* input)
 {
-	thread_message_queue_tt *queue = 0;
+	THREAD_MESSAGE_QUEUE *queue = 0;
 	ULONG pos;
 
 	if (active_window)
@@ -212,13 +212,13 @@ void WIN32K_MANAGER::SendInput(INPUT* input)
 		{
 			key_state[input->ki.wVk] = 0;
 			if (queue)
-				queue->post_message( active_window->handle, WM_KEYUP, input->ki.wVk, 0 );
+				queue->PostMessage( active_window->handle, WM_KEYUP, input->ki.wVk, 0 );
 		}
 		else
 		{
 			key_state[input->ki.wVk] = 0x8000;
 			if (queue)
-				queue->post_message( active_window->handle, WM_KEYDOWN, input->ki.wVk, 0 );
+				queue->PostMessage( active_window->handle, WM_KEYDOWN, input->ki.wVk, 0 );
 		}
 
 		break;
@@ -229,43 +229,43 @@ void WIN32K_MANAGER::SendInput(INPUT* input)
 		if (input->mi.dwFlags & MOUSEEVENTF_LEFTDOWN)
 		{
 			if (queue)
-				queue->post_message( active_window->handle, WM_LBUTTONDOWN, 0, pos );
+				queue->PostMessage( active_window->handle, WM_LBUTTONDOWN, 0, pos );
 		}
 
 		if (input->mi.dwFlags & MOUSEEVENTF_LEFTUP)
 		{
 			if (queue)
-				queue->post_message( active_window->handle, WM_LBUTTONUP, 0, pos );
+				queue->PostMessage( active_window->handle, WM_LBUTTONUP, 0, pos );
 		}
 
 		if (input->mi.dwFlags & MOUSEEVENTF_RIGHTDOWN)
 		{
 			if (queue)
-				queue->post_message( active_window->handle, WM_RBUTTONDOWN, 0, pos );
+				queue->PostMessage( active_window->handle, WM_RBUTTONDOWN, 0, pos );
 		}
 
 		if (input->mi.dwFlags & MOUSEEVENTF_RIGHTUP)
 		{
 			if (queue)
-				queue->post_message( active_window->handle, WM_RBUTTONUP, 0, pos );
+				queue->PostMessage( active_window->handle, WM_RBUTTONUP, 0, pos );
 		}
 
 		if (input->mi.dwFlags & MOUSEEVENTF_MIDDLEDOWN)
 		{
 			if (queue)
-				queue->post_message( active_window->handle, WM_MBUTTONDOWN, 0, pos );
+				queue->PostMessage( active_window->handle, WM_MBUTTONDOWN, 0, pos );
 		}
 
 		if (input->mi.dwFlags & MOUSEEVENTF_MIDDLEUP)
 		{
 			if (queue)
-				queue->post_message( active_window->handle, WM_MBUTTONUP, 0, pos );
+				queue->PostMessage( active_window->handle, WM_MBUTTONUP, 0, pos );
 		}
 
 		if (input->mi.dwFlags & MOUSEEVENTF_MOVE)
 		{
 			if (queue)
-				queue->post_message( active_window->handle, WM_MOUSEMOVE, 0, pos );
+				queue->PostMessage( active_window->handle, WM_MOUSEMOVE, 0, pos );
 		}
 
 		break;

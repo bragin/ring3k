@@ -23,94 +23,94 @@
 
 #include "ntwin32.h"
 
-class msg_tt;
-class msg_waiter_tt;
-class thread_message_queue_tt;
+class CMSG;
+class MSG_WAITER;
+class THREAD_MESSAGE_QUEUE;
 
-typedef LIST_ANCHOR<msg_tt,0> msg_list_t;
-typedef LIST_ITER<msg_tt,0> msg_iter_t;
-typedef LIST_ELEMENT<msg_tt> msg_element_t;
+typedef LIST_ANCHOR<CMSG,0> MSG_LIST;
+typedef LIST_ITER<CMSG,0> MSG_ITER;
+typedef LIST_ELEMENT<CMSG> MSG_ELEMENT;
 
-typedef LIST_ANCHOR<msg_waiter_tt,0> msg_waiter_list_t;
-typedef LIST_ITER<msg_waiter_tt,0> msg_waiter_iter_t;
-typedef LIST_ELEMENT<msg_waiter_tt> msg_waiter_element_t;
+typedef LIST_ANCHOR<MSG_WAITER,0> MSG_WAITER_LIST;
+typedef LIST_ITER<MSG_WAITER,0> MSG_WAITER_ITER;
+typedef LIST_ELEMENT<MSG_WAITER> MSG_WAITER_ELEMENT;
 
-class msg_waiter_tt
+class MSG_WAITER
 {
-	friend class thread_message_queue_tt;
-	friend class LIST_ANCHOR<msg_waiter_tt,0>;
-	msg_waiter_element_t Entry[1];
-	THREAD *t;
-	MSG& msg;
+	friend class THREAD_MESSAGE_QUEUE;
+	friend class LIST_ANCHOR<MSG_WAITER,0>;
+	MSG_WAITER_ELEMENT Entry[1];
+	THREAD *T;
+	MSG& Msg;
 public:
-	msg_waiter_tt( MSG& m);
+	MSG_WAITER( MSG& m);
 };
 
-class msg_tt
+class CMSG
 {
 public:
-	msg_element_t Entry[1];
-	HWND hwnd;
-	UINT message;
-	WPARAM wparam;
-	LPARAM lparam;
-	DWORD time;
+	MSG_ELEMENT Entry[1];
+	HWND HWnd;
+	UINT Message;
+	WPARAM WParam;
+	LPARAM LParam;
+	DWORD Time;
 public:
-	msg_tt( HWND _hwnd, UINT Message, WPARAM Wparam, LPARAM Lparam );
+	CMSG( HWND _hwnd, UINT Message, WPARAM Wparam, LPARAM Lparam );
 };
 
-class win_timer_tt;
+class WIN_TIMER;
 
-typedef LIST_ANCHOR<win_timer_tt,0> win_timer_list_t;
-typedef LIST_ITER<win_timer_tt,0> win_timer_iter_t;
-typedef LIST_ELEMENT<win_timer_tt> win_timer_element_t;
+typedef LIST_ANCHOR<WIN_TIMER,0> WIN_TIMER_LIST;
+typedef LIST_ITER<WIN_TIMER,0> WIN_TIMER_ITER;
+typedef LIST_ELEMENT<WIN_TIMER> WIN_TIMER_ELEMENT;
 
-class win_timer_tt
+class WIN_TIMER
 {
 public:
-	win_timer_element_t Entry[1];
-	HWND hwnd;
-	UINT id;
-	void *lparam;
-	UINT period;
-	LARGE_INTEGER expiry;
+	WIN_TIMER_ELEMENT Entry[1];
+	HWND HWnd;
+	UINT Id;
+	void *LParam;
+	UINT Period;
+	LARGE_INTEGER Expiry;
 public:
-	win_timer_tt( HWND Window, UINT Identifier );
-	void reset();
-	bool expired() const;
+	WIN_TIMER( HWND Window, UINT Identifier );
+	void Reset();
+	bool Expired() const;
 };
 
 // derived from Wine's struct thread_input
 // see wine/server/queue.c (by Alexandre Julliard)
-class thread_message_queue_tt :
+class THREAD_MESSAGE_QUEUE :
 	public SYNC_OBJECT,
 	public timeout_t
 {
-	bool	quit_message;    // is there a pending quit message?
-	int	exit_code;       // exit code of pending quit message
-	msg_list_t msg_list;
-	msg_waiter_list_t waiter_list;
-	win_timer_list_t timer_list;
+	bool	QuitMessage;    // is there a pending quit message?
+	int	ExitCode;       // exit code of pending quit message
+	MSG_LIST MsgList;
+	MSG_WAITER_LIST WaiterList;
+	WIN_TIMER_LIST TimerList;
 public:
-	thread_message_queue_tt();
-	~thread_message_queue_tt();
-	BOOL post_message( HWND Window, UINT Message, WPARAM Wparam, LPARAM Lparam );
-	void post_quit_message( ULONG exit_code );
-	bool get_quit_message( MSG &msg );
-	bool get_paint_message( HWND Window, MSG& msg );
+	THREAD_MESSAGE_QUEUE();
+	~THREAD_MESSAGE_QUEUE();
+	BOOL PostMessage( HWND Window, UINT Message, WPARAM Wparam, LPARAM Lparam );
+	void PostQuitMessage( ULONG exit_code );
+	bool GetQuitMessage( MSG &msg );
+	bool GetPaintMessage( HWND Window, MSG& msg );
 	virtual BOOLEAN IsSignalled( void );
-	virtual void signal_timeout();
-	BOOLEAN get_message( MSG& Message, HWND Window, ULONG MinMessage, ULONG MaxMessage);
-	BOOLEAN get_message_no_wait( MSG& Message, HWND Window, ULONG MinMessage, ULONG MaxMessage);
-	bool get_posted_message( HWND Window, MSG& Message );
-	BOOLEAN set_timer( HWND Window, UINT Identifier, UINT Elapse, PVOID TimerProc );
-	BOOLEAN kill_timer( HWND Window, UINT Identifier );
-	win_timer_tt* find_timer( HWND Window, UINT Identifier );
-	void timer_add( win_timer_tt* timer );
-	bool get_timer_message( HWND Window, MSG& msg );
-	bool get_message_timeout( HWND Window, LARGE_INTEGER& timeout );
+	virtual void SignalTimeout();
+	BOOLEAN GetMessage( MSG& Message, HWND Window, ULONG MinMessage, ULONG MaxMessage);
+	BOOLEAN GetMessageNoWait( MSG& Message, HWND Window, ULONG MinMessage, ULONG MaxMessage);
+	bool GetPostedMessage( HWND Window, MSG& Message );
+	BOOLEAN SetTimer( HWND Window, UINT Identifier, UINT Elapse, PVOID TimerProc );
+	BOOLEAN KillTimer( HWND Window, UINT Identifier );
+	WIN_TIMER* FindTimer( HWND Window, UINT Identifier );
+	void TimerAdd( WIN_TIMER* timer );
+	bool GetTimerMessage( HWND Window, MSG& msg );
+	bool GetMessageTimeout( HWND Window, LARGE_INTEGER& timeout );
 };
 
-HWND find_window_to_repaint( HWND Window, THREAD *thread );
+HWND FindWindowToRepaint( HWND Window, THREAD *thread );
 
 #endif // __RING3K_QUEUE__

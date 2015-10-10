@@ -621,7 +621,7 @@ BOOLEAN NtPostQuitMessage( ULONG ret )
 {
 	trace("%08lx\n", ret );
 	if (Current->queue)
-		Current->queue->post_quit_message( ret );
+		Current->queue->PostQuitMessage( ret );
 	return TRUE;
 }
 
@@ -1324,7 +1324,7 @@ window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, 
 
 	// create a thread message queue if necessary
 	if (!Current->queue)
-		Current->queue = new thread_message_queue_tt;
+		Current->queue = new THREAD_MESSAGE_QUEUE;
 
 	region_tt*& region = win->get_invalid_region();
 	region = region_tt::alloc();

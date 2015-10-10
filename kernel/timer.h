@@ -49,7 +49,7 @@ public:
 	static ULONG get_tick_count();
 	void do_timeout();
 	void set_timeout(PLARGE_INTEGER t);
-	virtual void signal_timeout() = 0;
+	virtual void SignalTimeout() = 0;
 	//static bool timers_active();
 	static bool check_timers(LARGE_INTEGER& ret);
 	bool has_expired();

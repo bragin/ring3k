@@ -45,45 +45,45 @@
 #include "queue.h"
 #include "spy.h"
 
-msg_tt::msg_tt( HWND _hwnd, UINT _message, WPARAM _wparam, LPARAM _lparam ) :
-	hwnd( _hwnd ),
-	message( _message ),
-	wparam( _wparam ),
-	lparam( _lparam )
+CMSG::CMSG( HWND _hwnd, UINT _message, WPARAM _wparam, LPARAM _lparam ) :
+	HWnd( _hwnd ),
+	Message( _message ),
+	WParam( _wparam ),
+	LParam( _lparam )
 {
-	time = timeout_t::get_tick_count();
+	Time = timeout_t::get_tick_count();
 }
 
-thread_message_queue_tt::thread_message_queue_tt() :
-	quit_message( 0 ),
-	exit_code( 0 )
+THREAD_MESSAGE_QUEUE::THREAD_MESSAGE_QUEUE() :
+	QuitMessage( 0 ),
+	ExitCode( 0 )
 {
 }
 
-thread_message_queue_tt::~thread_message_queue_tt()
+THREAD_MESSAGE_QUEUE::~THREAD_MESSAGE_QUEUE()
 {
-	msg_tt *msg;
+	CMSG *msg;
 
-	while ((msg = msg_list.Head()))
+	while ((msg = MsgList.Head()))
 	{
-		msg_list.Unlink( msg );
+		MsgList.Unlink( msg );
 		delete msg;
 	}
 }
 
-bool thread_message_queue_tt::get_quit_message( MSG& msg )
+bool THREAD_MESSAGE_QUEUE::GetQuitMessage( MSG& msg )
 {
-	bool ret = quit_message;
-	if (quit_message)
+	bool ret = QuitMessage;
+	if (QuitMessage)
 	{
 		msg.message = WM_QUIT;
-		msg.wParam = exit_code;
-		quit_message = false;
+		msg.wParam = ExitCode;
+		QuitMessage = false;
 	}
 	return ret;
 }
 
-bool thread_message_queue_tt::get_paint_message( HWND Window, MSG& msg )
+bool THREAD_MESSAGE_QUEUE::GetPaintMessage( HWND Window, MSG& msg )
 {
 	window_tt *win = window_tt::find_window_to_repaint( Window, Current );
 	if (!win)
@@ -96,24 +96,24 @@ bool thread_message_queue_tt::get_paint_message( HWND Window, MSG& msg )
 	return TRUE;
 }
 
-BOOLEAN thread_message_queue_tt::IsSignalled( void )
+BOOLEAN THREAD_MESSAGE_QUEUE::IsSignalled( void )
 {
 	return FALSE;
 }
 
-void thread_message_queue_tt::post_quit_message( ULONG ret )
+void THREAD_MESSAGE_QUEUE::PostQuitMessage( ULONG ret )
 {
-	quit_message = true;
-	exit_code = ret;
+	QuitMessage = true;
+	ExitCode = ret;
 }
 
-BOOL thread_message_queue_tt::post_message(
+BOOL THREAD_MESSAGE_QUEUE::PostMessage(
 	HWND Window, UINT Message, WPARAM Wparam, LPARAM Lparam )
 {
-	msg_waiter_tt *waiter = waiter_list.Head();
+	MSG_WAITER *waiter = WaiterList.Head();
 	if (waiter)
 	{
-		MSG& msg = waiter->msg;
+		MSG& msg = waiter->Msg;
 		msg.hwnd = Window;
 		msg.message = Message;
 		msg.wParam = Wparam;
@@ -123,38 +123,38 @@ BOOL thread_message_queue_tt::post_message(
 		msg.pt.y = 0;
 
 		// remove from the list first
-		waiter_list.Unlink( waiter );
+		WaiterList.Unlink( waiter );
 		set_timeout( 0 );
 
 		// start the thread (might reschedule here )
-		waiter->t->Start();
+		waiter->T->Start();
 
 		return TRUE;
 	}
 
 	// no waiter, so store the message
-	msg_tt* msg = new msg_tt( Window, Message, Wparam, Lparam );
+	CMSG* msg = new CMSG( Window, Message, Wparam, Lparam );
 	if (!msg)
 		return FALSE;
-	msg_list.Append( msg );
+	MsgList.Append( msg );
 
 	// FIXME: wake up a thread that is waiting
 	return TRUE;
 }
 
 // return true if we copied a message
-bool thread_message_queue_tt::get_posted_message( HWND Window, MSG& Message )
+bool THREAD_MESSAGE_QUEUE::GetPostedMessage( HWND Window, MSG& Message )
 {
-	msg_tt *m = msg_list.Head();
+	CMSG *m = MsgList.Head();
 	if (!m)
 		return false;
 
-	msg_list.Unlink( m );
-	Message.hwnd = m->hwnd;
-	Message.message = m->message;
-	Message.wParam = m->wparam;
-	Message.lParam = m->lparam;
-	Message.time = m->time;
+	MsgList.Unlink( m );
+	Message.hwnd = m->HWnd;
+	Message.message = m->Message;
+	Message.wParam = m->WParam;
+	Message.lParam = m->LParam;
+	Message.time = m->Time;
 	Message.pt.x = 0;
 	Message.pt.y = 0;
 	delete m;
@@ -162,75 +162,75 @@ bool thread_message_queue_tt::get_posted_message( HWND Window, MSG& Message )
 	return true;
 }
 
-msg_waiter_tt::msg_waiter_tt( MSG& m):
-	msg( m )
+MSG_WAITER::MSG_WAITER( MSG& m):
+	Msg( m )
 {
-	t = Current;
+	T = Current;
 }
 
-win_timer_tt::win_timer_tt( HWND Window, UINT Identifier ) :
-	hwnd( Window ),
-	id( Identifier ),
-	lparam(0),
-	period(0)
+WIN_TIMER::WIN_TIMER( HWND Window, UINT Identifier ) :
+	HWnd( Window ),
+	Id( Identifier ),
+	LParam(0),
+	Period(0)
 {
-	expiry.QuadPart = 0LL;
+	Expiry.QuadPart = 0LL;
 }
 
-win_timer_tt* thread_message_queue_tt::find_timer( HWND Window, UINT Identifier )
+WIN_TIMER* THREAD_MESSAGE_QUEUE::FindTimer( HWND Window, UINT Identifier )
 {
-	for (win_timer_iter_t i(timer_list); i; i.Next())
+	for (WIN_TIMER_ITER i(TimerList); i; i.Next())
 	{
-		win_timer_tt *t = i;
-		if (t->id != Identifier)
+		WIN_TIMER *t = i;
+		if (t->Id != Identifier)
 			continue;
-		if (t->hwnd != Window )
+		if (t->HWnd != Window )
 			continue;
 		return t;
 	}
 	return NULL;
 }
 
-void win_timer_tt::reset()
+void WIN_TIMER::Reset()
 {
-	expiry = timeout_t::current_time();
-	expiry.QuadPart += period*10000LL;
+	Expiry = timeout_t::current_time();
+	Expiry.QuadPart += Period*10000LL;
 }
 
-bool win_timer_tt::expired() const
+bool WIN_TIMER::Expired() const
 {
 	LARGE_INTEGER now = timeout_t::current_time();
-	return (now.QuadPart >= expiry.QuadPart);
+	return (now.QuadPart >= Expiry.QuadPart);
 }
 
-void thread_message_queue_tt::timer_add( win_timer_tt* timer )
+void THREAD_MESSAGE_QUEUE::TimerAdd( WIN_TIMER* timer )
 {
-	win_timer_tt *t = NULL;
+	WIN_TIMER *t = NULL;
 
 	// maintain list in order of expiry time
-	for (win_timer_iter_t i(timer_list); i; i.Next())
+	for (WIN_TIMER_ITER i(TimerList); i; i.Next())
 	{
 		t = i;
-		if (t->expiry.QuadPart >= timer->expiry.QuadPart)
+		if (t->Expiry.QuadPart >= timer->Expiry.QuadPart)
 			break;
 	}
 	if (t)
-		timer_list.InsertBefore( t, timer );
+		TimerList.InsertBefore( t, timer );
 	else
-		timer_list.Append( timer );
+		TimerList.Append( timer );
 }
 
-bool thread_message_queue_tt::get_timer_message( HWND Window, MSG& msg )
+bool THREAD_MESSAGE_QUEUE::GetTimerMessage( HWND Window, MSG& msg )
 {
 	LARGE_INTEGER now = timeout_t::current_time();
-	win_timer_tt *t = NULL;
-	for (win_timer_iter_t i(timer_list); i; i.Next())
+	WIN_TIMER *t = NULL;
+	for (WIN_TIMER_ITER i(TimerList); i; i.Next())
 	{
 		t = i;
 		// stop searching after we reach a timer that has not expired
-		if (t->expiry.QuadPart > now.QuadPart)
+		if (t->Expiry.QuadPart > now.QuadPart)
 			return false;
-		if (Window == NULL || t->hwnd == Window)
+		if (Window == NULL || t->HWnd == Window)
 			break;
 	}
 
@@ -238,105 +238,105 @@ bool thread_message_queue_tt::get_timer_message( HWND Window, MSG& msg )
 		return false;
 
 	// remove from the front of the queue
-	timer_list.Unlink( t );
+	TimerList.Unlink( t );
 
-	msg.hwnd = t->hwnd;
+	msg.hwnd = t->HWnd;
 	msg.message = WM_TIMER;
-	msg.wParam = t->id;
-	msg.lParam = (UINT) t->lparam;
+	msg.wParam = t->Id;
+	msg.lParam = (UINT) t->LParam;
 	msg.time = timeout_t::get_tick_count();
 	msg.pt.x = 0;
 	msg.pt.y = 0;
 
 	// reset and add back to the queue
-	t->reset();
-	timer_add( t );
+	t->Reset();
+	TimerAdd( t );
 
 	return true;
 }
 
-BOOLEAN thread_message_queue_tt::set_timer( HWND Window, UINT Identifier, UINT Elapse, PVOID TimerProc )
+BOOLEAN THREAD_MESSAGE_QUEUE::SetTimer( HWND Window, UINT Identifier, UINT Elapse, PVOID TimerProc )
 {
-	win_timer_tt* timer = find_timer( Window, Identifier );
+	WIN_TIMER* timer = FindTimer( Window, Identifier );
 	if (timer)
-		timer_list.Unlink( timer );
+		TimerList.Unlink( timer );
 	else
-		timer = new win_timer_tt( Window, Identifier );
+		timer = new WIN_TIMER( Window, Identifier );
 	trace("adding timer %p hwnd %p id %d\n", timer, Window, Identifier );
-	timer->period = Elapse;
-	timer->lparam = TimerProc;
-	timer_add( timer );
+	timer->Period = Elapse;
+	timer->LParam = TimerProc;
+	TimerAdd( timer );
 	return TRUE;
 }
 
-BOOLEAN thread_message_queue_tt::kill_timer( HWND Window, UINT Identifier )
+BOOLEAN THREAD_MESSAGE_QUEUE::KillTimer( HWND Window, UINT Identifier )
 {
-	win_timer_tt* timer = find_timer( Window, Identifier );
+	WIN_TIMER* timer = FindTimer( Window, Identifier );
 	if (!timer)
 		return FALSE;
 	trace("deleting timer %p hwnd %p id %d\n", timer, Window, Identifier );
-	timer_list.Unlink( timer );
+	TimerList.Unlink( timer );
 	delete timer;
 	return TRUE;
 }
 
-bool thread_message_queue_tt::get_message_timeout( HWND Window, LARGE_INTEGER& timeout )
+bool THREAD_MESSAGE_QUEUE::GetMessageTimeout( HWND Window, LARGE_INTEGER& timeout )
 {
-	for (win_timer_iter_t i(timer_list); i; i.Next())
+	for (WIN_TIMER_ITER i(TimerList); i; i.Next())
 	{
-		win_timer_tt *t = i;
-		if (Window != NULL && t->hwnd != Window)
+		WIN_TIMER *t = i;
+		if (Window != NULL && t->HWnd != Window)
 			continue;
-		timeout = t->expiry;
+		timeout = t->Expiry;
 		return true;
 	}
 	return false;
 }
 
 // return true if we succeeded in copying a message
-BOOLEAN thread_message_queue_tt::get_message_no_wait(
+BOOLEAN THREAD_MESSAGE_QUEUE::GetMessageNoWait(
 	MSG& Message, HWND Window, ULONG MinMessage, ULONG MaxMessage)
 {
 	//trace("checking posted messages\n");
-	if (get_posted_message( Window, Message ))
+	if (GetPostedMessage( Window, Message ))
 		return true;
 
 	//trace("checking quit messages\n");
-	if (get_quit_message( Message ))
+	if (GetQuitMessage( Message ))
 		return true;
 
 	//trace("checking paint messages\n");
-	if (get_paint_message( Window, Message ))
+	if (GetPaintMessage( Window, Message ))
 		return true;
 
 	//trace("checking timer messages\n");
-	if (get_timer_message( Window, Message ))
+	if (GetTimerMessage( Window, Message ))
 		return true;
 
 	return false;
 }
 
-void thread_message_queue_tt::signal_timeout()
+void THREAD_MESSAGE_QUEUE::SignalTimeout()
 {
-	msg_waiter_tt *waiter = waiter_list.Head();
+	MSG_WAITER *waiter = WaiterList.Head();
 	if (waiter)
 	{
-		waiter_list.Unlink( waiter );
+		WaiterList.Unlink( waiter );
 		set_timeout( 0 );
 
 		// start the thread (might reschedule here )
-		waiter->t->Start();
+		waiter->T->Start();
 	}
 }
 
-BOOLEAN thread_message_queue_tt::get_message(
+BOOLEAN THREAD_MESSAGE_QUEUE::GetMessage(
 	MSG& Message, HWND Window, ULONG MinMessage, ULONG MaxMessage)
 {
-	if (get_message_no_wait( Message, Window, MinMessage, MaxMessage))
+	if (GetMessageNoWait( Message, Window, MinMessage, MaxMessage))
 		return true;
 
 	LARGE_INTEGER t;
-	if (get_message_timeout( Window, t ))
+	if (GetMessageTimeout( Window, t ))
 	{
 		//trace("setting timeout %lld\n", t.QuadPart);
 		set_timeout( &t );
@@ -344,8 +344,8 @@ BOOLEAN thread_message_queue_tt::get_message(
 
 	// wait for a message
 	// a thread sending a message will restart us
-	msg_waiter_tt wait( Message );
-	waiter_list.Append( &wait );
+	MSG_WAITER wait( Message );
+	WaiterList.Append( &wait );
 	Current->Stop();
 
 	return !Current->IsTerminated();
@@ -354,7 +354,7 @@ BOOLEAN thread_message_queue_tt::get_message(
 BOOLEAN NTAPI NtUserGetMessage(PMSG Message, HWND Window, ULONG MinMessage, ULONG MaxMessage)
 {
 	// no input queue...
-	thread_message_queue_tt* queue = Current->queue;
+	THREAD_MESSAGE_QUEUE* queue = Current->queue;
 	if (!queue)
 		return FALSE;
 
@@ -364,7 +364,7 @@ BOOLEAN NTAPI NtUserGetMessage(PMSG Message, HWND Window, ULONG MinMessage, ULON
 
 	MSG msg;
 	memset( &msg, 0, sizeof msg );
-	if (queue->get_message( msg, Window, MinMessage, MaxMessage ))
+	if (queue->GetMessage( msg, Window, MinMessage, MaxMessage ))
 		CopyToUser( Message, &msg, sizeof msg );
 
 	if (OptionTrace)
@@ -391,12 +391,12 @@ BOOLEAN NTAPI NtUserPostMessage( HWND Window, UINT Message, WPARAM Wparam, LPARA
 	THREAD*& thread = win->get_win_thread();
 	assert(thread != NULL);
 
-	return thread->queue->post_message( Window, Message, Wparam, Lparam );
+	return thread->queue->PostMessage( Window, Message, Wparam, Lparam );
 }
 
 BOOLEAN NTAPI NtUserPeekMessage( PMSG Message, HWND Window, UINT MaxMessage, UINT MinMessage, UINT Remove)
 {
-	thread_message_queue_tt* queue = Current->queue;
+	THREAD_MESSAGE_QUEUE* queue = Current->queue;
 	if (!queue)
 		return FALSE;
 
@@ -406,7 +406,7 @@ BOOLEAN NTAPI NtUserPeekMessage( PMSG Message, HWND Window, UINT MaxMessage, UIN
 
 	MSG msg;
 	memset( &msg, 0, sizeof msg );
-	BOOL ret = queue->get_message_no_wait( msg, Window, MinMessage, MaxMessage );
+	BOOL ret = queue->GetMessageNoWait( msg, Window, MinMessage, MaxMessage );
 	if (ret)
 		CopyToUser( Message, &msg, sizeof msg );
 
@@ -422,7 +422,7 @@ UINT NTAPI NtUserSetTimer( HWND Window, UINT Identifier, UINT Elapse, PVOID Time
 	THREAD*& thread = win->get_win_thread();
 	assert(thread != NULL);
 
-	return thread->queue->set_timer( Window, Identifier, Elapse, TimerProc );
+	return thread->queue->SetTimer( Window, Identifier, Elapse, TimerProc );
 }
 
 BOOLEAN NTAPI NtUserKillTimer( HWND Window, UINT Identifier )
@@ -434,5 +434,5 @@ BOOLEAN NTAPI NtUserKillTimer( HWND Window, UINT Identifier )
 	THREAD*& thread = win->get_win_thread();
 	assert(thread != NULL);
 
-	return thread->queue->kill_timer( Window, Identifier );
+	return thread->queue->KillTimer( Window, Identifier );
 }
