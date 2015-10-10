@@ -107,7 +107,7 @@ struct THREAD_APC
 class THREAD_IMPL :
 	public THREAD,
 	public EXECUTION_CONTEXT,
-	public timeout_t
+	public TIMEOUT
 {
 	THREAD_STATE ThreadState;
 	ULONG SuspendCount;
@@ -823,7 +823,7 @@ NTSTATUS THREAD_IMPL::Terminate( NTSTATUS status )
 	SetState( StateTerminated );
 
 	// store the exit time
-	Times.ExitTime = timeout_t::current_time();
+	Times.ExitTime = TIMEOUT::CurrentTime();
 
 	// send the Thread terminate message if necessary
 	if (TerminatePort)
@@ -975,7 +975,7 @@ THREAD_IMPL::THREAD_IMPL( PROCESS *p ) :
 	TraceAccessedAddress(0)
 {
 
-	Times.CreateTime = timeout_t::current_time();
+	Times.CreateTime = TIMEOUT::CurrentTime();
 	Times.ExitTime.QuadPart = 0;
 	Times.UserTime.QuadPart = 0;
 	Times.KernelTime.QuadPart = 0;
@@ -1240,7 +1240,7 @@ NTSTATUS THREAD_IMPL::WaitOnHandles(
 		timeout = &t;
 	}
 
-	set_timeout( timeout );
+	SetTimeout( timeout );
 	while (1)
 	{
 		r = CheckWait();
@@ -1254,7 +1254,7 @@ NTSTATUS THREAD_IMPL::WaitOnHandles(
 			break;
 		}
 
-		if (timeout && has_expired())
+		if (timeout && HasExpired())
 		{
 			r = STATUS_TIMEOUT;
 			break;
@@ -1266,7 +1266,7 @@ NTSTATUS THREAD_IMPL::WaitOnHandles(
 	}
 
 	EndWait();
-	set_timeout( 0 );
+	SetTimeout( 0 );
 
 	return r;
 }

@@ -234,7 +234,7 @@ bool SDL_SLEEPER::HandleSdlEvent( SDL_Event& event )
 	case SDL_KEYUP:
 		trace("got SDL keyboard event\n");
 		input.type = INPUT_KEYBOARD;
-		input.ki.time = timeout_t::get_tick_count();
+		input.ki.time = TIMEOUT::GetTickCount();
 		input.ki.wVk = SdlKeysumToVkey( event.key.keysym.sym );
 		input.ki.wScan = event.key.keysym.scancode;
 		input.ki.dwFlags = (event.type == SDL_KEYUP) ? KEYEVENTF_KEYUP : 0;
@@ -250,7 +250,7 @@ bool SDL_SLEEPER::HandleSdlEvent( SDL_Event& event )
 		input.mi.dy = event.button.y;
 		input.mi.mouseData = 0;
 		input.mi.dwFlags = GetMouseButton( event.button.button, event.type == SDL_MOUSEBUTTONUP );
-		input.mi.time = timeout_t::get_tick_count();
+		input.mi.time = TIMEOUT::GetTickCount();
 		input.mi.dwExtraInfo = 0;
 		Manager->SendInput( &input );
 		break;
@@ -262,7 +262,7 @@ bool SDL_SLEEPER::HandleSdlEvent( SDL_Event& event )
 		input.mi.dy = event.motion.y;
 		input.mi.mouseData = 0;
 		input.mi.dwFlags = MOUSEEVENTF_MOVE;
-		input.mi.time = timeout_t::get_tick_count();
+		input.mi.time = TIMEOUT::GetTickCount();
 		input.mi.dwExtraInfo = 0;
 		Manager->SendInput( &input );
 		break;
@@ -279,7 +279,7 @@ bool SDL_SLEEPER::CheckEvents( bool wait )
 	SDL_Event event;
 	bool quit = false;
 
-	bool timers_left = timeout_t::check_timers(timeout);
+	bool timers_left = TIMEOUT::CheckTimers(timeout);
 
 	// quit if we got an SDL_QUIT
 	if (SDL_PollEvent( &event ) && HandleSdlEvent( event ))

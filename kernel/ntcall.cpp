@@ -177,7 +177,7 @@ NTSTATUS NTAPI NtQuerySystemInformation(
 
 	case SystemTimeOfDayInformation:
 		SET_INFO_LENGTH( len, info.time_of_day );
-		get_system_time_of_day( info.time_of_day );
+		GetSystemTimeOfDay( info.time_of_day );
 		break;
 
 	case SystemRangeStartInformation:
@@ -308,7 +308,7 @@ NTSTATUS NTAPI NtQueryPerformanceCounter(
 	PLARGE_INTEGER PerformanceCount,
 	PLARGE_INTEGER PerformanceFrequency)
 {
-	LARGE_INTEGER now = timeout_t::current_time();
+	LARGE_INTEGER now = TIMEOUT::CurrentTime();
 	LARGE_INTEGER freq;
 	NTSTATUS r;
 	freq.QuadPart = 1000LL;

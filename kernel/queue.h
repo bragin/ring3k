@@ -84,7 +84,7 @@ public:
 // see wine/server/queue.c (by Alexandre Julliard)
 class THREAD_MESSAGE_QUEUE :
 	public SYNC_OBJECT,
-	public timeout_t
+	public TIMEOUT
 {
 	bool	QuitMessage;    // is there a pending quit message?
 	int	ExitCode;       // exit code of pending quit message

@@ -33,25 +33,25 @@
 #include "debug.h"
 #include "object.inl"
 
-timeout_list_t timeout_t::g_timeouts;
-static LARGE_INTEGER boot_time;
-static ULONG tick_count;
+TIMEOUT_LIST TIMEOUT::g_Timeouts;
+static LARGE_INTEGER BootTime;
+static ULONG TickCount;
 
-bool timeout_t::has_expired()
+bool TIMEOUT::HasExpired()
 {
 	return !Entry[0].IsLinked();
 }
 
-bool timeout_t::queue_is_valid()
+bool TIMEOUT::QueueIsValid()
 {
-	timeout_iter_t i(g_timeouts);
-	timeout_t *prev = 0;
+	TIMEOUT_ITER i(g_Timeouts);
+	TIMEOUT *prev = 0;
 
 	i.Reset();
 	while (i)
 	{
-		timeout_t* x = i;
-		if (prev && prev->expires.QuadPart > x->expires.QuadPart)
+		TIMEOUT* x = i;
+		if (prev && prev->Expires.QuadPart > x->Expires.QuadPart)
 			return false;
 		i.Next();
 		prev = x;
@@ -61,105 +61,105 @@ bool timeout_t::queue_is_valid()
 }
 
 // returns false if there were no timers
-bool timeout_t::check_timers(LARGE_INTEGER& ret)
+bool TIMEOUT::CheckTimers(LARGE_INTEGER& ret)
 {
-	LARGE_INTEGER now = current_time();
-	timeout_t *t;
+	LARGE_INTEGER now = CurrentTime();
+	TIMEOUT *t;
 
-	if (!g_timeouts.Head())
+	if (!g_Timeouts.Head())
 		return false;
 
 	ret.QuadPart = 0LL;
 	while (1)
 	{
-		t = g_timeouts.Head();
+		t = g_Timeouts.Head();
 		if (!t)
 			return true;
 
-		if (t->expires.QuadPart > now.QuadPart)
+		if (t->Expires.QuadPart > now.QuadPart)
 			break;
 
-		t->do_timeout();
+		t->DoTimeout();
 	}
 
 	// calculate the timeout
-	ret.QuadPart = t->expires.QuadPart - now.QuadPart;
+	ret.QuadPart = t->Expires.QuadPart - now.QuadPart;
 
 	return true;
 }
 
 // FIXME: consider unifying this with logic in check_timers
 //        to avoid conflicting return values
-void timeout_t::time_remaining( LARGE_INTEGER& remaining )
+void TIMEOUT::TimeRemaining( LARGE_INTEGER& remaining )
 {
-	LARGE_INTEGER now = current_time();
-	remaining.QuadPart = expires.QuadPart - now.QuadPart;
+	LARGE_INTEGER now = CurrentTime();
+	remaining.QuadPart = Expires.QuadPart - now.QuadPart;
 }
 
-timeout_t::timeout_t(PLARGE_INTEGER t)
+TIMEOUT::TIMEOUT(PLARGE_INTEGER t)
 {
-	set_timeout(t);
+	SetTimeout(t);
 }
 
-void timeout_t::set_timeout(PLARGE_INTEGER t)
+void TIMEOUT::SetTimeout(PLARGE_INTEGER t)
 {
 	if (!t)
 	{
-		remove();
-		expires.QuadPart = 0LL;
+		Remove();
+		Expires.QuadPart = 0LL;
 		return;
 	}
 
-	LARGE_INTEGER now = current_time();
+	LARGE_INTEGER now = CurrentTime();
 	if (t->QuadPart <= 0LL)
-		expires.QuadPart = now.QuadPart - t->QuadPart;
+		Expires.QuadPart = now.QuadPart - t->QuadPart;
 	else
-		expires.QuadPart = t->QuadPart;
+		Expires.QuadPart = t->QuadPart;
 
 	// check there wasn't an overflow
-	if (expires.QuadPart < 0LL)
-		expires.QuadPart = 0x7fffffffffffffffLL;
+	if (Expires.QuadPart < 0LL)
+		Expires.QuadPart = 0x7fffffffffffffffLL;
 
-	add();
-	assert(!g_timeouts.Empty());
-	assert( queue_is_valid() );
+	Add();
+	assert(!g_Timeouts.Empty());
+	assert( QueueIsValid() );
 }
 
-void timeout_t::add()
+void TIMEOUT::Add()
 {
-	timeout_iter_t i(g_timeouts);
-	timeout_t* x;
+	TIMEOUT_ITER i(g_Timeouts);
+	TIMEOUT* x;
 
 	while ( (x = i) )
 	{
-		if (x->expires.QuadPart > expires.QuadPart)
+		if (x->Expires.QuadPart > Expires.QuadPart)
 			break;
 		i.Next();
 	}
 
 	// if there's a timer before this one, no need to set the interval timer
 	if (x)
-		g_timeouts.InsertBefore(x, this);
+		g_Timeouts.InsertBefore(x, this);
 	else
-		g_timeouts.Append(this);
+		g_Timeouts.Append(this);
 }
 
-void timeout_t::remove()
+void TIMEOUT::Remove()
 {
 	if (Entry[0].IsLinked())
-		g_timeouts.Unlink(this);
+		g_Timeouts.Unlink(this);
 }
 
 extern KUSER_SHARED_DATA *SharedMemoryAddress;
 
 // numbers from Wine's dlls/ntdll/time.c
 /* 1601 to 1970 is 369 years plus 89 leap days */
-const ULONGLONG tickspersec = 10000000;
-const ULONGLONG secsperday = 86400;
-const ULONGLONG secs_1601_to_1970 = (369 * 365 + 89) * secsperday;
-const ULONGLONG ticks_1601_to_1970 = secs_1601_to_1970 * tickspersec;
+const ULONGLONG TicksPerSec = 10000000;
+const ULONGLONG SecsPerDay = 86400;
+const ULONGLONG Secs1601To1970 = (369 * 365 + 89) * SecsPerDay;
+const ULONGLONG Ticks1601To1970 = Secs1601To1970 * TicksPerSec;
 
-LARGE_INTEGER timeout_t::current_time()
+LARGE_INTEGER TIMEOUT::CurrentTime()
 {
 	struct timeval tv;
 
@@ -168,10 +168,10 @@ LARGE_INTEGER timeout_t::current_time()
 	gettimeofday(&tv, NULL);
 	LARGE_INTEGER ret;
 	ret.QuadPart = (tv.tv_sec * 1000000LL + tv.tv_usec) * 10LL;
-	ret.QuadPart += ticks_1601_to_1970;
+	ret.QuadPart += Ticks1601To1970;
 
 	// calculate the tick count
-	tick_count = (ret.QuadPart - boot_time.QuadPart) / 10000LL;
+	TickCount = (ret.QuadPart - BootTime.QuadPart) / 10000LL;
 
 	// update the time in shared memory
 	// High1Time and High2Time need to be the same,
@@ -188,108 +188,108 @@ LARGE_INTEGER timeout_t::current_time()
 		// milliseconds since boot (T)
 		// T = shr(TickCountLow * TickCountMultiplier, 24)
 		SharedMemoryAddress->TickCountMultiplier = 0x100000;
-		SharedMemoryAddress->TickCountLow = ((tick_count * 0x01000000LL)/SharedMemoryAddress->TickCountMultiplier);
+		SharedMemoryAddress->TickCountLow = ((TickCount * 0x01000000LL)/SharedMemoryAddress->TickCountMultiplier);
 	}
 
 
 	return ret;
 }
 
-ULONG timeout_t::get_tick_count()
+ULONG TIMEOUT::GetTickCount()
 {
-	current_time();
-	return tick_count;
+	CurrentTime();
+	return TickCount;
 }
 
-void get_system_time_of_day( SYSTEM_TIME_OF_DAY_INFORMATION& time_of_day )
+void GetSystemTimeOfDay( SYSTEM_TIME_OF_DAY_INFORMATION& time_of_day )
 {
-	if (!boot_time.QuadPart)
-		boot_time = timeout_t::current_time();
+	if (!BootTime.QuadPart)
+		BootTime = TIMEOUT::CurrentTime();
 
-	time_of_day.CurrentTime = timeout_t::current_time();
-	time_of_day.BootTime = boot_time;
+	time_of_day.CurrentTime = TIMEOUT::CurrentTime();
+	time_of_day.BootTime = BootTime;
 	time_of_day.TimeZoneBias.QuadPart = 0LL;
 	time_of_day.CurrentTimeZoneId = 0;
 }
 
-void timeout_t::do_timeout()
+void TIMEOUT::DoTimeout()
 {
 	// remove first so we can be added again
-	remove();
+	Remove();
 	SignalTimeout();
 }
 
-timeout_t::~timeout_t()
+TIMEOUT::~TIMEOUT()
 {
-	remove();
+	Remove();
 }
 
-class nttimer_t : public SYNC_OBJECT, public timeout_t
+class NTTIMER : public SYNC_OBJECT, public TIMEOUT
 {
 protected:
-	BOOLEAN expired;
-	ULONG interval;
-	THREAD *thread;
-	PKNORMAL_ROUTINE apc_routine;
-	PVOID apc_context;
+	BOOLEAN Expired;
+	ULONG Interval;
+	THREAD *Thread;
+	PKNORMAL_ROUTINE ApcRoutine;
+	PVOID ApcContext;
 public:
-	nttimer_t();
-	~nttimer_t();
-	NTSTATUS set(LARGE_INTEGER& DueTime, PKNORMAL_ROUTINE apc, PVOID context, BOOLEAN Resume, ULONG Period, BOOLEAN& prev);
+	NTTIMER();
+	~NTTIMER();
+	NTSTATUS Set(LARGE_INTEGER& DueTime, PKNORMAL_ROUTINE apc, PVOID context, BOOLEAN Resume, ULONG Period, BOOLEAN& prev);
 	virtual BOOLEAN IsSignalled( void );
 	virtual BOOLEAN Satisfy( void );
 	virtual void SignalTimeout();
-	void cancel( BOOLEAN& prev );
+	void Cancel( BOOLEAN& prev );
 };
 
-nttimer_t::nttimer_t() :
-	expired(FALSE),
-	interval(0),
-	thread(0),
-	apc_routine(0),
-	apc_context(0)
+NTTIMER::NTTIMER() :
+	Expired(FALSE),
+	Interval(0),
+	Thread(0),
+	ApcRoutine(0),
+	ApcContext(0)
 {
 }
 
-nttimer_t::~nttimer_t()
+NTTIMER::~NTTIMER()
 {
-	if (thread)
-		Release( thread );
+	if (Thread)
+		Release( Thread );
 }
 
-nttimer_t *nttimer_from_obj( OBJECT *obj )
+NTTIMER *NtTimerFromObj( OBJECT *obj )
 {
-	return dynamic_cast<nttimer_t*>( obj );
+	return dynamic_cast<NTTIMER*>( obj );
 }
 
-BOOLEAN nttimer_t::IsSignalled( void )
+BOOLEAN NTTIMER::IsSignalled( void )
 {
-	return expired;
+	return Expired;
 }
 
-BOOLEAN nttimer_t::Satisfy( void )
+BOOLEAN NTTIMER::Satisfy( void )
 {
 	// FIXME: user correct time values
-	if (apc_routine)
-		thread->QueueApcThread( apc_routine, apc_context, 0, 0 );
+	if (ApcRoutine)
+		Thread->QueueApcThread( ApcRoutine, ApcContext, 0, 0 );
 
 	// restart the timer
-	if (interval)
+	if (Interval)
 	{
 		LARGE_INTEGER when;
-		when.QuadPart = interval * -10000LL;
-		set_timeout( &when );
+		when.QuadPart = Interval * -10000LL;
+		SetTimeout( &when );
 	}
 	return TRUE;
 }
 
-void nttimer_t::SignalTimeout()
+void NTTIMER::SignalTimeout()
 {
-	expired = TRUE;
+	Expired = TRUE;
 	NotifyWatchers();
 }
 
-NTSTATUS nttimer_t::set(
+NTSTATUS NTTIMER::Set(
 	LARGE_INTEGER& DueTime,
 	PKNORMAL_ROUTINE apc,
 	PVOID context,
@@ -299,64 +299,64 @@ NTSTATUS nttimer_t::set(
 {
 	//trace("%ld %p %p %d %ld\n", (ULONG)DueTime.QuadPart, apc, context, Resume, Period );
 
-	prev = expired;
-	interval = Period;
-	thread = Current;
-	AddRef( thread );
-	apc_routine = apc;
-	apc_context = context;
+	prev = Expired;
+	Interval = Period;
+	Thread = Current;
+	AddRef( Thread );
+	ApcRoutine = apc;
+	ApcContext = context;
 
 	if (DueTime.QuadPart == 0LL)
 	{
-		expired = TRUE;
+		Expired = TRUE;
 		return STATUS_SUCCESS;
 	}
 
-	expired = FALSE;
-	set_timeout( &DueTime );
+	Expired = FALSE;
+	SetTimeout( &DueTime );
 
 	return STATUS_SUCCESS;
 }
 
-void nttimer_t::cancel( BOOLEAN& prev )
+void NTTIMER::Cancel( BOOLEAN& prev )
 {
-	prev = expired;
-	set_timeout( 0 );
-	expired = FALSE;
+	prev = Expired;
+	SetTimeout( 0 );
+	Expired = FALSE;
 }
 
-// sync_timer_t is a specialized timer
-class sync_timer_t : public nttimer_t
+// SYNC_TIMER is a specialized timer
+class SYNC_TIMER : public NTTIMER
 {
 public:
 	virtual BOOLEAN Satisfy( void );
 };
 
-BOOLEAN sync_timer_t::Satisfy()
+BOOLEAN SYNC_TIMER::Satisfy()
 {
-	expired = FALSE;
-	return nttimer_t::Satisfy();
+	Expired = FALSE;
+	return NTTIMER::Satisfy();
 }
 
-class timer_factory : public OBJECT_FACTORY
+class TIMER_FACTORY : public OBJECT_FACTORY
 {
 private:
 	TIMER_TYPE Type;
 public:
-	timer_factory(TIMER_TYPE t) : Type(t) {}
+	TIMER_FACTORY(TIMER_TYPE t) : Type(t) {}
 	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-NTSTATUS timer_factory::AllocObject(OBJECT** obj)
+NTSTATUS TIMER_FACTORY::AllocObject(OBJECT** obj)
 {
 	switch (Type)
 	{
 	case SynchronizationTimer:
-		*obj = new sync_timer_t();
+		*obj = new SYNC_TIMER();
 		break;
 	case NotificationTimer:
 		//*obj = new notify_timer_t();
-		*obj = new nttimer_t();
+		*obj = new NTTIMER();
 		break;
 	default:
 		return STATUS_INVALID_PARAMETER_4;
@@ -374,7 +374,7 @@ NTSTATUS NTAPI NtCreateTimer(
 {
 	trace("%p %08lx %p %u\n", TimerHandle, AccessMask, ObjectAttributes, Type );
 
-	timer_factory factory( Type );
+	TIMER_FACTORY factory( Type );
 	return factory.Create( TimerHandle, AccessMask, ObjectAttributes );
 }
 
@@ -384,7 +384,7 @@ NTSTATUS NtOpenTimer(
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
 	trace("\n");
-	return NtOpenObject<nttimer_t>( TimerHandle, AccessMask, ObjectAttributes );
+	return NtOpenObject<NTTIMER>( TimerHandle, AccessMask, ObjectAttributes );
 }
 
 NTSTATUS NtCancelTimer(
@@ -393,7 +393,7 @@ NTSTATUS NtCancelTimer(
 {
 	NTSTATUS r;
 
-	nttimer_t* timer = 0;
+	NTTIMER* timer = 0;
 	r = ObjectFromHandle( timer, TimerHandle, TIMER_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -406,7 +406,7 @@ NTSTATUS NtCancelTimer(
 	}
 
 	BOOLEAN prev = 0;
-	timer->cancel(prev);
+	timer->Cancel(prev);
 
 	if (PreviousState)
 		CopyToUser( PreviousState, &prev, sizeof prev );
@@ -431,7 +431,7 @@ NTSTATUS NtSetTimer(
 
 	trace("due = %llx\n", due.QuadPart);
 
-	nttimer_t* timer = 0;
+	NTTIMER* timer = 0;
 	r = ObjectFromHandle( timer, TimerHandle, TIMER_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -444,7 +444,7 @@ NTSTATUS NtSetTimer(
 	}
 
 	BOOLEAN prev = FALSE;
-	r = timer->set( due, (PKNORMAL_ROUTINE)TimerApcRoutine, TimerContext, Resume, Period, prev );
+	r = timer->Set( due, (PKNORMAL_ROUTINE)TimerApcRoutine, TimerContext, Resume, Period, prev );
 	if (r == STATUS_SUCCESS && PreviousState )
 		CopyToUser( PreviousState, &prev, sizeof prev );
 
@@ -460,7 +460,7 @@ NTSTATUS NTAPI NtQueryTimer(
 {
 	NTSTATUS r;
 
-	nttimer_t* timer = 0;
+	NTTIMER* timer = 0;
 	r = ObjectFromHandle( timer, TimerHandle, TIMER_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -492,7 +492,7 @@ NTSTATUS NTAPI NtQueryTimer(
 	{
 	case TimerBasicInformation:
 		info.basic.SignalState = timer->IsSignalled();
-		timer->time_remaining( info.basic.TimeRemaining );
+		timer->TimeRemaining( info.basic.TimeRemaining );
 		break;
 	default:
 		assert(0);
@@ -510,7 +510,7 @@ NTSTATUS NTAPI NtQueryTimer(
 
 NTSTATUS NTAPI NtQuerySystemTime(PLARGE_INTEGER CurrentTime)
 {
-	LARGE_INTEGER now = timeout_t::current_time();
+	LARGE_INTEGER now = TIMEOUT::CurrentTime();
 
 	return CopyToUser( CurrentTime, &now, sizeof now );
 }

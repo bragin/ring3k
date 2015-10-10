@@ -51,7 +51,7 @@ CMSG::CMSG( HWND _hwnd, UINT _message, WPARAM _wparam, LPARAM _lparam ) :
 	WParam( _wparam ),
 	LParam( _lparam )
 {
-	Time = timeout_t::get_tick_count();
+	Time = TIMEOUT::GetTickCount();
 }
 
 THREAD_MESSAGE_QUEUE::THREAD_MESSAGE_QUEUE() :
@@ -90,7 +90,7 @@ bool THREAD_MESSAGE_QUEUE::GetPaintMessage( HWND Window, MSG& msg )
 		return FALSE;
 
 	msg.message = WM_PAINT;
-	msg.time = timeout_t::get_tick_count();
+	msg.time = TIMEOUT::GetTickCount();
 	msg.hwnd = win->handle;
 
 	return TRUE;
@@ -118,13 +118,13 @@ BOOL THREAD_MESSAGE_QUEUE::PostMessage(
 		msg.message = Message;
 		msg.wParam = Wparam;
 		msg.lParam = Lparam;
-		msg.time = timeout_t::get_tick_count();
+		msg.time = TIMEOUT::GetTickCount();
 		msg.pt.x = 0;
 		msg.pt.y = 0;
 
 		// remove from the list first
 		WaiterList.Unlink( waiter );
-		set_timeout( 0 );
+		SetTimeout( 0 );
 
 		// start the thread (might reschedule here )
 		waiter->T->Start();
@@ -193,13 +193,13 @@ WIN_TIMER* THREAD_MESSAGE_QUEUE::FindTimer( HWND Window, UINT Identifier )
 
 void WIN_TIMER::Reset()
 {
-	Expiry = timeout_t::current_time();
+	Expiry = TIMEOUT::CurrentTime();
 	Expiry.QuadPart += Period*10000LL;
 }
 
 bool WIN_TIMER::Expired() const
 {
-	LARGE_INTEGER now = timeout_t::current_time();
+	LARGE_INTEGER now = TIMEOUT::CurrentTime();
 	return (now.QuadPart >= Expiry.QuadPart);
 }
 
@@ -222,7 +222,7 @@ void THREAD_MESSAGE_QUEUE::TimerAdd( WIN_TIMER* timer )
 
 bool THREAD_MESSAGE_QUEUE::GetTimerMessage( HWND Window, MSG& msg )
 {
-	LARGE_INTEGER now = timeout_t::current_time();
+	LARGE_INTEGER now = TIMEOUT::CurrentTime();
 	WIN_TIMER *t = NULL;
 	for (WIN_TIMER_ITER i(TimerList); i; i.Next())
 	{
@@ -244,7 +244,7 @@ bool THREAD_MESSAGE_QUEUE::GetTimerMessage( HWND Window, MSG& msg )
 	msg.message = WM_TIMER;
 	msg.wParam = t->Id;
 	msg.lParam = (UINT) t->LParam;
-	msg.time = timeout_t::get_tick_count();
+	msg.time = TIMEOUT::GetTickCount();
 	msg.pt.x = 0;
 	msg.pt.y = 0;
 
@@ -322,7 +322,7 @@ void THREAD_MESSAGE_QUEUE::SignalTimeout()
 	if (waiter)
 	{
 		WaiterList.Unlink( waiter );
-		set_timeout( 0 );
+		SetTimeout( 0 );
 
 		// start the thread (might reschedule here )
 		waiter->T->Start();
@@ -339,7 +339,7 @@ BOOLEAN THREAD_MESSAGE_QUEUE::GetMessage(
 	if (GetMessageTimeout( Window, t ))
 	{
 		//trace("setting timeout %lld\n", t.QuadPart);
-		set_timeout( &t );
+		SetTimeout( &t );
 	}
 
 	// wait for a message

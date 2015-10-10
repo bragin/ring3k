@@ -80,7 +80,7 @@ bool DEFAULT_SLEEPER::CheckEvents( bool wait )
 	LARGE_INTEGER timeout;
 
 	// check for expired timers
-	bool timers_left = timeout_t::check_timers(timeout);
+	bool timers_left = TIMEOUT::CheckTimers(timeout);
 
 	// Check for a deadlock and quit.
 	//  This happens if we're the only active thread,
@@ -482,7 +482,7 @@ int main(int argc, char **argv)
 
 	// initialize boottime
 	SYSTEM_TIME_OF_DAY_INFORMATION dummy;
-	get_system_time_of_day( dummy );
+	GetSystemTimeOfDay( dummy );
 
 	InitRegistry();
 	FIBER::FibersInit();
