@@ -354,7 +354,7 @@ BOOLEAN THREAD_MESSAGE_QUEUE::GetMessage(
 BOOLEAN NTAPI NtUserGetMessage(PMSG Message, HWND Window, ULONG MinMessage, ULONG MaxMessage)
 {
 	// no input queue...
-	THREAD_MESSAGE_QUEUE* queue = Current->queue;
+	THREAD_MESSAGE_QUEUE* queue = Current->Queue;
 	if (!queue)
 		return FALSE;
 
@@ -391,12 +391,12 @@ BOOLEAN NTAPI NtUserPostMessage( HWND Window, UINT Message, WPARAM Wparam, LPARA
 	THREAD*& thread = win->get_win_thread();
 	assert(thread != NULL);
 
-	return thread->queue->PostMessage( Window, Message, Wparam, Lparam );
+	return thread->Queue->PostMessage( Window, Message, Wparam, Lparam );
 }
 
 BOOLEAN NTAPI NtUserPeekMessage( PMSG Message, HWND Window, UINT MaxMessage, UINT MinMessage, UINT Remove)
 {
-	THREAD_MESSAGE_QUEUE* queue = Current->queue;
+	THREAD_MESSAGE_QUEUE* queue = Current->Queue;
 	if (!queue)
 		return FALSE;
 
@@ -422,7 +422,7 @@ UINT NTAPI NtUserSetTimer( HWND Window, UINT Identifier, UINT Elapse, PVOID Time
 	THREAD*& thread = win->get_win_thread();
 	assert(thread != NULL);
 
-	return thread->queue->SetTimer( Window, Identifier, Elapse, TimerProc );
+	return thread->Queue->SetTimer( Window, Identifier, Elapse, TimerProc );
 }
 
 BOOLEAN NTAPI NtUserKillTimer( HWND Window, UINT Identifier )
@@ -434,5 +434,5 @@ BOOLEAN NTAPI NtUserKillTimer( HWND Window, UINT Identifier )
 	THREAD*& thread = win->get_win_thread();
 	assert(thread != NULL);
 
-	return thread->queue->KillTimer( Window, Identifier );
+	return thread->Queue->KillTimer( Window, Identifier );
 }

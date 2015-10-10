@@ -139,7 +139,7 @@ NTSTATUS HANDLE_TABLE::ObjectFromHandle( OBJECT*& obj, HANDLE handle, ACCESS_MAS
 	}
 	if (handle == NtCurrentProcess())
 	{
-		obj = Current->process;
+		obj = Current->Process;
 		return STATUS_SUCCESS;
 	}
 	ULONG n = (ULONG) handle;
@@ -336,7 +336,7 @@ BOOLEAN SYNC_OBJECT::Satisfy( void )
 NTSTATUS NTAPI NtClose( HANDLE Handle )
 {
 	trace("%p\n", Handle );
-	return Current->process->HandleTable.FreeHandle( Handle );
+	return Current->Process->HandleTable.FreeHandle( Handle );
 }
 
 NTSTATUS NTAPI NtQueryObject(

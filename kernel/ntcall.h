@@ -71,12 +71,12 @@ NTSTATUS ProcessAllocUserHandle( PROCESS *process, OBJECT *obj, ACCESS_MASK acce
 
 static inline NTSTATUS AllocUserHandle( OBJECT *obj, ACCESS_MASK access, HANDLE *out )
 {
-	return ProcessAllocUserHandle( Current->process, obj, access, out, 0 );
+	return ProcessAllocUserHandle( Current->Process, obj, access, out, 0 );
 }
 
 static inline NTSTATUS AllocUserHandle( OBJECT *obj, ACCESS_MASK access, HANDLE *out, HANDLE *copy )
 {
-	return ProcessAllocUserHandle( Current->process, obj, access, out, copy );
+	return ProcessAllocUserHandle( Current->Process, obj, access, out, copy );
 }
 
 // from reg.cpp

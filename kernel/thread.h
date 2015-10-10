@@ -32,19 +32,19 @@
 
 class THREAD;
 
-typedef LIST_ANCHOR<THREAD,0> sibling_list_t;
-typedef LIST_ITER<THREAD,0> sibling_iter_t;
-typedef LIST_ELEMENT<THREAD> thread_element_t;
+typedef LIST_ANCHOR<THREAD,0> SIBLING_LIST;
+typedef LIST_ITER<THREAD,0> SIBLING_ITER;
+typedef LIST_ELEMENT<THREAD> THREAD_ELEMENT;
 
 struct PORT;
 struct PROCESS;
 
-struct exception_stack_frame
+struct EXCEPTION_STACK_FRAME
 {
-	PEXCEPTION_RECORD prec;
-	PCONTEXT pctx;
-	CONTEXT ctx;
-	EXCEPTION_RECORD rec;
+	PEXCEPTION_RECORD PRec;
+	PCONTEXT PCtx;
+	CONTEXT Ctx;
+	EXCEPTION_RECORD Rec;
 };
 
 const ULONG context_all =
@@ -53,53 +53,53 @@ const ULONG context_all =
 	CONTEXT_EXTENDED_REGISTERS |
 	CONTEXT_FULL ;
 
-struct kernel_debug_string_output
+struct KERNEL_DEBUG_STRING_OUTPUT
 {
-	USHORT length;
-	USHORT pad;
-	ULONG address;
-	ULONG unknown1;
-	ULONG unknown2;
+	USHORT Length;
+	USHORT Pad;
+	ULONG Address;
+	ULONG Unknown1;
+	ULONG Unknown2;
 };
 
 struct SECTION;
 class MBLOCK;
 class THREAD_MESSAGE_QUEUE;
 
-class runlist_entry_t
+class RUNLIST_ENTRY
 {
-	friend class LIST_ANCHOR<runlist_entry_t,0>;
-	friend class LIST_ELEMENT<runlist_entry_t>;
-	LIST_ELEMENT<runlist_entry_t> Entry[1];
-	static LIST_ANCHOR<runlist_entry_t,0> running_threads;
-	static ULONG num_running_threads;
+	friend class LIST_ANCHOR<RUNLIST_ENTRY,0>;
+	friend class LIST_ELEMENT<RUNLIST_ENTRY>;
+	LIST_ELEMENT<RUNLIST_ENTRY> Entry[1];
+	static LIST_ANCHOR<RUNLIST_ENTRY,0> RunningThreads;
+	static ULONG NumRunningThreads;
 public:
-	static ULONG num_active_threads();
-	void runlist_add();
-	void runlist_remove();
+	static ULONG NumActiveThreads();
+	void RunlistAdd();
+	void RunlistRemove();
 };
 
 class THREAD :
 	public SYNC_OBJECT,
 	public FIBER,
-	public runlist_entry_t
+	public RUNLIST_ENTRY
 {
 	friend class LIST_ANCHOR<THREAD,0>;
 	friend class LIST_ELEMENT<THREAD>;
 	friend class LIST_ITER<THREAD,0>;
-	thread_element_t Entry[1];
+	THREAD_ELEMENT Entry[1];
 
 protected:
-	ULONG id;
+	ULONG Id;
 
 public:
-	PROCESS *process;
+	PROCESS *Process;
 
 	// LPC information
 	ULONG MessageId;
-	PORT *port;
+	PORT *Port;
 
-	THREAD_MESSAGE_QUEUE* queue;
+	THREAD_MESSAGE_QUEUE* Queue;
 
 public:
 	THREAD( PROCESS *p );
@@ -107,7 +107,7 @@ public:
 	virtual ULONG TraceId();
 	ULONG GetID()
 	{
-		return id;
+		return Id;
 	}
 	virtual void GetClientID( CLIENT_ID *id );
 	virtual void Wait();
@@ -131,8 +131,8 @@ public:
 	virtual PTEB GetTEB() = 0;
 };
 
-NTSTATUS create_thread( THREAD **pthread, PROCESS *p, PCLIENT_ID id, CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended );
-int run_thread(FIBER *arg);
+NTSTATUS CreateThread( THREAD **pthread, PROCESS *p, PCLIENT_ID id, CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspended );
+int RunThread(FIBER *arg);
 
 extern THREAD *Current;
 

@@ -196,7 +196,7 @@ void WIN32K_MANAGER::SendInput(INPUT* input)
 	{
 		THREAD *t = active_window->get_win_thread();
 		assert(t != NULL);
-		queue = t->queue;
+		queue = t->Queue;
 	}
 
 	trace("active window = %p\n", active_window);
@@ -361,7 +361,7 @@ NTSTATUS Win32kThreadInit(THREAD *thread)
 	if (thread->Win32kInitComplete())
 		return STATUS_SUCCESS;
 
-	r = Win32kProcessInit( thread->process );
+	r = Win32kProcessInit( thread->Process );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -422,7 +422,7 @@ HGDIOBJ AllocGdiHandle( BOOL stock, ULONG type, void *user_info, GDI_OBJECT* obj
 		type = GDI_OBJECT_BRUSH;
 
 	gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
-	table[index].ProcessId = Current->process->Id;
+	table[index].ProcessId = Current->Process->Id;
 	table[index].Type = type;
 	HGDIOBJ handle = makeHGDIOBJ(0,stock,reported_type,index);
 	table[index].Count = 0;
@@ -549,17 +549,17 @@ void GDI_OBJECT::InitGdiSharedMem()
 		g_gdi_shared_bitmap->SetArea( g_gdi_shared_memory, dc_shared_memory_size );
 	}
 
-	BYTE*& dc_shared_mem = Current->process->Win32kInfo->dc_shared_mem;
+	BYTE*& dc_shared_mem = Current->Process->Win32kInfo->dc_shared_mem;
 	if (!dc_shared_mem)
 	{
-		r = g_gdi_section->Mapit( Current->process->Vm, dc_shared_mem, 0, MEM_COMMIT, PAGE_READWRITE );
+		r = g_gdi_section->Mapit( Current->Process->Vm, dc_shared_mem, 0, MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 		{
 			trace("failed to map shared memory\n");
 			assert( 0 );
 		}
 
-		Current->process->Vm->SetTracer( dc_shared_mem, GdishmTrace );
+		Current->Process->Vm->SetTracer( dc_shared_mem, GdishmTrace );
 	}
 }
 
@@ -1133,7 +1133,7 @@ HANDLE WIN32K_MANAGER::GetStockObject( ULONG Index )
 {
 	if (Index > STOCK_LAST)
 		return 0;
-	HANDLE& handle = Current->process->Win32kInfo->stock_object[Index];
+	HANDLE& handle = Current->Process->Win32kInfo->stock_object[Index];
 	if (handle)
 		return handle;
 
@@ -1231,7 +1231,7 @@ BOOLEAN NTAPI NtGdiDeleteObjectApp(HGDIOBJ Object)
 	gdi_handle_table_entry *entry = GetHandleTableEntry(Object);
 	if (!entry)
 		return FALSE;
-	if (entry->ProcessId != Current->process->Id)
+	if (entry->ProcessId != Current->Process->Id)
 	{
 		trace("pirate deletion! %p\n", Object);
 		return FALSE;

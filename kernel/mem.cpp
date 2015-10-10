@@ -923,7 +923,7 @@ NTSTATUS NTAPI NtWriteVirtualMemory(
 		src = (BYTE*)Buffer;
 		dest = (BYTE*)BaseAddress;
 
-		r = Current->process->Vm->GetKernelAddress( &src, &len );
+		r = Current->Process->Vm->GetKernelAddress( &src, &len );
 		if (r < STATUS_SUCCESS)
 			break;
 

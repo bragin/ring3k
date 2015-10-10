@@ -258,7 +258,7 @@ THREAD *FindThreadByClientId( CLIENT_ID *id )
 		PROCESS *p = i;
 		if (p->Id == (ULONG)id->UniqueProcess)
 		{
-			for ( sibling_iter_t j(p->Threads); j; j.Next() )
+			for ( SIBLING_ITER j(p->Threads); j; j.Next() )
 			{
 				THREAD *t = j;
 				if (t->GetID() == (ULONG)id->UniqueThread)
@@ -283,7 +283,7 @@ PROCESS *FindProcessById( HANDLE UniqueProcess )
 
 BOOLEAN PROCESS::IsSignalled( void )
 {
-	for ( sibling_iter_t i(Threads); i; i.Next() )
+	for ( SIBLING_ITER i(Threads); i; i.Next() )
 	{
 		THREAD *t = i;
 		if (!t->IsTerminated())
@@ -611,7 +611,7 @@ NTSTATUS NTAPI NtOpenProcess(
 			THREAD *t = FindThreadByClientId( &id );
 			if (!t)
 				return STATUS_INVALID_CID;
-			process = t->process;
+			process = t->Process;
 		}
 		else if (id.UniqueProcess)
 		{
@@ -896,7 +896,7 @@ NTSTATUS NTAPI NtTerminateProcess(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	sibling_iter_t i(p->Threads);
+	SIBLING_ITER i(p->Threads);
 	while ( i )
 	{
 		THREAD *t = i;

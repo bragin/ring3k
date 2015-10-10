@@ -181,7 +181,7 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 	r = p->Vm->CopyToUser( (BYTE*) ctx.Esp + 4, &p->PebBaseAddress, sizeof p->PebBaseAddress );
 
 	if (r == STATUS_SUCCESS)
-		r = create_thread( t, p, &id, &ctx, &init_teb, FALSE );
+		r = CreateThread( t, p, &id, &ctx, &init_teb, FALSE );
 
 	Release( p );
 
@@ -235,7 +235,7 @@ void DoCleanup( void )
 			continue;
 		num_processes++;
 		fprintf(stderr, "process %04lx\n", p->Id);
-		for ( sibling_iter_t ti(p->Threads); ti; ti.Next() )
+		for ( SIBLING_ITER ti(p->Threads); ti; ti.Next() )
 		{
 			THREAD *t = ti;
 			if (t->IsSignalled())
@@ -519,7 +519,7 @@ int main(int argc, char **argv)
 	Schedule();
 
 	NtGdiFini();
-	r = initial_thread->process->ExitStatus;
+	r = initial_thread->Process->ExitStatus;
 	//fprintf(stderr, "process exited (%08x)\n", r);
 	Release( initial_thread );
 

@@ -49,7 +49,7 @@ template<typename T> NTSTATUS ObjectFromHandle(T*& out, HANDLE handle, ACCESS_MA
 	NTSTATUS r;
 	OBJECT *obj = 0;
 
-	r = Current->process->HandleTable.ObjectFromHandle( obj, handle, access );
+	r = Current->Process->HandleTable.ObjectFromHandle( obj, handle, access );
 	if (r != STATUS_SUCCESS)
 		return r;
 

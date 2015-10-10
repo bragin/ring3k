@@ -258,10 +258,10 @@ NTSTATUS SetExceptionPort( PROCESS *process, OBJECT *obj )
 
 bool SendException( THREAD *thread, EXCEPTION_RECORD& rec )
 {
-	if (!thread->process->ExceptionPort)
+	if (!thread->Process->ExceptionPort)
 		return false;
 
-	PORT *port = static_cast<PORT*>(thread->process->ExceptionPort);
+	PORT *port = static_cast<PORT*>(thread->Process->ExceptionPort);
 
 	trace("Thread = %p Port = %p\n", thread, port);
 
@@ -299,7 +299,7 @@ bool SendException( THREAD *thread, EXCEPTION_RECORD& rec )
 			thread->Terminate(rec.ExceptionCode);
 			return true;
 		case DBG_TERMINATE_PROCESS:
-			thread->process->Terminate(rec.ExceptionCode);
+			thread->Process->Terminate(rec.ExceptionCode);
 			return true;
 		default:
 			trace("status = %08lx\n", status);
@@ -416,9 +416,9 @@ PORT::~PORT()
 	}
 
 	if (OtherSectionBase)
-		Thread->process->Vm->UnmapView( OtherSectionBase );
+		Thread->Process->Vm->UnmapView( OtherSectionBase );
 	if (OurSectionBase)
-		Thread->process->Vm->UnmapView( OurSectionBase );
+		Thread->Process->Vm->UnmapView( OurSectionBase );
 	if (Section)
 		Release(Section);
 	if (Other)
@@ -626,10 +626,10 @@ NTSTATUS ConnectPort(
 	assert(port->ReceivedMsg == 0);
 
 	// expect to be restarted by NtCompleteConnectPort when t->Port is set
-	assert( 0 == Current->port);
-	Current->port = port;
+	assert( 0 == Current->Port);
+	Current->Port = port;
 	Current->Wait();
-	assert( Current->port == 0 );
+	assert( Current->Port == 0 );
 	if (port->ReceivedMsg)
 	{
 		reply = port->ReceivedMsg;
@@ -682,11 +682,11 @@ NTSTATUS CompleteConnectPort( PORT *port )
 
 	// allow starting threads where t->Port is set
 	THREAD *t = port->Other->Thread;
-	if (!t->port)
+	if (!t->Port)
 		return STATUS_INVALID_PARAMETER;
 
 	// make sure we don't try restart the Thread twice
-	t->port = 0;
+	t->Port = 0;
 
 	// restart the Thread that was blocked on connect
 	t->Start();
@@ -702,7 +702,7 @@ NTSTATUS PORT::AcceptConnect(
 	//trace("%p %p %08lx\n", req->ClientId.UniqueProcess, req->ClientId.UniqueThread, req->MessageId);
 
 	// set the Other pointer for connect_port
-	Other = t->port;
+	Other = t->Port;
 	Other->Other = this;
 	Other->ReceivedMsg = reply;
 
@@ -717,20 +717,20 @@ NTSTATUS PORT::AcceptConnect(
 		ViewSize = server_write_sec->ViewSize;
 
 		// map our Section into their process
-		assert(t->port->OtherSectionBase == 0);
-		r = Section->Mapit( t->process->Vm, t->port->OtherSectionBase, 0,
+		assert(t->Port->OtherSectionBase == 0);
+		r = Section->Mapit( t->Process->Vm, t->Port->OtherSectionBase, 0,
 							MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
 		// map our Section into our process
 		assert(OurSectionBase == 0);
-		r = Section->Mapit( Current->process->Vm, OurSectionBase, 0,
+		r = Section->Mapit( Current->Process->Vm, OurSectionBase, 0,
 							MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
-		trace("ours=%p theirs=%p\n", t->port->OtherSectionBase, OurSectionBase);
+		trace("ours=%p theirs=%p\n", t->Port->OtherSectionBase, OurSectionBase);
 	}
 
 	// map the Other side's Section into our process
@@ -738,17 +738,17 @@ NTSTATUS PORT::AcceptConnect(
 	{
 		assert(OtherSectionBase == 0);
 		// map their Section into our process
-		r = Other->Section->Mapit( Current->process->Vm, OtherSectionBase, 0,
+		r = Other->Section->Mapit( Current->Process->Vm, OtherSectionBase, 0,
 								   MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
 		// map their Section into their process
-		r = Other->Section->Mapit( t->process->Vm, t->port->OurSectionBase, 0,
+		r = Other->Section->Mapit( t->Process->Vm, t->Port->OurSectionBase, 0,
 								   MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
-		trace("theirs=%p ours=%p\n", OtherSectionBase, t->port->OurSectionBase);
+		trace("theirs=%p ours=%p\n", OtherSectionBase, t->Port->OurSectionBase);
 	}
 
 	server_write_sec->ViewBase = OurSectionBase;
@@ -1171,24 +1171,24 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 	}
 
 	// avoid accepting the same connection twice
-	if (!t->port)
+	if (!t->Port)
 		return STATUS_REPLY_MESSAGE_MISMATCH;
-	if (t->port->Other)
+	if (t->Port->Other)
 		return STATUS_REPLY_MESSAGE_MISMATCH;
 
 	if (!AcceptConnection)
 	{
 		// restart the Thread that was blocked on connect
-		t->port = 0;
+		t->Port = 0;
 		t->Start();
 		return STATUS_SUCCESS;
 	}
 
-	assert( t->port );
-	assert( !t->port->Other );
-	assert( t->port->Queue );
+	assert( t->Port );
+	assert( !t->Port->Other );
+	assert( t->Port->Queue );
 
-	PORT *port = new PORT( FALSE, Current, t->port->Queue );
+	PORT *port = new PORT( FALSE, Current, t->Port->Queue );
 	if (!port)
 		return STATUS_NO_MEMORY;
 

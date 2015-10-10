@@ -219,7 +219,7 @@ void COMPLETION_PORT_IMPL::Set(ULONG key, ULONG value, NTSTATUS status, ULONG in
 
 	// give each thread an I/O completion packet
 	// and add it to the list of idle threads
-	if (runlist_entry_t::num_active_threads() >= num_threads )
+	if (RUNLIST_ENTRY::NumActiveThreads() >= num_threads )
 	{
 		PortWaitIdle();
 		return;
@@ -262,7 +262,7 @@ NTSTATUS COMPLETION_PORT_IMPL::Remove(ULONG& key, ULONG& value, NTSTATUS& status
 		packet = waiter.GetPacket();
 	}
 	// this thread must be active... don't block ourselves
-	else if (runlist_entry_t::num_active_threads() > num_threads )
+	else if (RUNLIST_ENTRY::NumActiveThreads() > num_threads )
 	{
 		// there's a packet ready but the system, is busy
 		// a completion port isn't a FIFO - leave the packt alone

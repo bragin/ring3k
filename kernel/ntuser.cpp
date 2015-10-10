@@ -402,7 +402,7 @@ NTUSERINFO *alloc_user_info()
 	NTUSERINFO *info = (NTUSERINFO*) user_shared_bitmap.Alloc( sizeof (NTUSERINFO) );
 	info->DesktopWindow = desktop_window;
 	ULONG ofs = (BYTE*)info - (BYTE*)user_shared;
-	return (NTUSERINFO*) (Current->process->Win32kInfo->user_shared_mem + ofs);
+	return (NTUSERINFO*) (Current->Process->Win32kInfo->user_shared_mem + ofs);
 }
 
 void create_desktop_window()
@@ -421,7 +421,7 @@ void create_desktop_window()
 	desktop_window->rcWnd.bottom = 480;
 	desktop_window->rcClient = desktop_window->rcWnd;
 
-	desktop_window->handle = (HWND) alloc_user_handle( desktop_window, USER_HANDLE_WINDOW, Current->process );
+	desktop_window->handle = (HWND) alloc_user_handle( desktop_window, USER_HANDLE_WINDOW, Current->Process );
 }
 
 // should be called from NtGdiInit to map the user32 shared memory
@@ -466,12 +466,12 @@ NTSTATUS map_user_shared_memory( PROCESS *proc )
 BOOLEAN do_gdi_init()
 {
 	NTSTATUS r;
-	r = map_user_shared_memory( Current->process );
+	r = map_user_shared_memory( Current->Process );
 	if (r < STATUS_SUCCESS)
 		return FALSE;
 
 	// check set the offset
-	BYTE*& user_shared_mem = Current->process->Win32kInfo->user_shared_mem;
+	BYTE*& user_shared_mem = Current->Process->Win32kInfo->user_shared_mem;
 	Current->GetTEB()->KernelUserPointerOffset = (BYTE*) user_shared - user_shared_mem;
 
 	// create the desktop window for alloc_user_info
@@ -620,8 +620,8 @@ BOOLEAN NtReleaseDC( HANDLE hdc )
 BOOLEAN NtPostQuitMessage( ULONG ret )
 {
 	trace("%08lx\n", ret );
-	if (Current->queue)
-		Current->queue->PostQuitMessage( ret );
+	if (Current->Queue)
+		Current->Queue->PostQuitMessage( ret );
 	return TRUE;
 }
 
@@ -983,14 +983,14 @@ HANDLE NTAPI NtUserOpenDesktop(POBJECT_ATTRIBUTES DesktopName, ULONG, ACCESS_MAS
 BOOLEAN NTAPI NtUserSetProcessWindowStation(HANDLE WindowStation)
 {
 	trace("\n");
-	Current->process->WindowStation = WindowStation;
+	Current->Process->WindowStation = WindowStation;
 	return TRUE;
 }
 
 HANDLE NTAPI NtUserGetProcessWindowStation(void)
 {
 	trace("\n");
-	return Current->process->WindowStation;
+	return Current->Process->WindowStation;
 }
 
 BOOLEAN NTAPI NtUserSetThreadDesktop(HANDLE Desktop)
@@ -1169,7 +1169,7 @@ window_tt::~window_tt()
 PWND window_tt::get_wininfo()
 {
 	ULONG ofs = (BYTE*)this - (BYTE*)user_shared;
-	return (PWND) (Current->process->Win32kInfo->user_shared_mem + ofs);
+	return (PWND) (Current->Process->Win32kInfo->user_shared_mem + ofs);
 }
 
 NTSTATUS window_tt::send( MESSAGE& msg )
@@ -1319,12 +1319,12 @@ window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, 
 
 	win->link_window( parent_win );
 
-	win->handle = (HWND) alloc_user_handle( win, USER_HANDLE_WINDOW, Current->process );
+	win->handle = (HWND) alloc_user_handle( win, USER_HANDLE_WINDOW, Current->Process );
 	win->wndproc = wndcls->get_wndproc();
 
 	// create a thread message queue if necessary
-	if (!Current->queue)
-		Current->queue = new THREAD_MESSAGE_QUEUE;
+	if (!Current->Queue)
+		Current->Queue = new THREAD_MESSAGE_QUEUE;
 
 	REGION*& region = win->get_invalid_region();
 	region = REGION::Alloc();
