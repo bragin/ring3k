@@ -56,7 +56,7 @@ struct graphics_driver_list
 
 struct graphics_driver_list graphics_drivers[] =
 {
-	{ "sdl", &init_sdl_win32k_manager, },
+	{ "sdl", &InitSdlWin32kManager, },
 	{ "null", &InitNullWin32kManager, },
 	{ NULL, NULL, },
 };

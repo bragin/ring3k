@@ -43,13 +43,13 @@
 #if defined (HAVE_SDL) && defined (HAVE_SDL_SDL_H) || true
 #include <SDL/SDL.h>
 
-class sdl_16bpp_bitmap_t : public BitmapImpl<16>
+class SDL_16BPP_BITMAP : public BitmapImpl<16>
 {
-	SDL_Surface *surface;
+	SDL_Surface *Surface;
 public:
-	sdl_16bpp_bitmap_t( SDL_Surface *s );
-	void lock();
-	void unlock();
+	SDL_16BPP_BITMAP( SDL_Surface *s );
+	void Lock();
+	void Unlock();
 	virtual BOOL SetPixel( INT x, INT y, COLORREF color );
 	virtual COLORREF GetPixel( INT x, INT y );
 	virtual BOOL BitBlt( INT xDest, INT yDest, INT cx, INT cy,
@@ -60,115 +60,115 @@ protected:
 	virtual ULONG MapColorref( COLORREF color );
 };
 
-class sdl_device_context_t : public DEVICE_CONTEXT
+class SDL_DEVICE_CONTEXT : public DEVICE_CONTEXT
 {
 public:
-	CBITMAP *sdl_bitmap;
-	window_tt *win;
+	CBITMAP *SdlBitmap;
+	window_tt *Win;
 public:
-	sdl_device_context_t( CBITMAP *b );
+	SDL_DEVICE_CONTEXT( CBITMAP *b );
 	virtual CBITMAP* GetBitmap();
 	virtual HANDLE SelectBitmap( CBITMAP *bitmap );
 	virtual int GetCaps( int index );
 };
 
-class sdl_sleeper_t : public SLEEPER
+class SDL_SLEEPER : public SLEEPER
 {
-	WIN32K_MANAGER *manager;
+	WIN32K_MANAGER *Manager;
 public:
-	sdl_sleeper_t( WIN32K_MANAGER* mgr );
+	SDL_SLEEPER( WIN32K_MANAGER* mgr );
 	virtual bool CheckEvents( bool wait );
-	static Uint32 timeout_callback( Uint32 interval, void *arg );
-	bool handle_sdl_event( SDL_Event& event );
-	WORD sdl_keysum_to_vkey( SDLKey sym );
-	ULONG get_mouse_button( Uint8 button, bool up );
+	static Uint32 TimeoutCallback( Uint32 interval, void *arg );
+	bool HandleSdlEvent( SDL_Event& event );
+	WORD SdlKeysumToVkey( SDLKey sym );
+	ULONG GetMouseButton( Uint8 button, bool up );
 };
 
-class win32k_sdl_t : public WIN32K_MANAGER
+class WIN32K_SDL : public WIN32K_MANAGER
 {
 protected:
-	SDL_Surface *screen;
-	sdl_sleeper_t sdl_sleeper;
-	CBITMAP* sdl_bitmap;
+	SDL_Surface *Screen;
+	SDL_SLEEPER SdlSleeper;
+	CBITMAP* SdlBitmap;
 public:
 	virtual BOOL Init();
 	virtual void Fini();
-	win32k_sdl_t();
+	WIN32K_SDL();
 	virtual DEVICE_CONTEXT* AllocScreenDcPtr();
 
 protected:
 	Uint16 MapColorref( COLORREF );
-	virtual SDL_Surface* set_mode() = 0;
+	virtual SDL_Surface* SetMode() = 0;
 	virtual int GetCaps( int index );
 };
 
-win32k_sdl_t::win32k_sdl_t() :
-	sdl_sleeper( this )
+WIN32K_SDL::WIN32K_SDL() :
+	SdlSleeper( this )
 {
 }
 
-BOOL sdl_16bpp_bitmap_t::SetPixel( INT x, INT y, COLORREF color )
+BOOL SDL_16BPP_BITMAP::SetPixel( INT x, INT y, COLORREF color )
 {
 	BOOL r;
-	lock();
+	Lock();
 	r = CBITMAP::SetPixel( x, y, color );
-	SDL_UpdateRect(surface, x, y, 1, 1);
-	unlock();
+	SDL_UpdateRect(Surface, x, y, 1, 1);
+	Unlock();
 	return r;
 }
 
-COLORREF sdl_16bpp_bitmap_t::GetPixel( INT x, INT y )
+COLORREF SDL_16BPP_BITMAP::GetPixel( INT x, INT y )
 {
 	BOOL r;
-	lock();
+	Lock();
 	r = CBITMAP::GetPixel(x, y);
-	unlock();
+	Unlock();
 	return r;
 }
 
-BOOL sdl_16bpp_bitmap_t::Rectangle(INT left, INT top, INT right, INT bottom, BRUSH* brush )
+BOOL SDL_16BPP_BITMAP::Rectangle(INT left, INT top, INT right, INT bottom, BRUSH* brush )
 {
 	trace("sdl_16bpp_bitmap_t::rectangle\n");
-	lock();
+	Lock();
 	CBITMAP::Rectangle( left, top, right, bottom, brush );
-	unlock();
-	SDL_UpdateRect( surface, left, top, right - left, bottom - top );
+	Unlock();
+	SDL_UpdateRect( Surface, left, top, right - left, bottom - top );
 	return TRUE;
 }
 
-BOOL sdl_16bpp_bitmap_t::BitBlt( INT xDest, INT yDest, INT cx, INT cy, CBITMAP *src, INT xSrc, INT ySrc, ULONG rop )
+BOOL SDL_16BPP_BITMAP::BitBlt( INT xDest, INT yDest, INT cx, INT cy, CBITMAP *src, INT xSrc, INT ySrc, ULONG rop )
 {
 	BOOL r;
-	lock();
+	Lock();
 	assert(cx>=0);
 	assert(cy>=0);
 	r = CBITMAP::BitBlt(xDest, yDest, cx, cy, src, xSrc, ySrc, rop);
-	SDL_UpdateRect(surface, xDest, yDest, xDest + cx, yDest + cy);
-	unlock();
+	SDL_UpdateRect(Surface, xDest, yDest, xDest + cx, yDest + cy);
+	Unlock();
 	return r;
 }
 
-BOOL sdl_16bpp_bitmap_t::Line( INT x1, INT y1, INT x2, INT y2, PEN *pen )
+BOOL SDL_16BPP_BITMAP::Line( INT x1, INT y1, INT x2, INT y2, PEN *pen )
 {
 	BOOL r;
-	lock();
+	Lock();
 	r = CBITMAP::Line(x1, y1, x2, y2, pen);
 	// FIXME: possible optimization when updating?
 	if (x1 > x2)
 		swap(x1, x2);
 	if (y1 > y2)
 		swap(y1, y2);
-	SDL_UpdateRect(surface, x1, y1, x2 - x1 + 1, y2 - y1 + 1);
-	unlock();
+	SDL_UpdateRect(Surface, x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+	Unlock();
 	return r;
 }
 
-sdl_sleeper_t::sdl_sleeper_t( WIN32K_MANAGER* mgr ) :
-	manager( mgr )
+SDL_SLEEPER::SDL_SLEEPER( WIN32K_MANAGER* mgr ) :
+	Manager( mgr )
 {
 }
 
-Uint32 sdl_sleeper_t::timeout_callback( Uint32 interval, void *arg )
+Uint32 SDL_SLEEPER::TimeoutCallback( Uint32 interval, void *arg )
 {
 	SDL_Event event;
 	event.type = SDL_USEREVENT;
@@ -179,7 +179,7 @@ Uint32 sdl_sleeper_t::timeout_callback( Uint32 interval, void *arg )
 	return 0;
 }
 
-WORD sdl_sleeper_t::sdl_keysum_to_vkey( SDLKey sym )
+WORD SDL_SLEEPER::SdlKeysumToVkey( SDLKey sym )
 {
 	assert ( SDLK_a == 'a' );
 	assert ( SDLK_1 == '1' );
@@ -205,7 +205,7 @@ WORD sdl_sleeper_t::sdl_keysum_to_vkey( SDLKey sym )
 	}
 }
 
-ULONG sdl_sleeper_t::get_mouse_button( Uint8 button, bool up )
+ULONG SDL_SLEEPER::GetMouseButton( Uint8 button, bool up )
 {
 	switch (button)
 	{
@@ -221,7 +221,7 @@ ULONG sdl_sleeper_t::get_mouse_button( Uint8 button, bool up )
 	}
 }
 
-bool sdl_sleeper_t::handle_sdl_event( SDL_Event& event )
+bool SDL_SLEEPER::HandleSdlEvent( SDL_Event& event )
 {
 	INPUT input;
 
@@ -235,11 +235,11 @@ bool sdl_sleeper_t::handle_sdl_event( SDL_Event& event )
 		trace("got SDL keyboard event\n");
 		input.type = INPUT_KEYBOARD;
 		input.ki.time = timeout_t::get_tick_count();
-		input.ki.wVk = sdl_keysum_to_vkey( event.key.keysym.sym );
+		input.ki.wVk = SdlKeysumToVkey( event.key.keysym.sym );
 		input.ki.wScan = event.key.keysym.scancode;
 		input.ki.dwFlags = (event.type == SDL_KEYUP) ? KEYEVENTF_KEYUP : 0;
 		input.ki.dwExtraInfo = 0;
-		manager->SendInput( &input );
+		Manager->SendInput( &input );
 		break;
 
 	case SDL_MOUSEBUTTONDOWN:
@@ -249,10 +249,10 @@ bool sdl_sleeper_t::handle_sdl_event( SDL_Event& event )
 		input.mi.dx = event.button.x;
 		input.mi.dy = event.button.y;
 		input.mi.mouseData = 0;
-		input.mi.dwFlags = get_mouse_button( event.button.button, event.type == SDL_MOUSEBUTTONUP );
+		input.mi.dwFlags = GetMouseButton( event.button.button, event.type == SDL_MOUSEBUTTONUP );
 		input.mi.time = timeout_t::get_tick_count();
 		input.mi.dwExtraInfo = 0;
-		manager->SendInput( &input );
+		Manager->SendInput( &input );
 		break;
 
 	case SDL_MOUSEMOTION:
@@ -264,7 +264,7 @@ bool sdl_sleeper_t::handle_sdl_event( SDL_Event& event )
 		input.mi.dwFlags = MOUSEEVENTF_MOVE;
 		input.mi.time = timeout_t::get_tick_count();
 		input.mi.dwExtraInfo = 0;
-		manager->SendInput( &input );
+		Manager->SendInput( &input );
 		break;
 	}
 
@@ -273,7 +273,7 @@ bool sdl_sleeper_t::handle_sdl_event( SDL_Event& event )
 
 // wait for timers or input
 // return true if we're quitting
-bool sdl_sleeper_t::CheckEvents( bool wait )
+bool SDL_SLEEPER::CheckEvents( bool wait )
 {
 	LARGE_INTEGER timeout;
 	SDL_Event event;
@@ -282,7 +282,7 @@ bool sdl_sleeper_t::CheckEvents( bool wait )
 	bool timers_left = timeout_t::check_timers(timeout);
 
 	// quit if we got an SDL_QUIT
-	if (SDL_PollEvent( &event ) && handle_sdl_event( event ))
+	if (SDL_PollEvent( &event ) && HandleSdlEvent( event ))
 		return true;
 
 	// Check for a deadlock and quit.
@@ -301,7 +301,7 @@ bool sdl_sleeper_t::CheckEvents( bool wait )
 	if (timers_left)
 	{
 		interval = GetIntTimeout( timeout );
-		id = SDL_AddTimer( interval, sdl_sleeper_t::timeout_callback, 0 );
+		id = SDL_AddTimer( interval, SDL_SLEEPER::TimeoutCallback, 0 );
 	}
 
 	if (SDL_WaitEvent( &event ))
@@ -313,7 +313,7 @@ bool sdl_sleeper_t::CheckEvents( bool wait )
 		}
 		else
 		{
-			quit = handle_sdl_event( event );
+			quit = HandleSdlEvent( event );
 		}
 	}
 	else
@@ -327,21 +327,21 @@ bool sdl_sleeper_t::CheckEvents( bool wait )
 	return quit;
 }
 
-int win32k_sdl_t::GetCaps( int index )
+int WIN32K_SDL::GetCaps( int index )
 {
 	switch (index)
 	{
 	case NUMCOLORS:
-		return 1 << screen->format->BitsPerPixel;
+		return 1 << Screen->format->BitsPerPixel;
 	case BITSPIXEL:
-		return screen->format->BitsPerPixel;
+		return Screen->format->BitsPerPixel;
 	default:
 		trace("%d\n", index );
 		return 0;
 	}
 }
 
-BOOL win32k_sdl_t::Init()
+BOOL WIN32K_SDL::Init()
 {
 	if ( SDL_WasInit(SDL_INIT_VIDEO) )
 		return TRUE;
@@ -349,106 +349,106 @@ BOOL win32k_sdl_t::Init()
 	if ( SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE) < 0 )
 		return FALSE;
 
-	screen = set_mode();
+	Screen = SetMode();
 
-	sdl_bitmap = new sdl_16bpp_bitmap_t( screen );
+	SdlBitmap = new SDL_16BPP_BITMAP( Screen );
 
 	// FIXME: move this to caller
 	BRUSH light_blue(0, RGB(0x3b, 0x72, 0xa9), 0);
-	sdl_bitmap->Rectangle( 0, 0, screen->w, screen->h, &light_blue );
+	SdlBitmap->Rectangle( 0, 0, Screen->w, Screen->h, &light_blue );
 
-	::Sleeper = &sdl_sleeper;
+	::Sleeper = &SdlSleeper;
 
 	return TRUE;
 }
 
-void win32k_sdl_t::Fini()
+void WIN32K_SDL::Fini()
 {
 	if ( !SDL_WasInit(SDL_INIT_VIDEO) )
 		return;
 	SDL_Quit();
 }
 
-sdl_16bpp_bitmap_t::sdl_16bpp_bitmap_t( SDL_Surface *s ) :
+SDL_16BPP_BITMAP::SDL_16BPP_BITMAP( SDL_Surface *s ) :
 	BitmapImpl<16>( s->w, s->h ),
-	surface( s )
+	Surface( s )
 {
 	bits = reinterpret_cast<unsigned char*>( s->pixels );
 }
 
-void sdl_16bpp_bitmap_t::lock()
+void SDL_16BPP_BITMAP::Lock()
 {
-	if ( SDL_MUSTLOCK(surface) )
-		SDL_LockSurface(surface);
+	if ( SDL_MUSTLOCK(Surface) )
+		SDL_LockSurface(Surface);
 }
 
-void sdl_16bpp_bitmap_t::unlock()
+void SDL_16BPP_BITMAP::Unlock()
 {
-	if ( SDL_MUSTLOCK(surface) )
-		SDL_UnlockSurface(surface);
+	if ( SDL_MUSTLOCK(Surface) )
+		SDL_UnlockSurface(Surface);
 }
 
-ULONG sdl_16bpp_bitmap_t::MapColorref( COLORREF color )
+ULONG SDL_16BPP_BITMAP::MapColorref( COLORREF color )
 {
-	return SDL_MapRGB(surface->format, GetRValue(color), GetGValue(color), GetBValue(color));
+	return SDL_MapRGB(Surface->format, GetRValue(color), GetGValue(color), GetBValue(color));
 }
 
-class win32k_sdl_16bpp_t : public win32k_sdl_t
+class WIN32K_SDL_16BPP : public WIN32K_SDL
 {
 public:
-	virtual SDL_Surface* set_mode();
+	virtual SDL_Surface* SetMode();
 	Uint16 MapColorref( COLORREF color );
 };
 
-SDL_Surface* win32k_sdl_16bpp_t::set_mode()
+SDL_Surface* WIN32K_SDL_16BPP::SetMode()
 {
 	return SDL_SetVideoMode( 640, 480, 16, SDL_SWSURFACE );
 }
 
-Uint16 win32k_sdl_16bpp_t::MapColorref( COLORREF color )
+Uint16 WIN32K_SDL_16BPP::MapColorref( COLORREF color )
 {
-	return SDL_MapRGB(screen->format, GetRValue(color), GetGValue(color), GetBValue(color));
+	return SDL_MapRGB(Screen->format, GetRValue(color), GetGValue(color), GetBValue(color));
 }
 
-win32k_sdl_16bpp_t win32k_manager_sdl_16bpp;
+WIN32K_SDL_16BPP Win32kManagerSdl16bpp;
 
-WIN32K_MANAGER* init_sdl_win32k_manager()
+WIN32K_MANAGER* InitSdlWin32kManager()
 {
-	return &win32k_manager_sdl_16bpp;
+	return &Win32kManagerSdl16bpp;
 }
 
-sdl_device_context_t::sdl_device_context_t( CBITMAP *b ) :
-	sdl_bitmap( b ),
-	win( 0 )
+SDL_DEVICE_CONTEXT::SDL_DEVICE_CONTEXT( CBITMAP *b ) :
+	SdlBitmap( b ),
+	Win( 0 )
 {
 }
 
-CBITMAP* sdl_device_context_t::GetBitmap()
+CBITMAP* SDL_DEVICE_CONTEXT::GetBitmap()
 {
-	return sdl_bitmap;
+	return SdlBitmap;
 }
 
-HANDLE sdl_device_context_t::SelectBitmap( CBITMAP *bitmap )
+HANDLE SDL_DEVICE_CONTEXT::SelectBitmap( CBITMAP *bitmap )
 {
 	trace("trying to change device's bitmap...\n");
 	return 0;
 }
 
 
-int sdl_device_context_t::GetCaps( int index )
+int SDL_DEVICE_CONTEXT::GetCaps( int index )
 {
 	return Win32kManager->GetCaps( index );
 }
 
-DEVICE_CONTEXT* win32k_sdl_t::AllocScreenDcPtr()
+DEVICE_CONTEXT* WIN32K_SDL::AllocScreenDcPtr()
 {
-	trace("allocating SDL DC sdl_bitmap = %p\n", sdl_bitmap);
-	return new sdl_device_context_t( sdl_bitmap );
+	trace("allocating SDL DC sdl_bitmap = %p\n", SdlBitmap);
+	return new SDL_DEVICE_CONTEXT( SdlBitmap );
 }
 
 #else
 
-WIN32K_MANAGER* init_sdl_win32k_manager()
+WIN32K_MANAGER* InitSdlWin32kManager()
 {
 	return NULL;
 }
