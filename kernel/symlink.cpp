@@ -34,22 +34,22 @@
 #include "ntcall.h"
 #include "symlink.h"
 
-symlink_t::symlink_t( const UNICODE_STRING& us )
+SYMLINK::SYMLINK( const UNICODE_STRING& us )
 {
 	target.copy( &us );
 }
 
-symlink_t::~symlink_t()
+SYMLINK::~SYMLINK()
 {
 }
 
-class symlink_opener : public OPEN_INFO
+class SYMLINK_OPENER : public OPEN_INFO
 {
 public:
 	NTSTATUS OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
-NTSTATUS symlink_opener::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
+NTSTATUS SYMLINK_OPENER::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	if (!obj)
 		return STATUS_OBJECT_PATH_NOT_FOUND;
@@ -57,13 +57,13 @@ NTSTATUS symlink_opener::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info 
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS symlink_t::Open( OBJECT *&out, OPEN_INFO& info )
+NTSTATUS SYMLINK::Open( OBJECT *&out, OPEN_INFO& info )
 {
 	if (info.Path.Length != 0)
 	{
 		// follow the link
 		trace("following %pus\n", &target );
-		symlink_opener target_info;
+		SYMLINK_OPENER target_info;
 		target_info.Attributes = info.Attributes;
 		target_info.Path.set( target );
 		//target_info.root = parent;
@@ -88,21 +88,21 @@ NTSTATUS symlink_t::Open( OBJECT *&out, OPEN_INFO& info )
 	return OpenRoot( out, info );
 }
 
-class symlink_factory_t : public OBJECT_FACTORY
+class SYMLINK_FACTORY : public OBJECT_FACTORY
 {
 private:
 	const UNICODE_STRING& target;
 public:
-	symlink_factory_t(const UNICODE_STRING& _target);
+	SYMLINK_FACTORY(const UNICODE_STRING& _target);
 	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-symlink_factory_t::symlink_factory_t(const UNICODE_STRING& _target) :
+SYMLINK_FACTORY::SYMLINK_FACTORY(const UNICODE_STRING& _target) :
 	target( _target )
 {
 }
 
-NTSTATUS symlink_factory_t::AllocObject(OBJECT** obj)
+NTSTATUS SYMLINK_FACTORY::AllocObject(OBJECT** obj)
 {
 	trace("allocating object\n");
 	if (target.Length == 0)
@@ -111,7 +111,7 @@ NTSTATUS symlink_factory_t::AllocObject(OBJECT** obj)
 	if (target.Length > target.MaximumLength)
 		return STATUS_INVALID_PARAMETER;
 
-	*obj = new symlink_t( target );
+	*obj = new SYMLINK( target );
 	if (!*obj)
 		return STATUS_NO_MEMORY;
 	return STATUS_SUCCESS;
@@ -130,14 +130,14 @@ NTSTATUS NTAPI NtCreateSymbolicLinkObject(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	symlink_factory_t factory( target );
+	SYMLINK_FACTORY factory( target );
 	return factory.Create( SymbolicLinkHandle, DesiredAccess, ObjectAttributes );
 }
 
-NTSTATUS create_symlink( UNICODE_STRING& name, UNICODE_STRING& target )
+NTSTATUS CreateSymlink( UNICODE_STRING& name, UNICODE_STRING& target )
 {
 	OBJECT *obj = 0;
-	symlink_factory_t factory( target );
+	SYMLINK_FACTORY factory( target );
 	return factory.CreateKernel( obj, name );
 }
 
@@ -146,7 +146,7 @@ NTSTATUS NTAPI NtOpenSymbolicLinkObject(
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes )
 {
-	return NtOpenObject<symlink_t>( SymlinkHandle, DesiredAccess, ObjectAttributes );
+	return NtOpenObject<SYMLINK>( SymlinkHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtQuerySymbolicLinkObject(
@@ -173,12 +173,12 @@ NTSTATUS NTAPI NtQuerySymbolicLinkObject(
 			return r;
 	}
 
-	symlink_t *symlink = 0;
+	SYMLINK *symlink = 0;
 	r = ObjectFromHandle( symlink, SymbolicLinkHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	const unicode_string_t& target = symlink->get_target();
+	const unicode_string_t& target = symlink->GetTarget();
 
 	if (name.MaximumLength < target.Length)
 		return STATUS_BUFFER_TOO_SMALL;

@@ -809,7 +809,7 @@ void InitDrives()
 
 	unicode_string_t c_link;
 	c_link.set( L"\\??\\c:" );
-	r = create_symlink( c_link, dirname );
+	r = CreateSymlink( c_link, dirname );
 	if (r < STATUS_SUCCESS)
 	{
 		trace( "failed to create symlink %pus (%08lx)\n", &c_link, r);

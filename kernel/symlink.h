@@ -23,13 +23,13 @@
 
 #include "object.h"
 
-class symlink_t : public OBJECT
+class SYMLINK : public OBJECT
 {
 	unicode_string_t target;
 public:
-	symlink_t( const UNICODE_STRING& us );
-	~symlink_t();
-	unicode_string_t& get_target()
+	SYMLINK( const UNICODE_STRING& us );
+	~SYMLINK();
+	unicode_string_t& GetTarget()
 	{
 		return target;
 	}
@@ -37,6 +37,6 @@ public:
 };
 
 // from symlink.cpp
-NTSTATUS create_symlink( UNICODE_STRING& name, UNICODE_STRING& target );
+NTSTATUS CreateSymlink( UNICODE_STRING& name, UNICODE_STRING& target );
 
 #endif // __NTNATIVE_SYMLINK__

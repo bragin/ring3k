@@ -229,7 +229,7 @@ NTSTATUS FIND_OBJECT::OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 
 	// hack until NtOpenSymbolicLinkObject is fixed
-	if (dynamic_cast<symlink_t*>( obj ) != NULL &&
+	if (dynamic_cast<SYMLINK*>( obj ) != NULL &&
 	   (info.Attributes & OBJ_OPENLINK))
 	{
 		return STATUS_INVALID_PARAMETER;

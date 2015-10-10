@@ -492,7 +492,7 @@ int main(int argc, char **argv)
 	unicode_string_t link_name, link_target;
 	link_name.set( L"\\DosDevices" );
 	link_target.copy( L"\\??" );
-	create_symlink( link_name, link_target );
+	CreateSymlink( link_name, link_target );
 	CreateDirectoryObject( (PWSTR) L"\\Device" );
 	CreateDirectoryObject( (PWSTR) L"\\Device\\MailSlot" );
 	CreateDirectoryObject( (PWSTR) L"\\Security" );
