@@ -21,32 +21,32 @@
 #ifndef __SECTION_H__
 #define __SECTION_H__
 
-struct section_t : public OBJECT, public BACKING_STORE
+struct SECTION : public OBJECT, public BACKING_STORE
 {
-	int fd;
-	BYTE *addr;
-	size_t len;
+	int FD;
+	BYTE *Addr;
+	size_t Len;
 	ULONG Attributes;
 	ULONG Protect;
 public:
-	section_t( int fd, BYTE *a, size_t l, ULONG attr, ULONG prot );
-	virtual ~section_t();
-	virtual NTSTATUS mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG Prot );
-	virtual void* get_kernel_address();
-	virtual NTSTATUS query( SECTION_BASIC_INFORMATION *basic );
-	virtual NTSTATUS query( SECTION_IMAGE_INFORMATION *image );
-	virtual const char *get_symbol( ULONG address );
+	SECTION( int fd, BYTE *a, size_t l, ULONG attr, ULONG prot );
+	virtual ~SECTION();
+	virtual NTSTATUS Mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG Prot );
+	virtual void* GetKernelAddress();
+	virtual NTSTATUS Query( SECTION_BASIC_INFORMATION *basic );
+	virtual NTSTATUS Query( SECTION_IMAGE_INFORMATION *image );
+	virtual const char *GetSymbol( ULONG address );
 	virtual int GetFD();
 	virtual void AddRef();
 	virtual void Release();
 };
 
-NTSTATUS create_section( OBJECT **obj, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
-NTSTATUS create_section( section_t **section, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
-NTSTATUS mapit( ADDRESS_SPACE *vm, OBJECT *obj, BYTE *&addr );
-void *virtual_addr_to_offset( IMAGE_NT_HEADERS *nt, void *base, DWORD virtual_ofs );
-DWORD get_proc_address(OBJECT *obj, const char *name);
-void *get_entry_point( PROCESS *p );
-NTSTATUS section_from_handle( HANDLE, section_t*& section, ACCESS_MASK access );
+NTSTATUS CreateSection( OBJECT **obj, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
+NTSTATUS CreateSection( SECTION **section, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
+NTSTATUS Mapit( ADDRESS_SPACE *vm, OBJECT *obj, BYTE *&addr );
+void *VirtualAddrToOffset( IMAGE_NT_HEADERS *nt, void *base, DWORD virtual_ofs );
+DWORD GetProcAddress(OBJECT *obj, const char *name);
+void *GetEntryPoint( PROCESS *p );
+NTSTATUS SectionFromHandle( HANDLE, SECTION*& section, ACCESS_MASK access );
 
 #endif

@@ -43,7 +43,7 @@
 #include "alloc_bitmap.h"
 
 // shared across all processes (in a window station)
-static section_t *gdi_ht_section;
+static SECTION *gdi_ht_section;
 static void *gdi_handle_table = 0;
 
 WIN32K_MANAGER* (*Win32kManagerCreate)();
@@ -313,7 +313,7 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 
 	process->Win32kInfo = Win32kManager->AllocWin32kInfo();
 
-	PPEB ppeb = (PPEB) process->PebSection->get_kernel_address();
+	PPEB ppeb = (PPEB) process->PebSection->GetKernelAddress();
 
 	// only do this once per process
 	if (ppeb->GdiSharedHandleTable)
@@ -323,11 +323,11 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 	{
 		LARGE_INTEGER sz;
 		sz.QuadPart = GDI_SHARED_HANDLE_TABLE_SIZE;
-		r = create_section( &gdi_ht_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
+		r = CreateSection( &gdi_ht_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
-		gdi_handle_table = (BYTE*) gdi_ht_section->get_kernel_address();
+		gdi_handle_table = (BYTE*) gdi_ht_section->GetKernelAddress();
 	}
 
 	// read/write for the kernel and read only for processes
@@ -336,7 +336,7 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 	// unreserve memory so mapit doesn't get a conflicting address
 	process->Vm->FreeVirtualMemory( p, GDI_SHARED_HANDLE_TABLE_SIZE, MEM_FREE );
 
-	r = gdi_ht_section->mapit( process->Vm, p, 0, MEM_COMMIT, PAGE_READWRITE );
+	r = gdi_ht_section->Mapit( process->Vm, p, 0, MEM_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 	{
 		trace("r = %08lx\n", r);
@@ -510,7 +510,7 @@ bool gdishm_tracer::Enabled() const
 
 static gdishm_tracer GdishmTrace;
 
-section_t *GDI_OBJECT::g_gdi_section;
+SECTION *GDI_OBJECT::g_gdi_section;
 BYTE *GDI_OBJECT::g_gdi_shared_memory;
 ALLOCATION_BITMAP* GDI_OBJECT::g_gdi_shared_bitmap;
 
@@ -539,10 +539,10 @@ void GDI_OBJECT::InitGdiSharedMem()
 	{
 		LARGE_INTEGER sz;
 		sz.QuadPart = dc_shared_memory_size;
-		r = create_section( &g_gdi_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
+		r = CreateSection( &g_gdi_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 		assert (r >= STATUS_SUCCESS);
 
-		g_gdi_shared_memory = (BYTE*) g_gdi_section->get_kernel_address();
+		g_gdi_shared_memory = (BYTE*) g_gdi_section->GetKernelAddress();
 
 		assert( g_gdi_shared_bitmap == NULL );
 		g_gdi_shared_bitmap = new ALLOCATION_BITMAP;
@@ -552,7 +552,7 @@ void GDI_OBJECT::InitGdiSharedMem()
 	BYTE*& dc_shared_mem = Current->process->Win32kInfo->dc_shared_mem;
 	if (!dc_shared_mem)
 	{
-		r = g_gdi_section->mapit( Current->process->Vm, dc_shared_mem, 0, MEM_COMMIT, PAGE_READWRITE );
+		r = g_gdi_section->Mapit( Current->process->Vm, dc_shared_mem, 0, MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 		{
 			trace("failed to map shared memory\n");

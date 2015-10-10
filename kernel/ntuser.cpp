@@ -101,13 +101,13 @@ static const ULONG user_shared_mem_size = 0x20000;
 static const ULONG user_shared_mem_reserve = 0x10000;
 
 // section for user handle table
-static section_t *user_handle_table_section = 0;
+static SECTION *user_handle_table_section = 0;
 
 // kernel address for user handle table (shared)
 static USER_HANDLE_ENTRY *user_handle_table;
 
 // section for user shared memory
-static section_t *user_shared_section = 0;
+static SECTION *user_shared_section = 0;
 
 // kernel address for memory shared with the user process
 static USER_SHARED_MEM *user_shared;
@@ -238,20 +238,20 @@ void *init_user_shared_memory()
 		NTSTATUS r;
 
 		sz.QuadPart = sizeof (USER_HANDLE_ENTRY) * MAX_USER_HANDLES;
-		r = create_section( &user_handle_table_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
+		r = CreateSection( &user_handle_table_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return 0;
 
-		user_handle_table = (USER_HANDLE_ENTRY*) user_handle_table_section->get_kernel_address();
+		user_handle_table = (USER_HANDLE_ENTRY*) user_handle_table_section->GetKernelAddress();
 
 		init_user_handle_table();
 
 		sz.QuadPart = user_shared_mem_size;
-		r = create_section( &user_shared_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
+		r = CreateSection( &user_shared_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return 0;
 
-		user_shared = (USER_SHARED_MEM*) user_shared_section->get_kernel_address();
+		user_shared = (USER_SHARED_MEM*) user_shared_section->GetKernelAddress();
 
 		// setup the allocation bitmap for user objects (eg. windows)
 		void *object_area = (void*) ((BYTE*) user_shared + user_shared_mem_reserve);
@@ -441,7 +441,7 @@ NTSTATUS map_user_shared_memory( PROCESS *proc )
 	if (user_shared_mem)
 		return STATUS_SUCCESS;
 
-	r = user_shared_section->mapit( proc->Vm, user_shared_mem, 0,
+	r = user_shared_section->Mapit( proc->Vm, user_shared_mem, 0,
 									MEM_COMMIT, PAGE_READONLY );
 	if (r < STATUS_SUCCESS)
 		return STATUS_UNSUCCESSFUL;
@@ -453,7 +453,7 @@ NTSTATUS map_user_shared_memory( PROCESS *proc )
 	}
 
 	// map the shared handle table
-	r = user_handle_table_section->mapit( proc->Vm, user_handles, 0,
+	r = user_handle_table_section->Mapit( proc->Vm, user_handles, 0,
 										  MEM_COMMIT, PAGE_READONLY );
 	if (r < STATUS_SUCCESS)
 		return STATUS_UNSUCCESSFUL;

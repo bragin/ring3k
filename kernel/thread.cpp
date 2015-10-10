@@ -114,7 +114,7 @@ class THREAD_IMPL :
 
 	//SYSTEM_THREAD_INFORMATION members
 	NTSTATUS ExitStatus;
-	section_t *teb_section;
+	SECTION *teb_section;
 	PVOID TebBaseAddress;	// user
 	PTEB teb;		// kernel
 
@@ -496,7 +496,7 @@ void THREAD_IMPL::start_exception_handler(exception_stack_frame& info)
 	// get the address of the user side handler
 	// FIXME: this should be stored in the PROCESS structure
 	BYTE *pKiExceptionDispatcher = (BYTE*)process->PNtDLL +
-								   get_proc_address( NtDLLSection, "KiUserExceptionDispatcher" );
+								   GetProcAddress( NtDLLSection, "KiUserExceptionDispatcher" );
 	if (!pKiExceptionDispatcher)
 		Die("failed to find KiExceptionDispatcher in ntdll\n");
 
@@ -595,7 +595,7 @@ NTSTATUS THREAD_IMPL::DoUserCallback( ULONG index, ULONG &length, PVOID &buffer)
 
 	// setup the new execution context
 	BYTE *pKiUserCallbackDispatcher = (BYTE*)process->PNtDLL +
-									  get_proc_address( NtDLLSection, "KiUserCallbackDispatcher" );
+									  GetProcAddress( NtDLLSection, "KiUserCallbackDispatcher" );
 
 	context_changed = 1;
 	ctx.Eip = (ULONG) pKiUserCallbackDispatcher;
@@ -693,7 +693,7 @@ BOOLEAN THREAD_IMPL::deliver_apc(NTSTATUS thread_return)
 		goto end;
 
 	void *pKiUserApcDispatcher;
-	pKiUserApcDispatcher = (BYTE*)process->PNtDLL + get_proc_address( NtDLLSection, "KiUserApcDispatcher" );
+	pKiUserApcDispatcher = (BYTE*)process->PNtDLL + GetProcAddress( NtDLLSection, "KiUserApcDispatcher" );
 	if (!pKiUserApcDispatcher)
 		Die("failed to find KiUserApcDispatcher in ntdll\n");
 
@@ -1429,15 +1429,15 @@ NTSTATUS THREAD_IMPL::create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspe
 	/* allocate the TEB */
 	LARGE_INTEGER sz;
 	sz.QuadPart = PAGE_SIZE;
-	r = create_section( &teb_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
+	r = CreateSection( &teb_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = teb_section->mapit( process->Vm, addr, 0, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE );
+	r = teb_section->Mapit( process->Vm, addr, 0, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	teb = (PTEB) teb_section->get_kernel_address();
+	teb = (PTEB) teb_section->GetKernelAddress();
 
 	pteb = (PTEB) addr;
 	teb->Peb = (PPEB) process->PebBaseAddress;
@@ -1457,11 +1457,11 @@ NTSTATUS THREAD_IMPL::create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspe
 	TebBaseAddress = pteb;
 
 	/* find entry points */
-	pLdrInitializeThunk = (BYTE*)process->PNtDLL + get_proc_address( NtDLLSection, "LdrInitializeThunk" );
+	pLdrInitializeThunk = (BYTE*)process->PNtDLL + GetProcAddress( NtDLLSection, "LdrInitializeThunk" );
 	if (!pLdrInitializeThunk)
 		Die("failed to find LdrInitializeThunk in ntdll\n");
 
-	pKiUserApcDispatcher = (BYTE*)process->PNtDLL + get_proc_address( NtDLLSection, "KiUserApcDispatcher" );
+	pKiUserApcDispatcher = (BYTE*)process->PNtDLL + GetProcAddress( NtDLLSection, "KiUserApcDispatcher" );
 	if (!pKiUserApcDispatcher)
 		Die("failed to find KiUserApcDispatcher in ntdll\n");
 

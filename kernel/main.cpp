@@ -142,7 +142,7 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 		return r;
 
 	/* load the executable and ntdll */
-	r = create_section( &section, file, 0, SEC_IMAGE, PAGE_EXECUTE_READWRITE );
+	r = CreateSection( &section, file, 0, SEC_IMAGE, PAGE_EXECUTE_READWRITE );
 	Release( file );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -155,7 +155,7 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	PPEB ppeb = (PPEB) p->PebSection->get_kernel_address();
+	PPEB ppeb = (PPEB) p->PebSection->GetKernelAddress();
 	p->CreateExePPB( &ppeb->ProcessParameters, us );
 
 	/* map the stack */
@@ -172,7 +172,7 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 
 	/* initialize the first thread's context */
 	p->Vm->InitContext( ctx );
-	ctx.Eip = (DWORD) get_entry_point( p );
+	ctx.Eip = (DWORD) GetEntryPoint( p );
 	ctx.Esp = (DWORD) pstack + stack_size - 8;
 
 	trace("entry point = %08lx\n", ctx.Eip);
@@ -205,11 +205,11 @@ NTSTATUS InitNtDLL( void )
 	if (r < STATUS_SUCCESS)
 		Die("failed to open ntdll\n");
 
-	r = create_section( &NtDLLSection, file, 0, SEC_IMAGE, PAGE_EXECUTE_READWRITE );
+	r = CreateSection( &NtDLLSection, file, 0, SEC_IMAGE, PAGE_EXECUTE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		Die("failed to create ntdll section\n");
 
-	KiIntSystemCall = get_proc_address( NtDLLSection, "KiIntSystemCall" );
+	KiIntSystemCall = GetProcAddress( NtDLLSection, "KiIntSystemCall" );
 	trace("KiIntSystemCall = %08lx\n", KiIntSystemCall);
 	InitSyscalls(KiIntSystemCall != 0);
 

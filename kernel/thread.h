@@ -62,7 +62,7 @@ struct kernel_debug_string_output
 	ULONG unknown2;
 };
 
-struct section_t;
+struct SECTION;
 class MBLOCK;
 class THREAD_MESSAGE_QUEUE;
 

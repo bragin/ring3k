@@ -105,7 +105,7 @@ struct PORT: public OBJECT
 	BOOLEAN Server;
 	THREAD *Thread;
 	PORT *Other;
-	section_t *Section; // our Section
+	SECTION *Section; // our Section
 	BYTE *OtherSectionBase;	// mapped address of Other Port's Section
 	BYTE *OurSectionBase;	// mapped address of Our Port's Section
 	ULONG ViewSize;
@@ -718,14 +718,14 @@ NTSTATUS PORT::AcceptConnect(
 
 		// map our Section into their process
 		assert(t->port->OtherSectionBase == 0);
-		r = Section->mapit( t->process->Vm, t->port->OtherSectionBase, 0,
+		r = Section->Mapit( t->process->Vm, t->port->OtherSectionBase, 0,
 							MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
 		// map our Section into our process
 		assert(OurSectionBase == 0);
-		r = Section->mapit( Current->process->Vm, OurSectionBase, 0,
+		r = Section->Mapit( Current->process->Vm, OurSectionBase, 0,
 							MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
@@ -738,13 +738,13 @@ NTSTATUS PORT::AcceptConnect(
 	{
 		assert(OtherSectionBase == 0);
 		// map their Section into our process
-		r = Other->Section->mapit( Current->process->Vm, OtherSectionBase, 0,
+		r = Other->Section->Mapit( Current->process->Vm, OtherSectionBase, 0,
 								   MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
 		// map their Section into their process
-		r = Other->Section->mapit( t->process->Vm, t->port->OurSectionBase, 0,
+		r = Other->Section->Mapit( t->process->Vm, t->port->OurSectionBase, 0,
 								   MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
@@ -963,7 +963,7 @@ NTSTATUS NTAPI NtSecureConnectPort(
 
 	if (ClientSharedMemory)
 	{
-		section_t* sec = 0;
+		SECTION* sec = 0;
 		r = ObjectFromHandle( sec, write_sec.SectionHandle, 0 );
 		if (r < STATUS_SUCCESS)
 			return STATUS_INVALID_HANDLE;

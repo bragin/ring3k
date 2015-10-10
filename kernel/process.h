@@ -35,7 +35,7 @@ struct PROCESS : public SYNC_OBJECT
 
 	// PROCESS_BASIC_INFORMATION
 	NTSTATUS ExitStatus;
-	section_t *PebSection;
+	SECTION *PebSection;
 	void* PebBaseAddress;
 	ULONG Id;
 

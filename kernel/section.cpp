@@ -38,99 +38,99 @@
 #include "unicode.h"
 #include "file.h"
 
-struct pe_section_t : public section_t
+struct PE_SECTION : public SECTION
 {
 public:
-	pe_section_t( int f, BYTE *a, size_t l, ULONG attr, ULONG prot );
-	virtual ~pe_section_t();
-	virtual NTSTATUS mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG Protect );
-	virtual NTSTATUS query( SECTION_IMAGE_INFORMATION *image );
-	IMAGE_EXPORT_DIRECTORY* get_exports_table();
-	IMAGE_NT_HEADERS* get_nt_header();
-	DWORD get_proc_address( const char *name );
-	DWORD get_proc_address( ULONG ordinal );
-	void add_relay( ADDRESS_SPACE *vm );
-	bool add_relay_stub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG func, ULONG *user_addr, ULONG thunk_ofs );
-	const char *get_symbol( ULONG address );
-	const char *name_of_ordinal( ULONG ordinal );
+	PE_SECTION( int f, BYTE *a, size_t l, ULONG attr, ULONG prot );
+	virtual ~PE_SECTION();
+	virtual NTSTATUS Mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG Protect );
+	virtual NTSTATUS Query( SECTION_IMAGE_INFORMATION *image );
+	IMAGE_EXPORT_DIRECTORY* GetExportsTable();
+	IMAGE_NT_HEADERS* GetNtHeader();
+	DWORD GetProcAddress( const char *name );
+	DWORD GetProcAddress( ULONG ordinal );
+	void AddRelay( ADDRESS_SPACE *vm );
+	bool AddRelayStub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG func, ULONG *user_addr, ULONG thunk_ofs );
+	const char *GetSymbol( ULONG address );
+	const char *NameOfOrdinal( ULONG ordinal );
 private:
-	void *virtual_addr_to_offset( DWORD virtual_ofs );
+	void *VirtualAddrToOffset( DWORD virtual_ofs );
 };
 
-section_t::~section_t()
+SECTION::~SECTION()
 {
-	munmap( addr, len );
-	close(fd);
+	munmap( Addr, Len );
+	close(FD);
 }
 
-int section_t::GetFD()
+int SECTION::GetFD()
 {
-	return fd;
+	return FD;
 }
 
-void section_t::AddRef()
+void SECTION::AddRef()
 {
 	::AddRef( this );
 }
 
-void section_t::Release()
+void SECTION::Release()
 {
 	::Release( this );
 }
 
-NTSTATUS section_t::mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG prot )
+NTSTATUS SECTION::Mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG prot )
 {
 	trace("anonymous map\n");
 	if ((prot&0xff) > (Protect&0xff))
 		return STATUS_INVALID_PARAMETER;
-	NTSTATUS r = vm->MapFD( &addr, ZeroBits, len, State, prot, this );
+	NTSTATUS r = vm->MapFD( &addr, ZeroBits, Len, State, prot, this );
 	return r;
 }
 
-section_t::section_t( int _fd, BYTE *a, size_t l, ULONG attr, ULONG prot ) :
-	fd( _fd )
+SECTION::SECTION( int _fd, BYTE *a, size_t l, ULONG attr, ULONG prot ) :
+	FD( _fd )
 {
-	len = l;
-	addr = a;
+	Len = l;
+	Addr = a;
 	Attributes = attr;
 	Protect = prot;
 }
 
-NTSTATUS section_t::query( SECTION_BASIC_INFORMATION *basic )
+NTSTATUS SECTION::Query( SECTION_BASIC_INFORMATION *basic )
 {
 	basic->BaseAddress = 0; // FIXME
 	basic->Attributes = Attributes;
-	basic->Size.QuadPart = len;
+	basic->Size.QuadPart = Len;
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS section_t::query( SECTION_IMAGE_INFORMATION *image )
+NTSTATUS SECTION::Query( SECTION_IMAGE_INFORMATION *image )
 {
 	return STATUS_INVALID_PARAMETER;
 }
 
-void* section_t::get_kernel_address()
+void* SECTION::GetKernelAddress()
 {
-	return addr;
+	return Addr;
 }
 
-const char *section_t::get_symbol( ULONG address )
+const char *SECTION::GetSymbol( ULONG address )
 {
 	return 0;
 }
 
-pe_section_t::pe_section_t( int fd, BYTE *a, size_t l, ULONG attr, ULONG prot ) :
-	section_t( fd, a, l, attr, prot )
+PE_SECTION::PE_SECTION( int fd, BYTE *a, size_t l, ULONG attr, ULONG prot ) :
+	SECTION( fd, a, l, attr, prot )
 {
 }
 
-pe_section_t::~pe_section_t()
+PE_SECTION::~PE_SECTION()
 {
 }
 
-NTSTATUS pe_section_t::query( SECTION_IMAGE_INFORMATION *image )
+NTSTATUS PE_SECTION::Query( SECTION_IMAGE_INFORMATION *image )
 {
-	IMAGE_NT_HEADERS *nt = get_nt_header();
+	IMAGE_NT_HEADERS *nt = GetNtHeader();
 
 	// FIXME: assumes fixed base address...?
 	image->EntryPoint = (BYTE*) nt->OptionalHeader.ImageBase +
@@ -149,18 +149,18 @@ NTSTATUS pe_section_t::query( SECTION_IMAGE_INFORMATION *image )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS create_section( OBJECT **obj, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect )
+NTSTATUS CreateSection( OBJECT **obj, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect )
 {
-	section_t *sec;
-	NTSTATUS r = create_section( &sec, file, psz, attribs, protect );
+	SECTION *sec;
+	NTSTATUS r = CreateSection( &sec, file, psz, attribs, protect );
 	if (r == STATUS_SUCCESS)
 		*obj = sec;
 	return r;
 }
 
-NTSTATUS create_section( section_t **section, OBJECT *obj, PLARGE_INTEGER psz, ULONG attribs, ULONG protect )
+NTSTATUS CreateSection( SECTION **section, OBJECT *obj, PLARGE_INTEGER psz, ULONG attribs, ULONG protect )
 {
-	section_t *s;
+	SECTION *s;
 	BYTE *addr;
 	int fd, ofs = 0, r;
 	ULONG len;
@@ -212,9 +212,9 @@ NTSTATUS create_section( section_t **section, OBJECT *obj, PLARGE_INTEGER psz, U
 	}
 
 	if (attribs & SEC_IMAGE)
-		s = new pe_section_t( fd, addr, len, attribs, protect );
+		s = new PE_SECTION( fd, addr, len, attribs, protect );
 	else
-		s = new section_t( fd, addr, len, attribs, protect );
+		s = new SECTION( fd, addr, len, attribs, protect );
 
 	if (!s)
 		return STATUS_NO_MEMORY;
@@ -224,16 +224,16 @@ NTSTATUS create_section( section_t **section, OBJECT *obj, PLARGE_INTEGER psz, U
 	return STATUS_SUCCESS;
 }
 
-IMAGE_NT_HEADERS *pe_section_t::get_nt_header()
+IMAGE_NT_HEADERS *PE_SECTION::GetNtHeader()
 {
-	IMAGE_DOS_HEADER *dos = (IMAGE_DOS_HEADER*) addr;
+	IMAGE_DOS_HEADER *dos = (IMAGE_DOS_HEADER*) Addr;
 	IMAGE_NT_HEADERS *nt;
 
 	if (dos->e_magic != IMAGE_DOS_SIGNATURE)
 		return NULL;
 
-	nt = (IMAGE_NT_HEADERS*) ((BYTE*) addr + dos->e_lfanew);
-	if (len < (dos->e_lfanew + sizeof (*nt)))
+	nt = (IMAGE_NT_HEADERS*) ((BYTE*) Addr + dos->e_lfanew);
+	if (Len < (dos->e_lfanew + sizeof (*nt)))
 		return NULL;
 
 	if (nt->Signature != IMAGE_NT_SIGNATURE)
@@ -245,22 +245,22 @@ IMAGE_NT_HEADERS *pe_section_t::get_nt_header()
 	return nt;
 }
 
-NTSTATUS mapit( ADDRESS_SPACE *vm, OBJECT *obj, BYTE *&addr )
+NTSTATUS Mapit( ADDRESS_SPACE *vm, OBJECT *obj, BYTE *&addr )
 {
-	section_t *sec = dynamic_cast<section_t*>( obj );
+	SECTION *sec = dynamic_cast<SECTION*>( obj );
 	if (!sec)
 		return STATUS_OBJECT_TYPE_MISMATCH;
-	return sec->mapit( vm, addr, 0, MEM_COMMIT, PAGE_READONLY );
+	return sec->Mapit( vm, addr, 0, MEM_COMMIT, PAGE_READONLY );
 }
 
 // stub code for inserting into user address space
-extern BYTE *relay_code;
-extern ULONG relay_code_size;
+extern BYTE *RelayCode;
+extern ULONG RelayCodeSize;
 __asm__ (
 	"\n"
 ".data\n"
-".globl " ASM_NAME_PREFIX "relay_code\n"
-ASM_NAME_PREFIX "relay_code:\n"
+".globl " ASM_NAME_PREFIX "RelayCode\n"
+ASM_NAME_PREFIX "RelayCode:\n"
 ".align 4\n"
 	"\tpushl %eax\n"			// save registers
 	"\tpushl %ecx\n"
@@ -274,8 +274,8 @@ ASM_NAME_PREFIX "relay_code:\n"
 	"\tret\n"
 ASM_NAME_PREFIX "relay_code_end:\n"
 ".align 4\n"
-ASM_NAME_PREFIX "relay_code_size:\n"
-	"\t.long " ASM_NAME_PREFIX "relay_code_end - " ASM_NAME_PREFIX "relay_code\n"
+ASM_NAME_PREFIX "RelayCodeSize:\n"
+	"\t.long " ASM_NAME_PREFIX "relay_code_end - " ASM_NAME_PREFIX "RelayCode\n"
 );
 
 struct __attribute__ ((packed)) relay_stub
@@ -285,9 +285,9 @@ struct __attribute__ ((packed)) relay_stub
 	ULONG target;
 };
 
-bool pe_section_t::add_relay_stub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG func, ULONG *user_addr, ULONG thunk_ofs )
+bool PE_SECTION::AddRelayStub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG func, ULONG *user_addr, ULONG thunk_ofs )
 {
-	IMAGE_NT_HEADERS *nt = get_nt_header();
+	IMAGE_NT_HEADERS *nt = GetNtHeader();
 
 	if (!func)
 		return true;
@@ -301,7 +301,7 @@ bool pe_section_t::add_relay_stub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG fun
 	stub.target = nt->OptionalHeader.ImageBase + func;
 
 	// copy the stub
-	//PBYTE stub_addr = p + relay_code_size + sizeof stub*i;
+	//PBYTE stub_addr = p + RelayCodeSize + sizeof stub*i;
 	NTSTATUS r = vm->CopyToUser( stub_addr, &stub, sizeof stub );
 	if (r < STATUS_SUCCESS)
 	{
@@ -323,7 +323,7 @@ bool pe_section_t::add_relay_stub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG fun
 }
 
 // parse the exports table and generate relay code
-void pe_section_t::add_relay(ADDRESS_SPACE *vm)
+void PE_SECTION::AddRelay(ADDRESS_SPACE *vm)
 {
 	IMAGE_DATA_DIRECTORY *export_data_dir;
 	IMAGE_EXPORT_DIRECTORY *exp;
@@ -331,10 +331,10 @@ void pe_section_t::add_relay(ADDRESS_SPACE *vm)
 	ULONG *funcs;
 	ULONG i;
 
-	nt = get_nt_header();
+	nt = GetNtHeader();
 
 	export_data_dir = &nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
-	exp = (IMAGE_EXPORT_DIRECTORY*) virtual_addr_to_offset( export_data_dir->VirtualAddress );
+	exp = (IMAGE_EXPORT_DIRECTORY*) VirtualAddrToOffset( export_data_dir->VirtualAddress );
 	if (!exp)
 	{
 		trace("no exports\n");
@@ -351,14 +351,14 @@ void pe_section_t::add_relay(ADDRESS_SPACE *vm)
 		return;
 	}
 
-	funcs = (DWORD*) virtual_addr_to_offset( exp->AddressOfFunctions );
+	funcs = (DWORD*) VirtualAddrToOffset( exp->AddressOfFunctions );
 	if (!funcs)
 	{
-		Die("virtual_addr_to_offset failed\n");
+		Die("VirtualAddrToOffset failed\n");
 		return;
 	}
 
-	r = vm->CopyToUser( p, relay_code, relay_code_size );
+	r = vm->CopyToUser( p, RelayCode, RelayCodeSize );
 	if (r < STATUS_SUCCESS)
 	{
 		trace("relay copy failed %08lx\n", r);
@@ -369,16 +369,16 @@ void pe_section_t::add_relay(ADDRESS_SPACE *vm)
 	for (i = 0; i<exp->NumberOfFunctions; i++)
 	{
 		ULONG *user_addr = (ULONG*) (nt->OptionalHeader.ImageBase + exp->AddressOfFunctions);
-		ULONG thunk_ofs = 0 - (relay_code_size + sizeof (relay_stub)*i );
-		PBYTE stub_addr = p + relay_code_size + sizeof (relay_stub)*i;
+		ULONG thunk_ofs = 0 - (RelayCodeSize + sizeof (relay_stub)*i );
+		PBYTE stub_addr = p + RelayCodeSize + sizeof (relay_stub)*i;
 
-		if (!add_relay_stub( vm, stub_addr, funcs[i], user_addr + i, thunk_ofs ))
+		if (!AddRelayStub( vm, stub_addr, funcs[i], user_addr + i, thunk_ofs ))
 			break;
 	}
 }
 
-// maybe create a temp file to remap?
-NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, ULONG State, ULONG Protect )
+// maybe create a temp File to remap?
+NTSTATUS PE_SECTION::Mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, ULONG State, ULONG Protect )
 {
 	IMAGE_DOS_HEADER *dos;
 	IMAGE_NT_HEADERS *nt;
@@ -387,9 +387,9 @@ NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, UL
 	BYTE *p;
 	MBLOCK *mb;
 
-	dos = (IMAGE_DOS_HEADER*) addr;
+	dos = (IMAGE_DOS_HEADER*) Addr;
 
-	nt = get_nt_header();
+	nt = GetNtHeader();
 	if (!nt)
 		return STATUS_UNSUCCESSFUL;
 
@@ -407,11 +407,11 @@ NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, UL
 	mb = vm->FindBlock( p );
 	mb->SetSection( this );
 
-	r = vm->CopyToUser( p, addr, 0x1000 );
+	r = vm->CopyToUser( p, Addr, 0x1000 );
 	if (r < STATUS_SUCCESS)
 		trace("copy_to_user failed\n");
 
-	sections = (IMAGE_SECTION_HEADER*) (addr + dos->e_lfanew + sizeof (*nt));
+	sections = (IMAGE_SECTION_HEADER*) (Addr + dos->e_lfanew + sizeof (*nt));
 
 	if (OptionTrace)
 		trace("read %d sections, load at %08lx\n",
@@ -444,14 +444,14 @@ NTSTATUS pe_section_t::mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, UL
 
 		if (sections[i].SizeOfRawData)
 		{
-			r = vm->CopyToUser( p, addr + sections[i].PointerToRawData, sections[i].SizeOfRawData);
+			r = vm->CopyToUser( p, Addr + sections[i].PointerToRawData, sections[i].SizeOfRawData);
 			if (r < STATUS_SUCCESS)
 				trace("copy_to_user failed\n");
 		}
 	}
 
 	//if (option_trace)
-		//add_relay(vm);
+		//AddRelay(vm);
 
 	base = (BYTE*) nt->OptionalHeader.ImageBase;
 fail:
@@ -459,9 +459,9 @@ fail:
 	return r;
 }
 
-void *pe_section_t::virtual_addr_to_offset( DWORD virtual_ofs )
+void *PE_SECTION::VirtualAddrToOffset( DWORD virtual_ofs )
 {
-	IMAGE_NT_HEADERS *nt = get_nt_header();
+	IMAGE_NT_HEADERS *nt = GetNtHeader();
 	IMAGE_SECTION_HEADER *section = (IMAGE_SECTION_HEADER*) &nt[1];
 	int i;
 
@@ -470,39 +470,39 @@ void *pe_section_t::virtual_addr_to_offset( DWORD virtual_ofs )
 		if (section[i].VirtualAddress <= virtual_ofs &&
 			(section[i].VirtualAddress + section[i].SizeOfRawData) > virtual_ofs )
 		{
-			return addr + (virtual_ofs - section[i].VirtualAddress + section[i].PointerToRawData);
+			return Addr + (virtual_ofs - section[i].VirtualAddress + section[i].PointerToRawData);
 		}
 	}
 	return NULL;
 }
 
 // just to find LdrInitializeThunk
-DWORD get_proc_address( OBJECT *obj, const char *name )
+DWORD GetProcAddress( OBJECT *obj, const char *name )
 {
-	pe_section_t *sec = dynamic_cast<pe_section_t*>( obj );
+	PE_SECTION *sec = dynamic_cast<PE_SECTION*>( obj );
 	if (!sec)
 		return 0;
-	return sec->get_proc_address( name );
+	return sec->GetProcAddress( name );
 }
 
-IMAGE_EXPORT_DIRECTORY* pe_section_t::get_exports_table()
+IMAGE_EXPORT_DIRECTORY* PE_SECTION::GetExportsTable()
 {
-	IMAGE_NT_HEADERS* nt = get_nt_header();
+	IMAGE_NT_HEADERS* nt = GetNtHeader();
 	IMAGE_DATA_DIRECTORY *export_data_dir;
 
 	export_data_dir = &nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
-	return (IMAGE_EXPORT_DIRECTORY*) virtual_addr_to_offset( export_data_dir->VirtualAddress );
+	return (IMAGE_EXPORT_DIRECTORY*) VirtualAddrToOffset( export_data_dir->VirtualAddress );
 }
 
-DWORD pe_section_t::get_proc_address( const char *name )
+DWORD PE_SECTION::GetProcAddress( const char *name )
 {
 	trace("%s\n", name);
 
-	IMAGE_EXPORT_DIRECTORY *exp = get_exports_table();
+	IMAGE_EXPORT_DIRECTORY *exp = GetExportsTable();
 	if (!exp)
 		return 0;
 
-	DWORD *p = (DWORD*) virtual_addr_to_offset( exp->AddressOfNames );
+	DWORD *p = (DWORD*) VirtualAddrToOffset( exp->AddressOfNames );
 	if (!p)
 		return 0;
 
@@ -511,7 +511,7 @@ DWORD pe_section_t::get_proc_address( const char *name )
 	while ( left <= right )
 	{
 		n = (left+right)/2;
-		char *x = (char*) virtual_addr_to_offset( p[n] );
+		char *x = (char*) VirtualAddrToOffset( p[n] );
 		//trace("compare %s,%s\n", name, x);
 		r = strcmp(name, x);
 		if (r == 0)
@@ -528,58 +528,58 @@ DWORD pe_section_t::get_proc_address( const char *name )
 
 	assert( n < exp->NumberOfNames );
 
-	return get_proc_address( n );
+	return GetProcAddress( n );
 }
 
-DWORD pe_section_t::get_proc_address( ULONG ordinal )
+DWORD PE_SECTION::GetProcAddress( ULONG ordinal )
 {
-	IMAGE_EXPORT_DIRECTORY *exp = get_exports_table();
+	IMAGE_EXPORT_DIRECTORY *exp = GetExportsTable();
 
 	if (ordinal >= exp->NumberOfFunctions)
 		return 0;
-	WORD *ords = (WORD*) virtual_addr_to_offset( exp->AddressOfNameOrdinals );
+	WORD *ords = (WORD*) VirtualAddrToOffset( exp->AddressOfNameOrdinals );
 	if (!ords)
 		return 0;
-	DWORD *funcs = (DWORD*) virtual_addr_to_offset( exp->AddressOfFunctions );
+	DWORD *funcs = (DWORD*) VirtualAddrToOffset( exp->AddressOfFunctions );
 	if (!funcs)
 		return 0;
 	//trace("returning %ld -> %04x -> %08lx\n", ordinal, ords[ordinal], funcs[ords[ordinal]]);
 	return funcs[ords[ordinal]];
 }
 
-const char *pe_section_t::name_of_ordinal( ULONG ordinal )
+const char *PE_SECTION::NameOfOrdinal( ULONG ordinal )
 {
-	IMAGE_EXPORT_DIRECTORY* exp = get_exports_table();
+	IMAGE_EXPORT_DIRECTORY* exp = GetExportsTable();
 
-	DWORD *names = (DWORD*) virtual_addr_to_offset( exp->AddressOfNames );
+	DWORD *names = (DWORD*) VirtualAddrToOffset( exp->AddressOfNames );
 	if (!names)
 		return 0;
-	WORD *ords = (WORD*) virtual_addr_to_offset( exp->AddressOfNameOrdinals );
+	WORD *ords = (WORD*) VirtualAddrToOffset( exp->AddressOfNameOrdinals );
 	if (!ords)
 		return 0;
 
 	// there's no NumberOfNameOrdinals.  ordinal better be valid...
 	for (int i=0; i<0xffff; i++)
 		if (ords[i] == ordinal)
-			return (char*) virtual_addr_to_offset( names[i] );
+			return (char*) VirtualAddrToOffset( names[i] );
 	return 0;
 }
 
-const char *pe_section_t::get_symbol( ULONG address )
+const char *PE_SECTION::GetSymbol( ULONG address )
 {
-	IMAGE_EXPORT_DIRECTORY* exp = get_exports_table();
+	IMAGE_EXPORT_DIRECTORY* exp = GetExportsTable();
 
 	// this translation probably should be done in address_space_impl_t::get_symbol
-	IMAGE_NT_HEADERS *nt = get_nt_header();
+	IMAGE_NT_HEADERS *nt = GetNtHeader();
 	address -= nt->OptionalHeader.ImageBase;
 
-	ULONG *funcs = (ULONG*) virtual_addr_to_offset( exp->AddressOfFunctions );
+	ULONG *funcs = (ULONG*) VirtualAddrToOffset( exp->AddressOfFunctions );
 	if (!funcs)
 		return 0;
 
 	for (ULONG i=0; i<exp->NumberOfFunctions; i++)
 		if (funcs[i] == address)
-			return name_of_ordinal( i );
+			return NameOfOrdinal( i );
 
 	return 0;
 }
@@ -589,12 +589,12 @@ const char *GetSectionSymbol( OBJECT *object, ULONG address )
 	trace("%p %08lx\n", object, address);
 	if (!object)
 		return 0;
-	section_t *section = dynamic_cast<section_t*>( object );
+	SECTION *section = dynamic_cast<SECTION*>( object );
 	trace("%p %08lx\n", section, address);
-	return section->get_symbol( address );
+	return section->GetSymbol( address );
 }
 
-void *get_entry_point( PROCESS *p )
+void *GetEntryPoint( PROCESS *p )
 {
 	IMAGE_DOS_HEADER *dos = NULL;
 	IMAGE_NT_HEADERS *nt;
@@ -602,7 +602,7 @@ void *get_entry_point( PROCESS *p )
 	ULONG entry = 0;
 	NTSTATUS r;
 
-	PPEB ppeb = (PPEB) p->PebSection->get_kernel_address();
+	PPEB ppeb = (PPEB) p->PebSection->GetKernelAddress();
 	dos = (IMAGE_DOS_HEADER*) ppeb->ImageBaseAddress;
 
 	r = p->Vm->CopyFromUser( &ofs, &dos->e_lfanew, sizeof dos->e_lfanew );
@@ -619,33 +619,33 @@ void *get_entry_point( PROCESS *p )
 	return ((BYTE*)dos) + entry;
 }
 
-class section_factory : public OBJECT_FACTORY
+class SECTION_FACTORY : public OBJECT_FACTORY
 {
 private:
-	OBJECT *file;
+	OBJECT *File;
 	PLARGE_INTEGER SectionSize;
 	ULONG Attributes;
 	ULONG Protect;
 public:
-	section_factory( OBJECT *_file, PLARGE_INTEGER _SectionSize, ULONG _Attributes, ULONG _Protect );
+	SECTION_FACTORY( OBJECT *_file, PLARGE_INTEGER _SectionSize, ULONG _Attributes, ULONG _Protect );
 	virtual NTSTATUS AllocObject(OBJECT** obj);
 };
 
-section_factory::section_factory(
+SECTION_FACTORY::SECTION_FACTORY(
 	OBJECT *_file,
 	PLARGE_INTEGER _SectionSize,
 	ULONG _Attributes,
 	ULONG _Protect ) :
-	file(_file),
+	File(_file),
 	SectionSize( _SectionSize),
 	Attributes( _Attributes),
 	Protect( _Protect )
 {
 }
 
-NTSTATUS section_factory::AllocObject(OBJECT** obj)
+NTSTATUS SECTION_FACTORY::AllocObject(OBJECT** obj)
 {
-	NTSTATUS r = create_section( obj, file, SectionSize, Attributes, Protect );
+	NTSTATUS r = CreateSection( obj, File, SectionSize, Attributes, Protect );
 	if (r < STATUS_SUCCESS)
 		return r;
 	if (!*obj)
@@ -747,7 +747,7 @@ NTSTATUS NTAPI NtCreateSection(
 		SectionSize = &sz;
 	}
 
-	section_factory factory( file, SectionSize, Attributes, Protect );
+	SECTION_FACTORY factory( file, SectionSize, Attributes, Protect );
 	return factory.Create( SectionHandle, DesiredAccess, ObjectAttributes );
 }
 
@@ -756,7 +756,7 @@ NTSTATUS NTAPI NtOpenSection(
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes )
 {
-	return NtOpenObject<section_t>( SectionHandle, DesiredAccess, ObjectAttributes );
+	return NtOpenObject<SECTION>( SectionHandle, DesiredAccess, ObjectAttributes );
 }
 
 // pg 108
@@ -784,7 +784,7 @@ NTSTATUS NTAPI NtMapViewOfSection(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	section_t *section = 0;
+	SECTION *section = 0;
 	r = ObjectFromHandle( section, SectionHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -800,7 +800,7 @@ NTSTATUS NTAPI NtMapViewOfSection(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = section->mapit( p->Vm, addr, ZeroBits,
+	r = section->Mapit( p->Vm, addr, ZeroBits,
 						MEM_COMMIT | (AllocationType&MEM_TOP_DOWN), Protect );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -848,7 +848,7 @@ NTSTATUS NTAPI NtQuerySection(
 	trace("%p %u %p %lu %p\n", SectionHandle, SectionInformationClass,
 		  SectionInformation, SectionInformationLength, ResultLength );
 
-	section_t *section = 0;
+	SECTION *section = 0;
 	r = ObjectFromHandle( section, SectionHandle, SECTION_QUERY );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -859,12 +859,12 @@ NTSTATUS NTAPI NtQuerySection(
 	{
 	case SectionBasicInformation:
 		len = sizeof info.basic;
-		r = section->query( &info.basic );
+		r = section->Query( &info.basic );
 		break;
 
 	case SectionImageInformation:
 		len = sizeof info.image;
-		r = section->query( &info.image );
+		r = section->Query( &info.image );
 		break;
 
 	default:

@@ -149,12 +149,12 @@ NTSTATUS MapLocaleData( ADDRESS_SPACE *vm, const char *name, void **addr )
 	if (r < STATUS_SUCCESS)
 		Die("locale data %s missing from system directory (%08lx)\n", name, r);
 
-	r = create_section( &section, file, 0, SEC_FILE, PAGE_EXECUTE_READWRITE );
+	r = CreateSection( &section, file, 0, SEC_FILE, PAGE_EXECUTE_READWRITE );
 	Release( file );
 	if (r < STATUS_SUCCESS)
 		Die("failed to create section for locale data\n");
 
-	r = mapit( vm, section, data );
+	r = Mapit( vm, section, data );
 	if (r < STATUS_SUCCESS)
 		Die("failed to map locale data (%08lx)\n", r);
 
@@ -164,7 +164,7 @@ NTSTATUS MapLocaleData( ADDRESS_SPACE *vm, const char *name, void **addr )
 	return STATUS_SUCCESS;
 }
 
-section_t *SharedSection;
+SECTION *SharedSection;
 KUSER_SHARED_DATA *SharedMemoryAddress;
 
 class KSHM_TRACER : public BLOCK_TRACER
@@ -218,12 +218,12 @@ NTSTATUS GetSharedMemoryBlock( PROCESS *p )
 	{
 		LARGE_INTEGER sz;
 		sz.QuadPart = 0x10000;
-		r = create_section( &SharedSection, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
+		r = CreateSection( &SharedSection, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
 
 		// set the nt directory
-		SharedMemoryAddress = (KUSER_SHARED_DATA*) SharedSection->get_kernel_address();
+		SharedMemoryAddress = (KUSER_SHARED_DATA*) SharedSection->GetKernelAddress();
 		memcpy( SharedMemoryAddress->WindowsDirectory, ntdir, sizeof ntdir );
 
 		// mark the product type as valid
@@ -240,7 +240,7 @@ NTSTATUS GetSharedMemoryBlock( PROCESS *p )
 			SharedMemoryAddress->SystemCall = kisc;
 	}
 
-	r = SharedSection->mapit( p->Vm, shm, 0, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READONLY );
+	r = SharedSection->Mapit( p->Vm, shm, 0, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READONLY );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -451,11 +451,11 @@ NTSTATUS CreateProcess( PROCESS **pprocess, OBJECT *section )
 	p->Exe = section;
 
 	// FIXME: use section->mapit, get rid of mapit(section, ...)
-	r = mapit( p->Vm, p->Exe, p->PExe );
+	r = Mapit( p->Vm, p->Exe, p->PExe );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = mapit( p->Vm, NtDLLSection, p->PNtDLL );
+	r = Mapit( p->Vm, NtDLLSection, p->PNtDLL );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -466,7 +466,7 @@ NTSTATUS CreateProcess( PROCESS **pprocess, OBJECT *section )
 
 	LARGE_INTEGER sz;
 	sz.QuadPart = PAGE_SIZE;
-	r = create_section( &p->PebSection, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
+	r = CreateSection( &p->PebSection, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -479,12 +479,12 @@ NTSTATUS CreateProcess( PROCESS **pprocess, OBJECT *section )
 
 	/* allocate the PEB */
 	BYTE *peb_addr = 0;
-	r = p->PebSection->mapit( p->Vm, peb_addr, 0, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE );
+	r = p->PebSection->Mapit( p->Vm, peb_addr, 0, MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	p->PebBaseAddress = (void*) peb_addr;
-	PPEB ppeb = (PPEB) p->PebSection->get_kernel_address();
+	PPEB ppeb = (PPEB) p->PebSection->GetKernelAddress();
 
 	/* map the locale data (for LdrInitializeThunk) */
 	MapLocaleData( p->Vm, "l_intl.nls", &ppeb->UnicodeCaseTableData );
@@ -523,7 +523,7 @@ NTSTATUS NTAPI NtCreateProcess(
 	HANDLE ExceptionPort )
 {
 	PROCESS *p = NULL;
-	section_t *section = 0;
+	SECTION *section = 0;
 	NTSTATUS r;
 
 	trace("%p %08lx %p %p %u %p %p %p\n", ProcessHandle, DesiredAccess,
@@ -734,7 +734,7 @@ NTSTATUS NTAPI NtSetInformationProcess(
 
 		case ProcessSessionInformation:
 		{
-			PPEB ppeb = (PPEB) p->PebSection->get_kernel_address();
+			PPEB ppeb = (PPEB) p->PebSection->GetKernelAddress();
 			ppeb->SessionId = info.session.SessionId;
 			break;
 		}
@@ -849,7 +849,7 @@ NTSTATUS NTAPI NtQueryInformationProcess(
 
 		case ProcessSessionInformation:
 		{
-			PPEB ppeb = (PPEB) p->PebSection->get_kernel_address();
+			PPEB ppeb = (PPEB) p->PebSection->GetKernelAddress();
 			info.session.SessionId = ppeb->SessionId;
 			break;
 		}

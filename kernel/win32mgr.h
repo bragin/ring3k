@@ -86,7 +86,7 @@ protected:
 	HGDIOBJ handle;
 	ULONG refcount;
 
-	static section_t *g_gdi_section;
+	static SECTION *g_gdi_section;
 	static BYTE *g_gdi_shared_memory;
 	static ALLOCATION_BITMAP* g_gdi_shared_bitmap;
 
