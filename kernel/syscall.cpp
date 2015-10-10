@@ -32,72 +32,72 @@
 #include "ntcall.h"
 #include "ntwin32.h"
 
-typedef struct _ntcalldesc
+typedef struct _NtCallDesc
 {
 	const char *name;
 	void *func;
 	unsigned int numargs;
-} ntcalldesc;
+} NtCallDesc;
 
 #define NUL(x) { #x, NULL, 0 }	/* not even declared */
 #define DEC(x,n) { #x, NULL, n }  /* no stub implemented */
 #define IMP(x,n) { #x, (void*)x, n }	 /* entry point implemented */
 
-ntcalldesc win2k_calls[] =
+NtCallDesc Win2kCalls[] =
 {
 #define SYSCALL_WIN2K
 #include "ntsyscall.h"
 #undef SYSCALL_WIN2K
 };
 
-ntcalldesc winxp_calls[] =
+NtCallDesc WinXPCalls[] =
 {
 #define SYSCALL_WINXP
 #include "ntsyscall.h"
 #undef SYSCALL_WINXP
 };
 
-ntcalldesc win2k_uicalls[] =
+NtCallDesc Win2kUICalls[] =
 {
 #define SYSCALL_WIN2K
 #include "uisyscall.h"
 #undef SYSCALL_WIN2K
 };
 
-ntcalldesc winxp_uicalls[] =
+NtCallDesc WinXPUICalls[] =
 {
 #define SYSCALL_WINXP
 #include "uisyscall.h"
 #undef SYSCALL_WINXP
 };
 
-ntcalldesc *ntcalls;
-ULONG number_of_ntcalls;
+NtCallDesc *NtCalls;
+ULONG NumberOfNtCalls;
 
-ntcalldesc *ntuicalls;
-ULONG number_of_uicalls;
+NtCallDesc *NtUICalls;
+ULONG NumberOfUICalls;
 
-static ULONG uicall_offset = 0x1000;
+static ULONG UICallOffset = 0x1000;
 
 void InitSyscalls(bool xp)
 {
 	if (xp)
 	{
-		number_of_ntcalls = sizeof winxp_calls/sizeof winxp_calls[0];
-		ntcalls = winxp_calls;
-		number_of_uicalls = sizeof winxp_uicalls/sizeof winxp_uicalls[0];
-		ntuicalls = winxp_uicalls;
+		NumberOfNtCalls = sizeof WinXPCalls/sizeof WinXPCalls[0];
+		NtCalls = WinXPCalls;
+		NumberOfUICalls = sizeof WinXPUICalls/sizeof WinXPUICalls[0];
+		NtUICalls = WinXPUICalls;
 	}
 	else
 	{
-		number_of_ntcalls = sizeof win2k_calls/sizeof win2k_calls[0];
-		ntcalls = win2k_calls;
-		number_of_uicalls = sizeof win2k_uicalls/sizeof win2k_uicalls[0];
-		ntuicalls = win2k_uicalls;
+		NumberOfNtCalls = sizeof Win2kCalls/sizeof Win2kCalls[0];
+		NtCalls = Win2kCalls;
+		NumberOfUICalls = sizeof Win2kUICalls/sizeof Win2kUICalls[0];
+		NtUICalls = Win2kUICalls;
 	}
 }
 
-void trace_syscall_enter(ULONG id, ntcalldesc *ntcall, ULONG *args, ULONG retaddr)
+void TraceSyscallEnter(ULONG id, NtCallDesc *ntcall, ULONG *args, ULONG retaddr)
 {
 	/* print a relay style trace line */
 	if (!OptionTrace)
@@ -114,7 +114,7 @@ void trace_syscall_enter(ULONG id, ntcalldesc *ntcall, ULONG *args, ULONG retadd
 	fprintf(stderr,") ret=%08lx\n", retaddr);
 }
 
-void trace_syscall_exit(ULONG id, ntcalldesc *ntcall, ULONG r, ULONG retaddr)
+void TraceSyscallExit(ULONG id, NtCallDesc *ntcall, ULONG r, ULONG retaddr)
 {
 	if (!OptionTrace)
 		return;
@@ -126,19 +126,19 @@ void trace_syscall_exit(ULONG id, ntcalldesc *ntcall, ULONG r, ULONG retaddr)
 NTSTATUS DoNtSyscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
 {
 	NTSTATUS r = STATUS_INVALID_SYSTEM_SERVICE;
-	ntcalldesc *ntcall = 0;
+	NtCallDesc *ntcall = 0;
 	ULONG args[16];
 	const int magic_val = 0xfedc1248;	// random unlikely value
 	int magic = magic_val;
 	BOOLEAN win32k_func = FALSE;
 
 	/* check the call number is in range */
-	if (func >= 0 && func < number_of_ntcalls)
-		ntcall = &ntcalls[func];
-	else if (func >= uicall_offset && func < (uicall_offset + number_of_uicalls))
+	if (func >= 0 && func < NumberOfNtCalls)
+		ntcall = &NtCalls[func];
+	else if (func >= UICallOffset && func < (UICallOffset + NumberOfUICalls))
 	{
 		win32k_func = TRUE;
-		ntcall = &ntuicalls[func - uicall_offset];
+		ntcall = &NtUICalls[func - UICallOffset];
 	}
 	else
 	{
@@ -179,7 +179,7 @@ NTSTATUS DoNtSyscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
 	if (r < STATUS_SUCCESS)
 		goto end;
 
-	trace_syscall_enter(id, ntcall, args, retaddr );
+	TraceSyscallEnter(id, ntcall, args, retaddr );
 
 	// initialize the windows subsystem if necessary
 	if (win32k_func)
@@ -210,7 +210,7 @@ NTSTATUS DoNtSyscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
 	assert( magic == magic_val );
 
 end:
-	trace_syscall_exit(id, ntcall, r, retaddr);
+	TraceSyscallExit(id, ntcall, r, retaddr);
 
 	return r;
 }
