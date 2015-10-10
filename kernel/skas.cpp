@@ -49,35 +49,35 @@
 
 #include "ptrace_base.h"
 
-class skas3_address_space_impl: public PTRACE_ADRESS_SPACE_IMPL
+class SKAS3_ADDRESS_SPACE_IMPL: public PTRACE_ADRESS_SPACE_IMPL
 {
-	static int num_address_spaces;
-	int fd;
-	static unsigned short user_fs;
+	static int NumAddressSpaces;
+	int FD;
+	static unsigned short UserFs;
 public:
-	static pid_t child_pid;
-	skas3_address_space_impl(int _fd);
+	static pid_t ChildPid;
+	SKAS3_ADDRESS_SPACE_IMPL(int _fd);
 	virtual pid_t GetChildPid();
-	virtual ~skas3_address_space_impl();
+	virtual ~SKAS3_ADDRESS_SPACE_IMPL();
 	virtual int Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset );
 	virtual int Munmap( BYTE *address, size_t length );
 	virtual void Run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, EXECUTION_CONTEXT *exec );
-	static pid_t create_tracee(void);
-	static void init_fs(void);
+	static pid_t CreateTrace(void);
+	static void InitFs(void);
 	virtual unsigned short GetUserspaceFs();
 };
 
-pid_t skas3_address_space_impl::child_pid = -1;
-int skas3_address_space_impl::num_address_spaces;
-unsigned short skas3_address_space_impl::user_fs;
+pid_t SKAS3_ADDRESS_SPACE_IMPL::ChildPid = -1;
+int SKAS3_ADDRESS_SPACE_IMPL::NumAddressSpaces;
+unsigned short SKAS3_ADDRESS_SPACE_IMPL::UserFs;
 
 // target for timer signals
-pid_t skas3_address_space_impl::GetChildPid()
+pid_t SKAS3_ADDRESS_SPACE_IMPL::GetChildPid()
 {
-	return child_pid;
+	return ChildPid;
 }
 
-int do_fork_child(void *arg)
+int DoForkChild(void *arg)
 {
 	_exit(1);
 }
@@ -97,7 +97,7 @@ struct modify_ldt_s
 	unsigned int  garbage : 25;
 };
 
-static inline int set_thread_area( struct modify_ldt_s *ptr )
+static inline int SetThreadArea( struct modify_ldt_s *ptr )
 {
 	int res;
 	__asm__ __volatile__( "pushl %%ebx\n\t"
@@ -112,41 +112,41 @@ static inline int set_thread_area( struct modify_ldt_s *ptr )
 }
 
 // allocate fs in the current process
-void skas3_address_space_impl::init_fs(void)
+void SKAS3_ADDRESS_SPACE_IMPL::InitFs(void)
 {
 	unsigned short fs;
 	__asm__ __volatile__ ( "\n\tmovw %%fs, %0\n" : "=r"( fs ) : );
 	if (fs != 0)
 	{
-		user_fs = fs;
+		UserFs = fs;
 		return;
 	}
 
 	struct modify_ldt_s ldt;
 	memset( &ldt, 0, sizeof ldt );
 	ldt.entry_number = -1;
-	int r = set_thread_area( &ldt );
+	int r = SetThreadArea( &ldt );
 	if (r<0)
 		Die("alloc %%fs failed, errno = %d\n", errno);
-	user_fs = (ldt.entry_number << 3) | 3;
+	UserFs = (ldt.entry_number << 3) | 3;
 }
 
-unsigned short skas3_address_space_impl::GetUserspaceFs()
+unsigned short SKAS3_ADDRESS_SPACE_IMPL::GetUserspaceFs()
 {
-	return user_fs;
+	return UserFs;
 }
 
-pid_t skas3_address_space_impl::create_tracee(void)
+pid_t SKAS3_ADDRESS_SPACE_IMPL::CreateTrace(void)
 {
 	pid_t pid;
 
 	// init fs before forking
-	init_fs();
+	InitFs();
 
 	// clone this process
 	const int stack_size = 0x1000;
 	void *stack = MmapAnon( 0, stack_size, PROT_READ | PROT_WRITE );
-	pid = clone( do_fork_child, (char*) stack + stack_size,
+	pid = clone( DoForkChild, (char*) stack + stack_size,
 				 CLONE_FILES | CLONE_STOPPED | SIGCHLD, NULL );
 	if (pid == -1)
 	{
@@ -169,60 +169,60 @@ pid_t skas3_address_space_impl::create_tracee(void)
 	return pid;
 }
 
-skas3_address_space_impl::skas3_address_space_impl(int _fd) :
-	fd(_fd)
+SKAS3_ADDRESS_SPACE_IMPL::SKAS3_ADDRESS_SPACE_IMPL(int _fd) :
+	FD(_fd)
 {
-	num_address_spaces++;
+	NumAddressSpaces++;
 }
 
-void skas3_address_space_impl::Run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, EXECUTION_CONTEXT *exec )
+void SKAS3_ADDRESS_SPACE_IMPL::Run( void *TebBaseAddress, PCONTEXT ctx, int single_step, LARGE_INTEGER& timeout, EXECUTION_CONTEXT *exec )
 {
 	/* load the process address space into the child process */
-	int r = PtraceSetAddressSpace( child_pid, fd );
+	int r = PtraceSetAddressSpace( ChildPid, FD );
 	if (r < 0)
 		Die("ptrace_set_address_space failed %d (%d)\n", r, errno);
 
 	PTRACE_ADRESS_SPACE_IMPL::Run( TebBaseAddress, ctx, single_step, timeout, exec );
 }
 
-skas3_address_space_impl::~skas3_address_space_impl()
+SKAS3_ADDRESS_SPACE_IMPL::~SKAS3_ADDRESS_SPACE_IMPL()
 {
 	Destroy();
-	close( fd );
-	assert(num_address_spaces>0);
-	num_address_spaces--;
-	if (num_address_spaces == 0)
+	close( FD );
+	assert(NumAddressSpaces>0);
+	NumAddressSpaces--;
+	if (NumAddressSpaces == 0)
 	{
-		ptrace( PTRACE_KILL, child_pid, 0, 0 );
-		kill( child_pid, SIGTERM );
-		child_pid = -1;
+		ptrace( PTRACE_KILL, ChildPid, 0, 0 );
+		kill( ChildPid, SIGTERM );
+		ChildPid = -1;
 	}
 }
 
-ADDRESS_SPACE_IMPL* create_skas3_address_space()
+ADDRESS_SPACE_IMPL* CreateSkas3AddressSpace()
 {
-	if (skas3_address_space_impl::child_pid == -1)
+	if (SKAS3_ADDRESS_SPACE_IMPL::ChildPid == -1)
 	{
 		// Set up the signal handler and unmask it first.
 		// The child's signal handler will be unmasked too.
-		skas3_address_space_impl::child_pid = skas3_address_space_impl::create_tracee();
+		SKAS3_ADDRESS_SPACE_IMPL::ChildPid = SKAS3_ADDRESS_SPACE_IMPL::CreateTrace();
 	}
 
 	int fd = PtraceAllocAddressSpaceFD();
 	if (fd < 0)
 		return NULL;
 
-	return new skas3_address_space_impl( fd );
+	return new SKAS3_ADDRESS_SPACE_IMPL( fd );
 }
 
-int skas3_address_space_impl::Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset )
+int SKAS3_ADDRESS_SPACE_IMPL::Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset )
 {
-	return RemoteMMap( fd, address, length, prot, flags, file, offset );
+	return RemoteMMap( FD, address, length, prot, flags, file, offset );
 }
 
-int skas3_address_space_impl::Munmap( BYTE *address, size_t length )
+int SKAS3_ADDRESS_SPACE_IMPL::Munmap( BYTE *address, size_t length )
 {
-	return RemoteMUnmap( fd, address, length );
+	return RemoteMUnmap( FD, address, length );
 }
 
 bool InitSkas()
@@ -236,7 +236,7 @@ bool InitSkas()
 	close( fd );
 	trace("using skas3\n");
 	PTRACE_ADRESS_SPACE_IMPL::SetSignals();
-	pCreateAddressSpace = &create_skas3_address_space;
+	pCreateAddressSpace = &CreateSkas3AddressSpace;
 	return true;
 }
 
