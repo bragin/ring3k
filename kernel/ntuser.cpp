@@ -1477,7 +1477,7 @@ void window_tt::set_window_pos( UINT flags )
 
 HGDIOBJ window_tt::get_dc()
 {
-	DEVICE_CONTEXT *dc = Win32kManager->alloc_screen_dc_ptr();
+	DEVICE_CONTEXT *dc = Win32kManager->AllocScreenDcPtr();
 	if (!dc)
 		return 0;
 

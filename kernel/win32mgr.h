@@ -65,16 +65,16 @@ public:
 	HANDLE CreateSolidBrush( COLORREF color );
 	HANDLE CreatePen( UINT style, UINT width, COLORREF color );
 	virtual ~WIN32K_MANAGER();
-	virtual BOOL init() = 0;
-	virtual void fini() = 0;
+	virtual BOOL Init() = 0;
+	virtual void Fini() = 0;
 	virtual HGDIOBJ AllocCompatibleDc();
 	virtual HGDIOBJ AllocScreenDC();
-	virtual DEVICE_CONTEXT* alloc_screen_dc_ptr() = 0;
+	virtual DEVICE_CONTEXT* AllocScreenDcPtr() = 0;
 	virtual BOOL ReleaseDC( HGDIOBJ dc );
 	WIN32K_INFO* AllocWin32kInfo();
 	virtual void SendInput( INPUT* input );
 	ULONG GetAsyncKeyState( ULONG Key );
-	virtual int getcaps( int index ) = 0;
+	virtual int GetCaps( int index ) = 0;
 	FT_Face GetFace();
 };
 

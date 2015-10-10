@@ -91,15 +91,15 @@ protected:
 	sdl_sleeper_t sdl_sleeper;
 	CBITMAP* sdl_bitmap;
 public:
-	virtual BOOL init();
-	virtual void fini();
+	virtual BOOL Init();
+	virtual void Fini();
 	win32k_sdl_t();
-	virtual DEVICE_CONTEXT* alloc_screen_dc_ptr();
+	virtual DEVICE_CONTEXT* AllocScreenDcPtr();
 
 protected:
 	Uint16 MapColorref( COLORREF );
 	virtual SDL_Surface* set_mode() = 0;
-	virtual int getcaps( int index );
+	virtual int GetCaps( int index );
 };
 
 win32k_sdl_t::win32k_sdl_t() :
@@ -327,7 +327,7 @@ bool sdl_sleeper_t::CheckEvents( bool wait )
 	return quit;
 }
 
-int win32k_sdl_t::getcaps( int index )
+int win32k_sdl_t::GetCaps( int index )
 {
 	switch (index)
 	{
@@ -341,7 +341,7 @@ int win32k_sdl_t::getcaps( int index )
 	}
 }
 
-BOOL win32k_sdl_t::init()
+BOOL win32k_sdl_t::Init()
 {
 	if ( SDL_WasInit(SDL_INIT_VIDEO) )
 		return TRUE;
@@ -362,7 +362,7 @@ BOOL win32k_sdl_t::init()
 	return TRUE;
 }
 
-void win32k_sdl_t::fini()
+void win32k_sdl_t::Fini()
 {
 	if ( !SDL_WasInit(SDL_INIT_VIDEO) )
 		return;
@@ -437,10 +437,10 @@ HANDLE sdl_device_context_t::SelectBitmap( CBITMAP *bitmap )
 
 int sdl_device_context_t::GetCaps( int index )
 {
-	return Win32kManager->getcaps( index );
+	return Win32kManager->GetCaps( index );
 }
 
-DEVICE_CONTEXT* win32k_sdl_t::alloc_screen_dc_ptr()
+DEVICE_CONTEXT* win32k_sdl_t::AllocScreenDcPtr()
 {
 	trace("allocating SDL DC sdl_bitmap = %p\n", sdl_bitmap);
 	return new sdl_device_context_t( sdl_bitmap );

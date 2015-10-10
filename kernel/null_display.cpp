@@ -40,28 +40,28 @@
 class WIN32K_NULL : public WIN32K_MANAGER
 {
 public:
-	virtual BOOL init();
-	virtual void fini();
-	virtual DEVICE_CONTEXT* alloc_screen_dc_ptr();
-	virtual int getcaps( int index );
+	virtual BOOL Init();
+	virtual void Fini();
+	virtual DEVICE_CONTEXT* AllocScreenDcPtr();
+	virtual int GetCaps( int index );
 };
 
-BOOL WIN32K_NULL::init()
+BOOL WIN32K_NULL::Init()
 {
 	return TRUE;
 }
 
-void WIN32K_NULL::fini()
+void WIN32K_NULL::Fini()
 {
 }
 
-int WIN32K_NULL::getcaps( int index )
+int WIN32K_NULL::GetCaps( int index )
 {
 	trace("%d\n", index);
 	return 0;
 }
 
-DEVICE_CONTEXT* WIN32K_NULL::alloc_screen_dc_ptr()
+DEVICE_CONTEXT* WIN32K_NULL::AllocScreenDcPtr()
 {
 	// FIXME: make graphics functions more generic
 	assert( 0 );
@@ -69,10 +69,10 @@ DEVICE_CONTEXT* WIN32K_NULL::alloc_screen_dc_ptr()
 	//return new DEVICE_CONTEXT;
 }
 
-WIN32K_NULL win32k_manager_null;
+WIN32K_NULL Win32kManagerNull;
 
-WIN32K_MANAGER* init_null_win32k_manager()
+WIN32K_MANAGER* InitNullWin32kManager()
 {
-	return &win32k_manager_null;
+	return &Win32kManagerNull;
 }
 

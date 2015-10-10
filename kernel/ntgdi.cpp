@@ -57,7 +57,7 @@ struct graphics_driver_list
 struct graphics_driver_list graphics_drivers[] =
 {
 	{ "sdl", &init_sdl_win32k_manager, },
-	{ "null", &init_null_win32k_manager, },
+	{ "null", &InitNullWin32kManager, },
 	{ NULL, NULL, },
 };
 
@@ -285,7 +285,7 @@ ULONG WIN32K_MANAGER::GetAsyncKeyState( ULONG Key )
 void NtGdiFini()
 {
 	if (Win32kManager)
-		Win32kManager->fini();
+		Win32kManager->Fini();
 }
 
 NTSTATUS Win32kProcessInit(PROCESS *process)
@@ -346,7 +346,7 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 
 	ppeb->GdiSharedHandleTable = (void*) p;
 
-	if (!Win32kManager->init())
+	if (!Win32kManager->Init())
 		Die("unable to allocate screen\n");
 
 	process->vm->SetTracer( p, ntgdishm_trace );
@@ -524,7 +524,7 @@ HGDIOBJ WIN32K_MANAGER::AllocCompatibleDc()
 
 HGDIOBJ WIN32K_MANAGER::AllocScreenDC()
 {
-	DEVICE_CONTEXT* dc = alloc_screen_dc_ptr();
+	DEVICE_CONTEXT* dc = AllocScreenDcPtr();
 	if (!dc)
 		return NULL;
 	return dc->get_handle();

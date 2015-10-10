@@ -21,6 +21,6 @@
 #ifndef __RING3K_NULL_H__
 #define __RING3K_NULL_H__
 
-WIN32K_MANAGER* init_null_win32k_manager();
+WIN32K_MANAGER* InitNullWin32kManager();
 
 #endif // __RING3K_NULL_H__
