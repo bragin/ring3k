@@ -40,7 +40,7 @@
 #include "ntwin32.h"
 #include "sdl.h"
 
-#if defined (HAVE_SDL) && defined (HAVE_SDL_SDL_H) || true
+#if defined (HAVE_SDL) && defined (HAVE_SDL_SDL_H)
 #include <SDL/SDL.h>
 
 class SDL_16BPP_BITMAP : public BitmapImpl<16>
