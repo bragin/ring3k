@@ -134,16 +134,16 @@ void NTGDISHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 static NTGDISHM_TRACER ntgdishm_trace;
 
 GDI_OBJECT::GDI_OBJECT() :
-	handle( 0 ),
-	refcount( 0 )
+	Handle( 0 ),
+	RefCount( 0 )
 {
 }
 
 BOOL GDI_OBJECT::Release()
 {
-	if (refcount)
+	if (RefCount)
 		return FALSE;
-	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
+	gdi_handle_table_entry *entry = GetHandleTableEntry( Handle );
 	assert( entry );
 	assert( reinterpret_cast<GDI_OBJECT*>( entry->kernel_info ) == this );
 	memset( entry, 0, sizeof *entry );
@@ -153,29 +153,29 @@ BOOL GDI_OBJECT::Release()
 
 BOOLEAN NTAPI NtGdiInit()
 {
-	return do_gdi_init();
+	return DoGdiInit();
 }
 
 WIN32K_MANAGER::WIN32K_MANAGER()
 {
-	memset( key_state, 0, sizeof key_state );
+	memset( KeyState, 0, sizeof KeyState );
 
-	FT_Error r = FT_Init_FreeType( &ftlib );
+	FT_Error r = FT_Init_FreeType( &Ftlib );
 	if (r)
 		throw;
 }
 
 WIN32K_MANAGER::~WIN32K_MANAGER()
 {
-	FT_Done_FreeType( ftlib );
+	FT_Done_FreeType( Ftlib );
 }
 
 WIN32K_INFO::WIN32K_INFO() :
-	dc_shared_mem( 0 ),
-	user_shared_mem( 0 ),
-	user_handles( 0 )
+	DcSharedMem( 0 ),
+	UserSharedMem( 0 ),
+	UserHandles( 0 )
 {
-	memset( &stock_object, 0, sizeof stock_object );
+	memset( &StockObject, 0, sizeof StockObject );
 }
 
 WIN32K_INFO::~WIN32K_INFO()
@@ -192,14 +192,14 @@ void WIN32K_MANAGER::SendInput(INPUT* input)
 	THREAD_MESSAGE_QUEUE *queue = 0;
 	ULONG pos;
 
-	if (active_window)
+	if (ActiveWindow)
 	{
-		THREAD *t = active_window->GetWinThread();
+		THREAD *t = ActiveWindow->GetWinThread();
 		assert(t != NULL);
 		queue = t->Queue;
 	}
 
-	trace("active window = %p\n", active_window);
+	trace("active window = %p\n", ActiveWindow);
 
 	// keyboard activity
 	switch (input->type)
@@ -210,15 +210,15 @@ void WIN32K_MANAGER::SendInput(INPUT* input)
 
 		if (input->ki.dwFlags & KEYEVENTF_KEYUP)
 		{
-			key_state[input->ki.wVk] = 0;
+			KeyState[input->ki.wVk] = 0;
 			if (queue)
-				queue->PostMessage( active_window->handle, WM_KEYUP, input->ki.wVk, 0 );
+				queue->PostMessage( ActiveWindow->handle, WM_KEYUP, input->ki.wVk, 0 );
 		}
 		else
 		{
-			key_state[input->ki.wVk] = 0x8000;
+			KeyState[input->ki.wVk] = 0x8000;
 			if (queue)
-				queue->PostMessage( active_window->handle, WM_KEYDOWN, input->ki.wVk, 0 );
+				queue->PostMessage( ActiveWindow->handle, WM_KEYDOWN, input->ki.wVk, 0 );
 		}
 
 		break;
@@ -229,43 +229,43 @@ void WIN32K_MANAGER::SendInput(INPUT* input)
 		if (input->mi.dwFlags & MOUSEEVENTF_LEFTDOWN)
 		{
 			if (queue)
-				queue->PostMessage( active_window->handle, WM_LBUTTONDOWN, 0, pos );
+				queue->PostMessage( ActiveWindow->handle, WM_LBUTTONDOWN, 0, pos );
 		}
 
 		if (input->mi.dwFlags & MOUSEEVENTF_LEFTUP)
 		{
 			if (queue)
-				queue->PostMessage( active_window->handle, WM_LBUTTONUP, 0, pos );
+				queue->PostMessage( ActiveWindow->handle, WM_LBUTTONUP, 0, pos );
 		}
 
 		if (input->mi.dwFlags & MOUSEEVENTF_RIGHTDOWN)
 		{
 			if (queue)
-				queue->PostMessage( active_window->handle, WM_RBUTTONDOWN, 0, pos );
+				queue->PostMessage( ActiveWindow->handle, WM_RBUTTONDOWN, 0, pos );
 		}
 
 		if (input->mi.dwFlags & MOUSEEVENTF_RIGHTUP)
 		{
 			if (queue)
-				queue->PostMessage( active_window->handle, WM_RBUTTONUP, 0, pos );
+				queue->PostMessage( ActiveWindow->handle, WM_RBUTTONUP, 0, pos );
 		}
 
 		if (input->mi.dwFlags & MOUSEEVENTF_MIDDLEDOWN)
 		{
 			if (queue)
-				queue->PostMessage( active_window->handle, WM_MBUTTONDOWN, 0, pos );
+				queue->PostMessage( ActiveWindow->handle, WM_MBUTTONDOWN, 0, pos );
 		}
 
 		if (input->mi.dwFlags & MOUSEEVENTF_MIDDLEUP)
 		{
 			if (queue)
-				queue->PostMessage( active_window->handle, WM_MBUTTONUP, 0, pos );
+				queue->PostMessage( ActiveWindow->handle, WM_MBUTTONUP, 0, pos );
 		}
 
 		if (input->mi.dwFlags & MOUSEEVENTF_MOVE)
 		{
 			if (queue)
-				queue->PostMessage( active_window->handle, WM_MOUSEMOVE, 0, pos );
+				queue->PostMessage( ActiveWindow->handle, WM_MOUSEMOVE, 0, pos );
 		}
 
 		break;
@@ -279,7 +279,7 @@ ULONG WIN32K_MANAGER::GetAsyncKeyState( ULONG Key )
 {
 	if (Key > 254)
 		return 0;
-	return key_state[ Key ];
+	return KeyState[ Key ];
 }
 
 void NtGdiFini()
@@ -439,10 +439,10 @@ HGDIOBJ GDI_OBJECT::Alloc( BOOL stock, ULONG type )
 	GDI_OBJECT *obj = new GDI_OBJECT();
 	HGDIOBJ handle = AllocGdiHandle( stock, type, 0, obj );
 	if (handle)
-		obj->handle = handle;
+		obj->Handle = handle;
 	else
 		delete obj;
-	return obj->handle;
+	return obj->Handle;
 }
 
 HGDIOBJ AllocGdiObject( BOOL stock, ULONG type )
@@ -510,16 +510,16 @@ bool gdishm_tracer::Enabled() const
 
 static gdishm_tracer GdishmTrace;
 
-SECTION *GDI_OBJECT::g_gdi_section;
-BYTE *GDI_OBJECT::g_gdi_shared_memory;
-ALLOCATION_BITMAP* GDI_OBJECT::g_gdi_shared_bitmap;
+SECTION *GDI_OBJECT::g_GdiSection;
+BYTE *GDI_OBJECT::g_GdiSharedMemory;
+ALLOCATION_BITMAP* GDI_OBJECT::g_GdiSharedBitmap;
 
 HGDIOBJ WIN32K_MANAGER::AllocCompatibleDc()
 {
 	DEVICE_CONTEXT* dc = new MEMORY_DEVICE_CONTEXT;
 	if (!dc)
 		return NULL;
-	return dc->get_handle();
+	return dc->GetHandle();
 }
 
 HGDIOBJ WIN32K_MANAGER::AllocScreenDC()
@@ -527,7 +527,7 @@ HGDIOBJ WIN32K_MANAGER::AllocScreenDC()
 	DEVICE_CONTEXT* dc = AllocScreenDcPtr();
 	if (!dc)
 		return NULL;
-	return dc->get_handle();
+	return dc->GetHandle();
 }
 
 void GDI_OBJECT::InitGdiSharedMem()
@@ -535,24 +535,24 @@ void GDI_OBJECT::InitGdiSharedMem()
 	NTSTATUS r;
 	int dc_shared_memory_size = 0x10000;
 
-	if (!g_gdi_shared_memory)
+	if (!g_GdiSharedMemory)
 	{
 		LARGE_INTEGER sz;
 		sz.QuadPart = dc_shared_memory_size;
-		r = CreateSection( &g_gdi_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
+		r = CreateSection( &g_GdiSection, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 		assert (r >= STATUS_SUCCESS);
 
-		g_gdi_shared_memory = (BYTE*) g_gdi_section->GetKernelAddress();
+		g_GdiSharedMemory = (BYTE*) g_GdiSection->GetKernelAddress();
 
-		assert( g_gdi_shared_bitmap == NULL );
-		g_gdi_shared_bitmap = new ALLOCATION_BITMAP;
-		g_gdi_shared_bitmap->SetArea( g_gdi_shared_memory, dc_shared_memory_size );
+		assert( g_GdiSharedBitmap == NULL );
+		g_GdiSharedBitmap = new ALLOCATION_BITMAP;
+		g_GdiSharedBitmap->SetArea( g_GdiSharedMemory, dc_shared_memory_size );
 	}
 
-	BYTE*& dc_shared_mem = Current->Process->Win32kInfo->dc_shared_mem;
+	BYTE*& dc_shared_mem = Current->Process->Win32kInfo->DcSharedMem;
 	if (!dc_shared_mem)
 	{
-		r = g_gdi_section->Mapit( Current->Process->Vm, dc_shared_mem, 0, MEM_COMMIT, PAGE_READWRITE );
+		r = g_GdiSection->Mapit( Current->Process->Vm, dc_shared_mem, 0, MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 		{
 			trace("failed to map shared memory\n");
@@ -566,13 +566,13 @@ void GDI_OBJECT::InitGdiSharedMem()
 // see SaveDC in wine/dlls/gdi32/dc.c
 int DEVICE_CONTEXT::SaveDC()
 {
-	dc_state_tt *dcs = new dc_state_tt;
-	dcs->next = saved_dc;
-	saved_dc = dcs;
+	DcState *dcs = new DcState;
+	dcs->Next = SavedDc;
+	SavedDc = dcs;
 
 	// FIXME: actually copy the state
 
-	return ++saveLevel;
+	return ++SaveLevel;
 }
 
 // see RestoreDC in wine/dlls/gdi32/dc.c
@@ -581,19 +581,19 @@ BOOL DEVICE_CONTEXT::RestoreDC( int level )
 	if (level == 0)
 		return FALSE;
 
-	if (abs(level) > saveLevel)
+	if (abs(level) > SaveLevel)
 		return FALSE;
 
 	if (level < 0)
-		level = saveLevel + level + 1;
+		level = SaveLevel + level + 1;
 
 	BOOL success=TRUE;
-	while (saveLevel >= level)
+	while (SaveLevel >= level)
 	{
-		dc_state_tt *dcs = saved_dc;
-		saved_dc = dcs->next;
-		dcs->next = 0;
-		if (--saveLevel < level)
+		DcState *dcs = SavedDc;
+		SavedDc = dcs->Next;
+		dcs->Next = 0;
+		if (--SaveLevel < level)
 		{
 			// FIXME: actually restore the state
 			//set_dc_state( hdc, hdcs );
@@ -605,12 +605,12 @@ BOOL DEVICE_CONTEXT::RestoreDC( int level )
 
 BYTE* GDI_OBJECT::GetSharedMem() const
 {
-	return user_to_kernel( GetUserSharedMem() );
+	return UserToKernel( GetUserSharedMem() );
 }
 
 BYTE* GDI_OBJECT::GetUserSharedMem() const
 {
-	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
+	gdi_handle_table_entry *entry = GetHandleTableEntry( Handle );
 	assert( entry != NULL );
 	return (BYTE*) entry->user_info;
 }
@@ -623,29 +623,29 @@ GDI_DEVICE_CONTEXT_SHARED* DEVICE_CONTEXT::GetDcSharedMem() const
 BYTE *GDI_OBJECT::AllocGdiSharedMemory( size_t len, BYTE** kernel_shm )
 {
 	InitGdiSharedMem();
-	return g_gdi_shared_bitmap->Alloc( len );
+	return g_GdiSharedBitmap->Alloc( len );
 }
 
 void GDI_OBJECT::FreeGdiSharedMemory( BYTE *shm )
 {
-	g_gdi_shared_bitmap->Free( shm );
+	g_GdiSharedBitmap->Free( shm );
 }
 
 DEVICE_CONTEXT::DEVICE_CONTEXT() :
-	selected_bitmap( 0 ),
-	saved_dc( 0 ),
-	saveLevel( 0 )
+	SelectedBitmap( 0 ),
+	SavedDc( 0 ),
+	SaveLevel( 0 )
 {
 	// calculate user side pointer to the chunk
 	BYTE *shm = AllocGdiSharedMemory( sizeof (GDI_DEVICE_CONTEXT_SHARED) );
 	if (!shm)
 		throw;
 
-	trace("dc offset %08x\n", shm - g_gdi_shared_memory );
-	BYTE *user_shm = GDI_OBJECT::kernel_to_user( shm );
+	trace("dc offset %08x\n", shm - g_GdiSharedMemory );
+	BYTE *user_shm = GDI_OBJECT::KernelToUser( shm );
 
-	handle = AllocGdiHandle( FALSE, GDI_OBJECT_DC, user_shm, this );
-	if (!handle)
+	Handle = AllocGdiHandle( FALSE, GDI_OBJECT_DC, user_shm, this );
+	if (!Handle)
 		throw;
 
 	GDI_DEVICE_CONTEXT_SHARED *dcshm = GetDcSharedMem();
@@ -660,29 +660,29 @@ DEVICE_CONTEXT::DEVICE_CONTEXT() :
 BOOL DEVICE_CONTEXT::Release()
 {
 	GDI_DEVICE_CONTEXT_SHARED *shm = GetDcSharedMem();
-	g_gdi_shared_bitmap->Free( (unsigned char*) shm, sizeof *shm );
+	g_GdiSharedBitmap->Free( (unsigned char*) shm, sizeof *shm );
 	GDI_OBJECT::Release();
 	return TRUE;
 }
 
 HANDLE DEVICE_CONTEXT::SelectBitmap( CBITMAP *bitmap )
 {
-	assert( bitmap->is_valid() );
-	CBITMAP* old = selected_bitmap;
-	selected_bitmap = bitmap;
-	bitmap->select();
+	assert( bitmap->IsValid() );
+	CBITMAP* old = SelectedBitmap;
+	SelectedBitmap = bitmap;
+	bitmap->Select();
 	if (!old)
 		return NULL;
-	assert( old->is_valid() );
-	old->deselect();
-	return old->get_handle();
+	assert( old->IsValid() );
+	old->Deselect();
+	return old->GetHandle();
 }
 
 CBITMAP* DEVICE_CONTEXT::GetBitmap()
 {
-	if (selected_bitmap)
-		assert( selected_bitmap->is_valid() );
-	return selected_bitmap;
+	if (SelectedBitmap)
+		assert( SelectedBitmap->IsValid() );
+	return SelectedBitmap;
 }
 
 BOOL DEVICE_CONTEXT::BitBlt(
@@ -702,18 +702,18 @@ BOOL DEVICE_CONTEXT::BitBlt(
 	// keep everything on the destination bitmap
 	xDest = max( xDest, 0 );
 	yDest = max( yDest, 0 );
-	if ((xDest + cx) > dest_bm->get_width())
-		cx = dest_bm->get_width() - xDest;
-	if ((yDest + cy) > dest_bm->get_height())
-		cy = dest_bm->get_height() - yDest;
+	if ((xDest + cx) > dest_bm->GetWidth())
+		cx = dest_bm->GetWidth() - xDest;
+	if ((yDest + cy) > dest_bm->GetHeight())
+		cy = dest_bm->GetHeight() - yDest;
 
 	// keep everything on the source bitmap
 	xSrc = max( xSrc, 0 );
 	ySrc = max( ySrc, 0 );
-	if ((xSrc + cx) > src_bm->get_width())
-		cx = src_bm->get_width() - xSrc;
-	if ((ySrc + cy) > src_bm->get_height())
-		cy = src_bm->get_height() - ySrc;
+	if ((xSrc + cx) > src_bm->GetWidth())
+		cx = src_bm->GetWidth() - xSrc;
+	if ((ySrc + cy) > src_bm->GetHeight())
+		cy = src_bm->GetHeight() - ySrc;
 
 	// FIXME translate coordinates
 	return dest_bm->BitBlt( xDest, yDest, cx, cy, src_bm, xSrc, ySrc, rop );
@@ -729,15 +729,15 @@ BOOL DEVICE_CONTEXT::Rectangle(INT left, INT top, INT right, INT bottom)
 		return FALSE;
 
 	if (left > right)
-		swap( left, right );
+		Swap( left, right );
 	if (top > bottom)
-		swap( top, bottom );
+		Swap( top, bottom );
 
 	// clip to the size of the rectangle
 	top = max( 0, top );
 	left = max( 0, left );
-	right = min( bm->get_width() - 1, right );
-	bottom = min( bm->get_height() - 1, bottom );
+	right = min( bm->GetWidth() - 1, right );
+	bottom = min( bm->GetHeight() - 1, bottom );
 
 	return bm->Rectangle( left, top, right, bottom, brush );
 }
@@ -838,18 +838,18 @@ FT_Face WIN32K_MANAGER::GetFace()
 {
 	static char vgasys[] = "drive/winnt/system32/vgasys.fon";
 
-	if (!face)
+	if (!Face)
 	{
 		FT_Open_Args args;
 		memset( &args, 0, sizeof args );
 		args.flags = FT_OPEN_PATHNAME;
 		args.pathname = vgasys;
 
-		FT_Error r = FT_Open_Face( ftlib, &args, 0, &face );
+		FT_Error r = FT_Open_Face( Ftlib, &args, 0, &Face );
 		if (r)
-			face = NULL;
+			Face = NULL;
 	}
-	return face;
+	return Face;
 }
 
 BOOL DEVICE_CONTEXT::ExtTextOut( INT x, INT y, UINT options,
@@ -914,15 +914,15 @@ BOOL DEVICE_CONTEXT::PolypatBlt( ULONG Rop, PRECT rect )
 	LONG &bottom = rect->bottom;
 
 	if (left > right)
-		swap( left, right );
+		Swap( left, right );
 	if (top > bottom)
-		swap( top, bottom );
+		Swap( top, bottom );
 
 	// clip to the size of the rectangle
 	top = max( 0, top );
 	left = max( 0, left );
-	right = min( bm->get_width() - 1, right );
-	bottom = min( bm->get_height() - 1, bottom );
+	right = min( bm->GetWidth() - 1, right );
+	bottom = min( bm->GetHeight() - 1, bottom );
 
 	return bm->Rectangle( left, top, right, bottom, &black );
 }
@@ -934,9 +934,9 @@ int MEMORY_DEVICE_CONTEXT::GetCaps( int index )
 }
 
 BRUSH::BRUSH( UINT _style, COLORREF _color, ULONG _hatch ) :
-	style( _style ),
-	color( _color ),
-	hatch( _hatch )
+	Style( _style ),
+	Color( _color ),
+	Hatch( _hatch )
 {
 }
 
@@ -945,9 +945,9 @@ HANDLE BRUSH::Alloc( UINT style, COLORREF color, ULONG hatch, BOOL stock )
 	BRUSH* brush = new BRUSH( style, color, hatch );
 	if (!brush)
 		return NULL;
-	brush->handle = AllocGdiHandle( stock, GDI_OBJECT_BRUSH, NULL, brush );
-	trace("created brush %p with color %08lx\n", brush->handle, color );
-	return brush->handle;
+	brush->Handle = AllocGdiHandle( stock, GDI_OBJECT_BRUSH, NULL, brush );
+	trace("created brush %p with color %08lx\n", brush->Handle, color );
+	return brush->Handle;
 }
 
 BRUSH* BrushFromHandle( HGDIOBJ handle )
@@ -962,9 +962,9 @@ BRUSH* BrushFromHandle( HGDIOBJ handle )
 }
 
 PEN::PEN( UINT _style, UINT _width, COLORREF _color ) :
-	style( _style ),
-	width( _width ),
-	color( _color )
+	Style( _style ),
+	Width( _width ),
+	Color( _color )
 {
 }
 
@@ -975,9 +975,9 @@ HANDLE PEN::Alloc( UINT style, UINT width, COLORREF color, BOOL stock )
 		return NULL;
 
 	// strangeness: handle indicates pen, but it's a brush in the table
-	pen->handle = AllocGdiHandle( stock, GDI_OBJECT_PEN, NULL, pen );
-	trace("created pen %p with color %08lx\n", pen->handle, color );
-	return pen->handle;
+	pen->Handle = AllocGdiHandle( stock, GDI_OBJECT_PEN, NULL, pen );
+	trace("created pen %p with color %08lx\n", pen->Handle, color );
+	return pen->Handle;
 }
 
 PEN* PenFromHandle( HGDIOBJ handle )
@@ -1035,15 +1035,15 @@ DEVICE_CONTEXT* dc_from_handle( HGDIOBJ handle )
 	return static_cast<DEVICE_CONTEXT*>( obj );
 }
 
-COLORREF get_di_pixel_4bpp( stretch_di_bits_args& args, int x, int y )
+COLORREF get_di_pixel_4bpp( StretchDiBitsArgs& args, int x, int y )
 {
-	int bytes_per_line = ((args.info->biWidth+3)&~3)>>1;
-	int ofs = (args.info->biHeight - y - 1) * bytes_per_line + (x>>1);
+	int bytes_per_line = ((args.Info->biWidth+3)&~3)>>1;
+	int ofs = (args.Info->biHeight - y - 1) * bytes_per_line + (x>>1);
 
 	// slow!
 	BYTE pixel = 0;
 	NTSTATUS r;
-	r = CopyFromUser( &pixel, (BYTE*) args.bits + ofs, 1 );
+	r = CopyFromUser( &pixel, (BYTE*) args.Bits + ofs, 1 );
 	if ( r < STATUS_SUCCESS)
 	{
 		trace("copy failed\n");
@@ -1054,52 +1054,52 @@ COLORREF get_di_pixel_4bpp( stretch_di_bits_args& args, int x, int y )
 
 	assert( val < 16);
 
-	return RGB( args.colors[val].rgbRed,
-				args.colors[val].rgbGreen,
-				args.colors[val].rgbBlue );
+	return RGB( args.Colors[val].rgbRed,
+				args.Colors[val].rgbGreen,
+				args.Colors[val].rgbBlue );
 }
 
-COLORREF get_di_pixel( stretch_di_bits_args& args, int x, int y )
+COLORREF get_di_pixel( StretchDiBitsArgs& args, int x, int y )
 {
-	switch (args.info->biBitCount)
+	switch (args.Info->biBitCount)
 	{
 	case 4:
 		return get_di_pixel_4bpp( args, x, y );
 	default:
-		trace("%d bpp\n", args.info->biBitCount);
+		trace("%d bpp\n", args.Info->biBitCount);
 	}
 	return 0;
 }
 
-BOOL DEVICE_CONTEXT::StretchDiBits( stretch_di_bits_args& args )
+BOOL DEVICE_CONTEXT::StretchDiBits( StretchDiBitsArgs& args )
 {
 	CBITMAP* bitmap = GetBitmap();
 	if (!bitmap)
 		return FALSE;
 
-	args.src_x = max( args.src_x, 0 );
-	args.src_y = max( args.src_y, 0 );
-	args.src_x = min( args.src_x, args.info->biWidth );
-	args.src_y = min( args.src_y, args.info->biHeight );
+	args.SrcX = max( args.SrcX, 0 );
+	args.SrcY = max( args.SrcY, 0 );
+	args.SrcX = min( args.SrcX, args.Info->biWidth );
+	args.SrcY = min( args.SrcY, args.Info->biHeight );
 
-	args.src_width = max( args.src_width, 0 );
-	args.src_height = max( args.src_height, 0 );
-	args.src_width = min( args.src_width, args.info->biWidth - args.src_x );
-	args.src_height = min( args.src_height, args.info->biHeight - args.src_y );
+	args.SrcWidth = max( args.SrcWidth, 0 );
+	args.SrcHeight = max( args.SrcHeight, 0 );
+	args.SrcWidth = min( args.SrcWidth, args.Info->biWidth - args.SrcX );
+	args.SrcHeight = min( args.SrcHeight, args.Info->biHeight - args.SrcY );
 
-	trace("w,h %ld,%ld\n", args.info->biWidth, args.info->biHeight);
-	trace("bits, planes %d,%d\n", args.info->biBitCount, args.info->biPlanes);
-	trace("compression %08lx\n", args.info->biCompression );
-	trace("size %08lx\n", args.info->biSize );
+	trace("w,h %ld,%ld\n", args.Info->biWidth, args.Info->biHeight);
+	trace("bits, planes %d,%d\n", args.Info->biBitCount, args.Info->biPlanes);
+	trace("compression %08lx\n", args.Info->biCompression );
+	trace("size %08lx\n", args.Info->biSize );
 
 	// copy the pixels
 	COLORREF pixel;
-	for (int i=0; i<args.src_height; i++)
+	for (int i=0; i<args.SrcHeight; i++)
 	{
-		for (int j=0; j<args.src_width; j++)
+		for (int j=0; j<args.SrcWidth; j++)
 		{
-			pixel = get_di_pixel( args, args.src_x+j, args.src_y+i );
-			SetPixel( args.dest_x+j, args.dest_y+i, pixel );
+			pixel = get_di_pixel( args, args.SrcX+j, args.SrcY+i );
+			SetPixel( args.DestX+j, args.DestY+i, pixel );
 		}
 	}
 
@@ -1133,7 +1133,7 @@ HANDLE WIN32K_MANAGER::GetStockObject( ULONG Index )
 {
 	if (Index > STOCK_LAST)
 		return 0;
-	HANDLE& handle = Current->Process->Win32kInfo->stock_object[Index];
+	HANDLE& handle = Current->Process->Win32kInfo->StockObject[Index];
 	if (handle)
 		return handle;
 
@@ -1205,7 +1205,7 @@ HGDIOBJ NTAPI NtGdiCreateDIBitmapInternal(
 	CBITMAP *bm = AllocBitmap( Width, Height, Bpp );
 	if (!bm)
 		return NULL;
-	return bm->get_handle();
+	return bm->GetHandle();
 }
 
 HGDIOBJ NTAPI NtGdiGetDCforBitmap(HGDIOBJ Bitmap)
@@ -1271,7 +1271,7 @@ HGDIOBJ NTAPI NtGdiSelectBitmap( HGDIOBJ hdc, HGDIOBJ hbm )
 	if (!bitmap)
 		return FALSE;
 
-	assert( bitmap->is_valid() );
+	assert( bitmap->IsValid() );
 
 	return dc->SelectBitmap( bitmap );
 }
@@ -1587,7 +1587,7 @@ HANDLE NTAPI NtGdiCreateCompatibleBitmap( HANDLE DeviceContext, int width, int h
 		return FALSE;
 
 	CBITMAP *bm = AllocBitmap( width, height, bpp );
-	return bm->get_handle();
+	return bm->GetHandle();
 }
 
 int NTAPI NtGdiGetAppClipBox( HANDLE handle, RECT* rectangle )
@@ -1596,7 +1596,7 @@ int NTAPI NtGdiGetAppClipBox( HANDLE handle, RECT* rectangle )
 	if (!dc)
 		return FALSE;
 
-	NTSTATUS r = CopyToUser( rectangle, &dc->get_bounds_rect(), sizeof *rectangle );
+	NTSTATUS r = CopyToUser( rectangle, &dc->GetBoundsRect(), sizeof *rectangle );
 	if (r < STATUS_SUCCESS)
 		return ERROR;
 
@@ -1683,19 +1683,19 @@ BOOLEAN NTAPI NtGdiStretchDIBitsInternal(
 	if (r < STATUS_SUCCESS)
 		return FALSE;
 
-	stretch_di_bits_args args;
-	args.dest_x = dest_x;
-	args.dest_y = dest_y;
-	args.dest_width = dest_width;
-	args.dest_height = dest_height;
-	args.src_x = src_x;
-	args.src_y = src_y;
-	args.src_width = src_width;
-	args.src_height = src_height;
-	args.bits = bits;
-	args.info = &bmi;
-	args.usage = usage;
-	args.rop = rop;
+	StretchDiBitsArgs args;
+	args.DestX = dest_x;
+	args.DestY = dest_y;
+	args.DestWidth = dest_width;
+	args.DestHeight = dest_height;
+	args.SrcX = src_x;
+	args.SrcY = src_y;
+	args.SrcWidth = src_width;
+	args.SrcHeight = src_height;
+	args.Bits = bits;
+	args.Info = &bmi;
+	args.Usage = usage;
+	args.Rop = rop;
 
 	if (bmi.biBitCount <= 8)
 	{
@@ -1703,10 +1703,10 @@ BOOLEAN NTAPI NtGdiStretchDIBitsInternal(
 		r = CopyFromUser( colors, &info->bmiColors, (1 << bmi.biBitCount) * sizeof (RGBQUAD));
 		if (r < STATUS_SUCCESS)
 			return FALSE;
-		args.colors = colors;
+		args.Colors = colors;
 	}
 	else
-		args.colors = NULL;
+		args.Colors = NULL;
 
 	return dc->StretchDiBits( args );
 }

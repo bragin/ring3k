@@ -43,7 +43,7 @@
 #include "win.h"
 
 WNDCLS_LIST wndcls_list;
-WINDOW *active_window;
+WINDOW *ActiveWindow;
 WINDOW *desktop_window;
 
 ULONG NTAPI NtUserGetThreadState( ULONG InfoClass )
@@ -193,7 +193,7 @@ void delete_user_object( ULONG i )
 	}
 }
 
-void free_user32_handles( PROCESS *p )
+void FreeUser32Handles( PROCESS *p )
 {
 	ULONG i;
 	assert( p != NULL );
@@ -391,7 +391,7 @@ BYTE* alloc_message_bitmap( PROCESS* proc, MESSAGE_MAP_SHARED_MEMORY& map, ULONG
 	BYTE *msg_map = user_shared_bitmap.Alloc( sz );
 	memset( msg_map, 0, sz );
 	ULONG ofs = (BYTE*)msg_map - (BYTE*)user_shared;
-	map.Bitmap = (BYTE*) (proc->Win32kInfo->user_shared_mem + ofs);
+	map.Bitmap = (BYTE*) (proc->Win32kInfo->UserSharedMem + ofs);
 	map.MaxMessage = last_message;
 	trace("bitmap = %p last = %ld\n", map.Bitmap, map.MaxMessage);
 	return msg_map;
@@ -402,7 +402,7 @@ NTUSERINFO *alloc_user_info()
 	NTUSERINFO *info = (NTUSERINFO*) user_shared_bitmap.Alloc( sizeof (NTUSERINFO) );
 	info->DesktopWindow = desktop_window;
 	ULONG ofs = (BYTE*)info - (BYTE*)user_shared;
-	return (NTUSERINFO*) (Current->Process->Win32kInfo->user_shared_mem + ofs);
+	return (NTUSERINFO*) (Current->Process->Win32kInfo->UserSharedMem + ofs);
 }
 
 void create_desktop_window()
@@ -430,8 +430,8 @@ NTSTATUS map_user_shared_memory( PROCESS *proc )
 	NTSTATUS r;
 
 	assert( proc->Win32kInfo );
-	BYTE*& user_shared_mem = proc->Win32kInfo->user_shared_mem;
-	BYTE*& user_handles = proc->Win32kInfo->user_handles;
+	BYTE*& user_shared_mem = proc->Win32kInfo->UserSharedMem;
+	BYTE*& user_handles = proc->Win32kInfo->UserHandles;
 
 	// map the user shared memory block into the process's memory
 	if (!init_user_shared_memory())
@@ -463,7 +463,7 @@ NTSTATUS map_user_shared_memory( PROCESS *proc )
 	return STATUS_SUCCESS;
 }
 
-BOOLEAN do_gdi_init()
+BOOLEAN DoGdiInit()
 {
 	NTSTATUS r;
 	r = map_user_shared_memory( Current->Process );
@@ -471,7 +471,7 @@ BOOLEAN do_gdi_init()
 		return FALSE;
 
 	// check set the offset
-	BYTE*& user_shared_mem = Current->Process->Win32kInfo->user_shared_mem;
+	BYTE*& user_shared_mem = Current->Process->Win32kInfo->UserSharedMem;
 	Current->GetTEB()->KernelUserPointerOffset = (BYTE*) user_shared - user_shared_mem;
 
 	// create the desktop window for alloc_user_info
@@ -522,8 +522,8 @@ NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSi
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	info.win2k.Ptr[0] = (void*)proc->Win32kInfo->user_shared_mem;
-	info.win2k.Ptr[1] = (void*)proc->Win32kInfo->user_handles;
+	info.win2k.Ptr[0] = (void*)proc->Win32kInfo->UserSharedMem;
+	info.win2k.Ptr[1] = (void*)proc->Win32kInfo->UserHandles;
 	info.win2k.Ptr[2] = (void*)0xbee30000;
 	info.win2k.Ptr[3] = (void*)0xbee40000;
 
@@ -1158,18 +1158,18 @@ WINDOW::~WINDOW()
 {
 	UnlinkWindow();
 	free_user_handle( handle );
-	trace("active window = %p this = %p\n", active_window, this);
-	if (active_window == this)
+	trace("active window = %p this = %p\n", ActiveWindow, this);
+	if (ActiveWindow == this)
 	{
 		trace("cleared active window handle\n");
-		active_window = 0;
+		ActiveWindow = 0;
 	}
 }
 
 PWND WINDOW::GetWininfo()
 {
 	ULONG ofs = (BYTE*)this - (BYTE*)user_shared;
-	return (PWND) (Current->Process->Win32kInfo->user_shared_mem + ofs);
+	return (PWND) (Current->Process->Win32kInfo->UserSharedMem + ofs);
 }
 
 NTSTATUS WINDOW::Send( MESSAGE& msg )
@@ -1481,22 +1481,22 @@ HGDIOBJ WINDOW::GetDc()
 	if (!dc)
 		return 0;
 
-	dc->set_bounds_rect( rcClient );
-	return dc->get_handle();
+	dc->SetBoundsRect( rcClient );
+	return dc->GetHandle();
 }
 
 void WINDOW::Activate()
 {
-	if (active_window == this)
+	if (ActiveWindow == this)
 		return;
 
-	if (active_window)
+	if (ActiveWindow)
 	{
 		APPACT_MSG aa( WA_INACTIVE );
-		active_window->Send( aa );
+		ActiveWindow->Send( aa );
 	}
 
-	active_window = this;
+	ActiveWindow = this;
 	APPACT_MSG aa( WA_ACTIVE );
 	Send( aa );
 

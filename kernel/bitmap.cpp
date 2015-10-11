@@ -40,7 +40,7 @@ template<>
 COLORREF BitmapImpl<1>::GetPixel( int x, int y )
 {
 	ULONG row_size = GetRowsize();
-	if ((bits[row_size * y + x/8 ]>> (7 - (x%8))) & 1)
+	if ((Bits[row_size * y + x/8 ]>> (7 - (x%8))) & 1)
 		return RGB( 255, 255, 255 );
 	else
 		return RGB( 0, 0, 0 );
@@ -57,7 +57,7 @@ template<>
 COLORREF BitmapImpl<16>::GetPixel( int x, int y )
 {
 	ULONG row_size = GetRowsize();
-	USHORT val = *(USHORT*) &bits[row_size * y + x*2 ];
+	USHORT val = *(USHORT*) &Bits[row_size * y + x*2 ];
 	return RGB( (val & 0xf800) >> 8, (val & 0x07e0) >> 3, (val & 0x1f) << 3 );
 }
 
@@ -65,47 +65,47 @@ template<>
 COLORREF BitmapImpl<24>::GetPixel( int x, int y )
 {
 	ULONG row_size = GetRowsize();
-	ULONG val = *(ULONG*) &bits[row_size * y + x*3 ];
+	ULONG val = *(ULONG*) &Bits[row_size * y + x*3 ];
 	return val&0xffffff;
 }
 
 CBITMAP::~CBITMAP()
 {
-	assert( magic == magic_val );
-	delete bits;
+	assert( Magic == MagicVal );
+	delete Bits;
 }
 
 ULONG CBITMAP::GetRowsize()
 {
-	assert( magic == magic_val );
-	ULONG row_size = (width*bpp)/8;
+	assert( Magic == MagicVal );
+	ULONG row_size = (Width*Bpp)/8;
 	return (row_size + 1)& ~1;
 }
 
 ULONG CBITMAP::BitmapSize()
 {
-	assert( magic == magic_val );
-	return height * GetRowsize();
+	assert( Magic == MagicVal );
+	return Height * GetRowsize();
 }
 
 void CBITMAP::Dump()
 {
-	assert( magic == magic_val );
-	for (int j=0; j<height; j++)
+	assert( Magic == MagicVal );
+	for (int j=0; j<Height; j++)
 	{
-		for (int i=0; i<width; i++)
+		for (int i=0; i<Width; i++)
 			fprintf(stderr,"%c", GetPixel(i, j)? 'X' : ' ');
 		fprintf(stderr, "\n");
 	}
 }
 
 CBITMAP::CBITMAP( int _width, int _height, int _planes, int _bpp ) :
-	magic( magic_val ),
-	bits( 0 ),
-	width( _width ),
-	height( _height ),
-	planes( _planes ),
-	bpp( _bpp )
+	Magic( MagicVal ),
+	Bits( 0 ),
+	Width( _width ),
+	Height( _height ),
+	Planes( _planes ),
+	Bpp( _bpp )
 {
 }
 
@@ -119,26 +119,26 @@ void CBITMAP::Unlock()
 
 COLORREF CBITMAP::GetPixel( int x, int y )
 {
-	assert( magic == magic_val );
-	if (x < 0 || x >= width)
+	assert( Magic == MagicVal );
+	if (x < 0 || x >= Width)
 		return 0;
-	if (y < 0 || y >= height)
+	if (y < 0 || y >= Height)
 		return 0;
 	ULONG row_size = GetRowsize();
-	switch (bpp)
+	switch (Bpp)
 	{
 	case 1:
-		if ((bits[row_size * y + x/8 ]>> (7 - (x%8))) & 1)
+		if ((Bits[row_size * y + x/8 ]>> (7 - (x%8))) & 1)
 			return RGB( 255, 255, 255 );
 		else
 			return RGB( 0, 0, 0 );
 	case 16:
 	{
-		USHORT val = *(USHORT*) &bits[row_size * y + x*2 ];
+		USHORT val = *(USHORT*) &Bits[row_size * y + x*2 ];
 		return RGB( (val & 0xf800) >> 8, (val & 0x07e0) >> 3, (val & 0x1f) << 3 );
 	}
 	default:
-		trace("%d bpp not implemented\n", bpp);
+		trace("%d bpp not implemented\n", Bpp);
 	}
 	return 0;
 }
@@ -150,40 +150,40 @@ BOOL CBITMAP::SetPixel( int x, int y, COLORREF color )
 
 BOOL CBITMAP::SetPixelL( int x, int y, COLORREF color )
 {
-	assert( magic == magic_val );
-	assert( width != 0 );
-	assert( height != 0 );
-	if (x < 0 || x >= width)
+	assert( Magic == MagicVal );
+	assert( Width != 0 );
+	assert( Height != 0 );
+	if (x < 0 || x >= Width)
 		return FALSE;
-	if (y < 0 || y >= height)
+	if (y < 0 || y >= Height)
 		return FALSE;
 	ULONG row_size = GetRowsize();
-	switch (bpp)
+	switch (Bpp)
 	{
 	case 1:
 		if (color == RGB( 0, 0, 0 ))
-			bits[row_size * y + x/8 ] &= ~ (1 << (7 - (x%8)));
+			Bits[row_size * y + x/8 ] &= ~ (1 << (7 - (x%8)));
 		else if (color == RGB( 255, 255, 255 ))
-			bits[row_size * y + x/8 ] |= (1 << (7 - (x%8)));
+			Bits[row_size * y + x/8 ] |= (1 << (7 - (x%8)));
 		else
 			// implement color translation
 			assert(0);
 		break;
 	case 16:
-		*((USHORT*) &bits[row_size * y + x*2 ]) =
+		*((USHORT*) &Bits[row_size * y + x*2 ]) =
 			((GetRValue(color)&0xf8) << 8) |
 			((GetGValue(color)&0xfc) << 3) |
 			((GetBValue(color)&0xf8) >> 3);
 		break;
 	default:
-		trace("%d bpp not implemented\n", bpp);
+		trace("%d bpp not implemented\n", Bpp);
 	}
 	return TRUE;
 }
 
 NTSTATUS CBITMAP::CopyPixels( void *pixels )
 {
-	return CopyFromUser( bits, pixels, BitmapSize() );
+	return CopyFromUser( Bits, pixels, BitmapSize() );
 }
 
 BOOL CBITMAP::BitBlt(
@@ -212,7 +212,7 @@ BOOL CBITMAP::BitBlt(
 void CBITMAP::DrawHLine(INT x, INT y, INT right, COLORREF color)
 {
 	if (x > right)
-		swap(x, right);
+		Swap(x, right);
 	for ( ; x <= right; x++)
 		SetPixelL( x, y, color );
 }
@@ -220,15 +220,15 @@ void CBITMAP::DrawHLine(INT x, INT y, INT right, COLORREF color)
 void CBITMAP::DrawVLine(INT x, INT y, INT bottom, COLORREF color)
 {
 	if (y > bottom)
-		swap(y, bottom);
+		Swap(y, bottom);
 	for ( ; y <= bottom; y++)
 		SetPixelL( x, y, color );
 }
 
 BOOL CBITMAP::PenDot( INT x, INT y, PEN *pen )
 {
-	ULONG width = pen->get_width();
-	COLORREF color = pen->get_color();
+	ULONG width = pen->GetWidth();
+	COLORREF color = pen->GetColor();
 
 	if (width == 1)
 		return SetPixelL(y, x, color);
@@ -249,9 +249,9 @@ BOOL CBITMAP::LineBresenham( INT x0, INT y0, INT x1, INT y1, PEN *pen )
 	INT steep = (abs(dy) >= abs(dx));
 	if (steep)
 	{
-		swap(x0, y0);
-		swap(x1, y1);
-		// recompute dx, dy after swap
+		Swap(x0, y0);
+		Swap(x1, y1);
+		// recompute dx, dy after Swap
 		dx = x1 - x0;
 		dy = y1 - y0;
 	}
@@ -302,8 +302,8 @@ BOOL CBITMAP::LineWide( INT x0, INT y0, INT x1, INT y1, PEN *pen )
 {
 	if (x0 > x1)
 	{
-		swap(x0, x1);
-		swap(y0, y1);
+		Swap(x0, x1);
+		Swap(y0, y1);
 	}
 
 	int ydelta;
@@ -320,8 +320,8 @@ BOOL CBITMAP::LineWide( INT x0, INT y0, INT x1, INT y1, PEN *pen )
 
 	trace("%d,%d-%d,%d\n", x0, y0, x1, y1);
 
-	INT width = pen->get_width();
-	INT color = pen->get_color();
+	INT width = pen->GetWidth();
+	INT color = pen->GetColor();
 	INT xstart = x0;
 	INT error_next_line = 0;	// starting at x0,y0 gives an error of 0
 	INT limit = width*width/4;
@@ -354,7 +354,7 @@ BOOL CBITMAP::LineWide( INT x0, INT y0, INT x1, INT y1, PEN *pen )
 
 BOOL CBITMAP::Line( INT x0, INT y0, INT x1, INT y1, PEN *pen )
 {
-	COLORREF color = pen->get_color();
+	COLORREF color = pen->GetColor();
 
 	//check for simple case
 	if (y0 == y1)
@@ -369,7 +369,7 @@ BOOL CBITMAP::Line( INT x0, INT y0, INT x1, INT y1, PEN *pen )
 		return TRUE;
 	}
 
-	if (pen->get_width() == 1)
+	if (pen->GetWidth() == 1)
 		return LineBresenham( x0, y0, x1, y1, pen );
 
 	return LineWide( x0, y0, x1, y1, pen );
@@ -450,11 +450,11 @@ CBITMAP* AllocBitmap( int width, int height, int depth )
 		assert( 0 );
 	}
 
-	bm->bits = new unsigned char [bm->BitmapSize()];
-	if (!bm->bits)
+	bm->Bits = new unsigned char [bm->BitmapSize()];
+	if (!bm->Bits)
 		throw;
-	bm->handle = AllocGdiHandle( FALSE, GDI_OBJECT_BITMAP, 0, bm );
-	if (!bm->handle)
+	bm->Handle = AllocGdiHandle( FALSE, GDI_OBJECT_BITMAP, 0, bm );
+	if (!bm->Handle)
 		throw;
 
 	return bm;
@@ -476,6 +476,6 @@ HGDIOBJ NTAPI NtGdiCreateBitmap(int Width, int Height, UINT Planes, UINT BitsPer
 		delete bm;
 		return 0;
 	}
-	return bm->get_handle();
+	return bm->GetHandle();
 }
 

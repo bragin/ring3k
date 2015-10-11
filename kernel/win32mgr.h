@@ -29,7 +29,7 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 
-template<typename T> static inline void swap( T& a, T& b )
+template<typename T> static inline void Swap( T& a, T& b )
 {
 	T x = a;
 	a = b;
@@ -42,10 +42,10 @@ public:
 	WIN32K_INFO();
 	~WIN32K_INFO();
 	// address that device context shared memory is mapped to
-	BYTE* dc_shared_mem;
-	BYTE* user_shared_mem;
-	BYTE* user_handles;
-	HANDLE stock_object[STOCK_LAST + 1];
+	BYTE* DcSharedMem;
+	BYTE* UserSharedMem;
+	BYTE* UserHandles;
+	HANDLE StockObject[STOCK_LAST + 1];
 };
 
 class BRUSH;
@@ -55,12 +55,12 @@ class DEVICE_CONTEXT;
 
 class WIN32K_MANAGER
 {
-	ULONG key_state[0x100];
-	FT_Library ftlib;
-	FT_Face face;
+	ULONG KeyState[0x100];
+	FT_Library Ftlib;
+	FT_Face Face;
 public:
 	WIN32K_MANAGER();
-	void init_stock_objects();
+	void InitStockObjects();
 	HANDLE GetStockObject( ULONG Index );
 	HANDLE CreateSolidBrush( COLORREF color );
 	HANDLE CreatePen( UINT style, UINT width, COLORREF color );
@@ -83,12 +83,12 @@ extern WIN32K_MANAGER* Win32kManager;
 class GDI_OBJECT
 {
 protected:
-	HGDIOBJ handle;
-	ULONG refcount;
+	HGDIOBJ Handle;
+	ULONG RefCount;
 
-	static SECTION *g_gdi_section;
-	static BYTE *g_gdi_shared_memory;
-	static ALLOCATION_BITMAP* g_gdi_shared_bitmap;
+	static SECTION *g_GdiSection;
+	static BYTE *g_GdiSharedMemory;
+	static ALLOCATION_BITMAP* g_GdiSharedBitmap;
 
 	static void InitGdiSharedMem();
 	static BYTE *AllocGdiSharedMemory( size_t len, BYTE** kernel_shm = NULL );
@@ -96,89 +96,89 @@ protected:
 protected:
 	GDI_OBJECT();
 public:
-	HGDIOBJ get_handle()
+	HGDIOBJ GetHandle()
 	{
-		return handle;
+		return Handle;
 	}
 	virtual ~GDI_OBJECT() {};
 	virtual BOOL Release();
-	void select()
+	void Select()
 	{
-		refcount++;
+		RefCount++;
 	}
-	void deselect()
+	void Deselect()
 	{
-		refcount--;
+		RefCount--;
 	}
 	static HGDIOBJ Alloc( BOOL stock, ULONG type );
 	BYTE *GetSharedMem() const;
-	template<typename T> static T* kernel_to_user( T* kernel_ptr )
+	template<typename T> static T* KernelToUser( T* kernel_ptr )
 	{
-		ULONG ofs = (BYTE*) kernel_ptr - (BYTE*) g_gdi_shared_memory;
-		return (T*) (Current->Process->Win32kInfo->dc_shared_mem + ofs);
+		ULONG ofs = (BYTE*) kernel_ptr - (BYTE*) g_GdiSharedMemory;
+		return (T*) (Current->Process->Win32kInfo->DcSharedMem + ofs);
 	}
-	template<typename T> static T* user_to_kernel( T* user_ptr )
+	template<typename T> static T* UserToKernel( T* user_ptr )
 	{
-		ULONG ofs = (BYTE*) user_ptr - (BYTE*) Current->Process->Win32kInfo->dc_shared_mem;
-		return (T*) (g_gdi_shared_memory + ofs);
+		ULONG ofs = (BYTE*) user_ptr - (BYTE*) Current->Process->Win32kInfo->DcSharedMem;
+		return (T*) (g_GdiSharedMemory + ofs);
 	}
 	BYTE *GetUserSharedMem() const;
 };
 
-struct stretch_di_bits_args
+struct StretchDiBitsArgs
 {
-	int dest_x, dest_y, dest_width, dest_height;
-	int src_x, src_y, src_width, src_height;
-	const VOID *bits;
-	BITMAPINFOHEADER *info;
-	UINT usage;
-	DWORD rop;
-	RGBQUAD* colors;
+	int DestX, DestY, DestWidth, DestHeight;
+	int SrcX, SrcY, SrcWidth, SrcHeight;
+	const VOID *Bits;
+	BITMAPINFOHEADER *Info;
+	UINT Usage;
+	DWORD Rop;
+	RGBQUAD* Colors;
 };
 
 class BRUSH : public GDI_OBJECT
 {
-	ULONG style;
-	COLORREF color;
-	ULONG hatch;
+	ULONG Style;
+	COLORREF Color;
+	ULONG Hatch;
 public:
 	BRUSH( UINT style, COLORREF color, ULONG hatch );
 	static HANDLE Alloc( UINT style, COLORREF color, ULONG hatch, BOOL stock = FALSE );
 	COLORREF GetColor()
 	{
-		return color;
+		return Color;
 	}
 };
 
 class PEN : public GDI_OBJECT
 {
-	ULONG style;
-	ULONG width;
-	COLORREF color;
+	ULONG Style;
+	ULONG Width;
+	COLORREF Color;
 public:
 	PEN( UINT style, UINT width, COLORREF color );
 	static HANDLE Alloc( UINT style, UINT width, COLORREF color, BOOL stock = FALSE );
-	COLORREF get_color()
+	COLORREF GetColor()
 	{
-		return color;
+		return Color;
 	}
-	ULONG get_width()
+	ULONG GetWidth()
 	{
-		return width;
+		return Width;
 	}
 };
 
 class CBITMAP : public GDI_OBJECT
 {
 	friend CBITMAP* AllocBitmap( int width, int height, int depth );
-	static const int magic_val = 0xbb11aa22;
-	int magic;
+	static const int MagicVal = 0xbb11aa22;
+	int Magic;
 protected:
-	unsigned char *bits;
-	int width;
-	int height;
-	int planes;
-	int bpp;
+	unsigned char *Bits;
+	int Width;
+	int Height;
+	int Planes;
+	int Bpp;
 protected:
 	void Dump();
 	virtual void Lock();
@@ -187,21 +187,21 @@ public:
 	CBITMAP( int _width, int _height, int _planes, int _bpp );
 	virtual ~CBITMAP();
 	ULONG BitmapSize();
-	int get_width()
+	int GetWidth()
 	{
-		return width;
+		return Width;
 	}
-	int get_height()
+	int GetHeight()
 	{
-		return height;
+		return Height;
 	}
 	//int get_planes() {return planes;}
 	ULONG GetRowsize();
 	virtual COLORREF GetPixel( int x, int y ) = 0;
 	virtual BOOL SetPixel( INT x, INT y, COLORREF color );
-	bool is_valid() const
+	bool IsValid() const
 	{
-		return magic == magic_val;
+		return Magic == MagicVal;
 	}
 	NTSTATUS CopyPixels( void* pixels );
 	virtual BOOL BitBlt( INT xDest, INT yDest, INT cx, INT cy,
@@ -225,7 +225,7 @@ public:
 	BitmapImpl( int _width, int _height );
 	virtual ~BitmapImpl();
 	virtual COLORREF GetPixel( int x, int y );
-	//virtual BOOL set_pixel( INT x, INT y, COLORREF color );
+	//virtual BOOL SetPixel( INT x, INT y, COLORREF color );
 };
 
 template<const int DEPTH>
@@ -239,22 +239,22 @@ BitmapImpl<DEPTH>::~BitmapImpl()
 {
 }
 
-class dc_state_tt
+class DcState
 {
 public:
-	dc_state_tt *next;
+	DcState *Next;
 	RECT BoundsRect;
 };
 
 class DEVICE_CONTEXT : public GDI_OBJECT
 {
-	CBITMAP* selected_bitmap;
+	CBITMAP* SelectedBitmap;
 	RECT BoundsRect;
-	dc_state_tt *saved_dc;
-	INT saveLevel;
+	DcState *SavedDc;
+	INT SaveLevel;
 public:
-	static const ULONG max_device_contexts = 0x100;
-	static const ULONG dc_size = 0x100;
+	static const ULONG MaxDeviceContexts = 0x100;
+	static const ULONG DcSize = 0x100;
 
 public:
 	DEVICE_CONTEXT();
@@ -265,11 +265,11 @@ public:
 	virtual PEN* GetSelectedPen();
 	POINT& GetCurrentPenPos();
 	POINT& GetWindowOffset();
-	void set_bounds_rect( RECT& r )
+	void SetBoundsRect( RECT& r )
 	{
 		BoundsRect = r;
 	}
-	RECT& get_bounds_rect()
+	RECT& GetBoundsRect()
 	{
 		return BoundsRect;
 	}
@@ -285,7 +285,7 @@ public:
 	virtual COLORREF GetPixel( INT x, INT y );
 	virtual BOOL PolypatBlt( ULONG Rop, PRECT rect );
 	virtual int GetCaps( int index ) = 0;
-	virtual BOOL StretchDiBits( stretch_di_bits_args& args );
+	virtual BOOL StretchDiBits( StretchDiBitsArgs& args );
 	virtual BOOL LineTo( INT xpos, INT ypos );
 	virtual BOOL MoveTo( INT xpos, INT ypos, POINT& pt );
 };
@@ -300,12 +300,12 @@ public:
 class WINDOW;
 
 class WINDOW;
-extern WINDOW* active_window;
-void free_user32_handles( PROCESS *p );
+extern WINDOW* ActiveWindow;
+void FreeUser32Handles( PROCESS *p );
 HGDIOBJ AllocGdiHandle( BOOL stock, ULONG type, void *user_info, GDI_OBJECT* obj );
 HGDIOBJ AllocGdiObject( BOOL stock, ULONG type );
 gdi_handle_table_entry *GetHandleTableEntry(HGDIOBJ handle);
-BOOLEAN do_gdi_init();
+BOOLEAN DoGdiInit();
 CBITMAP* BitmapFromHandle( HANDLE handle );
 CBITMAP* AllocBitmap( int width, int height, int depth );
 

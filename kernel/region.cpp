@@ -136,9 +136,9 @@ void CRECT::Dump() const
 void CRECT::Fix()
 {
 	if (left > right)
-		swap( left, right );
+		Swap( left, right );
 	if (top > bottom)
-		swap( top, bottom );
+		Swap( top, bottom );
 }
 
 BOOL CRECT::Equal( const RECT& other ) const
@@ -205,13 +205,13 @@ REGION* REGION::Alloc()
 	BYTE *shm = AllocGdiSharedMemory( len );
 	if (!shm)
 		return NULL;
-	BYTE *user_shm = kernel_to_user( shm );
+	BYTE *user_shm = KernelToUser( shm );
 
 	REGION* region = new REGION;
 	if (!region)
 		return NULL;
-	region->handle = AllocGdiHandle( FALSE, GDI_OBJECT_REGION, user_shm, region );
-	if (!region->handle)
+	region->Handle = AllocGdiHandle( FALSE, GDI_OBJECT_REGION, user_shm, region );
+	if (!region->Handle)
 	{
 		delete region;
 		return 0;
@@ -446,7 +446,7 @@ HRGN NTAPI NtGdiCreateRectRgn( int, int, int, int )
 	REGION* region = REGION::Alloc();
 	if (!region)
 		return 0;
-	return (HRGN) region->get_handle();
+	return (HRGN) region->GetHandle();
 }
 
 HRGN NTAPI NtGdiCreateEllipticRgn( int left, int top, int right, int bottom )

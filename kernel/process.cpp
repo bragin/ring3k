@@ -391,7 +391,7 @@ void PROCESS::Terminate( NTSTATUS status )
 	// now release the process...
 	HandleTable.FreeAllHandles();
 	if (Win32kInfo)
-		free_user32_handles( this );
+		FreeUser32Handles( this );
 	ExitStatus = status;
 	delete Vm;
 	Vm = NULL;

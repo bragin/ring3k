@@ -155,9 +155,9 @@ BOOL SDL_16BPP_BITMAP::Line( INT x1, INT y1, INT x2, INT y2, PEN *pen )
 	r = CBITMAP::Line(x1, y1, x2, y2, pen);
 	// FIXME: possible optimization when updating?
 	if (x1 > x2)
-		swap(x1, x2);
+		Swap(x1, x2);
 	if (y1 > y2)
-		swap(y1, y2);
+		Swap(y1, y2);
 	SDL_UpdateRect(Surface, x1, y1, x2 - x1 + 1, y2 - y1 + 1);
 	Unlock();
 	return r;
@@ -288,7 +288,7 @@ bool SDL_SLEEPER::CheckEvents( bool wait )
 	// Check for a deadlock and quit.
 	//  This happens if we're the only active thread,
 	//  there's no more timers, nobody listening for input and we're asked to wait.
-	if (!timers_left && !active_window && wait && FIBER::LastFiber())
+	if (!timers_left && !ActiveWindow && wait && FIBER::LastFiber())
 		return true;
 
 	// only wait if asked to
@@ -373,7 +373,7 @@ SDL_16BPP_BITMAP::SDL_16BPP_BITMAP( SDL_Surface *s ) :
 	BitmapImpl<16>( s->w, s->h ),
 	Surface( s )
 {
-	bits = reinterpret_cast<unsigned char*>( s->pixels );
+	Bits = reinterpret_cast<unsigned char*>( s->pixels );
 }
 
 void SDL_16BPP_BITMAP::Lock()
