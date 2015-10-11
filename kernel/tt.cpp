@@ -51,30 +51,30 @@
 #include "client.h"
 #include "ptrace_base.h"
 
-const char stub_name[] = "ring3k-client";
-char stub_path[MAX_PATH];
+const char StubName[] = "ring3k-client";
+char StubPath[MAX_PATH];
 
-class tt_address_space_impl: public PTRACE_ADRESS_SPACE_IMPL
+class TT_ADDRESS_SPACE_IMPL: public PTRACE_ADRESS_SPACE_IMPL
 {
-	long stub_regs[FRAME_SIZE];
-	pid_t child_pid;
+	long StubRegs[FRAME_SIZE];
+	pid_t ChildPid;
 protected:
-	int userside_req( int type );
+	int UsersideReq( int type );
 public:
-	tt_address_space_impl();
+	TT_ADDRESS_SPACE_IMPL();
 	virtual pid_t GetChildPid();
-	virtual ~tt_address_space_impl();
+	virtual ~TT_ADDRESS_SPACE_IMPL();
 	virtual int Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset );
 	virtual int Munmap( BYTE *address, size_t length );
 	virtual unsigned short GetUserspaceFs();
 };
 
-pid_t tt_address_space_impl::GetChildPid()
+pid_t TT_ADDRESS_SPACE_IMPL::GetChildPid()
 {
-	return child_pid;
+	return ChildPid;
 }
 
-tt_address_space_impl::tt_address_space_impl()
+TT_ADDRESS_SPACE_IMPL::TT_ADDRESS_SPACE_IMPL()
 {
 	int r;
 	pid_t pid;
@@ -86,9 +86,9 @@ tt_address_space_impl::tt_address_space_impl()
 	if (pid == 0)
 	{
 		::ptrace( PTRACE_TRACEME, 0, 0, 0 );
-		r = ::execl( stub_path, stub_name, NULL );
+		r = ::execl( StubPath, StubName, NULL );
 		// the next line should not be reached
-		Die("exec failed (%d) - %s missing?\n", r, stub_path);
+		Die("exec failed (%d) - %s missing?\n", r, StubPath);
 	}
 
 	// trace through exec after traceme
@@ -99,84 +99,84 @@ tt_address_space_impl::tt_address_space_impl()
 
 	// client should hit a breakpoint
 	WaitForSignal( pid, SIGTRAP );
-	r = PtraceGetRegs( pid, stub_regs );
+	r = PtraceGetRegs( pid, StubRegs );
 	if (r < 0)
 		Die("constructor: ptrace_get_regs failed (%d)\n", errno);
 
-	child_pid = pid;
+	ChildPid = pid;
 }
 
-tt_address_space_impl::~tt_address_space_impl()
+TT_ADDRESS_SPACE_IMPL::~TT_ADDRESS_SPACE_IMPL()
 {
 	assert( SigTarget == 0 );
 	//trace(stderr,"~tt_address_space_impl()\n");
 	Destroy();
-	ptrace( PTRACE_KILL, child_pid, 0, 0 );
-	assert( child_pid != -1 );
-	kill( child_pid, SIGTERM );
-	child_pid = -1;
+	ptrace( PTRACE_KILL, ChildPid, 0, 0 );
+	assert( ChildPid != -1 );
+	kill( ChildPid, SIGTERM );
+	ChildPid = -1;
 }
 
-ADDRESS_SPACE_IMPL* create_tt_address_space()
+ADDRESS_SPACE_IMPL* CreateTTAddressSpace()
 {
 	//trace("create_tt_address_space\n");
 	// Set up the signal handler and unmask it first.
 	// The child's signal handler will be unmasked too.
-	return new tt_address_space_impl();
+	return new TT_ADDRESS_SPACE_IMPL();
 }
 
-int tt_address_space_impl::userside_req( int type )
+int TT_ADDRESS_SPACE_IMPL::UsersideReq( int type )
 {
-	struct tt_req *ureq = (struct tt_req *) stub_regs[EBX];
+	struct tt_req *ureq = (struct tt_req *) StubRegs[EBX];
 	int r;
 
-	ptrace( PTRACE_POKEDATA, child_pid, &ureq->type, type );
+	ptrace( PTRACE_POKEDATA, ChildPid, &ureq->type, type );
 
-	r = PtraceSetRegs( child_pid, stub_regs );
+	r = PtraceSetRegs( ChildPid, StubRegs );
 	if (r < 0)
 		Die("ptrace_set_regs failed\n");
-	r = ::ptrace( PTRACE_CONT, child_pid, 0, 0 );
+	r = ::ptrace( PTRACE_CONT, ChildPid, 0, 0 );
 	if (r < 0)
 		Die("ptrace( PTRACE_CONT ) failed\n");
 
-	WaitForSignal( child_pid, SIGTRAP );
-	r = PtraceGetRegs( child_pid, stub_regs );
+	WaitForSignal( ChildPid, SIGTRAP );
+	r = PtraceGetRegs( ChildPid, StubRegs );
 	if (r < 0)
 		Die("ptrace_get_regs failed (%d)\n", errno);
 
-	return stub_regs[EAX];
+	return StubRegs[EAX];
 }
 
-int tt_address_space_impl::Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset )
+int TT_ADDRESS_SPACE_IMPL::Mmap( BYTE *address, size_t length, int prot, int flags, int file, off_t offset )
 {
 	//trace("tt_address_space_impl::mmap()\n");
 
 	// send our pid to the stub
-	struct tt_req *ureq = (struct tt_req *) stub_regs[EBX];
-	ptrace( PTRACE_POKEDATA, child_pid, &ureq->u.map.pid, getpid() );
-	ptrace( PTRACE_POKEDATA, child_pid, &ureq->u.map.fd, file );
-	ptrace( PTRACE_POKEDATA, child_pid, &ureq->u.map.addr, (int) address );
-	ptrace( PTRACE_POKEDATA, child_pid, &ureq->u.map.len, length );
-	ptrace( PTRACE_POKEDATA, child_pid, &ureq->u.map.ofs, offset );
-	ptrace( PTRACE_POKEDATA, child_pid, &ureq->u.map.prot, prot );
-	return userside_req( tt_req_map );
+	struct tt_req *ureq = (struct tt_req *) StubRegs[EBX];
+	ptrace( PTRACE_POKEDATA, ChildPid, &ureq->u.map.pid, getpid() );
+	ptrace( PTRACE_POKEDATA, ChildPid, &ureq->u.map.fd, file );
+	ptrace( PTRACE_POKEDATA, ChildPid, &ureq->u.map.addr, (int) address );
+	ptrace( PTRACE_POKEDATA, ChildPid, &ureq->u.map.len, length );
+	ptrace( PTRACE_POKEDATA, ChildPid, &ureq->u.map.ofs, offset );
+	ptrace( PTRACE_POKEDATA, ChildPid, &ureq->u.map.prot, prot );
+	return UsersideReq( tt_req_map );
 }
 
-int tt_address_space_impl::Munmap( BYTE *address, size_t length )
+int TT_ADDRESS_SPACE_IMPL::Munmap( BYTE *address, size_t length )
 {
 	//trace("tt_address_space_impl::munmap()\n");
-	struct tt_req *ureq = (struct tt_req *) stub_regs[EBX];
-	ptrace( PTRACE_POKEDATA, child_pid, &ureq->u.map.addr, (int) address );
-	ptrace( PTRACE_POKEDATA, child_pid, &ureq->u.map.len, length );
-	return userside_req( tt_req_umap );
+	struct tt_req *ureq = (struct tt_req *) StubRegs[EBX];
+	ptrace( PTRACE_POKEDATA, ChildPid, &ureq->u.map.addr, (int) address );
+	ptrace( PTRACE_POKEDATA, ChildPid, &ureq->u.map.len, length );
+	return UsersideReq( tt_req_umap );
 }
 
-unsigned short tt_address_space_impl::GetUserspaceFs()
+unsigned short TT_ADDRESS_SPACE_IMPL::GetUserspaceFs()
 {
-	return stub_regs[FS];
+	return StubRegs[FS];
 }
 
-void get_stub_path( const char *kernel_path )
+void GetStubPath( const char *kernel_path )
 {
 	// FIXME: handle loader in path too
 	const char *p = strrchr( kernel_path, '/' );
@@ -192,15 +192,15 @@ void get_stub_path( const char *kernel_path )
 		len = sizeof current_dir - 1;
 	}
 
-	memcpy( stub_path, kernel_path, len );
-	stub_path[len] = 0;
-	if ((len + sizeof stub_name) > sizeof stub_path)
+	memcpy( StubPath, kernel_path, len );
+	StubPath[len] = 0;
+	if ((len + sizeof StubName) > sizeof StubPath)
 		Die("path too long\n");
-	strcat( stub_path, stub_name );
+	strcat( StubPath, StubName );
 }
 
 // quick check that /proc is mounted
-void check_proc()
+void CheckProc()
 {
 	int fd = open("/proc/self/fd/0", O_RDONLY);
 	if (fd < 0)
@@ -210,10 +210,10 @@ void check_proc()
 
 bool InitTt( const char *kernel_path )
 {
-	get_stub_path( kernel_path );
-	check_proc();
-	trace("using thread tracing, kernel %s, client %s\n", kernel_path, stub_path );
+	GetStubPath( kernel_path );
+	CheckProc();
+	trace("using thread tracing, kernel %s, client %s\n", kernel_path, StubPath );
 	PTRACE_ADRESS_SPACE_IMPL::SetSignals();
-	pCreateAddressSpace = &create_tt_address_space;
+	pCreateAddressSpace = &CreateTTAddressSpace;
 	return true;
 }
