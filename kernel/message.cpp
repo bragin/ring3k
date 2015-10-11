@@ -54,11 +54,11 @@ NTSTATUS GENERIC_MESSAGE<Pack>::CopyToUser( void *ptr ) const
 }
 
 template<class Pack>
-void GENERIC_MESSAGE<Pack>::SetWindowInfo( window_tt *win )
+void GENERIC_MESSAGE<Pack>::SetWindowInfo( WINDOW *win )
 {
-	Info.wininfo = win->get_wininfo();
-	Info.wndproc = win->get_wndproc();
-	Info.func = (typeof(Info.func)) g_funcsW[17];
+	Info.wininfo = win->GetWininfo();
+	Info.wndproc = win->GetWndproc();
+	Info.func = (typeof(Info.func)) g_FuncsW[17];
 }
 
 template<class Pack>

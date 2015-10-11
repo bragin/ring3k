@@ -297,10 +297,10 @@ public:
 	virtual int GetCaps( int index );
 };
 
-class window_tt;
+class WINDOW;
 
-class window_tt;
-extern window_tt* active_window;
+class WINDOW;
+extern WINDOW* active_window;
 void free_user32_handles( PROCESS *p );
 HGDIOBJ AllocGdiHandle( BOOL stock, ULONG type, void *user_info, GDI_OBJECT* obj );
 HGDIOBJ AllocGdiObject( BOOL stock, ULONG type );

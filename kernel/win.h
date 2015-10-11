@@ -24,93 +24,93 @@
 #include "ntwin32.h"
 #include "region.h"
 
-struct window_tt;
-class wndcls_tt;
+struct WINDOW;
+class WNDCLS;
 class MESSAGE;
 
-typedef LIST_ANCHOR<wndcls_tt, 0> wndcls_list_tt;
-typedef LIST_ELEMENT<wndcls_tt> wndcls_entry_tt;
-typedef LIST_ITER<wndcls_tt, 0> wndcls_iter_tt;
+typedef LIST_ANCHOR<WNDCLS, 0> WNDCLS_LIST;
+typedef LIST_ELEMENT<WNDCLS> WNDCLS_ENTRY;
+typedef LIST_ITER<WNDCLS, 0> WNDCLS_ITER;
 
-class wndcls_tt : public CLASSINFO
+class WNDCLS : public CLASSINFO
 {
 	// FIXME: all these have to go
-	friend class LIST_ANCHOR<wndcls_tt, 0>;
-	friend class LIST_ITER<wndcls_tt, 0>;
-	wndcls_entry_tt Entry[1];
-	CUNICODE_STRING name;
-	CUNICODE_STRING menu;
-	NTWNDCLASSEX info;
-	ULONG refcount;
+	friend class LIST_ANCHOR<WNDCLS, 0>;
+	friend class LIST_ITER<WNDCLS, 0>;
+	WNDCLS_ENTRY Entry[1];
+	CUNICODE_STRING Name;
+	CUNICODE_STRING Menu;
+	NTWNDCLASSEX Info;
+	ULONG RefCount;
 public:
 	void* operator new(size_t sz);
 	void operator delete(void *p);
-	wndcls_tt( NTWNDCLASSEX& ClassInfo, const UNICODE_STRING& ClassName, const UNICODE_STRING& MenuName, ATOM a );
-	static wndcls_tt* from_name( const UNICODE_STRING& wndcls_name );
-	ATOM get_atom() const
+	WNDCLS( NTWNDCLASSEX& ClassInfo, const UNICODE_STRING& ClassName, const UNICODE_STRING& MenuName, ATOM a );
+	static WNDCLS* FromName( const UNICODE_STRING& wndcls_name );
+	ATOM GetAtom() const
 	{
 		return atomWindowType;
 	}
-	const CUNICODE_STRING& get_name() const
+	const CUNICODE_STRING& GetName() const
 	{
-		return name;
+		return Name;
 	}
-	void addref()
+	void AddRef()
 	{
-		refcount++;
+		RefCount++;
 	}
-	void release()
+	void Release()
 	{
-		refcount--;
+		RefCount--;
 	}
-	PVOID get_wndproc() const
+	PVOID GetWndproc() const
 	{
-		return info.WndProc;
+		return Info.WndProc;
 	}
 };
 
-class window_tt : public WND
+class WINDOW : public WND
 {
 	// no virtual functions here, binary compatible with user side WND struct
 public:
 	void* operator new(size_t sz);
 	void operator delete(void *p);
-	window_tt();
-	~window_tt();
-	static window_tt* do_create( CUNICODE_STRING& name, CUNICODE_STRING& cls, NTCREATESTRUCT& cs );
-	NTSTATUS send( MESSAGE& msg );
-	void *get_wndproc()
+	WINDOW();
+	~WINDOW();
+	static WINDOW* DoCreate( CUNICODE_STRING& name, CUNICODE_STRING& cls, NTCREATESTRUCT& cs );
+	NTSTATUS Send( MESSAGE& msg );
+	void *GetWndproc()
 	{
 		return wndproc;
 	}
-	PWND get_wininfo();
-	THREAD* &get_win_thread()
+	PWND GetWininfo();
+	THREAD* &GetWinThread()
 	{
 		return (THREAD*&)unk1;
 	}
-	REGION* &get_invalid_region()
+	REGION* &GetInvalidRegion()
 	{
 		return (REGION*&)unk2;
 	}
-	BOOLEAN show( INT Show );
-	void activate();
-	HGDIOBJ get_dc();
-	BOOLEAN destroy();
-	void set_window_pos( UINT flags );
-	static window_tt* find_window_to_repaint( HWND window, THREAD* thread );
-	static window_tt* find_window_to_repaint( window_tt* win, THREAD* thread );
-	void link_window( window_tt *parent );
-	void unlink_window();
-	BOOLEAN move_window( int x, int y, int width, int height, BOOLEAN repaint );
-	HWND from_point( POINT& pt );
-	bool on_access( BYTE* address, ULONG ip );
+	BOOLEAN Show( INT Show );
+	void Activate();
+	HGDIOBJ GetDc();
+	BOOLEAN Destroy();
+	void SetWindowPos( UINT flags );
+	static WINDOW* FindWindowToRepaint( HWND window, THREAD* thread );
+	static WINDOW* FindWindowToRepaint( WINDOW* win, THREAD* thread );
+	void LinkWindow( WINDOW *parent );
+	void UnlinkWindow();
+	BOOLEAN MoveWindow( int x, int y, int width, int height, BOOLEAN repaint );
+	HWND FromPoint( POINT& pt );
+	bool OnAccess( BYTE* address, ULONG ip );
 };
 
-window_tt *window_from_handle( HANDLE handle );
+WINDOW *WindowFromHandle( HANDLE handle );
 
 // system wide callback functions registered with kernel by user32.dll
-extern PVOID g_funcs[9];
-extern PVOID g_funcsW[20];
-extern PVOID g_funcsA[20];
+extern PVOID g_Funcs[9];
+extern PVOID g_FuncsW[20];
+extern PVOID g_FuncsA[20];
 
 #endif // __RING3K_WIN_H__

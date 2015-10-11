@@ -194,7 +194,7 @@ void WIN32K_MANAGER::SendInput(INPUT* input)
 
 	if (active_window)
 	{
-		THREAD *t = active_window->get_win_thread();
+		THREAD *t = active_window->GetWinThread();
 		assert(t != NULL);
 		queue = t->Queue;
 	}

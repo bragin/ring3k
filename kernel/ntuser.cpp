@@ -42,9 +42,9 @@
 #include "message.h"
 #include "win.h"
 
-wndcls_list_tt wndcls_list;
-window_tt *active_window;
-window_tt *desktop_window;
+WNDCLS_LIST wndcls_list;
+WINDOW *active_window;
+WINDOW *desktop_window;
 
 ULONG NTAPI NtUserGetThreadState( ULONG InfoClass )
 {
@@ -184,7 +184,7 @@ void delete_user_object( ULONG i )
 	switch (entry->type)
 	{
 	case USER_HANDLE_WINDOW:
-		delete (window_tt*) entry->object;
+		delete (WINDOW*) entry->object;
 		break;
 	default:
 		trace("object %ld (%p), type = %08x owner = %p\n",
@@ -221,12 +221,12 @@ void* user_obj_from_handle( HANDLE handle, ULONG type )
 	return user_handle_table[lowpart].object;
 }
 
-window_tt *window_from_handle( HANDLE handle )
+WINDOW *WindowFromHandle( HANDLE handle )
 {
 	void *obj = user_obj_from_handle( handle, 1 );
 	if (!obj)
 		return NULL;
-	return (window_tt*) obj;
+	return (WINDOW*) obj;
 }
 
 void *init_user_shared_memory()
@@ -312,8 +312,8 @@ bool window_on_access( BYTE *address, ULONG eip )
 			{
 				// window shared memory structures are variable size
 				// have the window check itself
-				window_tt* wnd = reinterpret_cast<window_tt*>( user_handle_table[i].object);
-				if (wnd->on_access( address, eip ))
+				WINDOW* wnd = reinterpret_cast<WINDOW*>( user_handle_table[i].object);
+				if (wnd->OnAccess( address, eip ))
 					return true;
 			}
 		}
@@ -410,11 +410,11 @@ void create_desktop_window()
 	if (desktop_window)
 		return;
 
-	desktop_window = new window_tt;
+	desktop_window = new WINDOW;
 	if (!desktop_window)
 		return;
 
-	memset( desktop_window, 0, sizeof (window_tt) );
+	memset( desktop_window, 0, sizeof (WINDOW) );
 	desktop_window->rcWnd.left = 0;
 	desktop_window->rcWnd.top = 0;
 	desktop_window->rcWnd.right = 640;
@@ -545,9 +545,9 @@ NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSi
 	return STATUS_SUCCESS;
 }
 
-PVOID g_funcs[9];
-PVOID g_funcsW[20];
-PVOID g_funcsA[20];
+PVOID g_Funcs[9];
+PVOID g_FuncsW[20];
+PVOID g_FuncsA[20];
 
 // Funcs array has 9 function pointers
 // FuncsW array has 20 function pointers
@@ -561,13 +561,13 @@ BOOLEAN NTAPI NtUserInitializeClientPfnArrays(
 {
 	NTSTATUS r;
 
-	r = CopyFromUser( &g_funcs, Funcs, sizeof g_funcs );
+	r = CopyFromUser( &g_Funcs, Funcs, sizeof g_Funcs );
 	if (r < 0)
 		return r;
-	r = CopyFromUser( &g_funcsW, FuncsW, sizeof g_funcsW );
+	r = CopyFromUser( &g_FuncsW, FuncsW, sizeof g_FuncsW );
 	if (r < 0)
 		return r;
-	r = CopyFromUser( &g_funcsA, FuncsA, sizeof g_funcsA );
+	r = CopyFromUser( &g_FuncsA, FuncsA, sizeof g_FuncsA );
 	if (r < 0)
 		return r;
 	return 0;
@@ -628,10 +628,10 @@ BOOLEAN NtPostQuitMessage( ULONG ret )
 PVOID NtGetWindowPointer( HWND window )
 {
 	trace("%p\n", window );
-	window_tt *win = window_from_handle( window );
+	WINDOW *win = WindowFromHandle( window );
 	if (!win)
 		return 0;
-	return win->get_wininfo();
+	return win->GetWininfo();
 }
 
 ULONG NTAPI NtUserCallOneParam(ULONG Param, ULONG Index)
@@ -787,11 +787,11 @@ HANDLE NTAPI NtUserGetDC(HANDLE Window)
 	if (!Window)
 		return Win32kManager->AllocScreenDC();
 
-	window_tt *win = window_from_handle( Window );
+	WINDOW *win = WindowFromHandle( Window );
 	if (!win)
 		return FALSE;
 
-	return win->get_dc();
+	return win->GetDc();
 }
 
 HGDIOBJ NtUserSelectPalette(HGDIOBJ hdc, HPALETTE palette, BOOLEAN force_bg)
@@ -819,35 +819,35 @@ BOOLEAN NTAPI NtUserGetIconInfo(
 	return TRUE;
 }
 
-void* wndcls_tt::operator new(size_t sz)
+void* WNDCLS::operator new(size_t sz)
 {
 	trace("allocating window\n");
-	assert( sz == sizeof (wndcls_tt));
+	assert( sz == sizeof (WNDCLS));
 	return user_shared_bitmap.Alloc( sz );
 }
 
-void wndcls_tt::operator delete(void *p)
+void WNDCLS::operator delete(void *p)
 {
-	user_shared_bitmap.Free( (unsigned char*) p, sizeof (wndcls_tt) );
+	user_shared_bitmap.Free( (unsigned char*) p, sizeof (WNDCLS) );
 }
 
-wndcls_tt::wndcls_tt( NTWNDCLASSEX& ClassInfo, const UNICODE_STRING& ClassName, const UNICODE_STRING& MenuName, ATOM a ) :
-	name( ClassName ),
-	menu( MenuName ),
-	info( ClassInfo ),
-	refcount( 0 )
+WNDCLS::WNDCLS( NTWNDCLASSEX& ClassInfo, const UNICODE_STRING& ClassName, const UNICODE_STRING& MenuName, ATOM a ) :
+	Name( ClassName ),
+	Menu( MenuName ),
+	Info( ClassInfo ),
+	RefCount( 0 )
 {
 	memset( this, 0, sizeof (WNDCLASS) );
 	atomWindowType = a;
 	pSelf = this;
 }
 
-wndcls_tt* wndcls_tt::from_name( const UNICODE_STRING& wndcls_name )
+WNDCLS* WNDCLS::FromName( const UNICODE_STRING& wndcls_name )
 {
-	for (wndcls_iter_tt i(wndcls_list); i; i.Next())
+	for (WNDCLS_ITER i(wndcls_list); i; i.Next())
 	{
-		wndcls_tt *cls = i;
-		if (cls->get_name().IsEqual( wndcls_name ))
+		WNDCLS *cls = i;
+		if (cls->GetName().IsEqual( wndcls_name ))
 			return cls;
 	}
 	return NULL;
@@ -890,13 +890,13 @@ ATOM NTAPI NtUserRegisterClassExWOW(
 	trace("window class = %pus  menu = %pus\n", &clsstr, &menuname);
 
 	static ATOM atom = 0xc001;
-	wndcls_tt* cls = new wndcls_tt( clsinfo, clsstr, menuname, atom );
+	WNDCLS* cls = new WNDCLS( clsinfo, clsstr, menuname, atom );
 	if (!cls)
 		return 0;
 
 	wndcls_list.Append( cls );
 
-	return cls->get_atom();
+	return cls->GetAtom();
 }
 
 NTSTATUS NTAPI NtUserSetInformationThread(
@@ -1072,12 +1072,12 @@ NTSTATUS user32_unicode_string_t::copy_from_user( PUSER32_UNICODE_STRING String 
 	return CopyWStrFromUser( str.Buffer, str.Length );
 }
 
-window_tt::window_tt()
+WINDOW::WINDOW()
 {
 	memset( this, 0, sizeof *this );
 }
 
-void window_tt::link_window( window_tt* parent_win )
+void WINDOW::LinkWindow( WINDOW* parent_win )
 {
 	assert( next == NULL );
 	assert( parent == NULL );
@@ -1088,7 +1088,7 @@ void window_tt::link_window( window_tt* parent_win )
 	assert( next != this );
 }
 
-void window_tt::unlink_window()
+void WINDOW::UnlinkWindow()
 {
 	// special behaviour for desktop window
 	// should replace window_tt::first with desktop...
@@ -1108,22 +1108,22 @@ void window_tt::unlink_window()
 	next = NULL;
 }
 
-void* window_tt::operator new(size_t sz)
+void* WINDOW::operator new(size_t sz)
 {
 	trace("allocating window\n");
-	assert( sz == sizeof (window_tt));
+	assert( sz == sizeof (WINDOW));
 	return user_shared_bitmap.Alloc( sz );
 }
 
-void window_tt::operator delete(void *p)
+void WINDOW::operator delete(void *p)
 {
-	user_shared_bitmap.Free( (unsigned char*) p, sizeof (window_tt) );
+	user_shared_bitmap.Free( (unsigned char*) p, sizeof (WINDOW) );
 }
 
 // return true if address is in this window's shared memory
-bool window_tt::on_access( BYTE *address, ULONG eip )
+bool WINDOW::OnAccess( BYTE *address, ULONG eip )
 {
-	BYTE *user_ptr = (BYTE*) get_wininfo();
+	BYTE *user_ptr = (BYTE*) GetWininfo();
 	if (user_ptr > address)
 		return false;
 
@@ -1154,9 +1154,9 @@ bool window_tt::on_access( BYTE *address, ULONG eip )
 	return true;
 }
 
-window_tt::~window_tt()
+WINDOW::~WINDOW()
 {
-	unlink_window();
+	UnlinkWindow();
 	free_user_handle( handle );
 	trace("active window = %p this = %p\n", active_window, this);
 	if (active_window == this)
@@ -1166,21 +1166,21 @@ window_tt::~window_tt()
 	}
 }
 
-PWND window_tt::get_wininfo()
+PWND WINDOW::GetWininfo()
 {
 	ULONG ofs = (BYTE*)this - (BYTE*)user_shared;
 	return (PWND) (Current->Process->Win32kInfo->user_shared_mem + ofs);
 }
 
-NTSTATUS window_tt::send( MESSAGE& msg )
+NTSTATUS WINDOW::Send( MESSAGE& msg )
 {
-	THREAD*& thread = get_win_thread();
+	THREAD*& thread = GetWinThread();
 	if (thread->IsTerminated())
 		return STATUS_THREAD_IS_TERMINATING;
 
 	PTEB teb = thread->GetTEB();
 	teb->CachedWindowHandle = handle;
-	teb->CachedWindowPointer = get_wininfo();
+	teb->CachedWindowPointer = GetWininfo();
 
 	trace("sending %s\n", msg.Description());
 
@@ -1207,11 +1207,11 @@ NTSTATUS window_tt::send( MESSAGE& msg )
 	return r;
 }
 
-BOOLEAN window_tt::show( INT Show )
+BOOLEAN WINDOW::Show( INT Show )
 {
 	// send a WM_SHOWWINDOW message
 	SHOWWINDOW_MSG sw( TRUE );
-	send( sw );
+	Send( sw );
 	style |= WS_VISIBLE;
 
 	return TRUE;
@@ -1262,27 +1262,27 @@ HANDLE NTAPI NtUserCreateWindowEx(
 	cs.lpszClass = NULL;
 	cs.dwExStyle = ExStyle;
 
-	window_tt* win = window_tt::do_create( window_name, wndcls_name, cs );
+	WINDOW* win = WINDOW::DoCreate( window_name, wndcls_name, cs );
 	if (!win)
 		return NULL;
 	return win->handle;
 }
 
-window_tt* window_tt::do_create( CUNICODE_STRING& name, CUNICODE_STRING& cls, NTCREATESTRUCT& cs )
+WINDOW* WINDOW::DoCreate( CUNICODE_STRING& name, CUNICODE_STRING& cls, NTCREATESTRUCT& cs )
 {
 	trace("window = %pus class = %pus\n", &name, &cls );
 
-	window_tt* parent_win = 0;
+	WINDOW* parent_win = 0;
 	if (cs.hwndParent)
 	{
-		parent_win = window_from_handle( cs.hwndParent );
+		parent_win = WindowFromHandle( cs.hwndParent );
 		if (!parent_win)
 			return FALSE;
 	}
 	else
 		parent_win = desktop_window;
 
-	wndcls_tt* wndcls = wndcls_tt::from_name( cls );
+	WNDCLS* wndcls = WNDCLS::FromName( cls );
 	if (!wndcls)
 		return 0;
 
@@ -1301,12 +1301,12 @@ window_tt* window_tt::do_create( CUNICODE_STRING& name, CUNICODE_STRING& cls, NT
 		cs.cy = 100;
 
 	// allocate a window
-	window_tt *win = new window_tt;
+	WINDOW *win = new WINDOW;
 	trace("new window %p\n", win);
 	if (!win)
 		return NULL;
 
-	win->get_win_thread() = Current;
+	win->GetWinThread() = Current;
 	win->self = win;
 	win->wndcls = wndcls;
 	win->style = cs.style;
@@ -1317,26 +1317,26 @@ window_tt* window_tt::do_create( CUNICODE_STRING& name, CUNICODE_STRING& cls, NT
 	win->rcWnd.bottom = cs.y + cs.cy;
 	win->hInstance = cs.hInstance;
 
-	win->link_window( parent_win );
+	win->LinkWindow( parent_win );
 
 	win->handle = (HWND) alloc_user_handle( win, USER_HANDLE_WINDOW, Current->Process );
-	win->wndproc = wndcls->get_wndproc();
+	win->wndproc = wndcls->GetWndproc();
 
 	// create a thread message queue if necessary
 	if (!Current->Queue)
 		Current->Queue = new THREAD_MESSAGE_QUEUE;
 
-	REGION*& region = win->get_invalid_region();
+	REGION*& region = win->GetInvalidRegion();
 	region = REGION::Alloc();
 	region->EmptyRegion();
 
 	// send WM_GETMINMAXINFO
 	GETMINMAXINFO_MESSAGE minmax;
-	win->send( minmax );
+	win->Send( minmax );
 
 	// send WM_NCCREATE
 	NCCREATE_MESSAGE nccreate( cs, cls, name );
-	win->send( nccreate );
+	win->Send( nccreate );
 
 	win->rcWnd.left = cs.x;
 	win->rcWnd.top = cs.y;
@@ -1348,56 +1348,56 @@ window_tt* window_tt::do_create( CUNICODE_STRING& name, CUNICODE_STRING& cls, NT
 
 	// send WM_NCCALCSIZE
 	NCCALCULATE_MESSAGE nccalcsize( FALSE, win->rcWnd );
-	win->send( nccalcsize );
+	win->Send( nccalcsize );
 
 	win->style |= WS_CLIPSIBLINGS;
 
 	// send WM_CREATE
 	CREATE_MESSAGE create( cs, cls, name );
-	win->send( create );
+	win->Send( create );
 
 	if (win->style & WS_VISIBLE)
 	{
 		trace("Window has WS_VISIBLE\n");
-		win->set_window_pos( SWP_SHOWWINDOW | SWP_NOMOVE );
+		win->SetWindowPos( SWP_SHOWWINDOW | SWP_NOMOVE );
 
 		// move manually afterwards
 		MOVE_MSG move( win->rcWnd.left, win->rcWnd.top );
-		win->send( move );
+		win->Send( move );
 	}
 
 	return win;
 }
 
 
-window_tt* window_tt::find_window_to_repaint( HWND window, THREAD* thread )
+WINDOW* WINDOW::FindWindowToRepaint( HWND window, THREAD* thread )
 {
-	window_tt *win;
+	WINDOW *win;
 	if (window)
 	{
-		win = window_from_handle( window );
+		win = WindowFromHandle( window );
 		if (!win)
 			return FALSE;
 	}
 	else
 		win = desktop_window;
 
-	return find_window_to_repaint( win, thread );
+	return FindWindowToRepaint( win, thread );
 }
 
-window_tt* window_tt::find_window_to_repaint( window_tt* win, THREAD* thread )
+WINDOW* WINDOW::FindWindowToRepaint( WINDOW* win, THREAD* thread )
 {
 	// special case the desktop window for the moment
 	if (win->parent)
 	{
-		REGION*& region = win->get_invalid_region();
+		REGION*& region = win->GetInvalidRegion();
 		if (region->GetRegionType() != NULLREGION)
 			return win;
 	}
 
 	for (WND *p = win->first_child; p; p = p->next)
 	{
-		win = find_window_to_repaint( p->handle, thread );
+		win = FindWindowToRepaint( p->handle, thread );
 		if (win)
 			return win;
 	}
@@ -1405,16 +1405,16 @@ window_tt* window_tt::find_window_to_repaint( window_tt* win, THREAD* thread )
 	return NULL;
 }
 
-void window_tt::set_window_pos( UINT flags )
+void WINDOW::SetWindowPos( UINT flags )
 {
 	if (!(style & WS_VISIBLE))
 		return;
 
 	if (flags & SWP_SHOWWINDOW)
 	{
-		show( SW_SHOW );
+		Show( SW_SHOW );
 
-		REGION*& rgn = get_invalid_region();
+		REGION*& rgn = GetInvalidRegion();
 		rgn->SetRect( rcClient );
 	}
 
@@ -1432,50 +1432,50 @@ void window_tt::set_window_pos( UINT flags )
 	if (flags & (SWP_SHOWWINDOW | SWP_HIDEWINDOW))
 	{
 		WINPOSCHANGING_MSG poschanging( wp );
-		send( poschanging );
+		Send( poschanging );
 	}
 
 	// send activate messages
 	if (!(flags & SWP_NOACTIVATE))
 	{
-		activate();
+		Activate();
 
 		// painting probably should be done elsewhere
 		NCPAINT_MSG ncpaint;
-		send( ncpaint );
+		Send( ncpaint );
 
-		ERASEBKG_MSG erase( get_dc() );
-		send( erase );
+		ERASEBKG_MSG erase( GetDc() );
+		Send( erase );
 	}
 
 	if (style & WS_VISIBLE)
 	{
 		WINPOSCHANGED_MSG poschanged( wp );
-		send( poschanged );
+		Send( poschanged );
 	}
 
 	if (flags & SWP_HIDEWINDOW)
 	{
 		// deactivate
 		NCACTIVATE_MSG ncact;
-		send( ncact );
+		Send( ncact );
 	}
 
 	if (!(flags & SWP_NOSIZE))
 	{
 		SIZE_MSG size( rcWnd.right - rcWnd.left,
 						 rcWnd.bottom - rcWnd.top );
-		send( size );
+		Send( size );
 	}
 
 	if (!(flags & SWP_NOMOVE))
 	{
 		MOVE_MSG move( rcWnd.left, rcWnd.top );
-		send( move );
+		Send( move );
 	}
 }
 
-HGDIOBJ window_tt::get_dc()
+HGDIOBJ WINDOW::GetDc()
 {
 	DEVICE_CONTEXT *dc = Win32kManager->AllocScreenDcPtr();
 	if (!dc)
@@ -1485,7 +1485,7 @@ HGDIOBJ window_tt::get_dc()
 	return dc->get_handle();
 }
 
-void window_tt::activate()
+void WINDOW::Activate()
 {
 	if (active_window == this)
 		return;
@@ -1493,34 +1493,34 @@ void window_tt::activate()
 	if (active_window)
 	{
 		APPACT_MSG aa( WA_INACTIVE );
-		active_window->send( aa );
+		active_window->Send( aa );
 	}
 
 	active_window = this;
 	APPACT_MSG aa( WA_ACTIVE );
-	send( aa );
+	Send( aa );
 
 	NCACTIVATE_MSG ncact;
-	send( ncact );
+	Send( ncact );
 
 	ACTIVATE_MSG act;
-	send( act );
+	Send( act );
 
 	SETFOCUS_MSG setfocus;
-	send( setfocus );
+	Send( setfocus );
 }
 
-BOOLEAN window_tt::destroy()
+BOOLEAN WINDOW::Destroy()
 {
 	// set the window to zero size
-	set_window_pos( SWP_NOMOVE | SWP_NOSIZE |
+	SetWindowPos( SWP_NOMOVE | SWP_NOSIZE |
 					SWP_NOZORDER | SWP_NOACTIVATE | SWP_HIDEWINDOW );
 
 	DESTROY_MSG destroy;
-	send( destroy );
+	Send( destroy );
 
 	NCDESTROY_MSG ncdestroy;
-	send( ncdestroy );
+	Send( ncdestroy );
 
 	delete this;
 	return TRUE;
@@ -1569,11 +1569,11 @@ BOOLEAN NTAPI NtUserResolveDesktop(HANDLE Process, PVOID, PVOID, PHANDLE Desktop
 
 BOOLEAN NTAPI NtUserShowWindow( HWND Window, INT Show )
 {
-	window_tt *win = window_from_handle( Window );
+	WINDOW *win = WindowFromHandle( Window );
 	if (!win)
 		return FALSE;
 
-	return win->show( Show );
+	return win->Show( Show );
 }
 
 HANDLE NTAPI NtUserCreateAcceleratorTable( PVOID Accelerators, UINT Count )
@@ -1584,14 +1584,14 @@ HANDLE NTAPI NtUserCreateAcceleratorTable( PVOID Accelerators, UINT Count )
 
 BOOLEAN NTAPI NtUserMoveWindow( HWND Window, int x, int y, int width, int height, BOOLEAN repaint )
 {
-	window_tt *win = window_from_handle( Window );
+	WINDOW *win = WindowFromHandle( Window );
 	if (!win)
 		return FALSE;
 
-	return win->move_window( x, y, width, height, repaint );
+	return win->MoveWindow( x, y, width, height, repaint );
 }
 
-BOOLEAN window_tt::move_window( int x, int y, int width, int height, BOOLEAN repaint )
+BOOLEAN WINDOW::MoveWindow( int x, int y, int width, int height, BOOLEAN repaint )
 {
 	WINDOWPOS wp;
 	memset( &wp, 0, sizeof wp );
@@ -1603,7 +1603,7 @@ BOOLEAN window_tt::move_window( int x, int y, int width, int height, BOOLEAN rep
 	wp.cy = height;
 
 	WINPOSCHANGING_MSG poschanging( wp );
-	send( poschanging );
+	Send( poschanging );
 
 	rcWnd.left = x;
 	rcWnd.top = y;
@@ -1613,17 +1613,17 @@ BOOLEAN window_tt::move_window( int x, int y, int width, int height, BOOLEAN rep
 	rcClient = rcWnd;
 
 	NCCALCULATE_MESSAGE nccalcsize( TRUE, rcWnd );
-	send( nccalcsize );
+	Send( nccalcsize );
 
 	WINPOSCHANGED_MSG poschanged( wp );
-	send( poschanged );
+	Send( poschanged );
 
 	return TRUE;
 }
 
 BOOLEAN NTAPI NtUserRedrawWindow( HWND Window, RECT *Update, HANDLE Region, UINT Flags )
 {
-	window_tt *win = window_from_handle( Window );
+	WINDOW *win = WindowFromHandle( Window );
 	if (!win)
 		return FALSE;
 
@@ -1642,7 +1642,7 @@ BOOLEAN NTAPI NtUserRedrawWindow( HWND Window, RECT *Update, HANDLE Region, UINT
 		rect = win->rcClient;
 	}
 
-	REGION*& region = win->get_invalid_region();
+	REGION*& region = win->GetInvalidRegion();
 	region->SetRect( rect );
 
 	return TRUE;
@@ -1661,7 +1661,7 @@ LRESULT NTAPI NtUserDispatchMessage( PMSG Message )
 	if (r < STATUS_SUCCESS)
 		return 0;
 
-	window_tt *win = window_from_handle( msg.hwnd );
+	WINDOW *win = WindowFromHandle( msg.hwnd );
 	if (!win)
 		return 0;
 
@@ -1670,7 +1670,7 @@ LRESULT NTAPI NtUserDispatchMessage( PMSG Message )
 		case WM_PAINT:
 		{
 			PAINT_MSG msg;
-			win->send( msg );
+			win->Send( msg );
 		}
 		break;
 	default:
@@ -1682,7 +1682,7 @@ LRESULT NTAPI NtUserDispatchMessage( PMSG Message )
 
 BOOLEAN NTAPI NtUserInvalidateRect( HWND Window, const RECT* Rectangle, BOOLEAN Erase )
 {
-	window_tt *win = window_from_handle( Window );
+	WINDOW *win = WindowFromHandle( Window );
 	if (!win)
 		return FALSE;
 
@@ -1701,7 +1701,7 @@ BOOLEAN NTAPI NtUserInvalidateRect( HWND Window, const RECT* Rectangle, BOOLEAN 
 		rect = win->rcClient;
 	}
 
-	REGION*& region = win->get_invalid_region();
+	REGION*& region = win->GetInvalidRegion();
 	region->SetRect( rect );
 
 	return TRUE;
@@ -1714,11 +1714,11 @@ BOOLEAN NTAPI NtUserMessageCall( HWND Window, ULONG, ULONG, PVOID, ULONG, ULONG,
 
 BOOLEAN NTAPI NtUserDestroyWindow( HWND Window )
 {
-	window_tt *win = window_from_handle( Window );
+	WINDOW *win = WindowFromHandle( Window );
 	if (!win)
 		return FALSE;
 
-	return win->destroy();
+	return win->Destroy();
 }
 
 BOOLEAN NTAPI NtUserValidateRect( HWND Window, PRECT Rect )
@@ -1733,7 +1733,7 @@ BOOLEAN NTAPI NtUserGetUpdateRgn( HWND Window, HRGN Region, BOOLEAN Erase )
 
 HDC NTAPI NtUserBeginPaint( HWND Window, PAINTSTRUCT* pps)
 {
-	window_tt *win = window_from_handle( Window );
+	WINDOW *win = WindowFromHandle( Window );
 	if (!win)
 		return NULL;
 
@@ -1747,10 +1747,10 @@ HDC NTAPI NtUserBeginPaint( HWND Window, PAINTSTRUCT* pps)
 	if (r < STATUS_SUCCESS)
 		return NULL;
 
-	REGION*& region = win->get_invalid_region();
+	REGION*& region = win->GetInvalidRegion();
 	region->EmptyRegion();
 
-	return (HDC) win->get_dc();
+	return (HDC) win->GetDc();
 }
 
 BOOLEAN NTAPI NtUserEndPaint( HWND Window, PAINTSTRUCT* pps )
@@ -1783,7 +1783,7 @@ BOOLEAN NTAPI NtUserTranslateMessage( PMSG Message, ULONG )
 	return 0;
 }
 
-HWND window_tt::from_point( POINT& pt )
+HWND WINDOW::FromPoint( POINT& pt )
 {
 	for (PWND win = first_child; win; win = win->next)
 	{
@@ -1796,8 +1796,8 @@ HWND window_tt::from_point( POINT& pt )
 
 HWND NTAPI NtUserWindowFromPoint( POINT pt )
 {
-	window_tt *win = desktop_window;
+	WINDOW *win = desktop_window;
 	if (!win)
 		return 0;
-	return win->from_point( pt );
+	return win->FromPoint( pt );
 }

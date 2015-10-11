@@ -64,7 +64,7 @@ class SDL_DEVICE_CONTEXT : public DEVICE_CONTEXT
 {
 public:
 	CBITMAP *SdlBitmap;
-	window_tt *Win;
+	WINDOW *Win;
 public:
 	SDL_DEVICE_CONTEXT( CBITMAP *b );
 	virtual CBITMAP* GetBitmap();

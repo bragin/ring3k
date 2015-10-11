@@ -85,7 +85,7 @@ bool THREAD_MESSAGE_QUEUE::GetQuitMessage( MSG& msg )
 
 bool THREAD_MESSAGE_QUEUE::GetPaintMessage( HWND Window, MSG& msg )
 {
-	window_tt *win = window_tt::find_window_to_repaint( Window, Current );
+	WINDOW *win = WINDOW::FindWindowToRepaint( Window, Current );
 	if (!win)
 		return FALSE;
 
@@ -384,11 +384,11 @@ BOOLEAN NTAPI NtUserGetMessage(PMSG Message, HWND Window, ULONG MinMessage, ULON
 
 BOOLEAN NTAPI NtUserPostMessage( HWND Window, UINT Message, WPARAM Wparam, LPARAM Lparam )
 {
-	window_tt *win = window_from_handle( Window );
+	WINDOW *win = WindowFromHandle( Window );
 	if (!win)
 		return FALSE;
 
-	THREAD*& thread = win->get_win_thread();
+	THREAD*& thread = win->GetWinThread();
 	assert(thread != NULL);
 
 	return thread->Queue->PostMessage( Window, Message, Wparam, Lparam );
@@ -415,11 +415,11 @@ BOOLEAN NTAPI NtUserPeekMessage( PMSG Message, HWND Window, UINT MaxMessage, UIN
 
 UINT NTAPI NtUserSetTimer( HWND Window, UINT Identifier, UINT Elapse, PVOID TimerProc )
 {
-	window_tt *win = window_from_handle( Window );
+	WINDOW *win = WindowFromHandle( Window );
 	if (!win)
 		return FALSE;
 
-	THREAD*& thread = win->get_win_thread();
+	THREAD*& thread = win->GetWinThread();
 	assert(thread != NULL);
 
 	return thread->Queue->SetTimer( Window, Identifier, Elapse, TimerProc );
@@ -427,11 +427,11 @@ UINT NTAPI NtUserSetTimer( HWND Window, UINT Identifier, UINT Elapse, PVOID Time
 
 BOOLEAN NTAPI NtUserKillTimer( HWND Window, UINT Identifier )
 {
-	window_tt *win = window_from_handle( Window );
+	WINDOW *win = WindowFromHandle( Window );
 	if (!win)
 		return FALSE;
 
-	THREAD*& thread = win->get_win_thread();
+	THREAD*& thread = win->GetWinThread();
 	assert(thread != NULL);
 
 	return thread->Queue->KillTimer( Window, Identifier );

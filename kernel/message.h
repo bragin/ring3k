@@ -32,7 +32,7 @@ public:
 	virtual ULONG GetSize() const = 0;
 	virtual NTSTATUS CopyToUser( void *ptr ) const = 0;
 	virtual ULONG GetCallbackNum() const = 0;
-	virtual void SetWindowInfo( window_tt *win ) = 0;
+	virtual void SetWindowInfo( WINDOW *win ) = 0;
 	virtual const char *Description() = 0;
 	virtual ~MESSAGE() {}
 };
@@ -48,7 +48,7 @@ public:
 	virtual ULONG GetSize() const;
 	virtual NTSTATUS CopyToUser( void *ptr ) const;
 	virtual ULONG GetCallbackNum() const = 0;
-	virtual void SetWindowInfo( window_tt *win );
+	virtual void SetWindowInfo( WINDOW *win );
 	virtual const char *Description();
 };
 
