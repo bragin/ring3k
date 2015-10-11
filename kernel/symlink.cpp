@@ -36,7 +36,7 @@
 
 SYMLINK::SYMLINK( const UNICODE_STRING& us )
 {
-	target.copy( &us );
+	target.Copy( &us );
 }
 
 SYMLINK::~SYMLINK()
@@ -65,7 +65,7 @@ NTSTATUS SYMLINK::Open( OBJECT *&out, OPEN_INFO& info )
 		trace("following %pus\n", &target );
 		SYMLINK_OPENER target_info;
 		target_info.Attributes = info.Attributes;
-		target_info.Path.set( target );
+		target_info.Path.Set( target );
 		//target_info.root = parent;
 
 		OBJECT *target_object;
@@ -84,7 +84,7 @@ NTSTATUS SYMLINK::Open( OBJECT *&out, OPEN_INFO& info )
 		return STATUS_INVALID_PARAMETER;
 	}
 
-	info.Path.set( target );
+	info.Path.Set( target );
 	return OpenRoot( out, info );
 }
 
@@ -123,10 +123,10 @@ NTSTATUS NTAPI NtCreateSymbolicLinkObject(
 	POBJECT_ATTRIBUTES ObjectAttributes,
 	PUNICODE_STRING TargetName )
 {
-	unicode_string_t target;
+	CUNICODE_STRING target;
 	NTSTATUS r;
 
-	r = target.copy_from_user( TargetName );
+	r = target.CopyFromUser( TargetName );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -178,7 +178,7 @@ NTSTATUS NTAPI NtQuerySymbolicLinkObject(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	const unicode_string_t& target = symlink->GetTarget();
+	const CUNICODE_STRING& target = symlink->GetTarget();
 
 	if (name.MaximumLength < target.Length)
 		return STATUS_BUFFER_TOO_SMALL;

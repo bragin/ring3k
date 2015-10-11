@@ -9,7 +9,7 @@ template<class T> NTSTATUS NtOpenObject(
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
 	OBJECT_ATTRIBUTES oa;
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	NTSTATUS r;
 
 	r = CopyFromUser( &oa, ObjectAttributes, sizeof oa );
@@ -18,7 +18,7 @@ template<class T> NTSTATUS NtOpenObject(
 
 	if (oa.ObjectName)
 	{
-		r = us.copy_from_user( oa.ObjectName );
+		r = us.CopyFromUser( oa.ObjectName );
 		if (r != STATUS_SUCCESS)
 			return r;
 		oa.ObjectName = &us;

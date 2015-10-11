@@ -181,7 +181,7 @@ EVENT* CreateSyncEvent( PWSTR name, BOOL InitialState )
 		OBJECT_ATTRIBUTES oa;
 		UNICODE_STRING us;
 		us.Buffer = name;
-		us.Length = strlenW( name ) * 2;
+		us.Length = StrLenW( name ) * 2;
 		us.MaximumLength = 0;
 
 		memset( &oa, 0, sizeof oa );

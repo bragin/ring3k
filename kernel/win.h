@@ -38,8 +38,8 @@ class wndcls_tt : public CLASSINFO
 	friend class LIST_ANCHOR<wndcls_tt, 0>;
 	friend class LIST_ITER<wndcls_tt, 0>;
 	wndcls_entry_tt Entry[1];
-	unicode_string_t name;
-	unicode_string_t menu;
+	CUNICODE_STRING name;
+	CUNICODE_STRING menu;
 	NTWNDCLASSEX info;
 	ULONG refcount;
 public:
@@ -51,7 +51,7 @@ public:
 	{
 		return atomWindowType;
 	}
-	const unicode_string_t& get_name() const
+	const CUNICODE_STRING& get_name() const
 	{
 		return name;
 	}
@@ -77,7 +77,7 @@ public:
 	void operator delete(void *p);
 	window_tt();
 	~window_tt();
-	static window_tt* do_create( unicode_string_t& name, unicode_string_t& cls, NTCREATESTRUCT& cs );
+	static window_tt* do_create( CUNICODE_STRING& name, CUNICODE_STRING& cls, NTCREATESTRUCT& cs );
 	NTSTATUS send( MESSAGE& msg );
 	void *get_wndproc()
 	{

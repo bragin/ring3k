@@ -23,53 +23,53 @@
 
 #include "winternl.h"
 
-class unicode_string_t : public UNICODE_STRING
+class CUNICODE_STRING : public UNICODE_STRING
 {
-	WCHAR *buf;
+	WCHAR *Buf;
 protected:
-	NTSTATUS copy_wstr_from_user();
-	ULONG utf8_to_wchar( const unsigned char *str, ULONG len, WCHAR *buf );
+	NTSTATUS CopyWStrFromUser();
+	ULONG Utf8ToWChar( const unsigned char *str, ULONG len, WCHAR *buf );
 public:
-	explicit unicode_string_t();
-	explicit unicode_string_t( const unicode_string_t& source );
-	explicit unicode_string_t( const UNICODE_STRING& source );
-	void set( PCWSTR str );
-	void set( const wchar_t* str )
+	explicit CUNICODE_STRING();
+	explicit CUNICODE_STRING( const CUNICODE_STRING& source );
+	explicit CUNICODE_STRING( const UNICODE_STRING& source );
+	void Set( PCWSTR str );
+	void Set( const wchar_t* str )
 	{
-		set( (PCWSTR) str );
+		Set( (PCWSTR) str );
 	}
-	void set( UNICODE_STRING& us );
-	NTSTATUS copy_from_user(PUNICODE_STRING ptr);
-	NTSTATUS copy( const UNICODE_STRING* ptr );
-	NTSTATUS copy( const char *ptr );
-	NTSTATUS copy( const unsigned char *ptr );
-	NTSTATUS copy( PCWSTR str );
-	NTSTATUS copy( const wchar_t* str )
+	void Set( UNICODE_STRING& us );
+	NTSTATUS CopyFromUser(PUNICODE_STRING ptr);
+	NTSTATUS Copy( const UNICODE_STRING* ptr );
+	NTSTATUS Copy( const char *ptr );
+	NTSTATUS Copy( const unsigned char *ptr );
+	NTSTATUS Copy( PCWSTR str );
+	NTSTATUS Copy( const wchar_t* str )
 	{
-		return copy( (PCWSTR) str );
+		return Copy( (PCWSTR) str );
 	}
-	bool is_equal( const UNICODE_STRING& ptr ) const;
-	bool compare( PUNICODE_STRING b, BOOLEAN case_insensitive ) const;
-	~unicode_string_t();
-	unicode_string_t& operator=(const unicode_string_t& in);
-	void clear();
-	NTSTATUS copy_wstr_from_user( PWSTR String, ULONG Length );
-	ULONG wchar_to_utf8( char *str, ULONG max );
+	bool IsEqual( const UNICODE_STRING& ptr ) const;
+	bool Compare( PUNICODE_STRING b, BOOLEAN case_insensitive ) const;
+	~CUNICODE_STRING();
+	CUNICODE_STRING& operator=(const CUNICODE_STRING& in);
+	void Clear();
+	NTSTATUS CopyWStrFromUser( PWSTR String, ULONG Length );
+	ULONG WCharToUtf8( char *str, ULONG max );
 };
 
-class object_attributes_t : public OBJECT_ATTRIBUTES
+class COBJECT_ATTRIBUTES : public OBJECT_ATTRIBUTES
 {
-	unicode_string_t us;
+	CUNICODE_STRING us;
 public:
-	explicit object_attributes_t();
-	explicit object_attributes_t( const WCHAR *str );
-	~object_attributes_t();
-	NTSTATUS copy_from_user( POBJECT_ATTRIBUTES oa );
-	object_attributes_t& operator=(const object_attributes_t& in);
+	explicit COBJECT_ATTRIBUTES();
+	explicit COBJECT_ATTRIBUTES( const WCHAR *str );
+	~COBJECT_ATTRIBUTES();
+	NTSTATUS CopyFromUser( POBJECT_ATTRIBUTES oa );
+	COBJECT_ATTRIBUTES& operator=(const COBJECT_ATTRIBUTES& in);
 };
 
-UINT strlenW( LPCWSTR str );
-LPWSTR strcpyW( LPWSTR dest, LPCWSTR src );
-LPWSTR strcatW( LPWSTR dest, LPCWSTR src );
+UINT StrLenW( LPCWSTR str );
+LPWSTR StrCpyW( LPWSTR dest, LPCWSTR src );
+LPWSTR StrCatW( LPWSTR dest, LPCWSTR src );
 
 #endif // __UNICODE_H__

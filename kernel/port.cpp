@@ -824,7 +824,7 @@ NTSTATUS NTAPI NtCreatePort(
 	ULONG MaxDataLength,
 	PULONG Reserved )
 {
-	object_attributes_t oa;
+	COBJECT_ATTRIBUTES oa;
 	NTSTATUS r;
 	OBJECT *p = NULL;
 
@@ -834,7 +834,7 @@ NTSTATUS NTAPI NtCreatePort(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = oa.copy_from_user( ObjectAttributes );
+	r = oa.CopyFromUser( ObjectAttributes );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -916,7 +916,7 @@ NTSTATUS NTAPI NtSecureConnectPort(
 	PVOID ConnectionInfo,
 	PULONG ConnectionInfoLength )
 {
-	unicode_string_t name;
+	CUNICODE_STRING name;
 	NTSTATUS r;
 
 	trace("%p %p %p %p %p %p %p %p %p\n", ClientPortHandle, ServerPortName,
@@ -954,7 +954,7 @@ NTSTATUS NTAPI NtSecureConnectPort(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = name.copy_from_user( ServerPortName );
+	r = name.CopyFromUser( ServerPortName );
 	if (r < STATUS_SUCCESS)
 		return r;
 

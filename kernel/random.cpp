@@ -68,8 +68,8 @@ NTSTATUS RANDOM_DEV_FACTORY::AllocObject(OBJECT** obj)
 void InitRandom()
 {
 	RANDOM_DEV_FACTORY factory;
-	unicode_string_t rand;
-	rand.copy("\\Device\\KsecDD");
+	CUNICODE_STRING rand;
+	rand.Copy("\\Device\\KsecDD");
 	OBJECT *obj = 0;
 	NTSTATUS r;
 	r = factory.CreateKernel( obj, rand );

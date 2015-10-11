@@ -53,7 +53,7 @@ typedef LIST_ELEMENT<REGKEY> REGKEY_ELEMENT;
 struct REGVAL
 {
 	REGVAL_ELEMENT Entry[1];
-	unicode_string_t Name;
+	CUNICODE_STRING Name;
 	ULONG Type;
 	ULONG Size;
 	BYTE *Data;
@@ -65,8 +65,8 @@ public:
 struct REGKEY : public OBJECT
 {
 	REGKEY *Parent;
-	unicode_string_t Name;
-	unicode_string_t Cls;
+	CUNICODE_STRING Name;
+	CUNICODE_STRING Cls;
 	REGKEY_ELEMENT Entry[1];
 	REGKEY_ANCHOR Children;
 	REGVAL_ANCHOR Values;
@@ -114,7 +114,7 @@ BOOLEAN UnicodeStringEqual( PUNICODE_STRING a, PUNICODE_STRING b, BOOLEAN case_i
 REGKEY::REGKEY( REGKEY *_parent, UNICODE_STRING *_name ) :
 	Parent( _parent)
 {
-	Name.copy( _name );
+	Name.Copy( _name );
 	if (Parent)
 		Parent->Children.Append( this );
 }
@@ -231,7 +231,7 @@ REGVAL::REGVAL( UNICODE_STRING *_name, ULONG _type, ULONG _size ) :
 	Type(_type),
 	Size(_size)
 {
-	Name.copy(_name);
+	Name.Copy(_name);
 	Data = new BYTE[Size];
 }
 
@@ -515,7 +515,7 @@ NTSTATUS NTAPI NtCreateKey(
 	ULONG CreateOptions,
 	PULONG Disposition )
 {
-	object_attributes_t oa;
+	COBJECT_ATTRIBUTES oa;
 	NTSTATUS r;
 	REGKEY *key = NULL;
 
@@ -529,17 +529,17 @@ NTSTATUS NTAPI NtCreateKey(
 			return r;
 	}
 
-	r = oa.copy_from_user( ObjectAttributes );
+	r = oa.CopyFromUser( ObjectAttributes );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	trace("len %08lx root %p attr %08lx %pus\n",
 		  oa.Length, oa.RootDirectory, oa.Attributes, oa.ObjectName);
 
-	unicode_string_t cls;
+	CUNICODE_STRING cls;
 	if (Class)
 	{
-		r = cls.copy_from_user( Class );
+		r = cls.CopyFromUser( Class );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -553,7 +553,7 @@ NTSTATUS NTAPI NtCreateKey(
 			ULONG dispos = opened_existing ? REG_OPENED_EXISTING_KEY : REG_CREATED_NEW_KEY;
 			CopyToUser( Disposition, &dispos, sizeof *Disposition );
 		}
-		key->Cls.copy( &cls );
+		key->Cls.Copy( &cls );
 		r = AllocUserHandle( key, DesiredAccess, KeyHandle );
 		//release( event );
 	}
@@ -566,7 +566,7 @@ NTSTATUS NTAPI NtOpenKey(
 	POBJECT_ATTRIBUTES ObjectAttributes )
 {
 	OBJECT_ATTRIBUTES oa;
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	NTSTATUS r;
 	REGKEY *key = NULL;
 
@@ -577,7 +577,7 @@ NTSTATUS NTAPI NtOpenKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = us.copy_from_user( oa.ObjectName );
+	r = us.CopyFromUser( oa.ObjectName );
 	if (r < STATUS_SUCCESS)
 		return r;
 	oa.ObjectName = &us;
@@ -636,7 +636,7 @@ NTSTATUS NTAPI NtQueryValueKey(
 	ULONG KeyValueInformationLength,
 	PULONG ResultLength )
 {
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	NTSTATUS r;
 	ULONG len;
 	REGKEY *key;
@@ -653,7 +653,7 @@ NTSTATUS NTAPI NtQueryValueKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = us.copy_from_user( ValueName );
+	r = us.CopyFromUser( ValueName );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -683,7 +683,7 @@ NTSTATUS NTAPI NtSetValueKey(
 	PVOID Data,
 	ULONG DataSize )
 {
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	REGKEY *key;
 	NTSTATUS r;
 
@@ -693,7 +693,7 @@ NTSTATUS NTAPI NtSetValueKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = us.copy_from_user( ValueName );
+	r = us.CopyFromUser( ValueName );
 	if (r == STATUS_SUCCESS)
 	{
 		REGVAL *val;
@@ -759,13 +759,13 @@ NTSTATUS NTAPI NtDeleteValueKey(
 	HANDLE KeyHandle,
 	PUNICODE_STRING ValueName )
 {
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	NTSTATUS r;
 	REGKEY *key;
 
 	trace("%p %p\n", KeyHandle, ValueName);
 
-	r = us.copy_from_user( ValueName );
+	r = us.CopyFromUser( ValueName );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1029,7 +1029,7 @@ NTSTATUS REGKEY::Query(
 	return r;
 }
 
-REGKEY *BuildKey( REGKEY *root, unicode_string_t *name )
+REGKEY *BuildKey( REGKEY *root, CUNICODE_STRING *name )
 {
 	REGKEY *key;
 
@@ -1146,7 +1146,7 @@ void LoadRegKey( REGKEY *parent, xmlNode *node )
 	xmlChar *contents = NULL;
 	const char *type = NULL;
 	const char *keycls = NULL;
-	unicode_string_t name, data;
+	CUNICODE_STRING name, data;
 	xmlNode *n;
 	REGVAL *val;
 	ULONG size;
@@ -1168,7 +1168,7 @@ void LoadRegKey( REGKEY *parent, xmlNode *node )
 	if (!contents)
 		return;
 
-	name.copy( contents );
+	name.Copy( contents );
 
 	switch (node->name[0])
 	{
@@ -1199,7 +1199,7 @@ void LoadRegKey( REGKEY *parent, xmlNode *node )
 		if (type == NULL)
 			type = "1";
 
-		data.copy( xmlNodeGetContent( node ) );
+		data.Copy( xmlNodeGetContent( node ) );
 		val = new REGVAL( &name, atoi(type), data.Length + 2 );
 		memcpy( val->Data, data.Buffer, data.Length );
 		memset( val->Data + data.Length, 0, 2 );
@@ -1208,7 +1208,7 @@ void LoadRegKey( REGKEY *parent, xmlNode *node )
 
 	case 'k': // key
 		key = BuildKey( parent, &name );
-		key->Cls.copy( keycls );
+		key->Cls.Copy( keycls );
 		for (n = node->children; n; n = n->next)
 			LoadRegKey( key, n );
 

@@ -49,9 +49,9 @@
 static void CopyUStringToBlock( RTL_USER_PROCESS_PARAMETERS* p,
 								   UNICODE_STRING *ustr, LPWSTR buffer, LPCWSTR str, ULONG maxlen )
 {
-	UINT len = strlenW( str );
+	UINT len = StrLenW( str );
 	assert( len < maxlen );
-	strcpyW( buffer, str );
+	StrCpyW( buffer, str );
 	ustr->Buffer = (WCHAR*)((BYTE*)buffer - (BYTE*) p);
 	ustr->Length = len*2;
 	ustr->MaximumLength = maxlen*2;
@@ -138,12 +138,12 @@ NTSTATUS MapLocaleData( ADDRESS_SPACE *vm, const char *name, void **addr )
 	CFILE *file = 0;
 	NTSTATUS r;
 	BYTE *data = 0;
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	char path[0x100];
 
 	strcpy( path, "\\??\\c:\\winnt\\system32\\" );
 	strcat( path, name );
-	us.copy( path );
+	us.Copy( path );
 
 	r = OpenFile( file, us );
 	if (r < STATUS_SUCCESS)
@@ -355,9 +355,9 @@ NTSTATUS PROCESS::CreateExePPB( RTL_USER_PROCESS_PARAMETERS **pparams, UNICODE_S
 		len = 0;
 	image[ len ] = 0;
 
-	strcpyW( cmd, (WCHAR*) L"\"" );
-	strcatW( cmd, image );
-	strcatW( cmd, (WCHAR*) L"\"" );
+	StrCpyW( cmd, (WCHAR*) L"\"" );
+	StrCatW( cmd, image );
+	StrCatW( cmd, (WCHAR*) L"\"" );
 
 	r = CreateParameters( pparams, image, (WCHAR*) L"c:\\", (WCHAR*) L"c:\\", cmd, (WCHAR*) L"", (WCHAR*) L"WinSta0\\Default");
 
@@ -573,7 +573,7 @@ NTSTATUS NTAPI NtOpenProcess(
 	PCLIENT_ID ClientId)
 {
 	OBJECT_ATTRIBUTES oa;
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	OBJECT *process = NULL;
 	CLIENT_ID id;
 	NTSTATUS r;
@@ -586,7 +586,7 @@ NTSTATUS NTAPI NtOpenProcess(
 
 	if (oa.ObjectName)
 	{
-		r = us.copy_from_user( oa.ObjectName );
+		r = us.CopyFromUser( oa.ObjectName );
 		if (r < STATUS_SUCCESS)
 			return r;
 		oa.ObjectName = &us;

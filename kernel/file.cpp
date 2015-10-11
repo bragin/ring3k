@@ -231,7 +231,7 @@ class DIRECTORY_ENTRY
 {
 public:
 	DIRLIST_ELEMENT Entry[1];
-	unicode_string_t name;
+	CUNICODE_STRING name;
 	struct stat st;
 };
 
@@ -240,7 +240,7 @@ class DIRECTORY : public CFILE
 	int count;
 	DIRECTORY_ENTRY *ptr;
 	DIRLIST entries;
-	unicode_string_t mask;
+	CUNICODE_STRING mask;
 protected:
 	void Reset();
 	void AddEntry(const char *name);
@@ -254,10 +254,10 @@ public:
 	NTSTATUS Write( PVOID Buffer, ULONG Length, ULONG *bytes_read );
 	virtual NTSTATUS QueryInformation( FILE_ATTRIBUTE_TAG_INFORMATION& info );
 	DIRECTORY_ENTRY* GetNext();
-	bool Match(unicode_string_t &name) const;
+	bool Match(CUNICODE_STRING &name) const;
 	void ScanDir();
 	bool IsFirstScan() const;
-	NTSTATUS SetMask(unicode_string_t *mask);
+	NTSTATUS SetMask(CUNICODE_STRING *mask);
 	int GetNumEntries() const;
 	virtual NTSTATUS Open( OBJECT *&out, OPEN_INFO& info );
 	NTSTATUS OpenFile( CFILE *&file, UNICODE_STRING& path, ULONG Attributes,
@@ -397,7 +397,7 @@ void DIRECTORY::Reset()
 	}
 }
 
-bool DIRECTORY::Match(unicode_string_t &name) const
+bool DIRECTORY::Match(CUNICODE_STRING &name) const
 {
 	if (mask.Length == 0)
 		return true;
@@ -471,7 +471,7 @@ void DIRECTORY::AddEntry(const char *name)
 {
 	trace("adding dir entry: %s\n", name);
 	DIRECTORY_ENTRY *ent = new DIRECTORY_ENTRY;
-	ent->name.copy(name);
+	ent->name.Copy(name);
 	/* FIXME: Should symlinks be deferenced?
 	   AT_SYMLINK_NOFOLLOW */
 	if (0 != Fstatat(GetFD(), name, &ent->st, 0))
@@ -539,9 +539,9 @@ void DIRECTORY::ScanDir()
 	} while (0);
 }
 
-NTSTATUS DIRECTORY::SetMask(unicode_string_t *string)
+NTSTATUS DIRECTORY::SetMask(CUNICODE_STRING *string)
 {
-	mask.copy(string);
+	mask.Copy(string);
 	return STATUS_SUCCESS;
 }
 
@@ -779,7 +779,7 @@ NTSTATUS DIRECTORY::Open( OBJECT *&out, OPEN_INFO& info )
 NTSTATUS OpenFile( CFILE *&file, UNICODE_STRING& name )
 {
 	FILE_CREATE_INFO info( 0, 0, FILE_OPEN );
-	info.Path.set( name );
+	info.Path.Set( name );
 	info.Attributes = OBJ_CASE_INSENSITIVE;
 	OBJECT *obj = 0;
 	NTSTATUS r = OpenRoot( obj, info );
@@ -796,8 +796,8 @@ void InitDrives()
 	if (fd < 0)
 		Die("drive does not exist");
 	DIRECTORY_FACTORY factory( fd );
-	unicode_string_t dirname;
-	dirname.copy( L"\\Device\\HarddiskVolume1" );
+	CUNICODE_STRING dirname;
+	dirname.Copy( L"\\Device\\HarddiskVolume1" );
 	OBJECT *obj = 0;
 	NTSTATUS r;
 	r = factory.CreateKernel( obj, dirname );
@@ -807,8 +807,8 @@ void InitDrives()
 		Die("fatal\n");
 	}
 
-	unicode_string_t c_link;
-	c_link.set( L"\\??\\c:" );
+	CUNICODE_STRING c_link;
+	c_link.Set( L"\\??\\c:" );
 	r = CreateSymlink( c_link, dirname );
 	if (r < STATUS_SUCCESS)
 	{
@@ -830,11 +830,11 @@ NTSTATUS NTAPI NtCreateFile(
 	PVOID EaBuffer,
 	ULONG EaLength )
 {
-	object_attributes_t oa;
+	COBJECT_ATTRIBUTES oa;
 	IO_STATUS_BLOCK iosb;
 	NTSTATUS r;
 
-	r = oa.copy_from_user( ObjectAttributes );
+	r = oa.CopyFromUser( ObjectAttributes );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -857,7 +857,7 @@ NTSTATUS NTAPI NtCreateFile(
 
 	FILE_CREATE_INFO info( Attributes, CreateOptions, CreateDisposition );
 
-	info.Path.set( *oa.ObjectName );
+	info.Path.Set( *oa.ObjectName );
 	info.Attributes = oa.Attributes;
 
 	OBJECT *obj = 0;
@@ -998,13 +998,13 @@ NTSTATUS NTAPI NtQueryAttributesFile(
 	POBJECT_ATTRIBUTES ObjectAttributes,
 	PFILE_BASIC_INFORMATION FileInformation )
 {
-	object_attributes_t oa;
+	COBJECT_ATTRIBUTES oa;
 	NTSTATUS r;
 	FILE_BASIC_INFORMATION info;
 
 	trace("%p %p\n", ObjectAttributes, FileInformation);
 
-	r = oa.copy_from_user( ObjectAttributes );
+	r = oa.CopyFromUser( ObjectAttributes );
 	if (r)
 		return r;
 
@@ -1017,7 +1017,7 @@ NTSTATUS NTAPI NtQueryAttributesFile(
 	// FIXME: use oa.RootDirectory
 	OBJECT *obj = 0;
 	FILE_CREATE_INFO open_info( 0, 0, FILE_OPEN );
-	open_info.Path.set( *oa.ObjectName );
+	open_info.Path.Set( *oa.ObjectName );
 	open_info.Attributes = oa.Attributes;
 	r = OpenRoot( obj, open_info );
 	if (r < STATUS_SUCCESS)
@@ -1092,12 +1092,12 @@ NTSTATUS NTAPI NtReadFile(
 NTSTATUS NTAPI NtDeleteFile(
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
-	object_attributes_t oa;
+	COBJECT_ATTRIBUTES oa;
 	NTSTATUS r;
 
 	trace("%p\n", ObjectAttributes);
 
-	r = oa.copy_from_user( ObjectAttributes );
+	r = oa.CopyFromUser( ObjectAttributes );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -1110,7 +1110,7 @@ NTSTATUS NTAPI NtDeleteFile(
 	// FIXME: use oa.RootDirectory
 	OBJECT *obj = 0;
 	FILE_CREATE_INFO open_info( 0, 0, FILE_OPEN );
-	open_info.Path.set( *oa.ObjectName );
+	open_info.Path.Set( *oa.ObjectName );
 	open_info.Attributes = oa.Attributes;
 	r = OpenRoot( obj, open_info );
 	if (r < STATUS_SUCCESS)
@@ -1332,10 +1332,10 @@ NTSTATUS NTAPI NtQueryDirectoryFile(
 		return r;
 
 	// default (empty) mask matches all...
-	unicode_string_t mask;
+	CUNICODE_STRING mask;
 	if (FileName)
 	{
-		r = mask.copy_from_user( FileName );
+		r = mask.CopyFromUser( FileName );
 		if (r < STATUS_SUCCESS)
 			return r;
 
@@ -1399,10 +1399,10 @@ NTSTATUS NTAPI NtQueryFullAttributesFile(
 	POBJECT_ATTRIBUTES ObjectAttributes,
 	PFILE_NETWORK_OPEN_INFORMATION FileInformation)
 {
-	object_attributes_t oa;
+	COBJECT_ATTRIBUTES oa;
 	NTSTATUS r;
 
-	r = oa.copy_from_user( ObjectAttributes );
+	r = oa.CopyFromUser( ObjectAttributes );
 	if (r < STATUS_SUCCESS)
 		return r;
 

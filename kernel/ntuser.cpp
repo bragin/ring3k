@@ -764,14 +764,14 @@ HANDLE NTAPI NtUserFindExistingCursorIcon(PUNICODE_STRING Library, PUNICODE_STRI
 {
 	ULONG index;
 
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	NTSTATUS r;
 
-	r = us.copy_from_user( Library );
+	r = us.CopyFromUser( Library );
 	if (r == STATUS_SUCCESS)
 		trace("Library=\'%pus\'\n", &us);
 
-	r = us.copy_from_user( str2 );
+	r = us.CopyFromUser( str2 );
 	if (r == STATUS_SUCCESS)
 		trace("str2=\'%pus\'\n", &us);
 
@@ -847,7 +847,7 @@ wndcls_tt* wndcls_tt::from_name( const UNICODE_STRING& wndcls_name )
 	for (wndcls_iter_tt i(wndcls_list); i; i.Next())
 	{
 		wndcls_tt *cls = i;
-		if (cls->get_name().is_equal( wndcls_name ))
+		if (cls->get_name().IsEqual( wndcls_name ))
 			return cls;
 	}
 	return NULL;
@@ -871,8 +871,8 @@ ATOM NTAPI NtUserRegisterClassExWOW(
 	if (clsinfo.Size != sizeof clsinfo)
 		return 0;
 
-	unicode_string_t clsstr;
-	r = clsstr.copy_from_user( ClassName );
+	CUNICODE_STRING clsstr;
+	r = clsstr.CopyFromUser( ClassName );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -882,8 +882,8 @@ ATOM NTAPI NtUserRegisterClassExWOW(
 	if (r < STATUS_SUCCESS)
 		return 0;
 
-	unicode_string_t menuname;
-	r = menuname.copy_from_user( menu_strings.name_us );
+	CUNICODE_STRING menuname;
+	r = menuname.CopyFromUser( menu_strings.name_us );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -936,8 +936,8 @@ HANDLE NTAPI NtUserCreateWindowStation(
 	if (r < STATUS_SUCCESS)
 		return 0;
 
-	unicode_string_t us;
-	r = us.copy_from_user( oa.ObjectName );
+	CUNICODE_STRING us;
+	r = us.CopyFromUser( oa.ObjectName );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -954,9 +954,9 @@ HANDLE NTAPI NtUserCreateDesktop(
 	ACCESS_MASK DesiredAccess)
 {
 	// print out the name
-	object_attributes_t oa;
+	COBJECT_ATTRIBUTES oa;
 	NTSTATUS r;
-	r = oa.copy_from_user( DesktopName );
+	r = oa.CopyFromUser( DesktopName );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -968,9 +968,9 @@ HANDLE NTAPI NtUserCreateDesktop(
 
 HANDLE NTAPI NtUserOpenDesktop(POBJECT_ATTRIBUTES DesktopName, ULONG, ACCESS_MASK DesiredAccess)
 {
-	object_attributes_t oa;
+	COBJECT_ATTRIBUTES oa;
 	NTSTATUS r;
-	r = oa.copy_from_user( DesktopName );
+	r = oa.CopyFromUser( DesktopName );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -1046,9 +1046,9 @@ ULONG message_no = 0xc001;
 ULONG NTAPI NtUserRegisterWindowMessage(PUNICODE_STRING Message)
 {
 	trace("\n");
-	unicode_string_t us;
+	CUNICODE_STRING us;
 
-	NTSTATUS r = us.copy_from_user( Message );
+	NTSTATUS r = us.CopyFromUser( Message );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -1057,7 +1057,7 @@ ULONG NTAPI NtUserRegisterWindowMessage(PUNICODE_STRING Message)
 	return message_no++;
 }
 
-class user32_unicode_string_t : public unicode_string_t
+class user32_unicode_string_t : public CUNICODE_STRING
 {
 public:
 	NTSTATUS copy_from_user( PUSER32_UNICODE_STRING String );
@@ -1069,7 +1069,7 @@ NTSTATUS user32_unicode_string_t::copy_from_user( PUSER32_UNICODE_STRING String 
 	NTSTATUS r = ::CopyFromUser( &str, String, sizeof str );
 	if (r < STATUS_SUCCESS)
 		return r;
-	return copy_wstr_from_user( str.Buffer, str.Length );
+	return CopyWStrFromUser( str.Buffer, str.Length );
 }
 
 window_tt::window_tt()
@@ -1268,7 +1268,7 @@ HANDLE NTAPI NtUserCreateWindowEx(
 	return win->handle;
 }
 
-window_tt* window_tt::do_create( unicode_string_t& name, unicode_string_t& cls, NTCREATESTRUCT& cs )
+window_tt* window_tt::do_create( CUNICODE_STRING& name, CUNICODE_STRING& cls, NTCREATESTRUCT& cs )
 {
 	trace("window = %pus class = %pus\n", &name, &cls );
 
@@ -1538,8 +1538,8 @@ LONG NTAPI NtUserGetClassInfo(
 	PULONG Length,
 	ULONG Unknown)
 {
-	unicode_string_t class_name;
-	NTSTATUS r = class_name.copy_from_user( ClassName );
+	CUNICODE_STRING class_name;
+	NTSTATUS r = class_name.CopyFromUser( ClassName );
 	if (r < STATUS_SUCCESS)
 		return r;
 	trace("%pus\n", &class_name );

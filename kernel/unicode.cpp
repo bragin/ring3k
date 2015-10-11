@@ -28,21 +28,21 @@
 #include "ntcall.h"
 #include "debug.h"
 
-UINT strlenW(LPCWSTR str)
+UINT StrLenW(LPCWSTR str)
 {
 	UINT n = 0;
 	while(str[n]) n++;
 	return n;
 }
 
-LPWSTR strcpyW( LPWSTR dest, LPCWSTR src )
+LPWSTR StrCpyW( LPWSTR dest, LPCWSTR src )
 {
 	while ((*dest++ = *src++))
 		;
 	return dest;
 }
 
-LPWSTR strcatW( LPWSTR dest, LPCWSTR src )
+LPWSTR StrCatW( LPWSTR dest, LPCWSTR src )
 {
 	while (*dest) dest++;
 	while ((*dest++ = *src++))
@@ -50,101 +50,101 @@ LPWSTR strcatW( LPWSTR dest, LPCWSTR src )
 	return dest;
 }
 
-unicode_string_t::unicode_string_t() :
-	buf(0)
+CUNICODE_STRING::CUNICODE_STRING() :
+	Buf(0)
 {
 	Buffer = 0;
 	Length = 0;
 	MaximumLength = 0;
 }
 
-unicode_string_t::unicode_string_t( const UNICODE_STRING& source ) :
-	buf(0)
+CUNICODE_STRING::CUNICODE_STRING( const UNICODE_STRING& source ) :
+	Buf(0)
 {
 	Buffer = 0;
 	Length = 0;
 	MaximumLength = 0;
-	assert (STATUS_SUCCESS == copy( &source ));
+	assert (STATUS_SUCCESS == Copy( &source ));
 }
 
-unicode_string_t::unicode_string_t( const unicode_string_t& source ) :
-	buf(0)
+CUNICODE_STRING::CUNICODE_STRING( const CUNICODE_STRING& source ) :
+	Buf(0)
 {
 	Buffer = 0;
 	Length = 0;
 	MaximumLength = 0;
-	assert (STATUS_SUCCESS == copy( &source ));
+	assert (STATUS_SUCCESS == Copy( &source ));
 }
 
-void unicode_string_t::set( UNICODE_STRING& us )
+void CUNICODE_STRING::Set( UNICODE_STRING& us )
 {
-	clear();
+	Clear();
 	Buffer = us.Buffer;
 	Length = us.Length;
 	MaximumLength = us.MaximumLength;
 }
 
-void unicode_string_t::set( PCWSTR str )
+void CUNICODE_STRING::Set( PCWSTR str )
 {
-	clear();
+	Clear();
 	Buffer = const_cast<PWSTR>( str );
-	Length = strlenW( str ) * 2;
+	Length = StrLenW( str ) * 2;
 	MaximumLength = 0;
 }
 
-NTSTATUS unicode_string_t::copy_from_user(PUNICODE_STRING ptr)
+NTSTATUS CUNICODE_STRING::CopyFromUser(PUNICODE_STRING ptr)
 {
 	NTSTATUS r = ::CopyFromUser( static_cast<UNICODE_STRING*>(this), ptr, sizeof (UNICODE_STRING) );
 	if (r < STATUS_SUCCESS)
 		return r;
-	return copy_wstr_from_user();
+	return CopyWStrFromUser();
 }
 
-NTSTATUS unicode_string_t::copy_wstr_from_user()
+NTSTATUS CUNICODE_STRING::CopyWStrFromUser()
 {
-	if (buf)
-		delete[] buf;
-	buf = 0;
+	if (Buf)
+		delete[] Buf;
+	Buf = 0;
 	if (Length&1)
 		return STATUS_INVALID_PARAMETER;
 	if (Buffer)
 	{
-		buf = new WCHAR[ Length/2 ];
-		if (!buf)
+		Buf = new WCHAR[ Length/2 ];
+		if (!Buf)
 			return STATUS_NO_MEMORY;
-		NTSTATUS r = ::CopyFromUser( buf, Buffer, Length );
+		NTSTATUS r = ::CopyFromUser( Buf, Buffer, Length );
 		if (r < STATUS_SUCCESS)
 		{
-			delete[] buf;
-			buf = 0;
+			delete[] Buf;
+			Buf = 0;
 			return r;
 		}
-		Buffer = buf;
+		Buffer = Buf;
 	}
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS unicode_string_t::copy_wstr_from_user( PWSTR String, ULONG _Length )
+NTSTATUS CUNICODE_STRING::CopyWStrFromUser( PWSTR String, ULONG _Length )
 {
 	Buffer = String;
 	Length = _Length;
-	return copy_wstr_from_user();
+	return CopyWStrFromUser();
 }
 
-NTSTATUS unicode_string_t::copy( const UNICODE_STRING* ptr )
+NTSTATUS CUNICODE_STRING::Copy( const UNICODE_STRING* ptr )
 {
-	clear();
+	Clear();
 	Length = ptr->Length;
 	if (Length&1)
 		return STATUS_INVALID_PARAMETER;
 	MaximumLength = ptr->MaximumLength;
 	if (ptr->Buffer)
 	{
-		buf = new WCHAR[ Length/2 ];
-		if (!buf)
+		Buf = new WCHAR[ Length/2 ];
+		if (!Buf)
 			return STATUS_NO_MEMORY;
-		memcpy( buf, ptr->Buffer, Length );
-		Buffer = buf;
+		memcpy( Buf, ptr->Buffer, Length );
+		Buffer = Buf;
 	}
 	else
 		Buffer = 0;
@@ -152,7 +152,7 @@ NTSTATUS unicode_string_t::copy( const UNICODE_STRING* ptr )
 }
 
 // returned size include nul terminator
-ULONG unicode_string_t::utf8_to_wchar( const unsigned char *str, ULONG len, WCHAR *buf )
+ULONG CUNICODE_STRING::Utf8ToWChar( const unsigned char *str, ULONG len, WCHAR *buf )
 {
 	unsigned int i, n;
 
@@ -198,7 +198,7 @@ ULONG unicode_string_t::utf8_to_wchar( const unsigned char *str, ULONG len, WCHA
 	return n;
 }
 
-ULONG unicode_string_t::wchar_to_utf8( char *str, ULONG max )
+ULONG CUNICODE_STRING::WCharToUtf8( char *str, ULONG max )
 {
 	ULONG n = 0;
 	for (ULONG i=0; i<Length/2; i++)
@@ -247,55 +247,55 @@ ULONG unicode_string_t::wchar_to_utf8( char *str, ULONG max )
 	return n;
 }
 
-NTSTATUS unicode_string_t::copy( const char *str )
+NTSTATUS CUNICODE_STRING::Copy( const char *str )
 {
 	const unsigned char *ustr = reinterpret_cast<const unsigned char*>(str);
-	return copy( ustr );
+	return Copy( ustr );
 }
 
-void unicode_string_t::clear()
+void CUNICODE_STRING::Clear()
 {
-	if (buf)
-		delete[] buf;
-	buf = 0;
+	if (Buf)
+		delete[] Buf;
+	Buf = 0;
 	Length = 0;
 	MaximumLength = 0;
 	Buffer = 0;
 }
 
-NTSTATUS unicode_string_t::copy( const unsigned char *ustr )
+NTSTATUS CUNICODE_STRING::Copy( const unsigned char *ustr )
 {
-	clear();
+	Clear();
 	if (!ustr)
 		return STATUS_SUCCESS;
-	ULONG len = utf8_to_wchar( ustr, 0, 0 );
+	ULONG len = Utf8ToWChar( ustr, 0, 0 );
 	Length = len * sizeof (WCHAR);
-	buf = new WCHAR[ len + 1 ];
-	if (!buf)
+	Buf = new WCHAR[ len + 1 ];
+	if (!Buf)
 		return STATUS_NO_MEMORY;
-	utf8_to_wchar( ustr, len, buf );
-	Buffer = buf;
+	Utf8ToWChar( ustr, len, Buf );
+	Buffer = Buf;
 	MaximumLength = 0;
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS unicode_string_t::copy( PCWSTR str )
+NTSTATUS CUNICODE_STRING::Copy( PCWSTR str )
 {
-	clear();
+	Clear();
 	ULONG n = 0;
 	while (str[n])
 		n++;
-	buf = new WCHAR[n];
-	if (!buf)
+	Buf = new WCHAR[n];
+	if (!Buf)
 		return STATUS_NO_MEMORY;
 	Length = n*2;
 	MaximumLength = Length;
-	Buffer = buf;
+	Buffer = Buf;
 	memcpy( Buffer, str, Length );
 	return STATUS_SUCCESS;
 }
 
-bool unicode_string_t::is_equal( const UNICODE_STRING& ptr ) const
+bool CUNICODE_STRING::IsEqual( const UNICODE_STRING& ptr ) const
 {
 	if (Length != ptr.Length)
 		return false;
@@ -303,25 +303,25 @@ bool unicode_string_t::is_equal( const UNICODE_STRING& ptr ) const
 	return !memcmp(ptr.Buffer, Buffer, Length);
 }
 
-unicode_string_t::~unicode_string_t()
+CUNICODE_STRING::~CUNICODE_STRING()
 {
-	clear();
+	Clear();
 }
 
-unicode_string_t& unicode_string_t::operator=(const unicode_string_t& in)
+CUNICODE_STRING& CUNICODE_STRING::operator=(const CUNICODE_STRING& in)
 {
 	// free the old buffer
-	if (buf)
-		delete[] buf;
+	if (Buf)
+		delete[] Buf;
 
 	// copy the other string
 	Length = in.Length;
 	MaximumLength = in.MaximumLength;
-	if (in.buf)
+	if (in.Buf)
 	{
-		buf = new WCHAR[ Length ];
-		memcpy( buf, in.buf, Length );
-		Buffer = buf;
+		Buf = new WCHAR[ Length ];
+		memcpy( Buf, in.Buf, Length );
+		Buffer = Buf;
 	}
 	else
 		Buffer = 0;
@@ -329,7 +329,7 @@ unicode_string_t& unicode_string_t::operator=(const unicode_string_t& in)
 }
 
 // returns TRUE if strings are the same
-bool unicode_string_t::compare( PUNICODE_STRING b, BOOLEAN case_insensitive ) const
+bool CUNICODE_STRING::Compare( PUNICODE_STRING b, BOOLEAN case_insensitive ) const
 {
 	if (Length != b->Length)
 		return FALSE;
@@ -349,17 +349,17 @@ bool unicode_string_t::compare( PUNICODE_STRING b, BOOLEAN case_insensitive ) co
 	return TRUE;
 }
 
-object_attributes_t::object_attributes_t()
+COBJECT_ATTRIBUTES::COBJECT_ATTRIBUTES()
 {
 	POBJECT_ATTRIBUTES oa = static_cast<OBJECT_ATTRIBUTES*>( this );
 	memset( oa, 0, sizeof *oa );
 }
 
-object_attributes_t::~object_attributes_t()
+COBJECT_ATTRIBUTES::~COBJECT_ATTRIBUTES()
 {
 }
 
-NTSTATUS object_attributes_t::copy_from_user( POBJECT_ATTRIBUTES oa )
+NTSTATUS COBJECT_ATTRIBUTES::CopyFromUser( POBJECT_ATTRIBUTES oa )
 {
 	NTSTATUS r;
 
@@ -372,7 +372,7 @@ NTSTATUS object_attributes_t::copy_from_user( POBJECT_ATTRIBUTES oa )
 
 	if (ObjectName)
 	{
-		r = us.copy_from_user( ObjectName );
+		r = us.CopyFromUser( ObjectName );
 		if (r == STATUS_INVALID_PARAMETER)
 			r = STATUS_OBJECT_NAME_INVALID;
 		if (r < STATUS_SUCCESS)
@@ -383,7 +383,7 @@ NTSTATUS object_attributes_t::copy_from_user( POBJECT_ATTRIBUTES oa )
 	return STATUS_SUCCESS;
 }
 
-object_attributes_t& object_attributes_t::operator=(const object_attributes_t& in)
+COBJECT_ATTRIBUTES& COBJECT_ATTRIBUTES::operator=(const COBJECT_ATTRIBUTES& in)
 {
 	Length = in.Length;
 	RootDirectory = in.RootDirectory;
@@ -400,9 +400,9 @@ object_attributes_t& object_attributes_t::operator=(const object_attributes_t& i
 	return *this;
 }
 
-object_attributes_t::object_attributes_t( const WCHAR *str )
+COBJECT_ATTRIBUTES::COBJECT_ATTRIBUTES( const WCHAR *str )
 {
-	us.copy( str );
+	us.Copy( str );
 	Length = sizeof (OBJECT_ATTRIBUTES);
 	RootDirectory = 0;
 	Attributes = OBJ_CASE_INSENSITIVE;

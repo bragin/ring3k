@@ -202,7 +202,7 @@ int SECURITY_REFERENCE_MONITOR::Run()
 	//trace("starting kthread %p p = %p\n", this, process);
 	Current = static_cast<THREAD*>( this );
 	//trace("current->process = %p\n", current->process);
-	object_attributes_t rm_oa( (PCWSTR) L"\\SeRmCommandPort" );
+	COBJECT_ATTRIBUTES rm_oa( (PCWSTR) L"\\SeRmCommandPort" );
 	HANDLE port = 0, client = 0;
 	NTSTATUS r = NtCreatePort( &port, &rm_oa, 0x100, 0x100, 0 );
 	if (r == STATUS_THREAD_IS_TERMINATING)
@@ -231,8 +231,8 @@ int SECURITY_REFERENCE_MONITOR::Run()
 	if (r < STATUS_SUCCESS)
 		Die("NtCompleteConnectPort(SeRmCommandPort) failed r = %08lx\n", r);
 
-	unicode_string_t lsa;
-	lsa.copy( (PCWSTR) L"\\SeLsaCommandPort" );
+	CUNICODE_STRING lsa;
+	lsa.Copy( (PCWSTR) L"\\SeLsaCommandPort" );
 
 	SECURITY_QUALITY_OF_SERVICE qos;
 	qos.Length = sizeof(qos);
@@ -293,8 +293,8 @@ int PLUG_AND_PLAY::Run()
 	LARGE_INTEGER timeout;
 	Current = static_cast<THREAD*>( this );
 
-	unicode_string_t pipename;
-	pipename.copy( "\\Device\\NamedPipe\\ntsvcs" );
+	CUNICODE_STRING pipename;
+	pipename.Copy( "\\Device\\NamedPipe\\ntsvcs" );
 
 	oa.Length = sizeof oa;
 	oa.RootDirectory = 0;

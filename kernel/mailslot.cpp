@@ -88,8 +88,8 @@ NTSTATUS NTAPI NtCreateMailslotFile(
 	if (!ObjectAttributes)
 		return STATUS_INVALID_PARAMETER;
 
-	object_attributes_t oa;
-	r = oa.copy_from_user( ObjectAttributes );
+	COBJECT_ATTRIBUTES oa;
+	r = oa.CopyFromUser( ObjectAttributes );
 	if (r < STATUS_SUCCESS)
 		return r;
 

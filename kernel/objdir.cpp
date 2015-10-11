@@ -93,9 +93,9 @@ OBJECT *OBJECT_DIR_IMPL::Lookup( UNICODE_STRING& name, bool ignore_case )
 	for( OBJECT_ITER i(object_list); i; i.Next() )
 	{
 		OBJECT *obj = i;
-		unicode_string_t& entry_name  = obj->GetName();
+		CUNICODE_STRING& entry_name  = obj->GetName();
 		//trace("checking %pus\n", &entry_name );
-		if (!entry_name.compare( &name, ignore_case ))
+		if (!entry_name.Compare( &name, ignore_case ))
 			continue;
 		return obj;
 	}
@@ -129,8 +129,8 @@ OBJECT *CreateDirectoryObject( PCWSTR name )
 		return Root;
 	}
 
-	unicode_string_t us;
-	us.copy(name);
+	CUNICODE_STRING us;
+	us.Copy(name);
 	OBJECT_ATTRIBUTES oa;
 	memset( &oa, 0, sizeof oa );
 	oa.Length = sizeof oa;
@@ -257,7 +257,7 @@ NTSTATUS FindObjectByName( OBJECT **out, const OBJECT_ATTRIBUTES *oa )
 	FIND_OBJECT oi;
 	oi.Attributes = oa->Attributes;
 	oi.Root = oa->RootDirectory;
-	oi.Path.set( *oa->ObjectName );
+	oi.Path.Set( *oa->ObjectName );
 
 	return OpenRoot( *out, oi );
 }
@@ -288,7 +288,7 @@ NTSTATUS NAME_OBJECT::OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 	obj = obj_to_name;
 
 	NTSTATUS r;
-	r = obj->Name.copy( &info.Path );
+	r = obj->Name.Copy( &info.Path );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -315,7 +315,7 @@ NTSTATUS NameObject( OBJECT *obj, const OBJECT_ATTRIBUTES *oa )
 	NAME_OBJECT oi( obj );
 	oi.Attributes = oa->Attributes;
 	oi.Root = oa->RootDirectory;
-	oi.Path.set( *oa->ObjectName );
+	oi.Path.Set( *oa->ObjectName );
 
 	return OpenRoot( obj, oi );
 }

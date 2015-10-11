@@ -91,13 +91,13 @@ NTSTATUS NTAPI NtRaiseHardError(
 		if (StringArgumentsMask & (1<<i))
 		{
 			char buffer[0x100];
-			unicode_string_t us;
+			CUNICODE_STRING us;
 
-			r = us.copy_from_user( (UNICODE_STRING*) arg );
+			r = us.CopyFromUser( (UNICODE_STRING*) arg );
 			if (r < STATUS_SUCCESS)
 				break;
 
-			us.wchar_to_utf8( buffer, sizeof buffer );
+			us.WCharToUtf8( buffer, sizeof buffer );
 			ColorPrint(" %s ", buffer);
 		}
 		else
@@ -241,10 +241,10 @@ NTSTATUS NTAPI NtFlushInstructionCache(
 
 NTSTATUS NTAPI NtDisplayString( PUNICODE_STRING String )
 {
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	NTSTATUS r;
 
-	r = us.copy_from_user( String );
+	r = us.CopyFromUser( String );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -259,10 +259,10 @@ NTSTATUS NTAPI NtCreatePagingFile(
 	PULARGE_INTEGER MaximumSize,
 	ULONG Reserved)
 {
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	NTSTATUS r;
 
-	r = us.copy_from_user( FileName );
+	r = us.CopyFromUser( FileName );
 	if (r < STATUS_SUCCESS)
 		return r;
 

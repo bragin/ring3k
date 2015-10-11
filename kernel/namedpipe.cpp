@@ -224,8 +224,8 @@ NTSTATUS PIPE_DEVICE_FACTORY::AllocObject(OBJECT** obj)
 void InitPipeDevice()
 {
 	PIPE_DEVICE_FACTORY factory;
-	unicode_string_t name;
-	name.set( L"\\Device\\NamedPipe");
+	CUNICODE_STRING name;
+	name.Set( L"\\Device\\NamedPipe");
 
 	NTSTATUS r;
 	OBJECT *obj = 0;
@@ -268,7 +268,7 @@ public:
 	LARGE_INTEGER&  Timeout;
 	ULONG&          NameLength;
 	BOOLEAN&        TimeoutSpecified;
-	unicode_string_t Name;
+	CUNICODE_STRING Name;
 public:
 	WAIT_SERVER_INFO();
 	NTSTATUS CopyFromUser( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG Length );
@@ -294,7 +294,7 @@ NTSTATUS WAIT_SERVER_INFO::CopyFromUser( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG 
 		return r;
 	if (Length < (sz + NameLength))
 		return STATUS_INVALID_PARAMETER;
-	return Name.copy_wstr_from_user( pwfb->Name, NameLength );
+	return Name.CopyWStrFromUser( pwfb->Name, NameLength );
 }
 
 void WAIT_SERVER_INFO::Dump()
@@ -705,7 +705,7 @@ NTSTATUS PIPE_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 		if (!container)
 			return STATUS_NO_MEMORY;
 
-		r = container->Name.copy( &info.Path );
+		r = container->Name.Copy( &info.Path );
 		if (r < STATUS_SUCCESS)
 			return r;
 
@@ -745,7 +745,7 @@ NTSTATUS NTAPI NtCreateNamedPipeFile(
 	PLARGE_INTEGER DefaultTimeout)
 {
 	LARGE_INTEGER timeout;
-	object_attributes_t oa;
+	COBJECT_ATTRIBUTES oa;
 	NTSTATUS r;
 
 	if (CreateDisposition != FILE_OPEN_IF)

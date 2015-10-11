@@ -25,11 +25,11 @@
 
 class SYMLINK : public OBJECT
 {
-	unicode_string_t target;
+	CUNICODE_STRING target;
 public:
 	SYMLINK( const UNICODE_STRING& us );
 	~SYMLINK();
-	unicode_string_t& GetTarget()
+	CUNICODE_STRING& GetTarget()
 	{
 		return target;
 	}

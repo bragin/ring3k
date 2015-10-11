@@ -195,11 +195,11 @@ NTSTATUS InitNtDLL( void )
 		'\\','?','?','\\','c',':','\\','w','i','n','n','t','\\',
 		's','y','s','t','e','m','3','2','\\','n','t','d','l','l','.','d','l','l',0
 	};
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	CFILE *file = 0;
 	NTSTATUS r;
 
-	us.set( ntdll );
+	us.Set( ntdll );
 
 	r = OpenFile( file, us );
 	if (r < STATUS_SUCCESS)
@@ -446,7 +446,7 @@ void ParseOptions(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	THREAD *initial_thread = NULL;
 	const char *exename;
 
@@ -489,9 +489,9 @@ int main(int argc, char **argv)
 	InitRoot();
 	CreateDirectoryObject( (PWSTR) L"\\" );
 	CreateDirectoryObject( (PWSTR) L"\\??" );
-	unicode_string_t link_name, link_target;
-	link_name.set( L"\\DosDevices" );
-	link_target.copy( L"\\??" );
+	CUNICODE_STRING link_name, link_target;
+	link_name.Set( L"\\DosDevices" );
+	link_target.Copy( L"\\??" );
 	CreateSymlink( link_name, link_target );
 	CreateDirectoryObject( (PWSTR) L"\\Device" );
 	CreateDirectoryObject( (PWSTR) L"\\Device\\MailSlot" );
@@ -509,7 +509,7 @@ int main(int argc, char **argv)
 	InitNtDLL();
 	CreateKThread();
 
-	us.copy( exename );
+	us.Copy( exename );
 
 	int r = CreateInitialProcess( &initial_thread, us );
 	if (r < STATUS_SUCCESS)

@@ -39,7 +39,7 @@ class OPEN_INFO
 public:
 	ULONG Attributes;
 	HANDLE Root;
-	unicode_string_t Path;
+	CUNICODE_STRING Path;
 public:
 	OPEN_INFO();
 	bool CaseInsensitive()
@@ -60,10 +60,10 @@ class OBJECT
 public:
 	ULONG Attr;
 	OBJECT_DIR *Parent;
-	unicode_string_t Name;
+	CUNICODE_STRING Name;
 	friend class OBJECT_DIR;
 	void SetParent( OBJECT_DIR *dir );
-	unicode_string_t& GetName()
+	CUNICODE_STRING& GetName()
 	{
 		return Name;
 	}

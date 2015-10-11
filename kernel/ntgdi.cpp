@@ -1430,8 +1430,8 @@ void FillFont( font_enum_entry* fee, LPWSTR name, ULONG height, ULONG width, ULO
 	fee->elfew.elfLogFont.lfWidth = width;
 	fee->elfew.elfLogFont.lfWeight = weight;
 	fee->elfew.elfLogFont.lfPitchAndFamily = paf;
-	memcpy( fee->elfew.elfLogFont.lfFaceName, name, strlenW(name)*2 );
-	memcpy( fee->elfew.elfFullName, name, strlenW(name)*2 );
+	memcpy( fee->elfew.elfLogFont.lfFaceName, name, StrLenW(name)*2 );
+	memcpy( fee->elfew.elfFullName, name, StrLenW(name)*2 );
 	fee->flags = flags;
 
 	fee->ntme.ntmTm.tmHeight = height;
@@ -1565,8 +1565,8 @@ BOOLEAN NTAPI NtGdiExtTextOutW( HANDLE handle, INT x, INT y, UINT options,
 		rect = &rectangle;
 	}
 
-	unicode_string_t text;
-	r = text.copy_wstr_from_user( string, length*2 );
+	CUNICODE_STRING text;
+	r = text.CopyWStrFromUser( string, length*2 );
 	if (r < STATUS_SUCCESS)
 		return FALSE;
 

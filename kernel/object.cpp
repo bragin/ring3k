@@ -195,7 +195,7 @@ NTSTATUS OBJECT_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info 
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = obj->Name.copy( &info.Path );
+	r = obj->Name.Copy( &info.Path );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -206,7 +206,7 @@ NTSTATUS OBJECT_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info 
 
 NTSTATUS OBJECT_FACTORY::CreateKernel( OBJECT*& obj, UNICODE_STRING& us )
 {
-	Path.set( us );
+	Path.Set( us );
 	return OpenRoot( obj, *this );
 }
 
@@ -215,7 +215,7 @@ NTSTATUS OBJECT_FACTORY::Create(
 	ACCESS_MASK AccessMask,
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
-	object_attributes_t oa;
+	COBJECT_ATTRIBUTES oa;
 	OBJECT *obj = 0;
 	NTSTATUS r;
 
@@ -225,7 +225,7 @@ NTSTATUS OBJECT_FACTORY::Create(
 
 	if (ObjectAttributes)
 	{
-		r = oa.copy_from_user( ObjectAttributes );
+		r = oa.CopyFromUser( ObjectAttributes );
 		if (r < STATUS_SUCCESS)
 			return r;
 
@@ -234,7 +234,7 @@ NTSTATUS OBJECT_FACTORY::Create(
 
 	if (oa.ObjectName && oa.ObjectName->Length)
 	{
-		Path.set( *oa.ObjectName );
+		Path.Set( *oa.ObjectName );
 		Root = oa.RootDirectory;
 		Attributes = oa.Attributes;
 		r = OpenRoot( obj, *this );
@@ -561,10 +561,10 @@ NTSTATUS NTAPI NtPrivilegeObjectAuditAlarm(
 	PPRIVILEGE_SET Privileges,
 	BOOLEAN AccessGranted)
 {
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	NTSTATUS r;
 
-	r = us.copy_from_user( SubsystemName );
+	r = us.CopyFromUser( SubsystemName );
 	if (r < STATUS_SUCCESS)
 		return r;
 	trace("SubsystemName = %pus\n", &us);
@@ -588,10 +588,10 @@ NTSTATUS NTAPI NtCloseObjectAuditAlarm(
 	PVOID HandleId,
 	BOOLEAN GenerateOnClose)
 {
-	unicode_string_t us;
+	CUNICODE_STRING us;
 	NTSTATUS r;
 
-	r = us.copy_from_user( SubsystemName );
+	r = us.CopyFromUser( SubsystemName );
 	if (r < STATUS_SUCCESS)
 		return r;
 	trace("SubsystemName = %pus\n", &us);
