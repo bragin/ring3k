@@ -42,9 +42,9 @@
 #include "message.h"
 #include "win.h"
 
-WNDCLS_LIST wndcls_list;
+WNDCLS_LIST WndclsList;
 WINDOW *ActiveWindow;
-WINDOW *desktop_window;
+WINDOW *DesktopWindow;
 
 ULONG NTAPI NtUserGetThreadState( ULONG InfoClass )
 {
@@ -79,116 +79,116 @@ struct USER_HANDLE_ENTRY
 {
 	union
 	{
-		void *object;
-		USHORT next_free;
+		void *Object;
+		USHORT NextFree;
 	};
-	void *owner;
-	USHORT type;
-	USHORT highpart;
+	void *Owner;
+	USHORT Type;
+	USHORT Highpart;
 };
 
 struct USER_SHARED_MEM
 {
-	ULONG x1;
-	ULONG x2;
-	ULONG max_window_handle;
-	ULONG x3[459];
+	ULONG X1;
+	ULONG X2;
+	ULONG MaxWindowHandle;
+	ULONG X3[459];
 	COLORREF ButtonHilight;
 	COLORREF ButtonDkShadow;
 };
 
-static const ULONG user_shared_mem_size = 0x20000;
-static const ULONG user_shared_mem_reserve = 0x10000;
+static const ULONG UserSharedMemSize = 0x20000;
+static const ULONG UserSharedMemReserve = 0x10000;
 
 // section for user handle table
-static SECTION *user_handle_table_section = 0;
+static SECTION *UserHandleTableSection = 0;
 
 // kernel address for user handle table (shared)
-static USER_HANDLE_ENTRY *user_handle_table;
+static USER_HANDLE_ENTRY *UserHandleTable;
 
 // section for user shared memory
-static SECTION *user_shared_section = 0;
+static SECTION *UserSharedSection = 0;
 
 // kernel address for memory shared with the user process
-static USER_SHARED_MEM *user_shared;
+static USER_SHARED_MEM *UserShared;
 
 // bitmap of free memory
-ALLOCATION_BITMAP user_shared_bitmap;
+ALLOCATION_BITMAP UserSharedBitmap;
 
-MESSAGE_MAP_SHARED_MEMORY message_maps[NUMBER_OF_MESSAGE_MAPS];
+MESSAGE_MAP_SHARED_MEMORY MessageMaps[NUMBER_OF_MESSAGE_MAPS];
 
-static USHORT next_user_handle = 1;
+static USHORT NextUserHandle = 1;
 
 #define MAX_USER_HANDLES 0x200
 
-void check_max_window_handle( ULONG n )
+void CheckMaxWindowHandle( ULONG n )
 {
 	n++;
-	if (user_shared->max_window_handle<n)
-		user_shared->max_window_handle = n;
-	trace("max_window_handle = %04lx\n", user_shared->max_window_handle);
+	if (UserShared->MaxWindowHandle<n)
+		UserShared->MaxWindowHandle = n;
+	trace("max_window_handle = %04lx\n", UserShared->MaxWindowHandle);
 }
 
-void init_user_handle_table()
+void InitUserHandleTable()
 {
 	USHORT i;
-	next_user_handle = 1;
-	for ( i=next_user_handle; i<(MAX_USER_HANDLES-1); i++ )
+	NextUserHandle = 1;
+	for ( i=NextUserHandle; i<(MAX_USER_HANDLES-1); i++ )
 	{
-		user_handle_table[i].object = (void*) (i+1);
-		user_handle_table[i].owner = 0;
-		user_handle_table[i].type = 0;
-		user_handle_table[i].highpart = 1;
+		UserHandleTable[i].Object = (void*) (i+1);
+		UserHandleTable[i].Owner = 0;
+		UserHandleTable[i].Type = 0;
+		UserHandleTable[i].Highpart = 1;
 	}
 }
 
-ULONG alloc_user_handle( void* obj, ULONG type, PROCESS *owner )
+ULONG AllocUserHandle( void* obj, ULONG type, PROCESS *owner )
 {
 	assert( type != 0 );
-	ULONG ret = next_user_handle;
-	ULONG next = user_handle_table[ret].next_free;
+	ULONG ret = NextUserHandle;
+	ULONG next = UserHandleTable[ret].NextFree;
 	assert( next != ret );
-	assert( user_handle_table[ret].type == 0 );
-	assert( user_handle_table[ret].owner == 0 );
+	assert( UserHandleTable[ret].Type == 0 );
+	assert( UserHandleTable[ret].Owner == 0 );
 	assert( next <= MAX_USER_HANDLES );
-	user_handle_table[ret].object = obj;
-	user_handle_table[ret].type = type;
-	user_handle_table[ret].owner = (void*) owner;
-	next_user_handle = next;
-	check_max_window_handle( ret );
-	return (user_handle_table[ret].highpart << 16) | ret;
+	UserHandleTable[ret].Object = obj;
+	UserHandleTable[ret].Type = type;
+	UserHandleTable[ret].Owner = (void*) owner;
+	NextUserHandle = next;
+	CheckMaxWindowHandle( ret );
+	return (UserHandleTable[ret].Highpart << 16) | ret;
 }
 
-void free_user_handle( HANDLE handle )
+void FreeUserHandle( HANDLE handle )
 {
 	UINT n = (UINT) handle;
 	USHORT lowpart = n&0xffff;
 
 	trace("freeing handle %08x\n", n);
-	user_handle_table[lowpart].type = 0;
-	user_handle_table[lowpart].owner = 0;
-	user_handle_table[lowpart].object = 0;
+	UserHandleTable[lowpart].Type = 0;
+	UserHandleTable[lowpart].Owner = 0;
+	UserHandleTable[lowpart].Object = 0;
 
 	// update the free handle list
-	user_handle_table[lowpart].next_free = next_user_handle;
-	next_user_handle = lowpart;
+	UserHandleTable[lowpart].NextFree = NextUserHandle;
+	NextUserHandle = lowpart;
 
 	// FIXME: maybe decrease max_window_handle?
 }
 
-void delete_user_object( ULONG i )
+void DeleteUserObject( ULONG i )
 {
-	USER_HANDLE_ENTRY *entry = user_handle_table+i;
+	USER_HANDLE_ENTRY *entry = UserHandleTable+i;
 	trace("deleting user handle %ld\n", i);
-	assert(entry->object != NULL);
-	switch (entry->type)
+	assert(entry->Object != NULL);
+	switch (entry->Type)
 	{
 	case USER_HANDLE_WINDOW:
-		delete (WINDOW*) entry->object;
+		delete (WINDOW*) entry->Object;
 		break;
 	default:
 		trace("object %ld (%p), type = %08x owner = %p\n",
-			  i, entry->object, entry->type, entry->owner);
+			  i, entry->Object, entry->Type, entry->Owner);
 		assert(0);
 	}
 }
@@ -197,79 +197,79 @@ void FreeUser32Handles( PROCESS *p )
 {
 	ULONG i;
 	assert( p != NULL );
-	if (!user_handle_table)
+	if (!UserHandleTable)
 		return;
-	for (i=0; i<user_shared->max_window_handle; i++)
+	for (i=0; i<UserShared->MaxWindowHandle; i++)
 	{
-		if (p == (PROCESS*) user_handle_table[i].owner)
-			delete_user_object( i );
+		if (p == (PROCESS*) UserHandleTable[i].Owner)
+			DeleteUserObject( i );
 	}
 }
 
-void* user_obj_from_handle( HANDLE handle, ULONG type )
+void* UserObjFromHandle( HANDLE handle, ULONG type )
 {
 	UINT n = (UINT) handle;
 	USHORT lowpart = n&0xffff;
 	//USHORT highpart = (n>>16);
 
-	if (lowpart == 0 || lowpart > user_shared->max_window_handle)
+	if (lowpart == 0 || lowpart > UserShared->MaxWindowHandle)
 		return NULL;
-	if (type != user_handle_table[lowpart].type)
+	if (type != UserHandleTable[lowpart].Type)
 		return NULL;
 	//FIXME: check high part and type
 	//if (user_handle_table[].highpart != highpart)
-	return user_handle_table[lowpart].object;
+	return UserHandleTable[lowpart].Object;
 }
 
 WINDOW *WindowFromHandle( HANDLE handle )
 {
-	void *obj = user_obj_from_handle( handle, 1 );
+	void *obj = UserObjFromHandle( handle, 1 );
 	if (!obj)
 		return NULL;
 	return (WINDOW*) obj;
 }
 
-void *init_user_shared_memory()
+void *InitUserSharedMemory()
 {
 	// read/write for the kernel and read only for processes
-	if (!user_shared)
+	if (!UserShared)
 	{
 		LARGE_INTEGER sz;
 		NTSTATUS r;
 
 		sz.QuadPart = sizeof (USER_HANDLE_ENTRY) * MAX_USER_HANDLES;
-		r = CreateSection( &user_handle_table_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
+		r = CreateSection( &UserHandleTableSection, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return 0;
 
-		user_handle_table = (USER_HANDLE_ENTRY*) user_handle_table_section->GetKernelAddress();
+		UserHandleTable = (USER_HANDLE_ENTRY*) UserHandleTableSection->GetKernelAddress();
 
-		init_user_handle_table();
+		InitUserHandleTable();
 
-		sz.QuadPart = user_shared_mem_size;
-		r = CreateSection( &user_shared_section, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
+		sz.QuadPart = UserSharedMemSize;
+		r = CreateSection( &UserSharedSection, NULL, &sz, SEC_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return 0;
 
-		user_shared = (USER_SHARED_MEM*) user_shared_section->GetKernelAddress();
+		UserShared = (USER_SHARED_MEM*) UserSharedSection->GetKernelAddress();
 
 		// setup the allocation bitmap for user objects (eg. windows)
-		void *object_area = (void*) ((BYTE*) user_shared + user_shared_mem_reserve);
-		user_shared_bitmap.SetArea( object_area,
-									 user_shared_mem_size - user_shared_mem_reserve );
+		void *object_area = (void*) ((BYTE*) UserShared + UserSharedMemReserve);
+		UserSharedBitmap.SetArea( object_area,
+									 UserSharedMemSize - UserSharedMemReserve );
 
 		// create the window stations directory too
 		CreateDirectoryObject( (PWSTR) L"\\Windows\\WindowStations" );
 
 		// see wine/dlls/user32/sysparams.c
-		user_shared->ButtonHilight = RGB(255,255,255);
-		user_shared->ButtonDkShadow = RGB(64,64,64);
+		UserShared->ButtonHilight = RGB(255,255,255);
+		UserShared->ButtonDkShadow = RGB(64,64,64);
 	}
 
-	trace("user_handle_table at %p\n", user_handle_table );
-	trace("user_shared at %p\n", user_shared );
+	trace("user_handle_table at %p\n", UserHandleTable );
+	trace("user_shared at %p\n", UserShared );
 
-	return user_shared;
+	return UserShared;
 }
 
 class NTUSERSHM_TRACER : public BLOCK_TRACER
@@ -284,16 +284,16 @@ bool NTUSERSHM_TRACER::Enabled() const
 	return TraceIsEnabled( "usershm" );
 }
 
-bool message_map_on_access( BYTE *address, ULONG eip )
+bool MessageMapOnAccess( BYTE *address, ULONG eip )
 {
 	for (ULONG i=0; i<NUMBER_OF_MESSAGE_MAPS; i++)
 	{
-		if (!message_maps[i].Bitmap)
+		if (!MessageMaps[i].Bitmap)
 			continue;
-		if (address < message_maps[i].Bitmap)
+		if (address < MessageMaps[i].Bitmap)
 			continue;
-		ULONG ofs = address - message_maps[i].Bitmap;
-		if (ofs > message_maps[i].MaxMessage/8)
+		ULONG ofs = address - MessageMaps[i].Bitmap;
+		if (ofs > MessageMaps[i].MaxMessage/8)
 			continue;
 		fprintf(stderr, "%04lx: accessed message map[%ld][%04lx] from %08lx\n",
 				Current->TraceId(), i, ofs, eip);
@@ -302,17 +302,17 @@ bool message_map_on_access( BYTE *address, ULONG eip )
 	return false;
 }
 
-bool window_on_access( BYTE *address, ULONG eip )
+bool WindowOnAccess( BYTE *address, ULONG eip )
 {
-	for (ULONG i=0; i<user_shared->max_window_handle; i++)
+	for (ULONG i=0; i<UserShared->MaxWindowHandle; i++)
 	{
-		switch (user_handle_table[i].type)
+		switch (UserHandleTable[i].Type)
 		{
 			case USER_HANDLE_WINDOW:
 			{
 				// window shared memory structures are variable size
 				// have the window check itself
-				WINDOW* wnd = reinterpret_cast<WINDOW*>( user_handle_table[i].object);
+				WINDOW* wnd = reinterpret_cast<WINDOW*>( UserHandleTable[i].Object);
 				if (wnd->OnAccess( address, eip ))
 					return true;
 			}
@@ -324,7 +324,7 @@ bool window_on_access( BYTE *address, ULONG eip )
 void NTUSERSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->GetBaseAddress();
-	if (ofs < user_shared_mem_reserve)
+	if (ofs < UserSharedMemReserve)
 	{
 		const char *name = "";
 		switch (ofs)
@@ -338,17 +338,17 @@ void NTUSERSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 		return;
 	}
 
-	if (message_map_on_access( address, eip ))
+	if (MessageMapOnAccess( address, eip ))
 		return;
 
-	if (window_on_access( address, eip ))
+	if (WindowOnAccess( address, eip ))
 		return;
 
 	fprintf(stderr, "%04lx: accessed ushm[%04lx] from %08lx\n",
 			Current->TraceId(), ofs, eip);
 }
 
-static NTUSERSHM_TRACER ntusershm_trace;
+static NTUSERSHM_TRACER NtUserShmTrace;
 
 class NTUSERHANDLE_TRACER : public BLOCK_TRACER
 {
@@ -371,10 +371,10 @@ void NTUSERHANDLE_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 	switch (ofs % sz)
 	{
 #define f(n, x) case n: field = #x; break;
-		f( 0, owner )
-		f( 4, object )
-		f( 8, type )
-		f( 10, highpart )
+		f( 0, Owner )
+		f( 4, Object )
+		f( 8, Type )
+		f( 10, Highpart )
 #undef f
 	default:
 		field = "unknown";
@@ -383,49 +383,49 @@ void NTUSERHANDLE_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 	fprintf(stderr, "%04lx: accessed user handle[%04lx]+%s (%ld) from %08lx\n",
 			Current->TraceId(), number, field, ofs%sz, eip);
 }
-static NTUSERHANDLE_TRACER ntuserhandle_trace;
+static NTUSERHANDLE_TRACER NtUserHandleTrace;
 
-BYTE* alloc_message_bitmap( PROCESS* proc, MESSAGE_MAP_SHARED_MEMORY& map, ULONG last_message )
+BYTE* AllocMessageBitmap( PROCESS* proc, MESSAGE_MAP_SHARED_MEMORY& map, ULONG last_message )
 {
 	ULONG sz = (last_message+7)/8;
-	BYTE *msg_map = user_shared_bitmap.Alloc( sz );
+	BYTE *msg_map = UserSharedBitmap.Alloc( sz );
 	memset( msg_map, 0, sz );
-	ULONG ofs = (BYTE*)msg_map - (BYTE*)user_shared;
+	ULONG ofs = (BYTE*)msg_map - (BYTE*)UserShared;
 	map.Bitmap = (BYTE*) (proc->Win32kInfo->UserSharedMem + ofs);
 	map.MaxMessage = last_message;
 	trace("bitmap = %p last = %ld\n", map.Bitmap, map.MaxMessage);
 	return msg_map;
 }
 
-NTUSERINFO *alloc_user_info()
+NTUSERINFO *AllocUserInfo()
 {
-	NTUSERINFO *info = (NTUSERINFO*) user_shared_bitmap.Alloc( sizeof (NTUSERINFO) );
-	info->DesktopWindow = desktop_window;
-	ULONG ofs = (BYTE*)info - (BYTE*)user_shared;
+	NTUSERINFO *info = (NTUSERINFO*) UserSharedBitmap.Alloc( sizeof (NTUSERINFO) );
+	info->DesktopWindow = DesktopWindow;
+	ULONG ofs = (BYTE*)info - (BYTE*)UserShared;
 	return (NTUSERINFO*) (Current->Process->Win32kInfo->UserSharedMem + ofs);
 }
 
-void create_desktop_window()
+void CreateDesktopWindow()
 {
-	if (desktop_window)
+	if (DesktopWindow)
 		return;
 
-	desktop_window = new WINDOW;
-	if (!desktop_window)
+	DesktopWindow = new WINDOW;
+	if (!DesktopWindow)
 		return;
 
-	memset( desktop_window, 0, sizeof (WINDOW) );
-	desktop_window->rcWnd.left = 0;
-	desktop_window->rcWnd.top = 0;
-	desktop_window->rcWnd.right = 640;
-	desktop_window->rcWnd.bottom = 480;
-	desktop_window->rcClient = desktop_window->rcWnd;
+	memset( DesktopWindow, 0, sizeof (WINDOW) );
+	DesktopWindow->rcWnd.left = 0;
+	DesktopWindow->rcWnd.top = 0;
+	DesktopWindow->rcWnd.right = 640;
+	DesktopWindow->rcWnd.bottom = 480;
+	DesktopWindow->rcClient = DesktopWindow->rcWnd;
 
-	desktop_window->handle = (HWND) alloc_user_handle( desktop_window, USER_HANDLE_WINDOW, Current->Process );
+	DesktopWindow->handle = (HWND) AllocUserHandle( DesktopWindow, USER_HANDLE_WINDOW, Current->Process );
 }
 
 // should be called from NtGdiInit to map the user32 shared memory
-NTSTATUS map_user_shared_memory( PROCESS *proc )
+NTSTATUS MapUserSharedMemory( PROCESS *proc )
 {
 	NTSTATUS r;
 
@@ -434,26 +434,26 @@ NTSTATUS map_user_shared_memory( PROCESS *proc )
 	BYTE*& user_handles = proc->Win32kInfo->UserHandles;
 
 	// map the user shared memory block into the process's memory
-	if (!init_user_shared_memory())
+	if (!InitUserSharedMemory())
 		return STATUS_UNSUCCESSFUL;
 
 	// already mapped into this process?
 	if (user_shared_mem)
 		return STATUS_SUCCESS;
 
-	r = user_shared_section->Mapit( proc->Vm, user_shared_mem, 0,
+	r = UserSharedSection->Mapit( proc->Vm, user_shared_mem, 0,
 									MEM_COMMIT, PAGE_READONLY );
 	if (r < STATUS_SUCCESS)
 		return STATUS_UNSUCCESSFUL;
 
 	if (OptionTrace)
 	{
-		proc->Vm->SetTracer( user_shared_mem, ntusershm_trace );
-		proc->Vm->SetTracer( user_handles, ntuserhandle_trace );
+		proc->Vm->SetTracer( user_shared_mem, NtUserShmTrace );
+		proc->Vm->SetTracer( user_handles, NtUserHandleTrace );
 	}
 
 	// map the shared handle table
-	r = user_handle_table_section->Mapit( proc->Vm, user_handles, 0,
+	r = UserHandleTableSection->Mapit( proc->Vm, user_handles, 0,
 										  MEM_COMMIT, PAGE_READONLY );
 	if (r < STATUS_SUCCESS)
 		return STATUS_UNSUCCESSFUL;
@@ -466,17 +466,17 @@ NTSTATUS map_user_shared_memory( PROCESS *proc )
 BOOLEAN DoGdiInit()
 {
 	NTSTATUS r;
-	r = map_user_shared_memory( Current->Process );
+	r = MapUserSharedMemory( Current->Process );
 	if (r < STATUS_SUCCESS)
 		return FALSE;
 
 	// check set the offset
 	BYTE*& user_shared_mem = Current->Process->Win32kInfo->UserSharedMem;
-	Current->GetTEB()->KernelUserPointerOffset = (BYTE*) user_shared - user_shared_mem;
+	Current->GetTEB()->KernelUserPointerOffset = (BYTE*) UserShared - user_shared_mem;
 
 	// create the desktop window for alloc_user_info
-	create_desktop_window();
-	Current->GetTEB()->NtUserInfo = alloc_user_info();
+	CreateDesktopWindow();
+	Current->GetTEB()->NtUserInfo = AllocUserInfo();
 
 	return TRUE;
 }
@@ -518,7 +518,7 @@ NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSi
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	r = map_user_shared_memory( proc );
+	r = MapUserSharedMemory( proc );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -533,10 +533,10 @@ NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSi
 		info.win2k.MessageMap[i].Bitmap = (BYTE*)i;
 	}
 
-	alloc_message_bitmap( proc, info.win2k.MessageMap[0x1b], 0x400 );
-	message_maps[0x1b] = info.win2k.MessageMap[0x1b];
-	alloc_message_bitmap( proc, info.win2k.MessageMap[0x1c], 0x400 );
-	message_maps[0x1c] = info.win2k.MessageMap[0x1c];
+	AllocMessageBitmap( proc, info.win2k.MessageMap[0x1b], 0x400 );
+	MessageMaps[0x1b] = info.win2k.MessageMap[0x1b];
+	AllocMessageBitmap( proc, info.win2k.MessageMap[0x1c], 0x400 );
+	MessageMaps[0x1c] = info.win2k.MessageMap[0x1c];
 
 	r = CopyToUser( Buffer, &info, BufferSize );
 	if (r < STATUS_SUCCESS)
@@ -823,12 +823,12 @@ void* WNDCLS::operator new(size_t sz)
 {
 	trace("allocating window\n");
 	assert( sz == sizeof (WNDCLS));
-	return user_shared_bitmap.Alloc( sz );
+	return UserSharedBitmap.Alloc( sz );
 }
 
 void WNDCLS::operator delete(void *p)
 {
-	user_shared_bitmap.Free( (unsigned char*) p, sizeof (WNDCLS) );
+	UserSharedBitmap.Free( (unsigned char*) p, sizeof (WNDCLS) );
 }
 
 WNDCLS::WNDCLS( NTWNDCLASSEX& ClassInfo, const UNICODE_STRING& ClassName, const UNICODE_STRING& MenuName, ATOM a ) :
@@ -844,7 +844,7 @@ WNDCLS::WNDCLS( NTWNDCLASSEX& ClassInfo, const UNICODE_STRING& ClassName, const 
 
 WNDCLS* WNDCLS::FromName( const UNICODE_STRING& wndcls_name )
 {
-	for (WNDCLS_ITER i(wndcls_list); i; i.Next())
+	for (WNDCLS_ITER i(WndclsList); i; i.Next())
 	{
 		WNDCLS *cls = i;
 		if (cls->GetName().IsEqual( wndcls_name ))
@@ -894,7 +894,7 @@ ATOM NTAPI NtUserRegisterClassExWOW(
 	if (!cls)
 		return 0;
 
-	wndcls_list.Append( cls );
+	WndclsList.Append( cls );
 
 	return cls->GetAtom();
 }
@@ -915,7 +915,7 @@ NTSTATUS NTAPI NtUserGetKeyboardLayoutList(ULONG x1, ULONG x2)
 	return STATUS_SUCCESS;
 }
 
-static int g_hack_desktop = 0xf00d2001;
+static int g_HackDesktop = 0xf00d2001;
 
 HANDLE NTAPI NtUserCreateWindowStation(
 	POBJECT_ATTRIBUTES WindowStationName,
@@ -943,7 +943,7 @@ HANDLE NTAPI NtUserCreateWindowStation(
 
 	trace("name = %pus\n", &us );
 
-	return (HANDLE) g_hack_desktop++;
+	return (HANDLE) g_HackDesktop++;
 }
 
 HANDLE NTAPI NtUserCreateDesktop(
@@ -963,7 +963,7 @@ HANDLE NTAPI NtUserCreateDesktop(
 	trace("name = %pus\n", oa.ObjectName );
 	trace("root = %p\n", oa.RootDirectory );
 
-	return (HANDLE) g_hack_desktop++;
+	return (HANDLE) g_HackDesktop++;
 }
 
 HANDLE NTAPI NtUserOpenDesktop(POBJECT_ATTRIBUTES DesktopName, ULONG, ACCESS_MASK DesiredAccess)
@@ -977,7 +977,7 @@ HANDLE NTAPI NtUserOpenDesktop(POBJECT_ATTRIBUTES DesktopName, ULONG, ACCESS_MAS
 	trace("name = %pus\n", oa.ObjectName );
 	trace("root = %p\n", oa.RootDirectory );
 
-	return (HANDLE) g_hack_desktop++;
+	return (HANDLE) g_HackDesktop++;
 }
 
 BOOLEAN NTAPI NtUserSetProcessWindowStation(HANDLE WindowStation)
@@ -1041,7 +1041,7 @@ ULONG NTAPI NtUserGetCaretBlinkTime(void)
 	return 100;
 }
 
-ULONG message_no = 0xc001;
+ULONG MessageNo = 0xc001;
 
 ULONG NTAPI NtUserRegisterWindowMessage(PUNICODE_STRING Message)
 {
@@ -1052,18 +1052,18 @@ ULONG NTAPI NtUserRegisterWindowMessage(PUNICODE_STRING Message)
 	if (r < STATUS_SUCCESS)
 		return 0;
 
-	trace("message = %pus -> %04lx\n", &us, message_no);
+	trace("message = %pus -> %04lx\n", &us, MessageNo);
 
-	return message_no++;
+	return MessageNo++;
 }
 
-class user32_unicode_string_t : public CUNICODE_STRING
+class CUSER32_UNICODE_STRING : public CUNICODE_STRING
 {
 public:
-	NTSTATUS copy_from_user( PUSER32_UNICODE_STRING String );
+	NTSTATUS CopyFromUser( PUSER32_UNICODE_STRING String );
 };
 
-NTSTATUS user32_unicode_string_t::copy_from_user( PUSER32_UNICODE_STRING String )
+NTSTATUS CUSER32_UNICODE_STRING::CopyFromUser( PUSER32_UNICODE_STRING String )
 {
 	USER32_UNICODE_STRING str;
 	NTSTATUS r = ::CopyFromUser( &str, String, sizeof str );
@@ -1092,9 +1092,9 @@ void WINDOW::UnlinkWindow()
 {
 	// special behaviour for desktop window
 	// should replace window_tt::first with desktop...
-	if (this == desktop_window)
+	if (this == DesktopWindow)
 	{
-		desktop_window = NULL;
+		DesktopWindow = NULL;
 		return;
 	}
 	WND **p;
@@ -1112,12 +1112,12 @@ void* WINDOW::operator new(size_t sz)
 {
 	trace("allocating window\n");
 	assert( sz == sizeof (WINDOW));
-	return user_shared_bitmap.Alloc( sz );
+	return UserSharedBitmap.Alloc( sz );
 }
 
 void WINDOW::operator delete(void *p)
 {
-	user_shared_bitmap.Free( (unsigned char*) p, sizeof (WINDOW) );
+	UserSharedBitmap.Free( (unsigned char*) p, sizeof (WINDOW) );
 }
 
 // return true if address is in this window's shared memory
@@ -1145,7 +1145,7 @@ bool WINDOW::OnAccess( BYTE *address, ULONG eip )
 		f( 0x28, next )
 		f( 0x2c, parent )
 		f( 0x30, first_child )
-		f( 0x34, owner )
+		f( 0x34, Owner )
 		f( 0x5c, wndproc )
 		f( 0x60, wndcls )
 #undef f
@@ -1157,7 +1157,7 @@ bool WINDOW::OnAccess( BYTE *address, ULONG eip )
 WINDOW::~WINDOW()
 {
 	UnlinkWindow();
-	free_user_handle( handle );
+	FreeUserHandle( handle );
 	trace("active window = %p this = %p\n", ActiveWindow, this);
 	if (ActiveWindow == this)
 	{
@@ -1168,7 +1168,7 @@ WINDOW::~WINDOW()
 
 PWND WINDOW::GetWininfo()
 {
-	ULONG ofs = (BYTE*)this - (BYTE*)user_shared;
+	ULONG ofs = (BYTE*)this - (BYTE*)UserShared;
 	return (PWND) (Current->Process->Win32kInfo->UserSharedMem + ofs);
 }
 
@@ -1235,15 +1235,15 @@ HANDLE NTAPI NtUserCreateWindowEx(
 {
 	NTSTATUS r;
 
-	user32_unicode_string_t window_name;
+	CUSER32_UNICODE_STRING window_name;
 #if 0
 	r = window_name.CopyFromUser( WindowName );
 	if (r < STATUS_SUCCESS)
 		return 0;
 #endif
 
-	user32_unicode_string_t wndcls_name;
-	r = wndcls_name.copy_from_user( ClassName );
+	CUSER32_UNICODE_STRING wndcls_name;
+	r = wndcls_name.CopyFromUser( ClassName );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
@@ -1280,7 +1280,7 @@ WINDOW* WINDOW::DoCreate( CUNICODE_STRING& name, CUNICODE_STRING& cls, NTCREATES
 			return FALSE;
 	}
 	else
-		parent_win = desktop_window;
+		parent_win = DesktopWindow;
 
 	WNDCLS* wndcls = WNDCLS::FromName( cls );
 	if (!wndcls)
@@ -1319,7 +1319,7 @@ WINDOW* WINDOW::DoCreate( CUNICODE_STRING& name, CUNICODE_STRING& cls, NTCREATES
 
 	win->LinkWindow( parent_win );
 
-	win->handle = (HWND) alloc_user_handle( win, USER_HANDLE_WINDOW, Current->Process );
+	win->handle = (HWND) AllocUserHandle( win, USER_HANDLE_WINDOW, Current->Process );
 	win->wndproc = wndcls->GetWndproc();
 
 	// create a thread message queue if necessary
@@ -1380,7 +1380,7 @@ WINDOW* WINDOW::FindWindowToRepaint( HWND window, THREAD* thread )
 			return FALSE;
 	}
 	else
-		win = desktop_window;
+		win = DesktopWindow;
 
 	return FindWindowToRepaint( win, thread );
 }
@@ -1796,7 +1796,7 @@ HWND WINDOW::FromPoint( POINT& pt )
 
 HWND NTAPI NtUserWindowFromPoint( POINT pt )
 {
-	WINDOW *win = desktop_window;
+	WINDOW *win = DesktopWindow;
 	if (!win)
 		return 0;
 	return win->FromPoint( pt );
