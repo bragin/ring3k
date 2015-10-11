@@ -21,23 +21,23 @@
 #ifndef __TOKEN_H__
 #define __TOKEN_H__
 
-class token_privileges_t;
-class sid_t;
-class acl_t;
-class sid_and_attributes_t;
-class token_groups_t;
+class CTOKEN_PRIVILEGES;
+class CSID;
+class CACL;
+class CSID_AND_ATTRIBUTES;
+class CTOKEN_GROUPS;
 
-class token_t : public OBJECT
+class TOKEN : public OBJECT
 {
 public:
-	virtual ~token_t() = 0;
-	virtual token_privileges_t& get_privs() = 0;
-	virtual sid_t& get_owner() = 0;
-	virtual sid_and_attributes_t& get_user() = 0;
-	virtual sid_t& get_primary_group() = 0;
-	virtual token_groups_t& get_groups() = 0;
-	virtual acl_t& get_default_dacl() = 0;
-	virtual NTSTATUS adjust(token_privileges_t& privs) = 0;
+	virtual ~TOKEN() = 0;
+	virtual CTOKEN_PRIVILEGES& GetPrivs() = 0;
+	virtual CSID& GetOwner() = 0;
+	virtual CSID_AND_ATTRIBUTES& GetUser() = 0;
+	virtual CSID& GetPrimaryGroup() = 0;
+	virtual CTOKEN_GROUPS& GetGroups() = 0;
+	virtual CACL& GetDefaultDacl() = 0;
+	virtual NTSTATUS Adjust(CTOKEN_PRIVILEGES& privs) = 0;
 };
 
 #endif // __TOKEN_H__

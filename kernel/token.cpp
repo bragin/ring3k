@@ -45,82 +45,82 @@
 // } ACCESS_MASK;
 // typedef ACCESS_MASK *PACCESS_MASK;
 
-class luid_and_privileges_t;
-class token_privileges_t;
+class LUID_AND_PRIVILEGES;
+class CTOKEN_PRIVILEGES;
 
-typedef LIST_ANCHOR<luid_and_privileges_t,0> luid_and_priv_list_t;
-typedef LIST_ELEMENT<luid_and_privileges_t> luid_and_priv_entry_t;
-typedef LIST_ITER<luid_and_privileges_t,0> luid_and_priv_iter_t;
+typedef LIST_ANCHOR<LUID_AND_PRIVILEGES,0> LUID_AND_PRIV_LIST;
+typedef LIST_ELEMENT<LUID_AND_PRIVILEGES> LUID_AND_PRIV_ENTRY;
+typedef LIST_ITER<LUID_AND_PRIVILEGES,0> LUID_AND_PRIV_ITER;
 
-class luid_and_privileges_t : public LUID_AND_ATTRIBUTES
+class LUID_AND_PRIVILEGES : public LUID_AND_ATTRIBUTES
 {
-	friend class LIST_ANCHOR<luid_and_privileges_t,0>;
-	friend class LIST_ITER<luid_and_privileges_t,0>;
+	friend class LIST_ANCHOR<LUID_AND_PRIVILEGES,0>;
+	friend class LIST_ITER<LUID_AND_PRIVILEGES,0>;
 protected:
-	luid_and_priv_entry_t Entry[1];
+	LUID_AND_PRIV_ENTRY Entry[1];
 public:
-	void dump();
+	void Dump();
 };
 
-void luid_and_privileges_t::dump()
+void LUID_AND_PRIVILEGES::Dump()
 {
 	trace("%08lx %08lx %08lx\n", Luid.LowPart, Luid.HighPart, Attributes );
 }
 
-class token_privileges_t
+class CTOKEN_PRIVILEGES
 {
-	ULONG priv_count;
-	luid_and_priv_list_t priv_list;
+	ULONG PrivCount;
+	LUID_AND_PRIV_LIST PrivList;
 public:
-	token_privileges_t();
-	~token_privileges_t();
-	void dump();
-	ULONG get_length();
-	NTSTATUS copy_from_user( PTOKEN_PRIVILEGES tp );
-	NTSTATUS copy_to_user( PTOKEN_PRIVILEGES tp );
-	NTSTATUS add( LUID_AND_ATTRIBUTES& la );
+	CTOKEN_PRIVILEGES();
+	~CTOKEN_PRIVILEGES();
+	void Dump();
+	ULONG GetLength();
+	NTSTATUS CopyFromUser( PTOKEN_PRIVILEGES tp );
+	NTSTATUS CopyToUser( PTOKEN_PRIVILEGES tp );
+	NTSTATUS Add( LUID_AND_ATTRIBUTES& la );
 };
 
-token_privileges_t::token_privileges_t() :
-	priv_count(0)
+CTOKEN_PRIVILEGES::CTOKEN_PRIVILEGES() :
+	PrivCount(0)
 {
 }
 
-token_privileges_t::~token_privileges_t()
+CTOKEN_PRIVILEGES::~CTOKEN_PRIVILEGES()
 {
-	luid_and_privileges_t *priv;
-	while ((priv = priv_list.Head()))
+	LUID_AND_PRIVILEGES *priv;
+	while ((priv = PrivList.Head()))
 	{
-		priv_list.Unlink( priv );
+		PrivList.Unlink( priv );
 		delete priv;
 	}
-	priv_count = 0;
+	PrivCount = 0;
 }
 
-void token_privileges_t::dump()
+void CTOKEN_PRIVILEGES::Dump()
 {
-	luid_and_priv_iter_t i(priv_list);
+	LUID_AND_PRIV_ITER i(PrivList);
 	while (i)
 	{
-		luid_and_privileges_t *priv = i;
-		priv->dump();
+		LUID_AND_PRIVILEGES *priv = i;
+		priv->Dump();
 		i.Next();
 	}
 }
 
-NTSTATUS token_privileges_t::add( LUID_AND_ATTRIBUTES& la )
+NTSTATUS CTOKEN_PRIVILEGES::Add( LUID_AND_ATTRIBUTES& la )
 {
-	luid_and_privileges_t *priv = new luid_and_privileges_t;
+	LUID_AND_PRIVILEGES *priv = new LUID_AND_PRIVILEGES;
 	if (!priv)
 		return STATUS_NO_MEMORY;
 	priv->Luid = la.Luid;
 	priv->Attributes = la.Attributes;
-	priv_list.Append( priv );
-	priv_count++;
+	PrivList.Append( priv );
+	PrivCount++;
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS token_privileges_t::copy_from_user( PTOKEN_PRIVILEGES tp )
+NTSTATUS CTOKEN_PRIVILEGES::CopyFromUser( PTOKEN_PRIVILEGES tp )
 {
 	NTSTATUS r;
 	ULONG count = 0;
@@ -135,7 +135,7 @@ NTSTATUS token_privileges_t::copy_from_user( PTOKEN_PRIVILEGES tp )
 		r = ::CopyFromUser( &la, &tp->Privileges[i], sizeof la );
 		if (r < STATUS_SUCCESS)
 			return r;
-		r = add( la );
+		r = Add( la );
 		if (r < STATUS_SUCCESS)
 			return r;
 	}
@@ -143,24 +143,24 @@ NTSTATUS token_privileges_t::copy_from_user( PTOKEN_PRIVILEGES tp )
 	return r;
 }
 
-ULONG token_privileges_t::get_length()
+ULONG CTOKEN_PRIVILEGES::GetLength()
 {
-	return sizeof priv_count + priv_count * sizeof (LUID_AND_ATTRIBUTES);
+	return sizeof PrivCount + PrivCount * sizeof (LUID_AND_ATTRIBUTES);
 }
 
-NTSTATUS token_privileges_t::copy_to_user( PTOKEN_PRIVILEGES tp )
+NTSTATUS CTOKEN_PRIVILEGES::CopyToUser( PTOKEN_PRIVILEGES tp )
 {
 	NTSTATUS r;
 
-	r = ::CopyToUser( &tp->PrivilegeCount, &priv_count, sizeof priv_count );
+	r = ::CopyToUser( &tp->PrivilegeCount, &PrivCount, sizeof PrivCount );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	luid_and_priv_iter_t i(priv_list);
+	LUID_AND_PRIV_ITER i(PrivList);
 	ULONG n = 0;
 	while (i)
 	{
-		luid_and_privileges_t *priv = i;
+		LUID_AND_PRIVILEGES *priv = i;
 		LUID_AND_ATTRIBUTES* la = priv;
 		r = ::CopyToUser( &tp->Privileges[n], la, sizeof *la );
 		if (r < STATUS_SUCCESS)
@@ -172,97 +172,97 @@ NTSTATUS token_privileges_t::copy_to_user( PTOKEN_PRIVILEGES tp )
 	return r;
 }
 
-class user_copy_t
+class USER_COPY
 {
 public:
-	virtual ULONG get_length() = 0;
-	virtual NTSTATUS copy_to_user(PVOID) = 0;
-	virtual ~user_copy_t() = 0;
+	virtual ULONG GetLength() = 0;
+	virtual NTSTATUS CopyToUser(PVOID) = 0;
+	virtual ~USER_COPY() = 0;
 };
 
-user_copy_t::~user_copy_t()
+USER_COPY::~USER_COPY()
 {
 }
 
-class sid_t : public user_copy_t
+class CSID : public USER_COPY
 {
 public:
 	BYTE Revision;
 	SID_IDENTIFIER_AUTHORITY IdentifierAuthority;
 protected:
 	BYTE SubAuthorityCount;
-	ULONG *subauthority;
-	inline ULONG sid_len()
+	ULONG *SubAuthority;
+	inline ULONG SidLen()
 	{
 		return FIELD_OFFSET( SID, SubAuthority );
 	}
 public:
-	sid_t();
-	NTSTATUS copy_from_user( PSID sid );
-	virtual ULONG get_length();
-	virtual NTSTATUS copy_to_user( PVOID sid );
-	void set_subauth_count( BYTE count );
-	void set_subauth( ULONG n, ULONG subauth );
-	ULONG get_subauth_count()
+	CSID();
+	NTSTATUS CopyFromUser( PSID sid );
+	virtual ULONG GetLength();
+	virtual NTSTATUS CopyToUser( PVOID sid );
+	void SetSubAuthCount( BYTE count );
+	void SetSubAuth( ULONG n, ULONG subauth );
+	ULONG GetSubAuthCount()
 	{
 		return SubAuthorityCount;
 	}
-	void dump();
+	void Dump();
 };
 
-sid_t::sid_t() :
+CSID::CSID() :
 	Revision(1),
 	SubAuthorityCount(0),
-	subauthority(0)
+	SubAuthority(0)
 {
 }
 
-void sid_t::dump()
+void CSID::Dump()
 {
 	BYTE* b = IdentifierAuthority.Value;
 	trace("sid: %02x %02x %02x-%02x-%02x-%02x-%02x-%02x\n",
 		  Revision, SubAuthorityCount, b[0], b[1], b[2], b[3], b[4], b[6]);
 }
 
-void sid_t::set_subauth_count( BYTE count )
+void CSID::SetSubAuthCount( BYTE count )
 {
-	if (subauthority)
-		delete subauthority;
+	if (SubAuthority)
+		delete SubAuthority;
 	SubAuthorityCount = count;
-	subauthority = new ULONG[count];
+	SubAuthority = new ULONG[count];
 }
 
-void sid_t::set_subauth( ULONG n, ULONG subauth )
+void CSID::SetSubAuth( ULONG n, ULONG subauth )
 {
 	assert(n < SubAuthorityCount);
-	subauthority[n] = subauth;
+	SubAuthority[n] = subauth;
 }
 
-ULONG sid_t::get_length()
+ULONG CSID::GetLength()
 {
-	return sid_len() + SubAuthorityCount * sizeof (ULONG);
+	return SidLen() + SubAuthorityCount * sizeof (ULONG);
 }
 
-NTSTATUS sid_t::copy_from_user( PSID psid )
+NTSTATUS CSID::CopyFromUser( PSID psid )
 {
 	NTSTATUS r;
 	SID sid;
 
-	r = ::CopyFromUser( &sid, psid, sid_len() );
+	r = ::CopyFromUser( &sid, psid, SidLen() );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	Revision = sid.Revision;
 	IdentifierAuthority = sid.IdentifierAuthority;
-	set_subauth_count( sid.SubAuthorityCount );
+	SetSubAuthCount( sid.SubAuthorityCount );
 
 	PISID pisid = (PISID) psid;
-	r = ::CopyFromUser( subauthority, &pisid->SubAuthority, SubAuthorityCount * sizeof (ULONG));
+	r = ::CopyFromUser( SubAuthority, &pisid->SubAuthority, SubAuthorityCount * sizeof (ULONG));
 
 	return r;
 }
 
-NTSTATUS sid_t::copy_to_user( PSID psid )
+NTSTATUS CSID::CopyToUser( PSID psid )
 {
 	NTSTATUS r;
 	SID sid;
@@ -271,45 +271,45 @@ NTSTATUS sid_t::copy_to_user( PSID psid )
 	sid.IdentifierAuthority = IdentifierAuthority;
 	sid.SubAuthorityCount = SubAuthorityCount;
 
-	r = ::CopyToUser( psid, &sid, sid_len() );
+	r = ::CopyToUser( psid, &sid, SidLen() );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	PISID pisid = (PISID) psid;
-	r = ::CopyToUser( &pisid->SubAuthority, subauthority, SubAuthorityCount * sizeof (ULONG));
+	r = ::CopyToUser( &pisid->SubAuthority, SubAuthority, SubAuthorityCount * sizeof (ULONG));
 
 	return r;
 }
 
 // wrapper for SID_AND_ATTRIBUTES
-class sid_and_attributes_t
+class CSID_AND_ATTRIBUTES
 {
-	sid_t sid;
+	CSID Sid;
 	ULONG Attributes;
 public:
-	sid_and_attributes_t();
-	ULONG get_length();
-	NTSTATUS copy_hdr_to_user( SID_AND_ATTRIBUTES* psida, ULONG ofs );
-	NTSTATUS copy_to_user( SID_AND_ATTRIBUTES* sida );
-	sid_t &get_sid();
+	CSID_AND_ATTRIBUTES();
+	ULONG GetLength();
+	NTSTATUS CopyHdrToUser( SID_AND_ATTRIBUTES* psida, ULONG ofs );
+	NTSTATUS CopyToUser( SID_AND_ATTRIBUTES* sida );
+	CSID &GetSid();
 };
 
-sid_and_attributes_t::sid_and_attributes_t():
+CSID_AND_ATTRIBUTES::CSID_AND_ATTRIBUTES():
 	Attributes( 0 )
 {
 }
 
-sid_t &sid_and_attributes_t::get_sid()
+CSID &CSID_AND_ATTRIBUTES::GetSid()
 {
-	return sid;
+	return Sid;
 }
 
-ULONG sid_and_attributes_t::get_length()
+ULONG CSID_AND_ATTRIBUTES::GetLength()
 {
-	return sizeof (SID_AND_ATTRIBUTES) + sid.get_length();
+	return sizeof (SID_AND_ATTRIBUTES) + Sid.GetLength();
 }
 
-NTSTATUS sid_and_attributes_t::copy_hdr_to_user( SID_AND_ATTRIBUTES* psida, ULONG ofs )
+NTSTATUS CSID_AND_ATTRIBUTES::CopyHdrToUser( SID_AND_ATTRIBUTES* psida, ULONG ofs )
 {
 	SID_AND_ATTRIBUTES sida;
 	sida.Attributes = Attributes;
@@ -317,78 +317,78 @@ NTSTATUS sid_and_attributes_t::copy_hdr_to_user( SID_AND_ATTRIBUTES* psida, ULON
 	return ::CopyToUser( psida, &sida, sizeof sida );
 }
 
-NTSTATUS sid_and_attributes_t::copy_to_user( SID_AND_ATTRIBUTES* psida )
+NTSTATUS CSID_AND_ATTRIBUTES::CopyToUser( SID_AND_ATTRIBUTES* psida )
 {
 	NTSTATUS r;
-	r = copy_hdr_to_user( psida, sizeof *psida );
+	r = CopyHdrToUser( psida, sizeof *psida );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	return sid.copy_to_user( (PSID)(psida + 1) );
+	return Sid.CopyToUser( (PSID)(psida + 1) );
 }
 
-class token_groups_t
+class CTOKEN_GROUPS
 {
-	ULONG count;
-	sid_and_attributes_t *sa;
+	ULONG Count;
+	CSID_AND_ATTRIBUTES *SA;
 protected:
-	void reset();
+	void Reset();
 public:
-	token_groups_t();
-	~token_groups_t();
-	ULONG get_length();
-	NTSTATUS copy_to_user( TOKEN_GROUPS *tg );
-	void set_count( ULONG n );
-	sid_and_attributes_t& get_sa( ULONG n );
+	CTOKEN_GROUPS();
+	~CTOKEN_GROUPS();
+	ULONG GetLength();
+	NTSTATUS CopyToUser( TOKEN_GROUPS *tg );
+	void SetCount( ULONG n );
+	CSID_AND_ATTRIBUTES& GetSA( ULONG n );
 };
 
-token_groups_t::token_groups_t() :
-	count(0),
-	sa(0)
+CTOKEN_GROUPS::CTOKEN_GROUPS() :
+	Count(0),
+	SA(0)
 {
 }
 
-token_groups_t::~token_groups_t()
+CTOKEN_GROUPS::~CTOKEN_GROUPS()
 {
-	reset();
+	Reset();
 }
 
-void token_groups_t::reset()
+void CTOKEN_GROUPS::Reset()
 {
-	delete sa;
-	sa = 0;
-	count = 0;
+	delete SA;
+	SA = 0;
+	Count = 0;
 }
 
 // assume this is only done once
-void token_groups_t::set_count( ULONG n )
+void CTOKEN_GROUPS::SetCount( ULONG n )
 {
-	reset();
-	sa = new sid_and_attributes_t[n];
-	count = n;
+	Reset();
+	SA = new CSID_AND_ATTRIBUTES[n];
+	Count = n;
 }
 
-sid_and_attributes_t& token_groups_t::get_sa( ULONG n )
+CSID_AND_ATTRIBUTES& CTOKEN_GROUPS::GetSA( ULONG n )
 {
-	if (n >= count)
+	if (n >= Count)
 		throw;
-	return sa[n];
+	return SA[n];
 }
 
-ULONG token_groups_t::get_length()
+ULONG CTOKEN_GROUPS::GetLength()
 {
 	ULONG len = sizeof (ULONG);
 
-	for (ULONG i=0; i<count; i++)
-		len += sa[i].get_length();
+	for (ULONG i=0; i<Count; i++)
+		len += SA[i].GetLength();
 
 	return len;
 }
 
-NTSTATUS token_groups_t::copy_to_user( TOKEN_GROUPS *tg )
+NTSTATUS CTOKEN_GROUPS::CopyToUser( TOKEN_GROUPS *tg )
 {
 	NTSTATUS r;
-	r = ::CopyToUser( &tg->GroupCount, &count, sizeof count );
+	r = ::CopyToUser( &tg->GroupCount, &Count, sizeof Count );
 	if (r < STATUS_SUCCESS)
 		return r;
 
@@ -400,235 +400,235 @@ NTSTATUS token_groups_t::copy_to_user( TOKEN_GROUPS *tg )
 	//    1st SID
 	//    2nd SID
 	//    ...
-	ULONG ofs = sizeof (ULONG) + count * sizeof (SID_AND_ATTRIBUTES);
-	for (ULONG i=0; i<count; i++)
+	ULONG ofs = sizeof (ULONG) + Count * sizeof (SID_AND_ATTRIBUTES);
+	for (ULONG i=0; i<Count; i++)
 	{
-		r = sa[i].copy_hdr_to_user( &tg->Groups[i], ofs );
+		r = SA[i].CopyHdrToUser( &tg->Groups[i], ofs );
 		if (r < STATUS_SUCCESS)
 			return r;
-		r = sa[i].get_sid().copy_to_user( (PSID) ((BYTE*) tg + ofs) );
+		r = SA[i].GetSid().CopyToUser( (PSID) ((BYTE*) tg + ofs) );
 		if (r < STATUS_SUCCESS)
 			return r;
-		ofs += sa[i].get_sid().get_length();
+		ofs += SA[i].GetSid().GetLength();
 	}
 
 	return r;
 }
 
 // access control entry
-class ace_t;
+class ACE;
 
-typedef LIST_ANCHOR<ace_t,0> ace_list_t;
-typedef LIST_ELEMENT<ace_t> ace_entry_t;
-typedef LIST_ITER<ace_t,0> ace_iter_t;
+typedef LIST_ANCHOR<ACE,0> ACE_LIST;
+typedef LIST_ELEMENT<ACE> ACE_ENTRY;
+typedef LIST_ITER<ACE,0> ACE_ITER;
 
-class ace_t : public user_copy_t
+class ACE : public USER_COPY
 {
-	struct ace_common_t
+	struct ACE_COMMON
 	{
-		ACE_HEADER header;
-		ULONG mask;
-		ULONG sid_start;
+		ACE_HEADER Header;
+		ULONG Mask;
+		ULONG SidStart;
 	};
-	friend class LIST_ANCHOR<ace_t,0>;
-	friend class LIST_ITER<ace_t,0>;
+	friend class LIST_ANCHOR<ACE,0>;
+	friend class LIST_ITER<ACE,0>;
 protected:
-	ace_entry_t Entry[1];
-	BYTE type;
-	BYTE flags;
-	ULONG mask;
-	sid_t sid;
+	ACE_ENTRY Entry[1];
+	BYTE Type;
+	BYTE Flags;
+	ULONG Mask;
+	CSID Sid;
 public:
-	ace_t(BYTE type);
-	virtual ULONG get_length();
-	virtual NTSTATUS copy_to_user( PVOID pace );
-	virtual ~ace_t();
-	sid_t& get_sid();
+	ACE(BYTE type);
+	virtual ULONG GetLength();
+	virtual NTSTATUS CopyToUser( PVOID pace );
+	virtual ~ACE();
+	CSID& GetSid();
 };
 
-ace_t::ace_t(BYTE _type) :
-	type( _type ),
-	flags( 0 )
+ACE::ACE(BYTE _type) :
+	Type( _type ),
+	Flags( 0 )
 {
 }
 
-ace_t::~ace_t()
+ACE::~ACE()
 {
 }
 
-sid_t& ace_t::get_sid()
+CSID& ACE::GetSid()
 {
-	return sid;
+	return Sid;
 }
 
-ULONG ace_t::get_length()
+ULONG ACE::GetLength()
 {
-	return sizeof (ace_common_t) + sid.get_length();
+	return sizeof (ACE_COMMON) + Sid.GetLength();
 }
 
-NTSTATUS ace_t::copy_to_user( PVOID pace )
+NTSTATUS ACE::CopyToUser( PVOID pace )
 {
 	BYTE *p = (BYTE*) pace;
 
-	ace_common_t ace;
+	ACE_COMMON ace;
 
-	ace.header.AceType = type;
-	ace.header.AceFlags = flags;
-	ace.header.AceSize = sizeof ace + sid.get_length();
-	ace.mask = mask;
-	ace.sid_start = sizeof ace;
+	ace.Header.AceType = Type;
+	ace.Header.AceFlags = Flags;
+	ace.Header.AceSize = sizeof ace + Sid.GetLength();
+	ace.Mask = Mask;
+	ace.SidStart = sizeof ace;
 
 	NTSTATUS r = ::CopyToUser( pace, &ace, sizeof ace );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	return sid.copy_to_user( (PVOID) ((PBYTE) p + sizeof ace) );
+	return Sid.CopyToUser( (PVOID) ((PBYTE) p + sizeof ace) );
 }
 
-class access_allowed_ace_t : public ace_t
+class CACCESS_ALLOWED_ACE : public ACE
 {
 public:
-	access_allowed_ace_t();
+	CACCESS_ALLOWED_ACE();
 };
 
-access_allowed_ace_t::access_allowed_ace_t() :
-	ace_t( ACCESS_ALLOWED_ACE_TYPE )
-{
-}
-
-class access_denied_ace_t : public ace_t
-{
-public:
-	access_denied_ace_t();
-};
-
-access_denied_ace_t::access_denied_ace_t() :
-	ace_t( ACCESS_DENIED_ACE_TYPE )
+CACCESS_ALLOWED_ACE::CACCESS_ALLOWED_ACE() :
+	ACE( ACCESS_ALLOWED_ACE_TYPE )
 {
 }
 
-class system_audit_ace_t : public ace_t
+class CACCESS_DENIED_ACE : public ACE
 {
 public:
-	system_audit_ace_t();
+	CACCESS_DENIED_ACE();
 };
 
-system_audit_ace_t::system_audit_ace_t() :
-	ace_t( SYSTEM_AUDIT_ACE_TYPE )
+CACCESS_DENIED_ACE::CACCESS_DENIED_ACE() :
+	ACE( ACCESS_DENIED_ACE_TYPE )
 {
 }
 
-class system_alarm_ace_t : public ace_t
+class CSYSTEM_AUDIT_ACE : public ACE
 {
 public:
-	system_alarm_ace_t();
+	CSYSTEM_AUDIT_ACE();
 };
 
-system_alarm_ace_t::system_alarm_ace_t() :
-	ace_t( SYSTEM_ALARM_ACE_TYPE )
+CSYSTEM_AUDIT_ACE::CSYSTEM_AUDIT_ACE() :
+	ACE( SYSTEM_AUDIT_ACE_TYPE )
+{
+}
+
+class CSYSTEM_ALARM_ACE : public ACE
+{
+public:
+	CSYSTEM_ALARM_ACE();
+};
+
+CSYSTEM_ALARM_ACE::CSYSTEM_ALARM_ACE() :
+	ACE( SYSTEM_ALARM_ACE_TYPE )
 {
 }
 
 // access control list
-class acl_t : public user_copy_t, protected ACL
+class CACL : public USER_COPY, protected ACL
 {
-	ace_list_t ace_list;
+	ACE_LIST AceList;
 public:
-	virtual ULONG get_length();
-	virtual NTSTATUS copy_to_user( PVOID pacl );
-	virtual ~acl_t();
-	NTSTATUS copy_from_user( PACL pacl );
-	void add( ace_t *ace );
+	virtual ULONG GetLength();
+	virtual NTSTATUS CopyToUser( PVOID pacl );
+	virtual ~CACL();
+	NTSTATUS CopyFromUser( PACL pacl );
+	void Add( ACE *ace );
 };
 
-acl_t::~acl_t()
+CACL::~CACL()
 {
-	ace_t *ace;
-	while ((ace = ace_list.Head()))
+	ACE *ace;
+	while ((ace = AceList.Head()))
 	{
-		ace_list.Unlink( ace );
+		AceList.Unlink( ace );
 		delete ace;
 	}
 }
 
-ULONG acl_t::get_length()
+ULONG CACL::GetLength()
 {
 	ULONG len = sizeof (ACL);
-	ace_iter_t i(ace_list);
+	ACE_ITER i(AceList);
 	while (i)
 	{
-		ace_t *ace = i;
-		len += ace->get_length();
+		ACE *ace = i;
+		len += ace->GetLength();
 		i.Next();
 	}
 	return len;
 }
 
-NTSTATUS acl_t::copy_to_user( PVOID pacl )
+NTSTATUS CACL::CopyToUser( PVOID pacl )
 {
 	PACL acl = this;
 	ULONG ofs = sizeof *acl;
 	NTSTATUS r = ::CopyToUser( pacl, acl, ofs );
 
-	ace_iter_t i(ace_list);
+	ACE_ITER i(AceList);
 	while (i && r == STATUS_SUCCESS)
 	{
-		ace_t *ace = i;
-		r = ace->copy_to_user( (PVOID) ((BYTE*) pacl + ofs) );
-		ofs += ace->get_length();
+		ACE *ace = i;
+		r = ace->CopyToUser( (PVOID) ((BYTE*) pacl + ofs) );
+		ofs += ace->GetLength();
 		i.Next();
 	}
 	return r;
 }
 
-void acl_t::add( ace_t *ace )
+void CACL::Add( ACE *ace )
 {
-	ace_list.Append( ace );
+	AceList.Append( ace );
 }
 
-class privilege_set_t
+class PRIVILEGES_SET
 {
-	ULONG count;
-	ULONG control;
-	LUID_AND_ATTRIBUTES *privileges;
+	ULONG Count;
+	ULONG Control;
+	LUID_AND_ATTRIBUTES *Privileges;
 protected:
-	void reset();
-	void set_count( ULONG count );
+	void Reset();
+	void SetCount( ULONG count );
 public:
-	privilege_set_t();
-	~privilege_set_t();
-	NTSTATUS copy_from_user( PPRIVILEGE_SET ps );
+	PRIVILEGES_SET();
+	~PRIVILEGES_SET();
+	NTSTATUS CopyFromUser( PPRIVILEGE_SET ps );
 };
 
-privilege_set_t::privilege_set_t() :
-	count(0),
-	control(0),
-	privileges(0)
+PRIVILEGES_SET::PRIVILEGES_SET() :
+	Count(0),
+	Control(0),
+	Privileges(0)
 {
 }
 
-privilege_set_t::~privilege_set_t()
+PRIVILEGES_SET::~PRIVILEGES_SET()
 {
-	reset();
+	Reset();
 }
 
-void privilege_set_t::reset()
+void PRIVILEGES_SET::Reset()
 {
-	if (count)
+	if (Count)
 	{
-		delete privileges;
-		count = 0;
+		delete Privileges;
+		Count = 0;
 	}
 }
 
-void privilege_set_t::set_count( ULONG n )
+void PRIVILEGES_SET::SetCount( ULONG n )
 {
-	reset();
-	privileges = new LUID_AND_ATTRIBUTES[n];
-	count = n;
+	Reset();
+	Privileges = new LUID_AND_ATTRIBUTES[n];
+	Count = n;
 }
 
-NTSTATUS privilege_set_t::copy_from_user( PPRIVILEGE_SET ps )
+NTSTATUS PRIVILEGES_SET::CopyFromUser( PPRIVILEGE_SET ps )
 {
 	struct
 	{
@@ -640,40 +640,40 @@ NTSTATUS privilege_set_t::copy_from_user( PPRIVILEGE_SET ps )
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	set_count( x.count );
-	control = x.control;
+	SetCount( x.count );
+	Control = x.control;
 
-	r = ::CopyFromUser( privileges, ps->Privilege, count * sizeof privileges[0] );
+	r = ::CopyFromUser( Privileges, ps->Privilege, Count * sizeof Privileges[0] );
 
 	return STATUS_SUCCESS;
 }
 
-token_t::~token_t()
+TOKEN::~TOKEN()
 {
 }
 
-class token_impl_t : public token_t
+class TOKEN_IMPL : public TOKEN
 {
-	token_privileges_t privs;
-	sid_t owner;
-	sid_t primary_group;
-	acl_t default_dacl;
-	sid_and_attributes_t user;
-	token_groups_t groups;
+	CTOKEN_PRIVILEGES Privs;
+	CSID Owner;
+	CSID PrimaryGroup;
+	CACL DefaultDacl;
+	CSID_AND_ATTRIBUTES User;
+	CTOKEN_GROUPS Groups;
 public:
-	token_impl_t();
-	virtual ~token_impl_t();
-	virtual token_privileges_t& get_privs();
-	virtual sid_t& get_owner();
-	virtual sid_and_attributes_t& get_user();
-	virtual sid_t& get_primary_group();
-	virtual token_groups_t& get_groups();
-	virtual acl_t& get_default_dacl();
-	virtual NTSTATUS adjust(token_privileges_t& privs);
-	NTSTATUS add( LUID_AND_ATTRIBUTES& la );
+	TOKEN_IMPL();
+	virtual ~TOKEN_IMPL();
+	virtual CTOKEN_PRIVILEGES& GetPrivs();
+	virtual CSID& GetOwner();
+	virtual CSID_AND_ATTRIBUTES& GetUser();
+	virtual CSID& GetPrimaryGroup();
+	virtual CTOKEN_GROUPS& GetGroups();
+	virtual CACL& GetDefaultDacl();
+	virtual NTSTATUS Adjust(CTOKEN_PRIVILEGES& privs);
+	NTSTATUS Add( LUID_AND_ATTRIBUTES& la );
 };
 
-token_impl_t::token_impl_t()
+TOKEN_IMPL::TOKEN_IMPL()
 {
 	// FIXME: make this a default local computer account with privileges disabled
 	LUID_AND_ATTRIBUTES la;
@@ -683,58 +683,58 @@ token_impl_t::token_impl_t()
 	la.Luid.HighPart = 0;
 	la.Attributes = 0;
 
-	privs.add( la );
+	Privs.Add( la );
 
 	static const SID_IDENTIFIER_AUTHORITY auth = {SECURITY_NT_AUTHORITY};
-	memcpy( &owner.IdentifierAuthority, &auth, sizeof auth );
-	owner.set_subauth_count( 1 );
-	owner.set_subauth( 0, SECURITY_LOCAL_SYSTEM_RID );
+	memcpy( &Owner.IdentifierAuthority, &auth, sizeof auth );
+	Owner.SetSubAuthCount( 1 );
+	Owner.SetSubAuth( 0, SECURITY_LOCAL_SYSTEM_RID );
 
-	memcpy( &primary_group.IdentifierAuthority, &auth, sizeof auth );
-	primary_group.set_subauth_count( 1 );
-	primary_group.set_subauth( 0, DOMAIN_GROUP_RID_COMPUTERS );
+	memcpy( &PrimaryGroup.IdentifierAuthority, &auth, sizeof auth );
+	PrimaryGroup.SetSubAuthCount( 1 );
+	PrimaryGroup.SetSubAuth( 0, DOMAIN_GROUP_RID_COMPUTERS );
 
-	sid_t &user_sid = user.get_sid();
+	CSID &user_sid = User.GetSid();
 	memcpy( &user_sid.IdentifierAuthority, &auth, sizeof auth );
-	user_sid.set_subauth_count( 1 );
-	user_sid.set_subauth( 0, SECURITY_LOCAL_SYSTEM_RID );
+	user_sid.SetSubAuthCount( 1 );
+	user_sid.SetSubAuth( 0, SECURITY_LOCAL_SYSTEM_RID );
 }
 
-token_impl_t::~token_impl_t()
+TOKEN_IMPL::~TOKEN_IMPL()
 {
 }
 
-sid_t& token_impl_t::get_owner()
+CSID& TOKEN_IMPL::GetOwner()
 {
-	return owner;
+	return Owner;
 }
 
-sid_t& token_impl_t::get_primary_group()
+CSID& TOKEN_IMPL::GetPrimaryGroup()
 {
-	return primary_group;
+	return PrimaryGroup;
 }
 
-token_groups_t& token_impl_t::get_groups()
+CTOKEN_GROUPS& TOKEN_IMPL::GetGroups()
 {
-	return groups;
+	return Groups;
 }
 
-sid_and_attributes_t& token_impl_t::get_user()
+CSID_AND_ATTRIBUTES& TOKEN_IMPL::GetUser()
 {
-	return user;
+	return User;
 }
 
-token_privileges_t& token_impl_t::get_privs()
+CTOKEN_PRIVILEGES& TOKEN_IMPL::GetPrivs()
 {
-	return privs;
+	return Privs;
 }
 
-acl_t& token_impl_t::get_default_dacl()
+CACL& TOKEN_IMPL::GetDefaultDacl()
 {
-	return default_dacl;
+	return DefaultDacl;
 }
 
-NTSTATUS token_impl_t::adjust(token_privileges_t& privs)
+NTSTATUS TOKEN_IMPL::Adjust(CTOKEN_PRIVILEGES& privs)
 {
 	return STATUS_SUCCESS;
 }
@@ -757,7 +757,7 @@ NTSTATUS NTAPI NtOpenProcessToken(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	token_t *token = new token_impl_t;
+	TOKEN *token = new TOKEN_IMPL;
 	if (!token)
 		return STATUS_NO_MEMORY;
 
@@ -786,7 +786,7 @@ NTSTATUS NTAPI NtOpenThreadToken(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	token_t *tok = t->GetToken();
+	TOKEN *tok = t->GetToken();
 	if (tok == 0)
 		return STATUS_NO_TOKEN;
 
@@ -823,28 +823,28 @@ NTSTATUS NTAPI NtAdjustPrivilegesToken(
 	if (PreviousState)
 		mask |= TOKEN_QUERY;
 
-	token_t *token = 0;
+	TOKEN *token = 0;
 	r = ObjectFromHandle( token, TokenHandle, mask );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	token_privileges_t privs;
-	r = privs.copy_from_user( NewState );
+	CTOKEN_PRIVILEGES privs;
+	r = privs.CopyFromUser( NewState );
 	if (r < STATUS_SUCCESS)
 		return r;
 
 	// return previous state information if required
 	if (PreviousState)
 	{
-		token_privileges_t& prev_state = token->get_privs();
+		CTOKEN_PRIVILEGES& prev_state = token->GetPrivs();
 
-		ULONG len = prev_state.get_length();
+		ULONG len = prev_state.GetLength();
 		trace("old privs %ld bytes\n", len);
-		prev_state.dump();
+		prev_state.Dump();
 		if (len > BufferLength)
 			return STATUS_BUFFER_TOO_SMALL;
 
-		r = prev_state.copy_to_user( PreviousState );
+		r = prev_state.CopyToUser( PreviousState );
 		if (r < STATUS_SUCCESS)
 			return r;
 
@@ -852,18 +852,18 @@ NTSTATUS NTAPI NtAdjustPrivilegesToken(
 		assert( r == STATUS_SUCCESS );
 	}
 
-	r = token->adjust( privs );
+	r = token->Adjust( privs );
 
 	trace("new privs\n");
-	privs.dump();
+	privs.Dump();
 
 	return r;
 }
 
-static NTSTATUS copy_ptr_to_user( user_copy_t& item, PVOID info, ULONG infolen, ULONG& retlen )
+static NTSTATUS CopyPtrToUser( USER_COPY& item, PVOID info, ULONG infolen, ULONG& retlen )
 {
 	// really screwy - have to write back a pointer to the sid, then the sid
-	retlen = item.get_length() + sizeof (PVOID);
+	retlen = item.GetLength() + sizeof (PVOID);
 	if (retlen > infolen)
 		return STATUS_BUFFER_TOO_SMALL;
 
@@ -872,7 +872,7 @@ static NTSTATUS copy_ptr_to_user( user_copy_t& item, PVOID info, ULONG infolen, 
 	NTSTATUS r = CopyToUser( info, &ptr, sizeof ptr );
 	if (r < STATUS_SUCCESS)
 		return r;
-	return item.copy_to_user( ptr );
+	return item.CopyToUser( ptr );
 }
 
 NTSTATUS NTAPI NtQueryInformationToken(
@@ -882,7 +882,7 @@ NTSTATUS NTAPI NtQueryInformationToken(
 	ULONG TokenInformationLength,
 	PULONG ReturnLength )
 {
-	token_t *token;
+	TOKEN *token;
 	ULONG len;
 	NTSTATUS r;
 	TOKEN_STATISTICS stats;
@@ -898,29 +898,29 @@ NTSTATUS NTAPI NtQueryInformationToken(
 	{
 	case TokenOwner:
 		trace("TokenOwner\n");
-		r = copy_ptr_to_user( token->get_owner(), TokenInformation, TokenInformationLength, len );
+		r = CopyPtrToUser( token->GetOwner(), TokenInformation, TokenInformationLength, len );
 		break;
 
 	case TokenPrimaryGroup:
 		trace("TokenPrimaryGroup\n");
-		r = copy_ptr_to_user( token->get_primary_group(), TokenInformation, TokenInformationLength, len );
+		r = CopyPtrToUser( token->GetPrimaryGroup(), TokenInformation, TokenInformationLength, len );
 		break;
 
 	case TokenDefaultDacl:
 		trace("TokenDefaultDacl\n");
-		r = copy_ptr_to_user( token->get_default_dacl(), TokenInformation, TokenInformationLength, len );
+		r = CopyPtrToUser( token->GetDefaultDacl(), TokenInformation, TokenInformationLength, len );
 		break;
 
 	case TokenUser:
 		trace("TokenUser\n");
-		len = token->get_user().get_length();
+		len = token->GetUser().GetLength();
 		if (len > TokenInformationLength)
 		{
 			r = STATUS_BUFFER_TOO_SMALL;
 			break;
 		}
 
-		r = token->get_user().copy_to_user( (SID_AND_ATTRIBUTES*) TokenInformation );
+		r = token->GetUser().CopyToUser( (SID_AND_ATTRIBUTES*) TokenInformation );
 		break;
 
 	case TokenImpersonationLevel:
@@ -942,14 +942,14 @@ NTSTATUS NTAPI NtQueryInformationToken(
 
 	case TokenGroups:
 		trace("TokenGroups\n");
-		len = token->get_groups().get_length();
+		len = token->GetGroups().GetLength();
 		if (len > TokenInformationLength)
 		{
 			r = STATUS_BUFFER_TOO_SMALL;
 			break;
 		}
 
-		r = token->get_groups().copy_to_user( (TOKEN_GROUPS*) TokenInformation );
+		r = token->GetGroups().CopyToUser( (TOKEN_GROUPS*) TokenInformation );
 		break;
 
 	default:
@@ -980,13 +980,13 @@ NTSTATUS NTAPI NtDuplicateToken(
 	TOKEN_TYPE TokenType,
 	PHANDLE TokenHandle)
 {
-	token_t *existing = 0;
+	TOKEN *existing = 0;
 
 	NTSTATUS r = ObjectFromHandle( existing, ExistingToken, TOKEN_QUERY );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	token_t *token = new token_impl_t;
+	TOKEN *token = new TOKEN_IMPL;
 	if (!token)
 		return STATUS_NO_MEMORY;
 
@@ -1026,14 +1026,14 @@ NTSTATUS NtPrivilegeCheck(
 	PPRIVILEGE_SET RequiredPrivileges,
 	PBOOLEAN Result)
 {
-	token_t *token = 0;
+	TOKEN *token = 0;
 
 	NTSTATUS r = ObjectFromHandle( token, TokenHandle, TOKEN_QUERY );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	privilege_set_t ps;
-	r = ps.copy_from_user( RequiredPrivileges );
+	PRIVILEGES_SET ps;
+	r = ps.CopyFromUser( RequiredPrivileges );
 	if (r < STATUS_SUCCESS)
 		return r;
 

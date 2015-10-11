@@ -58,7 +58,7 @@ public:
 	virtual void RegisterTerminatePort( OBJECT *port );
 	//virtual void Wait();
 	virtual NTSTATUS QueueApcThread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, PVOID Arg2, PVOID Arg3);
-	virtual token_t* GetToken();
+	virtual TOKEN* GetToken();
 	virtual NTSTATUS Resume( PULONG count );
 	virtual NTSTATUS CopyToUser( void *dest, const void *src, size_t count );
 	virtual NTSTATUS CopyFromUser( void *dest, const void *src, size_t count );
@@ -132,7 +132,7 @@ NTSTATUS KERNEL_THREAD::QueueApcThread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, 
 	return 0;
 }
 
-token_t* KERNEL_THREAD::GetToken()
+TOKEN* KERNEL_THREAD::GetToken()
 {
 	assert(0);
 	return 0;

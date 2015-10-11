@@ -134,7 +134,7 @@ class THREAD_IMPL :
 	BOOLEAN ContextChanged;
 
 	OBJECT *TerminatePort;
-	token_t *Token;
+	TOKEN *Token;
 
 	// win32 callback stack
 	CALLBACK_FRAME *CallbackFrame;
@@ -176,8 +176,8 @@ public:
 	void CopyRegisters( CONTEXT& dest, CONTEXT &src, ULONG flags );
 	void SetContext( CONTEXT& c, bool override_return=true );
 	void GetContext( CONTEXT& c );
-	void SetToken( token_t *tok );
-	token_t* GetToken();
+	void SetToken( TOKEN *tok );
+	TOKEN* GetToken();
 	CALLBACK_FRAME* SetCallback( CALLBACK_FRAME *cb );
 	PVOID& GetWin32StartAddress();
 	void RegisterTerminatePort( OBJECT *port );
@@ -1725,7 +1725,7 @@ NTSTATUS THREAD_IMPL::TestAlert()
 	return STATUS_SUCCESS;
 }
 
-void THREAD_IMPL::SetToken( token_t *tok )
+void THREAD_IMPL::SetToken( TOKEN *tok )
 {
 	if (Token)
 		Release( Token );
@@ -1733,7 +1733,7 @@ void THREAD_IMPL::SetToken( token_t *tok )
 	Token = tok;
 }
 
-token_t *THREAD_IMPL::GetToken()
+TOKEN *THREAD_IMPL::GetToken()
 {
 	return Token;
 }
@@ -1771,7 +1771,7 @@ NTSTATUS NTAPI NtSetInformationThread(
 			NTSTATUS r = CopyFromUser( &TokenHandle, ThreadInformation, sizeof TokenHandle );
 			if (r < STATUS_SUCCESS)
 				return r;
-			token_t *token = 0;
+			TOKEN *token = 0;
 			r = ObjectFromHandle(token, TokenHandle, 0);
 			if (r < STATUS_SUCCESS)
 				return r;

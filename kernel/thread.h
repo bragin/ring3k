@@ -121,7 +121,7 @@ public:
 	virtual bool IsTerminated() = 0;
 	virtual void RegisterTerminatePort( OBJECT *port ) = 0;
 	virtual NTSTATUS QueueApcThread(PKNORMAL_ROUTINE ApcRoutine, PVOID Arg1, PVOID Arg2, PVOID Arg3) = 0;
-	virtual token_t* GetToken() = 0;
+	virtual TOKEN* GetToken() = 0;
 	virtual NTSTATUS Resume( PULONG count ) = 0;
 	virtual NTSTATUS CopyToUser( void *dest, const void *src, size_t count ) = 0;
 	virtual NTSTATUS CopyFromUser( void *dest, const void *src, size_t count ) = 0;
