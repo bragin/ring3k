@@ -366,7 +366,11 @@ NTSTATUS CopyMsgFromUser( MESSAGE **message, LPC_MESSAGE *Reply, ULONG max_data 
 
 NTSTATUS CopyMsgToUser( LPC_MESSAGE *addr, MESSAGE *msg )
 {
-	return CopyToUser( addr, &msg->Req, RoundUp(msg->Req.MessageSize) );
+    int AdditionalLength = 0;
+    if (!msg->Req.DataSize)
+        AdditionalLength = 1;
+    
+	return CopyToUser( addr, &msg->Req, RoundUp(msg->Req.MessageSize + AdditionalLength) );
 }
 
 PORT_QUEUE::~PORT_QUEUE()
