@@ -39,9 +39,10 @@ SUBDIRS = \
 	kernel \
 	programs \
 	tests \
-	tools \
 	regedit \
 	unpack
+#Commented, because for now qdf from tools folder is broken
+#	tools
 
 INSTALLSUBDIRS = \
 	kernel \
