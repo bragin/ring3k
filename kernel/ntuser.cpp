@@ -1743,6 +1743,7 @@ HDC NTAPI NtUserBeginPaint( HWND Window, PAINTSTRUCT* pps)
 	ps.rcPaint.top = 0;
 	ps.rcPaint.bottom = win->rcClient.bottom - win->rcClient.top;
 	ps.rcPaint.right = win->rcClient.right - win->rcClient.left;
+    ps.hdc = (HDC)win->GetDc();
 	NTSTATUS r = CopyToUser( pps, &ps );
 	if (r < STATUS_SUCCESS)
 		return NULL;
@@ -1750,7 +1751,7 @@ HDC NTAPI NtUserBeginPaint( HWND Window, PAINTSTRUCT* pps)
 	REGION*& region = win->GetInvalidRegion();
 	region->EmptyRegion();
 
-	return (HDC) win->GetDc();
+	return ps.hdc;
 }
 
 BOOLEAN NTAPI NtUserEndPaint( HWND Window, PAINTSTRUCT* pps )
