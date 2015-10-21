@@ -1597,7 +1597,7 @@ void test_port_loop(void)
 		case LPC_CONNECTION_REQUEST:
 			connection_requests++;
 			ok( client_handle == 0, "port wrong %p\n", client_handle );
-			ok(req->Data[0] == i, "sequence wrong %d\n", i);
+			ok(req->DataSize == 0, "data size wrong %d\n", i);
 			i++;
 
 			r = NtAcceptConnectPort( &con_port, (void*)1234, req, TRUE, NULL, NULL );
