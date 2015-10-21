@@ -460,6 +460,8 @@ cat > reg.xml <<EOF
         <s n="EventMessageFile">%SystemRoot%\System32\User32.dll</s>
        </k>
       </k>
+      <k n="Security">
+      </k>
      </k>
      <k n="DnsCache">
      </k>
