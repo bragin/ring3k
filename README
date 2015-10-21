@@ -177,3 +177,13 @@ Run QEMU (as user, making sure you have umount'ed the image first!)
 
     qemu -hda win2k.img
 
+
+Winlogon debugging
+----------------------------------------------------------------
+
+Add the following to win.ini to enable Winlogon/GINA debug messages (https://technet.microsoft.com/en-US/aa374744):
+
+[WinlogonDebug]
+DebugFlags=Error,Init,Notify,SAS,State,Timeout,Trace,Warn
+
+Don't forget to use checked build binaries for that!
