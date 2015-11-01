@@ -313,6 +313,7 @@ BOOLEAN NTAPI  NtUserSystemParametersInfo(ULONG,ULONG,ULONG,ULONG);
 int NTAPI      NtUserTranslateAccelerator(HWND,HACCEL,PMSG);
 BOOLEAN NTAPI  NtUserTranslateMessage(PMSG,ULONG);
 BOOLEAN NTAPI  NtUserUpdatePerUserSystemParameters(ULONG,ULONG);
+BOOLEAN NTAPI  NtUserUnregisterClass(PUNICODE_STRING,HINSTANCE,PNTCLASSMENUNAMES);
 BOOLEAN NTAPI  NtUserValidateRect(HWND,PRECT);
 HWND NTAPI     NtUserWindowFromPoint(POINT);
 

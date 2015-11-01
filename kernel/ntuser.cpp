@@ -899,6 +899,22 @@ ATOM NTAPI NtUserRegisterClassExWOW(
 	return cls->GetAtom();
 }
 
+BOOLEAN
+NTAPI
+NtUserUnregisterClass(
+	IN PUNICODE_STRING ClassNameOrAtom,
+	IN HINSTANCE hInstance,
+	OUT PNTCLASSMENUNAMES pClassMenuName)
+{
+	CUNICODE_STRING clsstr;
+	NTSTATUS Status = clsstr.CopyFromUser(ClassNameOrAtom);
+	if (Status < STATUS_SUCCESS)
+		return FALSE;
+
+	trace("UNIMPLEMENTED window class = %pus, hInstance = %lx, pClassMenuName %p\n", &clsstr, (ULONG)hInstance, pClassMenuName);
+	return TRUE;
+}
+
 NTSTATUS NTAPI NtUserSetInformationThread(
 	HANDLE ThreadHandle,
 	ULONG InfoClass,

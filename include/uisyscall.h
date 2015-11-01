@@ -627,7 +627,7 @@ NUL(NtUserUnhookWindowsHookEx),
 NUL(NtUserUnhookWinEvent),
 NUL(NtUserUnloadKeyboardLayout),
 NUL(NtUserUnlockWindowStation),
-NUL(NtUserUnregisterClass),
+IMP(NtUserUnregisterClass, 3),
 #ifdef SYSCALL_WINXP
 NUL(NtUserUnregisterUserApiHook), // 0
 #endif

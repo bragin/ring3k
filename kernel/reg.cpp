@@ -500,6 +500,7 @@ NTSTATUS RegQueryValue(
 	case KeyValueFullInformationAlign64:
 	case KeyValuePartialInformationAlign64:
 	default:
+		trace("RegQueryValue: UNIMPLEMENTED case %ld\n", KeyValueInformationClass);
 		r = STATUS_NOT_IMPLEMENTED;
 	}
 
