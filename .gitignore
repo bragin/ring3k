@@ -4,6 +4,9 @@
 *.a
 *.lib
 *.dll
+.autotools
+.cproject
+.project
 autom4te.cache
 config.log
 config.status
@@ -12,5 +15,4 @@ Makefile
 Make.rules
 ring3k
 ring3k-setup
-reg.xml
 core-*
