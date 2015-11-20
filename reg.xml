@@ -3,37 +3,57 @@
  <k n="Machine">
   <k n="Security">
    <k n="Policy">
-    <k n="PolRevision">
-    </k>
-    <k n="PolMod">
-    </k>
-    <k n="PolAdtLg">
-    </k>
-    <k n="PolAdtEv">
-    </k>
-    <k n="PolPrDmn">
-    </k>
-    <k n="PolPrDms">
-    </k>
-    <k n="PolPdAcn">
-    </k>
-    <k n="PolAcDmn">
-    </k>
-    <k n="PolRepSc">
-    </k>
-    <k n="PolRepAc">
+    <k n="Accounts">
+     <k n="S-1-1-0">
+      <k n="ActSysAc">
+      </k>
+      <k n="Privilgs">
+      </k>
+      <k n="SecDesc">
+      </k>
+      <k n="Sid">
+      </k>
+     </k>
     </k>
     <k n="DefQuota">
     </k>
-    <k n="PolAdtFL">
+    <k n="Domains">
     </k>
-    <k n="SecDesc">
+    <k n="PolAcDmN">
+    </k>
+    <k n="PolAcDmS">
+    </k>
+    <k n="PolAdtEv">
+    </k>
+    <k n="PolAdtFl">
+    </k>
+    <k n="PolAdtLg">
     </k>
     <k n="PolDnDDN">
     </k>
-    <k n="PolDnTrn">
+    <k n="PolDnDmG">
     </k>
-    <k n="PolDnDmg">
+    <k n="PolDnTrN">
+    </k>
+    <k n="PolEfDat">
+    </k>
+    <k n="PolMod">
+    </k>
+    <k n="PolPrDmN">
+    </k>
+    <k n="PolPrDmS">
+    </k>
+    <k n="PolRevision">
+    </k>
+    <k n="PolSecretEncryptionKey">
+    </k>
+    <k n="PolState">
+    </k>
+    <k n="QuAbsMax">
+    </k>
+    <k n="QuAbsMin">
+    </k>
+    <k n="SecDesc">
     </k>
    </k>
   </k>
