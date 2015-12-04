@@ -838,15 +838,19 @@ NTSTATUS NTAPI NtCreatePort(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	if (MaxDataLength > 0x148)
+	// FIXME: Calculate real values based on struct sizes, not just numbers when Windows fails the tests
+	ULONG RealMaxDataLength = 0x148;
+	ULONG RealMaxConnectInfoLength = RealMaxDataLength - 0x44; // 0x44 is message structures overhead
+
+	if (MaxDataLength > RealMaxDataLength)
 		return STATUS_INVALID_PARAMETER_4;
 
-	if (MaxConnectInfoLength > 0x104)
+	if (MaxConnectInfoLength > RealMaxConnectInfoLength)
 		return STATUS_INVALID_PARAMETER_3;
 
 	trace("root = %p Port = %pus\n", oa.RootDirectory, oa.ObjectName );
 
-	r = CreateNamedPort( &p, &oa, MaxConnectInfoLength, MaxDataLength );
+	r = CreateNamedPort( &p, &oa, RealMaxConnectInfoLength, MaxDataLength );
 	if (r == STATUS_SUCCESS)
 	{
 		r = AllocUserHandle( p, 0, Port );
