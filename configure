@@ -4436,7 +4436,7 @@ done
 
 MAKE_RULES=Make.rules
 
-ac_config_files="$ac_config_files Make.rules Makefile kernel/Makefile tests/Makefile tools/Makefile libudis86/Makefile libmspack/Makefile libntreg/Makefile programs/Makefile programs/clock/Makefile programs/minitris/Makefile programs/minshell/Makefile programs/pixels/Makefile programs/winemine/Makefile programs/winlogon/Makefile regedit/Makefile unpack/Makefile"
+ac_config_files="$ac_config_files Make.rules Makefile kernel/Makefile tests/Makefile tools/Makefile libudis86/Makefile libmspack/Makefile libntreg/Makefile programs/Makefile programs/clock/Makefile programs/minitris/Makefile programs/minshell/Makefile programs/pixels/Makefile programs/winemine/Makefile programs/winlogon/Makefile utils/Makefile utils/regedit/Makefile unpack/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -5145,7 +5145,8 @@ do
     "programs/pixels/Makefile") CONFIG_FILES="$CONFIG_FILES programs/pixels/Makefile" ;;
     "programs/winemine/Makefile") CONFIG_FILES="$CONFIG_FILES programs/winemine/Makefile" ;;
     "programs/winlogon/Makefile") CONFIG_FILES="$CONFIG_FILES programs/winlogon/Makefile" ;;
-    "regedit/Makefile") CONFIG_FILES="$CONFIG_FILES regedit/Makefile" ;;
+    "utils/Makefile") CONFIG_FILES="$CONFIG_FILES utils/Makefile" ;;
+    "utils/regedit/Makefile") CONFIG_FILES="$CONFIG_FILES utils/regedit/Makefile" ;;
     "unpack/Makefile") CONFIG_FILES="$CONFIG_FILES unpack/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
