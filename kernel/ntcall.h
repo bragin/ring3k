@@ -66,6 +66,7 @@ void FreeUS( UNICODE_STRING *us );
 NTSTATUS ProcessFromHandle( HANDLE handle, PROCESS **process );
 NTSTATUS ThreadFromHandle( HANDLE handle, THREAD **thread );
 THREAD *FindThreadByClientId( CLIENT_ID *id );
+THREAD *FindThreadById(HANDLE ThreadId);
 
 NTSTATUS ProcessAllocUserHandle( PROCESS *process, OBJECT *obj, ACCESS_MASK access, HANDLE *out, HANDLE *copy );
 

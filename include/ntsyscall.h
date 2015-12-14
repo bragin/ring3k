@@ -179,7 +179,7 @@
 	IMP( NtOpenSection, 3 ),
 	IMP( NtOpenSemaphore, 3 ),
 	IMP( NtOpenSymbolicLinkObject, 3 ),
-	DEC( NtOpenThread, 4 ),
+	IMP( NtOpenThread, 4 ),
 	IMP( NtOpenThreadToken, 4 ),
 #ifdef SYSCALL_WINXP
 	NUL( NtOpenThreadTokenEx ),

@@ -1906,6 +1906,110 @@ NTSTATUS NTAPI NtCallbackReturn(
 	return thread->UserCallbackReturn(Result, ResultLength, Status);
 }
 
+NTSTATUS OpenThread(THREAD **thread, OBJECT_ATTRIBUTES *oa)
+{
+	OBJECT *obj = NULL;
+	THREAD *p;
+	NTSTATUS r;
+
+	r = GetNamedObject(&obj, oa);
+	if (r < STATUS_SUCCESS)
+		return r;
+
+	p = dynamic_cast<THREAD*>(obj);
+	if (!p)
+	{
+		Release(obj);
+		return STATUS_OBJECT_TYPE_MISMATCH;
+	}
+
+	*thread = p;
+
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS NTAPI NtOpenThread(
+	PHANDLE ThreadHandle,
+	ACCESS_MASK DesiredAccess,
+	POBJECT_ATTRIBUTES ObjectAttributes,
+	PCLIENT_ID ClientId)
+{
+	OBJECT_ATTRIBUTES SafeObjectAttributes;
+	CUNICODE_STRING SafeObjectName;
+	CLIENT_ID SafeClientId;
+	THREAD *Thread = NULL;
+	NTSTATUS Status;
+	
+	trace("%p %08lx %p %p\n", ThreadHandle, DesiredAccess, ObjectAttributes, ClientId);
+	
+	Status = CopyFromUser(&SafeObjectAttributes, ObjectAttributes, sizeof SafeObjectAttributes);
+	if (Status < STATUS_SUCCESS)
+		return Status;
+
+	if (SafeObjectAttributes.ObjectName)
+	{
+		Status = SafeObjectName.CopyFromUser(SafeObjectAttributes.ObjectName);
+		if (Status < STATUS_SUCCESS)
+			return Status;
+		SafeObjectAttributes.ObjectName = &SafeObjectName;
+	}
+
+	SafeClientId.UniqueProcess = 0;
+	SafeClientId.UniqueThread = 0;
+	if (ClientId)
+	{
+		Status = CopyFromUser(&SafeClientId, ClientId, sizeof SafeClientId);
+		if (Status < STATUS_SUCCESS)
+			return Status;
+	}
+
+	trace("client id %p %p\n", SafeClientId.UniqueProcess, SafeClientId.UniqueThread);
+
+	if (SafeObjectAttributes.ObjectName == 0)
+	{
+		trace("cid\n");
+		if (SafeClientId.UniqueProcess)
+		{
+			Thread = FindThreadByClientId(&SafeClientId);
+			if (!Thread)
+				return STATUS_INVALID_CID;
+		}
+		else
+		{
+			Thread = FindThreadById(SafeClientId.UniqueThread);
+			if (!Thread)
+				return STATUS_INVALID_CID;
+		}
+	}
+	else
+	{
+		trace("objectname\n");
+
+		if (!SafeObjectAttributes.ObjectName)
+			return STATUS_INVALID_PARAMETER;
+
+		if (ClientId)
+			return STATUS_INVALID_PARAMETER_MIX;
+
+		if (SafeObjectAttributes.Length != sizeof SafeObjectAttributes)
+			return STATUS_INVALID_PARAMETER;
+
+		if (SafeObjectName.Length == 0)
+			return STATUS_OBJECT_PATH_SYNTAX_BAD;
+
+		Status = OpenThread(&Thread, &SafeObjectAttributes);
+	}
+
+	if (Status == STATUS_SUCCESS)
+	{
+		Status = AllocUserHandle(Thread, DesiredAccess, ThreadHandle);
+	}
+
+	trace("returning 0x%08lx\n", Status);
+	
+	return Status;
+}
+
 NTSTATUS NTAPI NtSetThreadExecutionState(
 	EXECUTION_STATE ExecutionState,
 	PEXECUTION_STATE PreviousExecutionState )

@@ -270,6 +270,22 @@ THREAD *FindThreadByClientId( CLIENT_ID *id )
 	return 0;
 }
 
+THREAD *FindThreadById(HANDLE ThreadId)
+{
+	for (PROCESS_ITER i(Processes); i; i.Next())
+	{
+		PROCESS *p = i;
+		for (SIBLING_ITER j(p->Threads); j; j.Next())
+		{
+			THREAD *t = j;
+			if (t->GetID() == (ULONG)ThreadId)
+				return t;
+		}
+	}
+
+	return 0;
+}
+
 PROCESS *FindProcessById( HANDLE UniqueProcess )
 {
 	for ( PROCESS_ITER i(Processes); i; i.Next() )
@@ -601,11 +617,11 @@ NTSTATUS NTAPI NtOpenProcess(
 			return r;
 	}
 
-	//trace("client id %p %p\n", id.UniqueProcess, id.UniqueThread);
+	trace("client id %p %p\n", id.UniqueProcess, id.UniqueThread);
 
 	if (oa.ObjectName == 0)
 	{
-		//trace("cid\n");
+		trace("cid\n");
 		if (id.UniqueThread)
 		{
 			THREAD *t = FindThreadByClientId( &id );
@@ -613,20 +629,17 @@ NTSTATUS NTAPI NtOpenProcess(
 				return STATUS_INVALID_CID;
 			process = t->Process;
 		}
-		else if (id.UniqueProcess)
+		else
 		{
 			process = FindProcessById( id.UniqueProcess );
 			if (!process)
 				return STATUS_INVALID_PARAMETER;
 				//return STATUS_INVALID_CID;
 		}
-		else
-			return STATUS_INVALID_PARAMETER;
-		AddRef( process );
 	}
 	else
 	{
-		//trace("objectname\n");
+		trace("objectname\n");
 
 		if (!oa.ObjectName)
 			return STATUS_INVALID_PARAMETER;
@@ -640,6 +653,7 @@ NTSTATUS NTAPI NtOpenProcess(
 		if (us.Length == 0)
 			return STATUS_OBJECT_PATH_SYNTAX_BAD;
 
+		// This increases the object ref counter
 		r = OpenProcess( &process, &oa );
 	}
 
@@ -647,7 +661,6 @@ NTSTATUS NTAPI NtOpenProcess(
 	{
 		r = AllocUserHandle( process, DesiredAccess, ProcessHandle );
 	}
-	Release( process );
 
 	return r;
 }
