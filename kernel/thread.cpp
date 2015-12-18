@@ -1727,9 +1727,8 @@ NTSTATUS THREAD_IMPL::TestAlert()
 
 void THREAD_IMPL::SetToken( TOKEN *tok )
 {
-	if (Token)
-		Release( Token );
-	AddRef( tok );
+	if (Token) Release( Token );
+	if (tok) AddRef( tok );
 	Token = tok;
 }
 
@@ -1771,10 +1770,16 @@ NTSTATUS NTAPI NtSetInformationThread(
 			NTSTATUS r = CopyFromUser( &TokenHandle, ThreadInformation, sizeof TokenHandle );
 			if (r < STATUS_SUCCESS)
 				return r;
-			TOKEN *token = 0;
-			r = ObjectFromHandle(token, TokenHandle, 0);
-			if (r < STATUS_SUCCESS)
-				return r;
+			TOKEN *token = NULL;
+			if (TokenHandle)
+			{
+				r = ObjectFromHandle(token, TokenHandle, 0);
+				if (r < STATUS_SUCCESS)
+				{
+					trace("invalid token handle, status: 0x%08lx\n", r);
+					return r;
+				}
+			}
 			t->SetToken( token );
 			return STATUS_SUCCESS;
 		}
