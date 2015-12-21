@@ -580,7 +580,19 @@ NTSTATUS NTAPI NtPrivilegedServiceAuditAlarm(
 	BOOLEAN AccessGranted)
 {
 	trace("\n");
-	return STATUS_UNSUCCESSFUL;
+
+    CUNICODE_STRING SubsystemNameSafe, ServiceNameSafe;
+    NTSTATUS Status;
+
+    Status = SubsystemNameSafe.CopyFromUser(SubsystemName);
+    if (Status < STATUS_SUCCESS) return Status;
+
+    Status = ServiceNameSafe.CopyFromUser(ServiceName);
+    if (Status < STATUS_SUCCESS) return Status;
+
+    trace("Subsystem: %pus, Service: %pus\n", &SubsystemNameSafe, &ServiceNameSafe);
+
+    return STATUS_SUCCESS;;
 }
 
 NTSTATUS NTAPI NtCloseObjectAuditAlarm(

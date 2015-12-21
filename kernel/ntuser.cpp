@@ -1073,6 +1073,12 @@ ULONG NTAPI NtUserRegisterWindowMessage(PUNICODE_STRING Message)
 	return MessageNo++;
 }
 
+BOOL NTAPI NtUserRegisterHotKey(HWND hWnd, INT id, UINT fsModifiers, UINT vk)
+{
+	trace("hWnd: %x, id: %x, fsModifiers: %x, vk: %x\n", hWnd, id, fsModifiers, vk);
+	return TRUE;
+}
+
 class CUSER32_UNICODE_STRING : public CUNICODE_STRING
 {
 public:
@@ -1545,6 +1551,13 @@ BOOLEAN WINDOW::Destroy()
 BOOLEAN NTAPI NtUserSetLogonNotifyWindow( HWND Window )
 {
 	return TRUE;
+}
+
+LONG NTAPI NtUserSetWindowLong(HWND hWnd, INT Index, LONG NewValue, BOOL Ansi)
+{
+	trace("hwnd: %x, Index: %x, Value: %x, Ansi: %d\n", hWnd, Index, NewValue, Ansi);
+	trace("FIXME: Always returning 0 as a previous windows long\n");
+	return 0;
 }
 
 LONG NTAPI NtUserGetClassInfo(

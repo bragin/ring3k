@@ -535,7 +535,7 @@ IMP(NtUserRegisterClassExWOW, 6),
 #ifdef SYSCALL_WINXP
 NUL(NtUserRegisterUserApiHook), // 2
 #endif
-NUL(NtUserRegisterHotKey),
+IMP(NtUserRegisterHotKey, 4),
 #ifdef SYSCALL_WINXP
 NUL(NtUserRegisterRawInputDevices), // 3
 #endif
@@ -595,7 +595,7 @@ NUL(NtUserSetThreadLayoutHandles),
 NUL(NtUserSetThreadState),
 IMP(NtUserSetTimer, 4),
 NUL(NtUserSetWindowFNID),
-NUL(NtUserSetWindowLong),
+IMP(NtUserSetWindowLong, 4),
 NUL(NtUserSetWindowPlacement),
 NUL(NtUserSetWindowPos),
 NUL(NtUserSetWindowRgn),
