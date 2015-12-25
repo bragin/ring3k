@@ -38,6 +38,23 @@
 #include "types.h"
 #include "extern.h"
 
+#define RTL_NUMBER_OF(A) (sizeof(A)/sizeof((A)[0]))
+
+/* PROTOTYPES ****************************************************************/
+
+static BOOLEAN KdbpCmdBackTrace(ULONG Argc, PCHAR Argv[]);
+static BOOLEAN KdbpCmdContinue(ULONG Argc, PCHAR Argv[]);
+static BOOLEAN KdbpCmdDisassembleX(ULONG Argc, PCHAR Argv[]);
+static BOOLEAN KdbpCmdHelp(ULONG Argc, PCHAR Argv[]);
+static BOOLEAN KdbpCmdRegs(ULONG Argc, PCHAR Argv[]);
+static BOOLEAN KdbpQuit(ULONG Argc, PCHAR Argv[]);
+
+/* GLOBALS *******************************************************************/
+
+CONTEXT KdbpContext;
+
+/* FUNCTIONS *****************************************************************/
+
 char Printable( WCHAR x )
 {
 	if (x>=0x20 && x<0x7f)
@@ -175,7 +192,31 @@ void DebugPrintf(const char *file, const char *func, int line, const char *fmt, 
 	*p = 0;
 	va_end( va );
 
+#ifdef PRINT_PID_AND_TID
+	ULONG pid = 0;
+	ULONG tid = 0;
+	if (Current) {
+		tid = Current->TraceId();
+		if (Current->Process)
+			pid = Current->Process->Id;
+	}
+	fprintf(stderr, "%s:(pid:%lx, tid:%lx) %s", func, pid, tid, buffer);
+#else
 	fprintf( stderr, "%s %s", func, buffer );
+#endif
+}
+
+VOID
+KdbpPrint(
+	IN CONST CHAR *Format,
+	IN ...  OPTIONAL)
+{
+	va_list ap;
+
+	/* Get the string */
+	va_start(ap, Format);
+	vfprintf(stderr, Format, ap);
+	va_end(ap);
 }
 
 void DumpMem(void *p, unsigned int len)
@@ -214,22 +255,9 @@ void Die(const char *fmt, ...)
 	exit(1);
 }
 
-void DoDumpRegs(CONTEXT *ctx)
-{
-	fprintf(stderr, "eax %08lx ebx %08lx ecx %08lx edx %08lx\n"
-			"esi %08lx edi %08lx ebp %08lx efl %08lx\n"
-			"cs:eip %04lx:%08lx ss:esp %04lx:%08lx\n"
-			"ds %04lx es %04lx fs %04lx gs %04lx\n",
-			ctx->Eax, ctx->Ebx, ctx->Ecx, ctx->Edx,
-			ctx->Esi, ctx->Edi, ctx->Ebp, ctx->EFlags,
-			ctx->SegCs, ctx->Eip, ctx->SegSs, ctx->Esp,
-			ctx->SegDs, ctx->SegEs, ctx->SegFs, ctx->SegGs);
-}
-
 void DumpRegs(CONTEXT *ctx)
 {
-	if (OptionTrace)
-		DoDumpRegs( ctx );
+	fprintf(stderr, "DumpRegs\n");
 }
 
 BYTE* DumpUserMem( BYTE *address )
@@ -320,10 +348,10 @@ int UDInputHook(struct ud* ud_obj)
 	return b;
 }
 
-BYTE *Unassemble( BYTE *address )
+BYTE *Unassemble( BYTE *address, int count )
 {
 	ud_info info;
-	int i = 10;
+	int i = count;
 	BYTE *insn_addr = address;
 
 	ud_init(&info.ud_obj);
@@ -355,38 +383,227 @@ void Chomp( char *buf )
 		buf[ len - 1 ] = 0;
 }
 
-void DebuggerHelp( void )
+static BOOLEAN KdbpCmdBackTrace(ULONG Argc, PCHAR Argv[])
 {
-	const char *help_text =
-		"ring3k debugger\n\n"
-		" b          backtrace\n"
-		" c          continue\n"
-		" d <addr>   dump the contents of memory\n"
-		" h          help (this text)\n"
-		" r          display registers\n"
-		" q          quit ring3k\n"
-		" u <addr>   disassemble\n";
-	fprintf( stderr, "%s\n", help_text);
+	CONTEXT *ctx = &KdbpContext;
+
+	DebuggerBacktrace(ctx);
+
+	return TRUE;
 }
+
+static BOOLEAN KdbpCmdContinue(ULONG Argc, PCHAR Argv[])
+{
+	/* Exit the main loop */
+	return FALSE;
+}
+
+static BOOLEAN KdbpCmdRegs(ULONG Argc, PCHAR Argv[])
+{
+	CONTEXT *ctx = &KdbpContext;
+
+	fprintf(stderr, "eax %08lx ebx %08lx ecx %08lx edx %08lx\n"
+		"esi %08lx edi %08lx ebp %08lx efl %08lx\n"
+		"cs:eip %04lx:%08lx ss:esp %04lx:%08lx\n"
+		"ds %04lx es %04lx fs %04lx gs %04lx\n",
+		ctx->Eax, ctx->Ebx, ctx->Ecx, ctx->Edx,
+		ctx->Esi, ctx->Edi, ctx->Ebp, ctx->EFlags,
+		ctx->SegCs, ctx->Eip, ctx->SegSs, ctx->Esp,
+		ctx->SegDs, ctx->SegEs, ctx->SegFs, ctx->SegGs);
+
+	return TRUE;
+}
+
+static BOOLEAN KdbpCmdDisassembleX(ULONG Argc, PCHAR Argv[])
+{
+	ULONG Count;
+	ULONG ul;
+	ULONG_PTR Address = KdbpContext.Eip;
+
+	if (Argv[0][0] == 'x') /* display memory */
+		Count = 16;
+	else /* disassemble */
+		Count = 10;
+
+	if (Argc >= 2)
+	{
+		/* Check for [L count] part */
+		ul = 0;
+		if (strcmp(Argv[Argc - 2], "L") == 0)
+		{
+			ul = strtoul(Argv[Argc - 1], NULL, 0);
+			if (ul > 0)
+			{
+				Count = ul;
+				Argc -= 2;
+			}
+		}
+		else if (Argv[Argc - 1][0] == 'L')
+		{
+			ul = strtoul(Argv[Argc - 1] + 1, NULL, 0);
+			if (ul > 0)
+			{
+				Count = ul;
+				Argc--;
+			}
+		}
+
+		/* Put the remaining arguments back together */
+		Argc--;
+		for (ul = 1; ul < Argc; ul++)
+		{
+			Argv[ul][strlen(Argv[ul])] = ' ';
+		}
+		Argc++;
+	}
+
+	/* Evaluate the expression */
+	if (Argc > 1)
+	{
+		Address = (ULONG_PTR)strtol(Argv[1], NULL, 0x10);
+	}
+	else if (Argv[0][0] == 'x')
+	{
+		KdbpPrint("x: Address argument required.\n");
+		return TRUE;
+	}
+
+	if (Argv[0][0] == 'x')
+	{
+		/* Display dwords */
+		ul = 0;
+
+		DumpUserMem((BYTE*)Address);
+	}
+	else
+	{
+		/* Disassemble */
+		Unassemble((BYTE*)Address, Count);
+	}
+
+	return TRUE;
+}
+
+static BOOLEAN KdbpQuit(ULONG Argc, PCHAR Argv[])
+{
+	exit(1);
+	return TRUE;
+}
+
+static const struct
+{
+	CONST CHAR *Name;
+	CONST CHAR *Syntax;
+	CONST CHAR *Help;
+	BOOLEAN(*Fn)(ULONG Argc, PCHAR Argv[]);
+} KdbDebuggerCommands[] = {
+	{ "bt", "bt [*frameaddr|thread id]", "Prints current backtrace or from given frame addr", KdbpCmdBackTrace },
+	{ "cont", "cont", "Continue execution (leave debugger)", KdbpCmdContinue },
+	{ "x", "x [address] [L count]", "Display count dwords, starting at addr.", KdbpCmdDisassembleX },
+	{ "help", "help", "Display help screen.", KdbpCmdHelp },
+	{ "regs", "regs", "Display general purpose registers.", KdbpCmdRegs },
+	{ "disasm", "disasm [address] [L count]", "Disassemble count instructions at address.", KdbpCmdDisassembleX },
+	{ "quit", "quit", "Quit ring3k,", KdbpQuit }
+};
+
+static BOOLEAN
+KdbpCmdHelp(ULONG Argc, PCHAR Argv[])
+{
+	ULONG i;
+
+	KdbpPrint("Kernel debugger commands:\n");
+	for (i = 0; i < RTL_NUMBER_OF(KdbDebuggerCommands); i++)
+	{
+		if (!KdbDebuggerCommands[i].Syntax) /* Command group */
+		{
+			if (i > 0)
+				KdbpPrint("\n");
+
+			KdbpPrint("\x1b[7m* %s:\x1b[0m\n", KdbDebuggerCommands[i].Help);
+			continue;
+		}
+
+		KdbpPrint("  %-20s - %s\n",
+			KdbDebuggerCommands[i].Syntax,
+			KdbDebuggerCommands[i].Help);
+	}
+
+	return TRUE;
+}
+
+static BOOLEAN
+KdbpDoCommand(IN PCHAR Command)
+{
+	ULONG i;
+	PCHAR p;
+	ULONG Argc;
+	// FIXME: for what do we need a 1024 characters command line and 256 tokens?
+	static PCH Argv[256];
+	static CHAR OrigCommand[1024];
+
+	strncpy(OrigCommand, Command, sizeof(OrigCommand));
+
+	Argc = 0;
+	p = Command;
+
+	for (;;)
+	{
+		while (*p == '\t' || *p == ' ')
+			p++;
+
+		if (*p == '\0')
+			break;
+
+		i = strcspn(p, "\t ");
+		Argv[Argc++] = p;
+		p += i;
+		if (*p == '\0')
+			break;
+
+		*p = '\0';
+		p++;
+	}
+
+	if (Argc < 1)
+		return TRUE;
+
+	for (i = 0; i < RTL_NUMBER_OF(KdbDebuggerCommands); i++)
+	{
+		if (!KdbDebuggerCommands[i].Name)
+			continue;
+
+		if (strcmp(KdbDebuggerCommands[i].Name, Argv[0]) == 0)
+		{
+			return KdbDebuggerCommands[i].Fn(Argc, Argv);
+		}
+	}
+
+	/* Now invoke the registered callbacks */
+	/*if (KdbpInvokeCliCallbacks(Command, Argc, Argv))
+	{
+		return TRUE;
+	}*/
+
+	KdbpPrint("Command '%s' is unknown.\n", OrigCommand);
+	return TRUE;
+}
+
 
 void Debugger( void )
 {
-	CONTEXT ctx;
-
-	ctx.ContextFlags = context_all;
-	Current->GetContext( ctx );
-	BYTE *d_address = (BYTE*) ctx.Esp;
-	BYTE *u_address = (BYTE*) ctx.Eip;
+	KdbpContext.ContextFlags = context_all;
+	Current->GetContext(KdbpContext);
+	//BYTE *d_address = (BYTE*) ctx.Esp;
+	//BYTE *u_address = (BYTE*) ctx.Eip;
 	char buf[100];
 	int errors = 0;
 	static bool help_displayed;
 
 	if (!help_displayed)
 	{
-		DebuggerHelp();
+		KdbpCmdHelp(0, NULL);
 		help_displayed = true;
 	}
-	DoDumpRegs( &ctx );
 
 	while (errors < 3)
 	{
@@ -399,39 +616,6 @@ void Debugger( void )
 
 		Chomp( buf );
 
-		switch (buf[0])
-		{
-		case 'q': // quit
-			exit(1);
-
-		case 'd': // dump, like DOS debug :)
-			if (buf[1])
-				d_address = (BYTE*)strtol(buf+1, NULL, 0x10);
-			d_address = DumpUserMem( d_address );
-			break;
-
-		case 'r': // registers
-			DoDumpRegs( &ctx );
-			break;
-
-		case 'h': // continue
-			DebuggerHelp();
-			break;
-		case 'c': // continue
-			return;
-
-		case 'b': // backtrace
-			DebuggerBacktrace( &ctx );
-			break;
-
-		case 'u': // unassemble
-			if (buf[1])
-				u_address = (BYTE*)strtol(buf+1, NULL, 0x10);
-			u_address = Unassemble( u_address );
-			break;
-
-		default:
-			fprintf(stderr, "unknown command %s\n", buf);
-		}
+		if (!KdbpDoCommand(buf)) return;
 	}
 }
