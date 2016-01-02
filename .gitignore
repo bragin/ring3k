@@ -13,6 +13,7 @@ config.status
 drive
 Makefile
 Make.rules
+log.txt
 ring3k
 ring3k-setup
 core-*
