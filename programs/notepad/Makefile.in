@@ -1,15 +1,54 @@
-MODULE    = notepad.exe
-APPMODE   = -mwindows -mno-cygwin
-IMPORTS   = comdlg32 shell32 shlwapi user32 gdi32 advapi32
+srcdir = .
 
-C_SRCS = \
+
+DEPFLAG = -Wp,-MD,.$@.d
+CC=i586-mingw32msvc-cc
+STRIP=i586-mingw32msvc-strip
+CFLAGS=-Wall -O2 $(DEPFLAG)
+AS=i586-mingw32msvc-as
+AR=i586-mingw32msvc-ar
+RANLIB=i586-mingw32msvc-ranlib
+WINDRES=i586-mingw32msvc-windres
+
+INSTALL = /usr/bin/install -c
+INSTALL_PROGRAM = ${INSTALL}
+INSTALL_DATA = ${INSTALL} -m 644
+prefix = /usr/local
+bindir = ${prefix}/bin
+datadir = ${prefix}/data
+
+SOURCE = \
 	dialog.c \
 	main.c
 
-RC_SRCS = notepad.rc
+RESOURCES = notepad.rc
 
-MANPAGES = notepad.man.in
+TARGET = notepad.exe
 
-SVG_SRCS = notepad.svg
+all: $(TARGET)
 
-INSTALL_LIB = notepad.exe notepad
+.PHONY: all clean
+
+OBJECTS += $(SOURCE:.c=.o)
+OBJECTS += $(RESOURCES:.rc=.res)
+
+%.res: %.rc
+	$(WINDRES) -i $< -o $@ -O coff
+
+$(TARGET): $(OBJECTS) notepad.res
+	$(CC) -o $@ $^ -lgdi32 -luser32 -lshlwapi -lcomdlg32 -Wl,--subsystem=windows
+
+include $(wildcard .*.d)
+
+clean:
+	rm -f $(OBJECTS) $(TARGET) .*.d
+
+install:
+
+uninstall:
+
+ISO = winemine.iso
+
+cdrom:
+	genisoimage -r -J -input-charset utf-8 -o $(ISO) $(TARGET)
+	
