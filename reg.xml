@@ -16,44 +16,62 @@
      </k>
     </k>
     <k n="DefQuota">
+      <x n="">0000000200001000000001000000000f00000000000000000000000000000000</x>
     </k>
     <k n="Domains">
     </k>
     <k n="PolAcDmN">
+      <x n="">1e002000080000004c004f00420053005400450052002d00340039004500510055004c0030000000</x>
     </k>
     <k n="PolAcDmS">
+      <x n="">010400000000000515000000093a2a240ff8601ddbeb0c50</x>
     </k>
     <k n="PolAdtEv">
+      <x n="">00ff060000000000000000000000000000000000000000000000000000000000000000000000000009000000</x>
     </k>
     <k n="PolAdtFl">
+      <x n="">0000</x>
     </k>
     <k n="PolAdtLg">
+      <x n="">0000000000200000433582000000000000fc6576340000c056660400000000005a60607610af0700</x>
     </k>
     <k n="PolDnDDN">
+      <x n=""></x>
     </k>
     <k n="PolDnDmG">
+      <x n="">00000000000000000000000000000000</x>
     </k>
     <k n="PolDnTrN">
+      <x n=""></x>
     </k>
     <k n="PolEfDat">
+      <x n="">01000100010000006d020000690200001c0000000200000031020000380000007300000016000400010500000000000515000000093a2a240ff8601ddbeb0c50e80300003082022d3082019aa0030201020210b5bf6035cbae5c90455f90c8ba2251db300906052b0e03021d0500304a3110300e060355040313076c6f6273746572310c300a0603550407130345465331283026060355040b131f4546532046696c6520456e6372797074696f6e2043657274696669636174653020170d3135313032343139303335335a180f32313135303933303139303335335a304a3110300e060355040313076c6f6273746572310c300a0603550407130345465331283026060355040b131f4546532046696c6520456e6372797074696f6e20436572746966696361746530819f300d06092a864886f70d010101050003818d0030818902818100d21a7f4b8ccd0644e5c10574649ac784deed78cb3b57cf5fc63b499cc2749a27dec0b0d3cdbe2a0bc8af04837ddefa4ce83c4699c5fb54b2059de26b8588eea5af2b8808c7ef2d8abf0c953865459117fc74c6fa77d3c0522dfcae1c5bff7bd1bbbd1ee46dd1b5bb2c05e9bf043f0949aa7a86bc23d7a8097ffcec44d5fc103f0203010001a31a301830160603551d25040f300d060b2b0601040182370a030401300906052b0e03021d050003818100469e4829ea8ae27f60d367b630f976d182f9fd8ff154e791fcad8f6544ed1943c25b4d89b2ac38ad9609a522dbb7a1d8c2253dd1c79a5e4f1995f04a56f62284e4f86c7c7d0c1a571e03de5549c1bdd2af79d9c7be8d38df2925affd8588d21e665266ed6eef5c54c1fbb38b341856860e0ca5d0db0b50e1773257e333cacfd4</x>
     </k>
     <k n="PolMod">
+      <x n="">01000000000000006029baa7520ed101</x>
     </k>
     <k n="PolPrDmN">
+      <x n="">120014000800000057004f0052004b00470052004f00550050000000</x>
     </k>
     <k n="PolPrDmS">
+      <x n=""></x>
     </k>
     <k n="PolRevision">
+      <x n="">05000100</x>
     </k>
     <k n="PolSecretEncryptionKey">
     </k>
     <k n="PolState">
+      <x n="">00000000</x>
     </k>
     <k n="QuAbsMax">
+      <x n="">ffffffffffffffffffffffffffffffffffffffff000000000000000000000000</x>
     </k>
     <k n="QuAbsMin">
+      <x n="">0000010000000100010000000010000000100000000000000000000000000000</x>
     </k>
     <k n="SecDesc">
+      <x n="">0100048048000000580000000000000014000000020034000200000000001800ff1f0f0001020000000000052000000020020000000014000108020001010000000000010000000001020000000000052000000020020000010100000000000512000000</x>
     </k>
    </k>
   </k>
@@ -338,6 +356,28 @@
    </k>
    <k n="Software">
     <k n="Microsoft">
+     <k n="Notepad">
+      <n n="fSavePageSettings">0</n>
+      <n n="fSaveWindowPositions">0</n>
+      <n n="fWrap">0</n>
+      <n n="iPointSize">0x64</n>
+      <n n="iWindowPosDX">0x300</n>
+      <n n="iWindowPosDY">0x219</n>
+      <n n="iWindowPosX">32</n>
+      <n n="iWindowPosY">0</n>
+      <n n="lfCharSet">0</n>
+      <n n="lfClipPrecision">2</n>
+      <n n="lfEscapement">0</n>
+      <n n="lfItalic">0</n>
+      <n n="lfOrientation">0</n>
+      <n n="lfOutPrecision">1</n>
+      <n n="lfPitchAndFamily">0x31</n>
+      <n n="lfQuality">2</n>
+      <n n="lfStrikeOut">0</n>
+      <n n="lfUnderline">0</n>
+      <n n="lfWeight">0x190</n>
+      <s n="lfFaceName">Lucida Console</s>
+     </k>
      <k n="Windows">
       <k n="CurrentVersion">
        <k n="Explorer">
