@@ -41,8 +41,31 @@ public:
 	virtual void Release();
 };
 
-NTSTATUS CreateSection( OBJECT **obj, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
-NTSTATUS CreateSection( SECTION **section, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
+struct PE_SECTION : public SECTION
+{
+public:
+	CUNICODE_STRING ImageFileName;
+
+	PE_SECTION(int f, const CUNICODE_STRING &FileName, BYTE *a, size_t l, ULONG attr, ULONG prot);
+	virtual ~PE_SECTION();
+	virtual NTSTATUS Mapit(ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG Protect);
+	virtual NTSTATUS Query(SECTION_IMAGE_INFORMATION *image);
+	IMAGE_EXPORT_DIRECTORY* GetExportsTable();
+	IMAGE_NT_HEADERS* GetNtHeader();
+	DWORD GetProcAddress(const char *name);
+	DWORD GetProcAddress(ULONG ordinal);
+	void AddRelay(ADDRESS_SPACE *vm);
+	bool AddRelayStub(ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG func, ULONG *user_addr, ULONG thunk_ofs);
+	const char *GetSymbol(ULONG address);
+	const char *NameOfOrdinal(ULONG ordinal);
+private:
+	void *VirtualAddrToOffset(DWORD virtual_ofs);
+};
+
+class CFILE;
+
+NTSTATUS CreateSection( OBJECT **obj, CFILE *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
+NTSTATUS CreateSection( SECTION **section, CFILE *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect );
 NTSTATUS Mapit( ADDRESS_SPACE *vm, OBJECT *obj, BYTE *&addr );
 void *VirtualAddrToOffset( IMAGE_NT_HEADERS *nt, void *base, DWORD virtual_ofs );
 DWORD GetProcAddress(OBJECT *obj, const char *name);

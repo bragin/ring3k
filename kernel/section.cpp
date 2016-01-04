@@ -38,25 +38,6 @@
 #include "unicode.h"
 #include "file.h"
 
-struct PE_SECTION : public SECTION
-{
-public:
-	PE_SECTION( int f, BYTE *a, size_t l, ULONG attr, ULONG prot );
-	virtual ~PE_SECTION();
-	virtual NTSTATUS Mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG Protect );
-	virtual NTSTATUS Query( SECTION_IMAGE_INFORMATION *image );
-	IMAGE_EXPORT_DIRECTORY* GetExportsTable();
-	IMAGE_NT_HEADERS* GetNtHeader();
-	DWORD GetProcAddress( const char *name );
-	DWORD GetProcAddress( ULONG ordinal );
-	void AddRelay( ADDRESS_SPACE *vm );
-	bool AddRelayStub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG func, ULONG *user_addr, ULONG thunk_ofs );
-	const char *GetSymbol( ULONG address );
-	const char *NameOfOrdinal( ULONG ordinal );
-private:
-	void *VirtualAddrToOffset( DWORD virtual_ofs );
-};
-
 SECTION::~SECTION()
 {
 	munmap( Addr, Len );
@@ -119,8 +100,8 @@ const char *SECTION::GetSymbol( ULONG address )
 	return 0;
 }
 
-PE_SECTION::PE_SECTION( int fd, BYTE *a, size_t l, ULONG attr, ULONG prot ) :
-	SECTION( fd, a, l, attr, prot )
+PE_SECTION::PE_SECTION( int fd, const CUNICODE_STRING &FileName, BYTE *a, size_t l, ULONG attr, ULONG prot ) :
+	SECTION(fd, a, l, attr, prot), ImageFileName(FileName)
 {
 }
 
@@ -149,7 +130,7 @@ NTSTATUS PE_SECTION::Query( SECTION_IMAGE_INFORMATION *image )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS CreateSection( OBJECT **obj, OBJECT *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect )
+NTSTATUS CreateSection( OBJECT **obj, CFILE *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect )
 {
 	SECTION *sec;
 	NTSTATUS r = CreateSection( &sec, file, psz, attribs, protect );
@@ -158,19 +139,19 @@ NTSTATUS CreateSection( OBJECT **obj, OBJECT *file, PLARGE_INTEGER psz, ULONG at
 	return r;
 }
 
-NTSTATUS CreateSection( SECTION **section, OBJECT *obj, PLARGE_INTEGER psz, ULONG attribs, ULONG protect )
+NTSTATUS CreateSection(SECTION **section, CFILE *file, PLARGE_INTEGER psz, ULONG attribs, ULONG protect)
 {
 	SECTION *s;
 	BYTE *addr;
 	int fd, ofs = 0, r;
 	ULONG len;
 
-	if (obj)
+	if (file)
 	{
 		// FIXME: probably better to have a CFILE passed in
-		CFILE *file = dynamic_cast<CFILE*>( obj );
-		if (!file)
-			return STATUS_OBJECT_TYPE_MISMATCH;
+		//CFILE *file = dynamic_cast<CFILE*>( obj );
+		//if (!file)
+			//return STATUS_OBJECT_TYPE_MISMATCH;
 
 		fd = file->GetFD();
 		if (fd<0)
@@ -212,7 +193,7 @@ NTSTATUS CreateSection( SECTION **section, OBJECT *obj, PLARGE_INTEGER psz, ULON
 	}
 
 	if (attribs & SEC_IMAGE)
-		s = new PE_SECTION( fd, addr, len, attribs, protect );
+		s = new PE_SECTION( fd, file->GetFileName(), addr, len, attribs, protect );
 	else
 		s = new SECTION( fd, addr, len, attribs, protect );
 
@@ -645,7 +626,7 @@ SECTION_FACTORY::SECTION_FACTORY(
 
 NTSTATUS SECTION_FACTORY::AllocObject(OBJECT** obj)
 {
-	NTSTATUS r = CreateSection( obj, File, SectionSize, Attributes, Protect );
+	NTSTATUS r = CreateSection(obj, dynamic_cast<CFILE*>(File), SectionSize, Attributes, Protect);
 	if (r < STATUS_SUCCESS)
 		return r;
 	if (!*obj)

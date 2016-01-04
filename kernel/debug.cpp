@@ -1,7 +1,9 @@
 /*
- * nt loader
+ * Ring3K Kernel Debugger
+ * Based on ReactOS's KDBG
  *
  * Copyright 2006-2008 Mike McCormack
+ * Copyright 2015-2016 Aleksey Bragin
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,6 +34,7 @@
 #include "winternl.h"
 
 #include "ntcall.h"
+#include "section.h"
 #include "thread.h"
 #include "debug.h"
 
@@ -48,6 +51,8 @@ static BOOLEAN KdbpCmdDisassembleX(ULONG Argc, PCHAR Argv[]);
 static BOOLEAN KdbpCmdHelp(ULONG Argc, PCHAR Argv[]);
 static BOOLEAN KdbpCmdRegs(ULONG Argc, PCHAR Argv[]);
 static BOOLEAN KdbpQuit(ULONG Argc, PCHAR Argv[]);
+
+static BOOLEAN KdbpCmdProc(ULONG Argc, PCHAR Argv[]);
 
 /* GLOBALS *******************************************************************/
 
@@ -85,19 +90,12 @@ int SPrintUnicodeString( char *output, int len, UNICODE_STRING *us )
 	return n;
 }
 
-void DebugPrintf(const char *file, const char *func, int line, const char *fmt, ...)
+void vDebugPrintf(char *Buffer, int Length, const char *fmt, va_list va)
 {
-	char buffer[0x100], fstr[16], *p;
-	int sz, n, i, is_longlong;
-	va_list va;
-
-	if (!OptionTrace)
-		return;
-
-	va_start( va, fmt );
-
-	p = buffer;
-	sz = sizeof buffer - 1;
+	int sz = Length;
+	char *p = Buffer;
+	char fstr[16];
+	int n, i, is_longlong;
 
 	while (*fmt && sz>0)
 	{
@@ -143,44 +141,44 @@ void DebugPrintf(const char *file, const char *func, int line, const char *fmt, 
 		case 'p':
 			if (fmt[1] == 'w' && fmt[2] == 's')
 			{
-				n = SPrintWideString( p, sz, va_arg(va, unsigned short * ) );
+				n = SPrintWideString(p, sz, va_arg(va, unsigned short *));
 				fmt += 2;
 			}
 			else if (fmt[1] == 'u' && fmt[2] == 's')
 			{
-				n = SPrintUnicodeString( p, sz, va_arg(va, UNICODE_STRING* ) );
+				n = SPrintUnicodeString(p, sz, va_arg(va, UNICODE_STRING*));
 				fmt += 2;
 			}
 			else
-				n = snprintf( p, sz, "%p", va_arg( va, void* ) );
+				n = snprintf(p, sz, "%p", va_arg(va, void*));
 			break;
 		case 'x':
 			if (is_longlong)
-				n = snprintf( p, sz, fstr, va_arg( va, long long ) );
+				n = snprintf(p, sz, fstr, va_arg(va, long long));
 			else
-				n = snprintf( p, sz, fstr, va_arg( va, int ) );
+				n = snprintf(p, sz, fstr, va_arg(va, int));
 			break;
 		case 'd':
 		case 'u':
 		case 'o':
 			if (is_longlong)
-				n = snprintf( p, sz, fstr, va_arg( va, long long ) );
+				n = snprintf(p, sz, fstr, va_arg(va, long long));
 			else
-				n = snprintf( p, sz, fstr, va_arg( va, int ) );
+				n = snprintf(p, sz, fstr, va_arg(va, int));
 			break;
 		case 's':
-			n = snprintf( p, sz, fstr, va_arg( va, char * ) );
+			n = snprintf(p, sz, fstr, va_arg(va, char *));
 			break;
 		case 'S':
-			n = SPrintWideString( p, sz, va_arg(va, unsigned short * ) );
+			n = SPrintWideString(p, sz, va_arg(va, unsigned short *));
 			break;
 		case 'c':
-			n = snprintf( p, sz, fstr, va_arg( va, int ) );
+			n = snprintf(p, sz, fstr, va_arg(va, int));
 			break;
 		case 0:
 			break;
 		default:
-			n = snprintf( p, sz, "(?%c=%x)", *fmt, va_arg( va, unsigned int ) );
+			n = snprintf(p, sz, "(?%c=%x)", *fmt, va_arg(va, unsigned int));
 			break;
 		}
 		if (n<0)
@@ -190,6 +188,21 @@ void DebugPrintf(const char *file, const char *func, int line, const char *fmt, 
 		sz -= n;
 	}
 	*p = 0;
+}
+
+void DebugPrintf(const char *file, const char *func, int line, const char *fmt, ...)
+{
+	char buffer[0x100];
+	int sz;
+	va_list va;
+
+	if (!OptionTrace)
+		return;
+
+	sz = sizeof buffer - 1;
+
+	va_start( va, fmt );
+	vDebugPrintf(buffer, sz, fmt, va);
 	va_end( va );
 
 #ifdef PRINT_PID_AND_TID
@@ -211,12 +224,14 @@ KdbpPrint(
 	IN CONST CHAR *Format,
 	IN ...  OPTIONAL)
 {
-	va_list ap;
+	char buffer[0x100];
+	va_list va;
 
-	/* Get the string */
-	va_start(ap, Format);
-	vfprintf(stderr, Format, ap);
-	va_end(ap);
+	va_start(va, Format);
+	vDebugPrintf(buffer, sizeof buffer - 1, Format, va);
+	va_end(va);
+
+	fprintf(stderr, "%s", buffer);
 }
 
 void DumpMem(void *p, unsigned int len)
@@ -484,6 +499,124 @@ static BOOLEAN KdbpCmdDisassembleX(ULONG Argc, PCHAR Argv[])
 	return TRUE;
 }
 
+static BOOLEAN
+KdbpCmdProc(ULONG Argc, PCHAR Argv[])
+{
+	//PLIST_ENTRY Entry;
+	//PEPROCESS Process;
+	//BOOLEAN ReferencedProcess = FALSE;
+	const CHAR *str1, *str2;
+	//ULONG ul;
+	//extern LIST_ENTRY PsActiveProcessHead;
+
+	if (Argc >= 2 && strcasecmp(Argv[1], "list") == 0)
+	{
+		/*
+		Entry = PsActiveProcessHead.Flink;
+		if (!Entry || Entry == &PsActiveProcessHead)
+		{
+			KdbpPrint("No processes in the system!\n");
+			return TRUE;
+		}*/
+
+		KdbpPrint("  PID         Info       Filename\n");
+
+		for (PROCESS_ITER i(Processes); i; i.Next())
+		{
+			PROCESS *Process = i;
+
+			if (Current && (Process == Current->Process))
+			{
+				str1 = "\x1b[1m*";
+				str2 = "\x1b[0m";
+			}
+			else
+			{
+				str1 = " ";
+				str2 = "";
+			}
+
+			KdbpPrint(" %s0x%08x  %-10s  %pus%s\n",
+				str1,
+				Process->Id,
+				"",
+				Process->Exe ? &(((PE_SECTION *)(Process->Exe))->ImageFileName) : NULL,
+				str2);
+		};
+	}
+	else if (Argc >= 2 && strcasecmp(Argv[1], "attach") == 0)
+	{
+#if 0
+		if (Argc < 3)
+		{
+			KdbpPrint("process attach: process id argument required!\n");
+			return TRUE;
+		}
+
+		ul = strtoul(Argv[2], &pend, 0);
+		if (Argv[2] == pend)
+		{
+			KdbpPrint("process attach: '%s' is not a valid process id!\n", Argv[2]);
+			return TRUE;
+		}
+
+		if (!KdbpAttachToProcess((PVOID)ul))
+		{
+			return TRUE;
+		}
+
+		KdbpPrint("Attached to process 0x%08x, thread 0x%08x.\n", (ULONG)ul,
+			(ULONG)KdbCurrentThread->Cid.UniqueThread);
+#else
+		KdbpPrint("Not supported yet\n");
+#endif
+	}
+	else
+	{
+#if 0
+		Process = KdbCurrentProcess;
+
+		if (Argc >= 2)
+		{
+			ul = strtoul(Argv[1], &pend, 0);
+			if (Argv[1] == pend)
+			{
+				KdbpPrint("proc: '%s' is not a valid process id!\n", Argv[1]);
+				return TRUE;
+			}
+
+			if (!NT_SUCCESS(PsLookupProcessByProcessId((PVOID)ul, &Process)))
+			{
+				KdbpPrint("proc: Invalid process id!\n");
+				return TRUE;
+			}
+
+			/* Remember our reference */
+			ReferencedProcess = TRUE;
+		}
+
+		State = ((Process->Pcb.State == ProcessInMemory) ? "In Memory" :
+			((Process->Pcb.State == ProcessOutOfMemory) ? "Out of Memory" : "In Transition"));
+		KdbpPrint("%s"
+			"  PID:             0x%08x\n"
+			"  State:           %s (0x%x)\n"
+			"  Image Filename:  %s\n",
+			(Argc < 2) ? "Current process:\n" : "",
+			Process->UniqueProcessId,
+			State, Process->Pcb.State,
+			Process->ImageFileName);
+
+		/* Release our reference, if any */
+		if (ReferencedProcess)
+			ObDereferenceObject(Process);
+#else
+		KdbpPrint("Not supported yet\n");
+#endif
+	}
+
+	return TRUE;
+}
+
 static BOOLEAN KdbpQuit(ULONG Argc, PCHAR Argv[])
 {
 	exit(1);
@@ -497,13 +630,26 @@ static const struct
 	CONST CHAR *Help;
 	BOOLEAN(*Fn)(ULONG Argc, PCHAR Argv[]);
 } KdbDebuggerCommands[] = {
+	/* Data */
+	{ NULL, NULL, "Data", NULL },
 	{ "bt", "bt [*frameaddr|thread id]", "Prints current backtrace or from given frame addr", KdbpCmdBackTrace },
-	{ "cont", "cont", "Continue execution (leave debugger)", KdbpCmdContinue },
 	{ "x", "x [address] [L count]", "Display count dwords, starting at addr.", KdbpCmdDisassembleX },
-	{ "help", "help", "Display help screen.", KdbpCmdHelp },
 	{ "regs", "regs", "Display general purpose registers.", KdbpCmdRegs },
 	{ "disasm", "disasm [address] [L count]", "Disassemble count instructions at address.", KdbpCmdDisassembleX },
-	{ "quit", "quit", "Quit ring3k,", KdbpQuit }
+
+	/* Flow control */
+	{ NULL, NULL, "Flow control", NULL },
+	{ "cont", "cont", "Continue execution (leave debugger)", KdbpCmdContinue },
+	{ "quit", "quit", "Quit ring3k,", KdbpQuit },
+
+	/* Process/Thread */
+	{ NULL, NULL, "Process/Thread", NULL },
+	/*{ "thread", "thread [list[ pid]|[attach ]tid]", "List threads in current or specified process, display thread with given id or attach to thread.", KdbpCmdThread },*/
+	{ "proc", "proc [list|[attach ]pid]", "List processes, display process with given id or attach to process.", KdbpCmdProc },
+
+	/* Others */
+	{ NULL, NULL, "Others", NULL },
+	{ "help", "help", "Display help screen.", KdbpCmdHelp }
 };
 
 static BOOLEAN

@@ -94,9 +94,41 @@ CFILE::~CFILE()
 	close( fd );
 }
 
-CFILE::CFILE( int f ) :
+CFILE::CFILE(int f, UNICODE_STRING *Path) :
 	fd( f )
 {
+	// Extract file name and save it in the object
+	PWCHAR Source = NULL;
+	USHORT Length = 0;
+	if (Path && Path->Buffer)
+	{
+		Source = (PWCHAR)((PCHAR)Path->Buffer + Path->Length);
+
+		/* Loop the file name*/
+		while (Source > Path->Buffer)
+		{
+			/* Make sure this isn't a backslash */
+			if (*--Source == L'\\')
+			{
+				/* If so, stop it here */
+				Source++;
+				break;
+			}
+			else
+			{
+				/* Otherwise, keep going */
+				Length++;
+			}
+		}
+	}
+
+	PWCHAR Buf = new WCHAR[Length + 1];
+	PWCHAR Destination = Buf;
+	while (Length--) *Destination++ = (UCHAR)*Source++;
+	*Destination = 0;
+
+	FileName.Set(Buf);
+	FileName.MaximumLength = FileName.Length + sizeof(WCHAR);
 }
 
 class FILE_CREATE_INFO : public OPEN_INFO
@@ -287,7 +319,7 @@ NTSTATUS DIRECTORY_FACTORY::AllocObject(OBJECT** obj)
 
 
 DIRECTORY::DIRECTORY( int fd ) :
-	CFILE(fd),
+	CFILE(fd, NULL),
 	count(-1),
 	ptr(0)
 {
@@ -747,7 +779,7 @@ NTSTATUS DIRECTORY::OpenFile(
 		if (file_fd == -1)
 			return STATUS_OBJECT_PATH_NOT_FOUND;
 
-		file = new CFILE( file_fd );
+		file = new CFILE( file_fd, &path);
 		if (!file)
 		{
 			::close( file_fd );
