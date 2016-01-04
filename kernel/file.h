@@ -59,8 +59,9 @@ public:
 class CFILE : public IO_OBJECT
 {
 	int fd;
+	CUNICODE_STRING FileName;
 public:
-	CFILE( int fd );
+	CFILE( int fd, UNICODE_STRING *path );
 	~CFILE();
 	virtual NTSTATUS QueryInformation( FILE_STANDARD_INFORMATION& std_info );
 	virtual NTSTATUS Read( PVOID Buffer, ULONG Length, ULONG *read );
@@ -70,6 +71,7 @@ public:
 	virtual NTSTATUS SetPosition( LARGE_INTEGER& ofs );
 	virtual NTSTATUS Remove();
 	int GetFD();
+	const CUNICODE_STRING &GetFileName() { return FileName; };
 };
 
 NTSTATUS OpenFile( CFILE *&file, UNICODE_STRING& us );
