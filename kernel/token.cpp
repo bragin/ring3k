@@ -660,6 +660,7 @@ class TOKEN_IMPL : public TOKEN
 	CACL DefaultDacl;
 	CSID_AND_ATTRIBUTES User;
 	CTOKEN_GROUPS Groups;
+	CTOKEN_GROUPS RestrictedSids;
 public:
 	TOKEN_IMPL();
 	virtual ~TOKEN_IMPL();
@@ -668,6 +669,7 @@ public:
 	virtual CSID_AND_ATTRIBUTES& GetUser();
 	virtual CSID& GetPrimaryGroup();
 	virtual CTOKEN_GROUPS& GetGroups();
+	virtual CTOKEN_GROUPS& GetRestrictedSids();
 	virtual CACL& GetDefaultDacl();
 	virtual NTSTATUS Adjust(CTOKEN_PRIVILEGES& privs);
 	NTSTATUS Add( LUID_AND_ATTRIBUTES& la );
@@ -717,6 +719,11 @@ CSID& TOKEN_IMPL::GetPrimaryGroup()
 CTOKEN_GROUPS& TOKEN_IMPL::GetGroups()
 {
 	return Groups;
+}
+
+CTOKEN_GROUPS& TOKEN_IMPL::GetRestrictedSids()
+{
+	return RestrictedSids;
 }
 
 CSID_AND_ATTRIBUTES& TOKEN_IMPL::GetUser()
@@ -924,7 +931,7 @@ NTSTATUS NTAPI NtQueryInformationToken(
 		break;
 
 	case TokenImpersonationLevel:
-		trace("TokenImpersonationLevel\n");
+		trace("UNIMPLEMENTED: TokenImpersonationLevel\n");
 		return STATUS_INVALID_INFO_CLASS;
 
 	case TokenStatistics:
@@ -952,8 +959,20 @@ NTSTATUS NTAPI NtQueryInformationToken(
 		r = token->GetGroups().CopyToUser( (TOKEN_GROUPS*) TokenInformation );
 		break;
 
+	case TokenRestrictedSids:
+		trace("TokenRestrictedSids\n");
+		len = token->GetRestrictedSids().GetLength();
+		if (len > TokenInformationLength)
+		{
+			r = STATUS_BUFFER_TOO_SMALL;
+			break;
+		}
+
+		r = token->GetGroups().CopyToUser((TOKEN_GROUPS*)TokenInformation);
+		break;
+
 	default:
-		trace("info class %d\n", TokenInformationClass);
+		trace("UNIMPLEMENTED: info class %d\n", TokenInformationClass);
 		return STATUS_INVALID_INFO_CLASS;
 	}
 
@@ -968,7 +987,7 @@ NTSTATUS NTAPI NtSetSecurityObject(
 	SECURITY_INFORMATION SecurityInformation,
 	PSECURITY_DESCRIPTOR SecurityDescriptor )
 {
-	trace("%p %08lx %p\n", Handle, SecurityInformation, SecurityDescriptor );
+	trace("UNIMPLEMENTED: %p %08lx %p\n", Handle, SecurityInformation, SecurityDescriptor );
 	return STATUS_SUCCESS;
 }
 
