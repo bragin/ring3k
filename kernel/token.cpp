@@ -988,6 +988,10 @@ NTSTATUS NTAPI NtSetSecurityObject(
 	PSECURITY_DESCRIPTOR SecurityDescriptor )
 {
 	trace("UNIMPLEMENTED: %p %08lx %p\n", Handle, SecurityInformation, SecurityDescriptor );
+
+	// Make sure the caller doesn't pass a NULL security descriptor
+	if (!SecurityDescriptor) return STATUS_ACCESS_VIOLATION;
+
 	return STATUS_SUCCESS;
 }
 
