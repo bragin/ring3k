@@ -462,6 +462,9 @@ int main(int argc, char **argv)
 		exename = argv[optind];
 	}
 
+	// Read debug channels options
+	DebugInit();
+
 	// the skas3 patch is deprecated...
 	if (0) InitSkas();
 
