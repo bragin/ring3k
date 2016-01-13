@@ -42,6 +42,8 @@
 #include "queue.h"
 #include "alloc_bitmap.h"
 
+DEFAULT_DEBUG_CHANNEL(ntgdi);
+
 // shared across all processes (in a window station)
 static SECTION *gdi_ht_section;
 static void *gdi_handle_table = 0;
@@ -199,7 +201,7 @@ void WIN32K_MANAGER::SendInput(INPUT* input)
 		queue = t->Queue;
 	}
 
-	trace("active window = %p\n", ActiveWindow);
+	TRACE("active window = %p\n", ActiveWindow);
 
 	// keyboard activity
 	switch (input->type)
@@ -270,7 +272,7 @@ void WIN32K_MANAGER::SendInput(INPUT* input)
 
 		break;
 	default:
-		trace("unknown input %ld\n", input->type);
+		FIXME("unknown input %ld\n", input->type);
 	}
 
 }
@@ -295,7 +297,7 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 	if (process->Win32kInfo)
 		return STATUS_SUCCESS;
 
-	trace("\n");
+	TRACE("\n");
 
 	if (!Win32kManager)
 	{
@@ -339,7 +341,7 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 	r = gdi_ht_section->Mapit( process->Vm, p, 0, MEM_COMMIT, PAGE_READWRITE );
 	if (r < STATUS_SUCCESS)
 	{
-		trace("r = %08lx\n", r);
+		ERR("r = %08lx\n", r);
 		assert(0);
 		return FALSE;
 	}
@@ -394,7 +396,7 @@ BOOLEAN NTAPI NtGdiAddFontResourceW(
 	NTSTATUS r = CopyFromUser( buf, Filename, FilenameLength );
 	if (r < STATUS_SUCCESS)
 		return FALSE;
-	trace("filename = %pws\n", buf);
+	TRACE("filename = %pws\n", buf);
 	return TRUE;
 }
 
@@ -555,7 +557,7 @@ void GDI_OBJECT::InitGdiSharedMem()
 		r = g_GdiSection->Mapit( Current->Process->Vm, dc_shared_mem, 0, MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 		{
-			trace("failed to map shared memory\n");
+			ERR("failed to map shared memory\n");
 			assert( 0 );
 		}
 
@@ -641,7 +643,7 @@ DEVICE_CONTEXT::DEVICE_CONTEXT() :
 	if (!shm)
 		throw;
 
-	trace("dc offset %08x\n", shm - g_GdiSharedMemory );
+	TRACE("dc offset %08x\n", shm - g_GdiSharedMemory );
 	BYTE *user_shm = GDI_OBJECT::KernelToUser( shm );
 
 	Handle = AllocGdiHandle( FALSE, GDI_OBJECT_DC, user_shm, this );
@@ -807,7 +809,7 @@ static COLORREF FreetypeGetPixel( int x, int y, FT_Bitmap* ftbm )
 		val = (ftbm->buffer[bytes_per_row*y + (x>>3)] << (x&7)) & 0x80;
 		return val ? RGB( 255, 255, 255 ) : RGB( 0, 0, 0 );
 	default:
-		trace("unknown freetype pixel mode %d\n", ftbm->pixel_mode);
+		FIXME("unknown freetype pixel mode %d\n", ftbm->pixel_mode);
 		return 0;
 	}
 }
@@ -817,10 +819,10 @@ static void freetype_bitblt( CBITMAP* bm, int x, int y, FT_Bitmap* ftbm )
 	INT bmpX, bmpY;
 	INT j, i;
 
-	trace("glyph is %dx%d\n", ftbm->rows, ftbm->width);
-	trace("pixel mode is %d\n", ftbm->pixel_mode );
-	trace("destination is %d,%d\n", x, y );
-	trace("pitch is %d\n", ftbm->pitch );
+	TRACE("glyph is %dx%d\n", ftbm->rows, ftbm->width);
+	TRACE("pixel mode is %d\n", ftbm->pixel_mode);
+	TRACE("destination is %d,%d\n", x, y);
+	TRACE("pitch is %d\n", ftbm->pitch);
 
 	/* loop for every pixel in bitmap */
 	for (bmpY = 0, i = y; bmpY < ftbm->rows; bmpY++, i++)
@@ -855,7 +857,7 @@ FT_Face WIN32K_MANAGER::GetFace()
 BOOL DEVICE_CONTEXT::ExtTextOut( INT x, INT y, UINT options,
 								   LPRECT rect, UNICODE_STRING& text )
 {
-	trace("text: %pus\n", &text );
+	TRACE("text: %pus\n", &text);
 
 	CBITMAP *bitmap = GetBitmap();
 	if (!bitmap)
@@ -929,7 +931,7 @@ BOOL DEVICE_CONTEXT::PolypatBlt( ULONG Rop, PRECT rect )
 
 int MEMORY_DEVICE_CONTEXT::GetCaps( int index )
 {
-	trace("%d\n", index );
+	FIXME("%d\n", index );
 	return 0;
 }
 
@@ -946,7 +948,7 @@ HANDLE BRUSH::Alloc( UINT style, COLORREF color, ULONG hatch, BOOL stock )
 	if (!brush)
 		return NULL;
 	brush->Handle = AllocGdiHandle( stock, GDI_OBJECT_BRUSH, NULL, brush );
-	trace("created brush %p with color %08lx\n", brush->Handle, color );
+	TRACE("created brush %p with color %08lx\n", brush->Handle, color);
 	return brush->Handle;
 }
 
@@ -976,7 +978,7 @@ HANDLE PEN::Alloc( UINT style, UINT width, COLORREF color, BOOL stock )
 
 	// strangeness: handle indicates pen, but it's a brush in the table
 	pen->Handle = AllocGdiHandle( stock, GDI_OBJECT_PEN, NULL, pen );
-	trace("created pen %p with color %08lx\n", pen->Handle, color );
+	TRACE("created pen %p with color %08lx\n", pen->Handle, color);
 	return pen->Handle;
 }
 
@@ -1046,7 +1048,7 @@ COLORREF get_di_pixel_4bpp( StretchDiBitsArgs& args, int x, int y )
 	r = CopyFromUser( &pixel, (BYTE*) args.Bits + ofs, 1 );
 	if ( r < STATUS_SUCCESS)
 	{
-		trace("copy failed\n");
+		ERR("copy failed\n");
 		return 0;
 	}
 
@@ -1066,7 +1068,7 @@ COLORREF get_di_pixel( StretchDiBitsArgs& args, int x, int y )
 	case 4:
 		return get_di_pixel_4bpp( args, x, y );
 	default:
-		trace("%d bpp\n", args.Info->biBitCount);
+		FIXME("%d bpp\n", args.Info->biBitCount);
 	}
 	return 0;
 }
@@ -1087,10 +1089,10 @@ BOOL DEVICE_CONTEXT::StretchDiBits( StretchDiBitsArgs& args )
 	args.SrcWidth = min( args.SrcWidth, args.Info->biWidth - args.SrcX );
 	args.SrcHeight = min( args.SrcHeight, args.Info->biHeight - args.SrcY );
 
-	trace("w,h %ld,%ld\n", args.Info->biWidth, args.Info->biHeight);
-	trace("bits, planes %d,%d\n", args.Info->biBitCount, args.Info->biPlanes);
-	trace("compression %08lx\n", args.Info->biCompression );
-	trace("size %08lx\n", args.Info->biSize );
+	TRACE("w,h %ld,%ld\n", args.Info->biWidth, args.Info->biHeight);
+	TRACE("bits, planes %d,%d\n", args.Info->biBitCount, args.Info->biPlanes);
+	TRACE("compression %08lx\n", args.Info->biCompression);
+	TRACE("size %08lx\n", args.Info->biSize);
 
 	// copy the pixels
 	COLORREF pixel;
@@ -1233,7 +1235,7 @@ BOOLEAN NTAPI NtGdiDeleteObjectApp(HGDIOBJ Object)
 		return FALSE;
 	if (entry->ProcessId != Current->Process->Id)
 	{
-		trace("pirate deletion! %p\n", Object);
+		ERR("pirate deletion! %p\n", Object);
 		return FALSE;
 	}
 
@@ -1278,7 +1280,7 @@ HGDIOBJ NTAPI NtGdiSelectBitmap( HGDIOBJ hdc, HGDIOBJ hbm )
 
 HGDIOBJ NTAPI NtGdiSelectPen( HGDIOBJ hdc, HGDIOBJ hbm )
 {
-
+	FIXME("\n");
 	return NULL;
 }
 
@@ -1295,11 +1297,13 @@ BOOLEAN NTAPI NtGdiGetFontResourceInfoInternalW(
 	PVOID Buffer,
 	ULONG Info)
 {
+	FIXME("\n");
 	return FALSE;
 }
 
 BOOLEAN NTAPI NtGdiFlush(void)
 {
+	FIXME("\n");
 	return 0x93;
 }
 
@@ -1332,6 +1336,7 @@ ULONG NTAPI NtGdiSetDIBitsToDeviceInternal(
 	int xSrc, int ySrc, ULONG StartScan, ULONG ScanLines,
 	PVOID Bits, PVOID bmi, ULONG Color, ULONG, ULONG, ULONG, ULONG)
 {
+	FIXME("\n");
 	return cy;
 }
 
@@ -1347,7 +1352,7 @@ ULONG NTAPI NtGdiExtGetObjectW(HGDIOBJ Object, ULONG Size, PVOID Buffer)
 	switch (get_handle_type(Object))
 	{
 	case GDI_OBJECT_BITMAP:
-		trace("GDI_OBJECT_BITMAP\n");
+		TRACE("GDI_OBJECT_BITMAP\n");
 		len = sizeof info.bm;
 		info.bm.bmType = 0;
 		info.bm.bmWidth = 0x10;
@@ -1357,7 +1362,7 @@ ULONG NTAPI NtGdiExtGetObjectW(HGDIOBJ Object, ULONG Size, PVOID Buffer)
 		info.bm.bmBits = (PBYTE) 0xbbbb0001;
 		break;
 	default:
-		trace("should return data for ?\n");
+		FIXME("should return data for ?\n");
 	}
 
 	if (Size < len)
@@ -1399,6 +1404,7 @@ HANDLE NTAPI NtGdiCreateDIBSection(
 
 ULONG NTAPI NtGdiSetFontEnumeration(ULONG Unknown)
 {
+	FIXME("\n");
 	return 0;
 }
 
@@ -1500,6 +1506,7 @@ BOOLEAN NTAPI NtGdiEnumFontChunk(
 
 BOOLEAN NTAPI NtGdiEnumFontClose(HANDLE FontEnumeration)
 {
+	FIXME("\n");
 	return TRUE;
 }
 
@@ -1522,6 +1529,7 @@ BOOLEAN NTAPI NtGdiGetTextMetricsW(HANDLE DeviceContext, PVOID Buffer, ULONG Len
 
 BOOLEAN NTAPI NtGdiSetIcmMode(HANDLE DeviceContext, ULONG, ULONG)
 {
+	FIXME("\n");
 	return TRUE;
 }
 
@@ -1529,6 +1537,8 @@ BOOLEAN NTAPI NtGdiComputeXformCoefficients( HANDLE DeviceContext )
 {
 	if (get_handle_type( DeviceContext ) != GDI_OBJECT_DC)
 		return FALSE;
+
+	FIXME("\n");
 	return TRUE;
 }
 
@@ -1571,7 +1581,7 @@ BOOLEAN NTAPI NtGdiExtTextOutW( HANDLE handle, INT x, INT y, UINT options,
 		return FALSE;
 
 	if (dx)
-		trace("character spacing provided but ignored\n");
+		FIXME("character spacing provided but ignored\n");
 
 	return dc->ExtTextOut( x, y, options, rect, text );
 }
@@ -1699,7 +1709,7 @@ BOOLEAN NTAPI NtGdiStretchDIBitsInternal(
 
 	if (bmi.biBitCount <= 8)
 	{
-		trace("copying %d colors\n",  bmi.biBitCount);
+		TRACE("copying %d colors\n",  bmi.biBitCount);
 		r = CopyFromUser( colors, &info->bmiColors, (1 << bmi.biBitCount) * sizeof (RGBQUAD));
 		if (r < STATUS_SUCCESS)
 			return FALSE;
@@ -1714,11 +1724,13 @@ BOOLEAN NTAPI NtGdiStretchDIBitsInternal(
 BOOLEAN NTAPI NtGdiScaleViewportExtEx(HDC handle, int xnum, int ynum,
 									  int xdiv, int ydiv, PSIZE pSize)
 {
+	FIXME("\n");
 	return FALSE;
 }
 
 BOOLEAN NTAPI NtGdiScaleWindowExtEx(HDC handle, int xnum, int ynum,
 									int xdiv, int ydiv, PSIZE pSize)
 {
+	FIXME("\n");
 	return FALSE;
 }

@@ -28,9 +28,12 @@
 
 #include "debug.h"
 #include "object.h"
-#include "object.inl"
 #include "ntcall.h"
 #include "token.h"
+
+DEFAULT_DEBUG_CHANNEL(token);
+
+#include "object.inl"
 
 // http://blogs.msdn.com/david_leblanc/archive/2007/07/26/process-tokens-and-default-dacls.aspx
 // typedef struct _ACCESS_MASK {
@@ -64,7 +67,7 @@ public:
 
 void LUID_AND_PRIVILEGES::Dump()
 {
-	trace("%08lx %08lx %08lx\n", Luid.LowPart, Luid.HighPart, Attributes );
+	TRACE("%08lx %08lx %08lx\n", Luid.LowPart, Luid.HighPart, Attributes );
 }
 
 class CTOKEN_PRIVILEGES
@@ -220,7 +223,7 @@ CSID::CSID() :
 void CSID::Dump()
 {
 	BYTE* b = IdentifierAuthority.Value;
-	trace("sid: %02x %02x %02x-%02x-%02x-%02x-%02x-%02x\n",
+	TRACE("sid: %02x %02x %02x-%02x-%02x-%02x-%02x-%02x\n",
 		  Revision, SubAuthorityCount, b[0], b[1], b[2], b[3], b[4], b[6]);
 }
 
@@ -753,7 +756,7 @@ NTSTATUS NTAPI NtOpenProcessToken(
 {
 	NTSTATUS r;
 
-	trace("%p %08lx %p\n", Process, DesiredAccess, Token);
+	TRACE("%p %08lx %p\n", Process, DesiredAccess, Token);
 
 	r = VerifyForWrite( Token, sizeof *Token );
 	if (r < STATUS_SUCCESS)
@@ -782,7 +785,7 @@ NTSTATUS NTAPI NtOpenThreadToken(
 {
 	NTSTATUS r;
 
-	trace("%p %08lx %u %p\n", Thread, DesiredAccess, OpenAsSelf, TokenHandle);
+	TRACE("%p %08lx %u %p\n", Thread, DesiredAccess, OpenAsSelf, TokenHandle);
 
 	r = VerifyForWrite( TokenHandle, sizeof *TokenHandle );
 	if (r < STATUS_SUCCESS)
@@ -812,7 +815,7 @@ NTSTATUS NTAPI NtAdjustPrivilegesToken(
 {
 	NTSTATUS r;
 
-	trace("%p %u %p %lu %p %p\n", TokenHandle, DisableAllPrivileges,
+	TRACE("%p %u %p %lu %p %p\n", TokenHandle, DisableAllPrivileges,
 		  NewState, BufferLength, PreviousState, ReturnLength );
 
 	if (ReturnLength)
@@ -846,7 +849,7 @@ NTSTATUS NTAPI NtAdjustPrivilegesToken(
 		CTOKEN_PRIVILEGES& prev_state = token->GetPrivs();
 
 		ULONG len = prev_state.GetLength();
-		trace("old privs %ld bytes\n", len);
+		TRACE("old privs %ld bytes\n", len);
 		prev_state.Dump();
 		if (len > BufferLength)
 			return STATUS_BUFFER_TOO_SMALL;
@@ -861,7 +864,7 @@ NTSTATUS NTAPI NtAdjustPrivilegesToken(
 
 	r = token->Adjust( privs );
 
-	trace("new privs\n");
+	TRACE("new privs\n");
 	privs.Dump();
 
 	return r;
@@ -894,7 +897,7 @@ NTSTATUS NTAPI NtQueryInformationToken(
 	NTSTATUS r;
 	TOKEN_STATISTICS stats;
 
-	trace("%p %u %p %lu %p\n", TokenHandle, TokenInformationClass,
+	TRACE("%p %u %p %lu %p\n", TokenHandle, TokenInformationClass,
 		  TokenInformation, TokenInformationLength, ReturnLength );
 
 	r = ObjectFromHandle( token, TokenHandle, TOKEN_QUERY );
@@ -904,22 +907,22 @@ NTSTATUS NTAPI NtQueryInformationToken(
 	switch( TokenInformationClass )
 	{
 	case TokenOwner:
-		trace("TokenOwner\n");
+		TRACE("TokenOwner\n");
 		r = CopyPtrToUser( token->GetOwner(), TokenInformation, TokenInformationLength, len );
 		break;
 
 	case TokenPrimaryGroup:
-		trace("TokenPrimaryGroup\n");
+		TRACE("TokenPrimaryGroup\n");
 		r = CopyPtrToUser( token->GetPrimaryGroup(), TokenInformation, TokenInformationLength, len );
 		break;
 
 	case TokenDefaultDacl:
-		trace("TokenDefaultDacl\n");
+		TRACE("TokenDefaultDacl\n");
 		r = CopyPtrToUser( token->GetDefaultDacl(), TokenInformation, TokenInformationLength, len );
 		break;
 
 	case TokenUser:
-		trace("TokenUser\n");
+		TRACE("TokenUser\n");
 		len = token->GetUser().GetLength();
 		if (len > TokenInformationLength)
 		{
@@ -931,11 +934,11 @@ NTSTATUS NTAPI NtQueryInformationToken(
 		break;
 
 	case TokenImpersonationLevel:
-		trace("UNIMPLEMENTED: TokenImpersonationLevel\n");
+		FIXME("UNIMPLEMENTED: TokenImpersonationLevel\n");
 		return STATUS_INVALID_INFO_CLASS;
 
 	case TokenStatistics:
-		trace("TokenStatistics\n");
+		TRACE("TokenStatistics\n");
 		len = sizeof stats;
 		if (len != TokenInformationLength)
 			return STATUS_INFO_LENGTH_MISMATCH;
@@ -948,7 +951,7 @@ NTSTATUS NTAPI NtQueryInformationToken(
 		break;
 
 	case TokenGroups:
-		trace("TokenGroups\n");
+		TRACE("TokenGroups\n");
 		len = token->GetGroups().GetLength();
 		if (len > TokenInformationLength)
 		{
@@ -960,7 +963,7 @@ NTSTATUS NTAPI NtQueryInformationToken(
 		break;
 
 	case TokenRestrictedSids:
-		trace("TokenRestrictedSids\n");
+		TRACE("TokenRestrictedSids\n");
 		len = token->GetRestrictedSids().GetLength();
 		if (len > TokenInformationLength)
 		{
@@ -972,7 +975,7 @@ NTSTATUS NTAPI NtQueryInformationToken(
 		break;
 
 	default:
-		trace("UNIMPLEMENTED: info class %d\n", TokenInformationClass);
+		FIXME("UNIMPLEMENTED: info class %d\n", TokenInformationClass);
 		return STATUS_INVALID_INFO_CLASS;
 	}
 
@@ -987,7 +990,7 @@ NTSTATUS NTAPI NtSetSecurityObject(
 	SECURITY_INFORMATION SecurityInformation,
 	PSECURITY_DESCRIPTOR SecurityDescriptor )
 {
-	trace("UNIMPLEMENTED: %p %08lx %p\n", Handle, SecurityInformation, SecurityDescriptor );
+	FIXME("UNIMPLEMENTED: %p %08lx %p\n", Handle, SecurityInformation, SecurityDescriptor );
 
 	// Make sure the caller doesn't pass a NULL security descriptor
 	if (!SecurityDescriptor) return STATUS_ACCESS_VIOLATION;
@@ -1027,6 +1030,7 @@ NTSTATUS NTAPI NtFilterToken(
 	PTOKEN_GROUPS SidsToRestrict,
 	PHANDLE NewTokenHandle)
 {
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -1040,6 +1044,7 @@ NTSTATUS NTAPI NtAccessCheck(
 	PACCESS_MASK GrantedAccess,
 	PBOOLEAN AccessStatus)
 {
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -1062,6 +1067,8 @@ NTSTATUS NtPrivilegeCheck(
 
 	BOOLEAN ok = TRUE;
 	r = CopyToUser( Result, &ok, sizeof ok );
+
+	FIXME("\n");
 
 	return r;
 }

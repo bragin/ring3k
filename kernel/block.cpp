@@ -41,6 +41,8 @@
 #include "mem.h"
 #include "ntcall.h"
 
+DEFAULT_DEBUG_CHANNEL(block);
+
 #define MAX_CORE_MEMORY 0x10000000
 
 static inline BOOLEAN MemAllocationTypeIsValid(ULONG state)
@@ -243,14 +245,14 @@ MBLOCK::~MBLOCK()
 
 void MBLOCK::Dump()
 {
-	trace("%p %08lx %08lx %08lx %08lx\n", BaseAddress, RegionSize, Protect, State, Type );
+	TRACE("%p %08lx %08lx %08lx %08lx\n", BaseAddress, RegionSize, Protect, State, Type );
 }
 
 MBLOCK *MBLOCK::Split( size_t target_length )
 {
 	MBLOCK *ret;
 
-	trace("splitting block\n");
+	TRACE("splitting block\n");
 
 	assert( target_length >= 0x1000);
 	assert( !(target_length&0xfff) );
@@ -264,7 +266,7 @@ MBLOCK *MBLOCK::Split( size_t target_length )
 	ret = DoSplit( BaseAddress + target_length, RegionSize - target_length );
 	if (!ret)
 	{
-		trace("Split failed!\n");
+		ERR("Split failed!\n");
 		return NULL;
 	}
 
@@ -309,7 +311,7 @@ ULONG MBLOCK::MmapFlagFromPageProt( ULONG prot )
 	case PAGE_EXECUTE_READWRITE:
 		return PROT_EXEC | PROT_READ | PROT_WRITE;
 	case PAGE_EXECUTE_WRITECOPY:
-		trace("FIXME, PAGE_EXECUTE_WRITECOPY not supported\n");
+		FIXME("FIXME, PAGE_EXECUTE_WRITECOPY not supported\n");
 		return PROT_EXEC | PROT_READ | PROT_WRITE;
 	case PAGE_NOACCESS:
 		return 0;
@@ -318,10 +320,10 @@ ULONG MBLOCK::MmapFlagFromPageProt( ULONG prot )
 	case PAGE_READWRITE:
 		return PROT_READ | PROT_WRITE;
 	case PAGE_WRITECOPY:
-		trace("FIXME, PAGE_WRITECOPY not supported\n");
+		FIXME("PAGE_WRITECOPY not supported\n");
 		return PROT_READ | PROT_WRITE;
 	}
-	trace("shouldn't get here\n");
+	ERR("shouldn't get here\n");
 	return STATUS_INVALID_PAGE_PROTECTION;
 }
 

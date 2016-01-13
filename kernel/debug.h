@@ -51,6 +51,7 @@ void DumpMem(void *p, unsigned int len);
 void Die(const char *fmt, ...) __attribute__((format (printf,1,2))) __attribute__((noreturn));
 int dump_instruction(unsigned char *inst);
 void print_wide_string( unsigned short *str, int len );
+int DebugPrintfEx(enum __kdbp_debug_class cls, struct __kdbp_debug_channel *channel, const char *func, const char *format, ...);
 
 extern int option_quiet;
 extern int option_debug;
@@ -66,10 +67,6 @@ void DebuggerBacktrace(PCONTEXT ctx);
 #define kalloc( size ) _kalloc( __FILE__, __LINE__, (size) )
 #define kfree( mem ) _kfree( __FILE__, __LINE__, (mem) )
 
-// Legacy debug macro
-#define trace(...) DebugPrintf(__FILE__,__FUNCTION__,__LINE__,__VA_ARGS__)
-
-// New debug macros
 #define __KDBG_GET_DEBUGGING_TRACE(dbch) ((dbch)->flags & (1 << __KDBP_DBCL_TRACE))
 #define __KDBG_GET_DEBUGGING_WARN(dbch)  ((dbch)->flags & (1 << __KDBP_DBCL_WARN))
 #define __KDBG_GET_DEBUGGING_FIXME(dbch) ((dbch)->flags & (1 << __KDBP_DBCL_FIXME))

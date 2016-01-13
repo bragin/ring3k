@@ -28,6 +28,8 @@
 
 #include "debug.h"
 
+DEFAULT_DEBUG_CHANNEL(profile);
+
 NTSTATUS NTAPI NtCreateProfile(
 	PHANDLE ProfileHandle,
 	HANDLE ProcessHandle,
@@ -39,6 +41,6 @@ NTSTATUS NTAPI NtCreateProfile(
 	KPROFILE_SOURCE Source,
 	ULONG ProcessorMask)
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }

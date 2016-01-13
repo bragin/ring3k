@@ -29,7 +29,11 @@
 #include "object.h"
 #include "thread.h"
 #include "ntcall.h"
+
+DEFAULT_DEBUG_CHANNEL(mutant);
+
 #include "object.inl"
+
 
 class MUTANT : public SYNC_OBJECT
 {
@@ -109,7 +113,7 @@ NTSTATUS NTAPI NtCreateMutant(
 	POBJECT_ATTRIBUTES ObjectAttributes,
 	BOOLEAN InitialOwner)
 {
-	trace("%p %08lx %p %u\n", MutantHandle,
+	TRACE("%p %08lx %p %u\n", MutantHandle,
 		  AccessMask, ObjectAttributes, InitialOwner);
 
 	MUTANT_FACTORY factory( InitialOwner );
@@ -124,7 +128,7 @@ NTSTATUS NTAPI NtReleaseMutant(
 	ULONG prev = 0;
 	NTSTATUS r;
 
-	trace("%p %p\n", MutantHandle, PreviousState);
+	TRACE("%p %p\n", MutantHandle, PreviousState);
 
 	r = ObjectFromHandle( mutant, MutantHandle, MUTEX_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
@@ -149,7 +153,7 @@ NTSTATUS NTAPI NtOpenMutant(
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
-	trace("%p %08lx %p\n", MutantHandle, DesiredAccess, ObjectAttributes );
+	TRACE("%p %08lx %p\n", MutantHandle, DesiredAccess, ObjectAttributes );
 	return NtOpenObject<MUTANT>( MutantHandle, DesiredAccess, ObjectAttributes );
 }
 
@@ -160,5 +164,6 @@ NTSTATUS NTAPI NtQueryMutant(
 	ULONG MutantInformationLength,
 	PULONG ReturnLength)
 {
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }

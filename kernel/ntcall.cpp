@@ -34,6 +34,8 @@
 #include "ntcall.h"
 #include "timer.h"
 
+DEFAULT_DEBUG_CHANNEL(ntcall);
+
 NTSTATUS CopyToUser( void *dest, const void *src, size_t len )
 {
 	return Current->CopyToUser( dest, src, len );
@@ -73,7 +75,7 @@ NTSTATUS NTAPI NtRaiseHardError(
 	NTSTATUS r;
 	ULONG i;
 
-	trace("%08lx %lu %lu %p %u %p\n", Status, NumberOfArguments,
+	TRACE("%08lx %lu %lu %p %u %p\n", Status, NumberOfArguments,
 		  StringArgumentsMask, Arguments, ResponseOption, Response);
 
 	if (NumberOfArguments>32)
@@ -138,7 +140,7 @@ NTSTATUS NTAPI NtQuerySystemInformation(
 	} info;
 	ULONG len = 0;
 
-	trace("%d %p %lu %p\n", SystemInformationClass, SystemInformation,
+	TRACE("%d %p %lu %p\n", SystemInformationClass, SystemInformation,
 		  SystemInformationLength, ReturnLength);
 
 	if (ReturnLength)
@@ -210,7 +212,7 @@ NTSTATUS NTAPI NtQuerySystemInformation(
 		break;
 
 	default:
-		trace("SystemInformationClass = %d not handled\n", SystemInformationClass);
+		FIXME("SystemInformationClass = %d not handled\n", SystemInformationClass);
 		r = STATUS_INVALID_INFO_CLASS;
 	}
 
@@ -226,7 +228,7 @@ NTSTATUS NTAPI NtSetSystemInformation(
 	PVOID SystemInformation,
 	ULONG SystemInformationLength )
 {
-	trace("%d %p %lu\n", SystemInformationClass, SystemInformation, SystemInformationLength );
+	FIXME("%d %p %lu\n", SystemInformationClass, SystemInformation, SystemInformationLength );
 	return STATUS_SUCCESS;
 }
 
@@ -235,7 +237,7 @@ NTSTATUS NTAPI NtFlushInstructionCache(
 	PVOID BaseAddress,
 	SIZE_T NumberOfBytesToFlush )
 {
-	trace("%p %p %08lx\n", Process, BaseAddress, NumberOfBytesToFlush);
+	FIXME("%p %p %08lx\n", Process, BaseAddress, NumberOfBytesToFlush);
 	return STATUS_SUCCESS;
 }
 
@@ -248,7 +250,7 @@ NTSTATUS NTAPI NtDisplayString( PUNICODE_STRING String )
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("%pus\n", &us );
+	FIXME("%pus\n", &us );
 
 	return STATUS_SUCCESS;
 }
@@ -276,7 +278,7 @@ NTSTATUS NTAPI NtCreatePagingFile(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("unimplemented - %pus %llu %llu %08lx\n",
+	FIXME("unimplemented - %pus %llu %llu %08lx\n",
 		  &us, init_sz.QuadPart, max_sz.QuadPart, Reserved);
 
 	return STATUS_SUCCESS;
@@ -300,7 +302,7 @@ NTSTATUS NTAPI NtShutdownSystem(
 	default:
 		return STATUS_INVALID_PARAMETER;
 	}
-	trace("%s\n", action);
+	TRACE("%s\n", action);
 	exit(1);
 }
 
@@ -336,6 +338,6 @@ NTSTATUS NTAPI NtQueryDebugFilterState(
 	ULONG Component,
 	ULONG Level)
 {
-	trace("%08lx %08lx\n", Component, Level);
+	FIXME("%08lx %08lx\n", Component, Level);
 	return STATUS_SUCCESS;
 }

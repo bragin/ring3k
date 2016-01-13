@@ -38,12 +38,15 @@
 #include "ntwin32.h"
 #include "mem.h"
 #include "debug.h"
-#include "object.inl"
 #include "list.h"
 #include "timer.h"
 #include "win.h"
 #include "queue.h"
 #include "spy.h"
+
+DEFAULT_DEBUG_CHANNEL(queue);
+
+#include "object.inl"
 
 CMSG::CMSG( HWND _hwnd, UINT _message, WPARAM _wparam, LPARAM _lparam ) :
 	HWnd( _hwnd ),
@@ -262,7 +265,7 @@ BOOLEAN THREAD_MESSAGE_QUEUE::SetTimer( HWND Window, UINT Identifier, UINT Elaps
 		TimerList.Unlink( timer );
 	else
 		timer = new WIN_TIMER( Window, Identifier );
-	trace("adding timer %p hwnd %p id %d\n", timer, Window, Identifier );
+	TRACE("adding timer %p hwnd %p id %d\n", timer, Window, Identifier );
 	timer->Period = Elapse;
 	timer->LParam = TimerProc;
 	TimerAdd( timer );
@@ -274,7 +277,7 @@ BOOLEAN THREAD_MESSAGE_QUEUE::KillTimer( HWND Window, UINT Identifier )
 	WIN_TIMER* timer = FindTimer( Window, Identifier );
 	if (!timer)
 		return FALSE;
-	trace("deleting timer %p hwnd %p id %d\n", timer, Window, Identifier );
+	TRACE("deleting timer %p hwnd %p id %d\n", timer, Window, Identifier );
 	TimerList.Unlink( timer );
 	delete timer;
 	return TRUE;

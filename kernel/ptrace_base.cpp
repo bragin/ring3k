@@ -49,6 +49,8 @@
 #include "platform.h"
 #include "ptrace_base.h"
 
+DEFAULT_DEBUG_CHANNEL(ptrace);
+
 #define CTX_HAS_CONTROL(flags) ((flags)&1)
 #define CTX_HAS_INTEGER(flags) ((flags)&2)
 #define CTX_HAS_SEGMENTS(flags) ((flags)&4)
@@ -198,9 +200,9 @@ void PTRACE_ADRESS_SPACE_IMPL::WaitForSignal( pid_t pid, int signal )
 		}
 
 		if (WIFSTOPPED(status) && WEXITSTATUS(status) == SIGALRM)
-			trace("stray SIGALRM\n");
+			WARN("stray SIGALRM\n");
 		else
-			trace("stray signal %d\n", WEXITSTATUS(status));
+			WARN("stray signal %d\n", WEXITSTATUS(status));
 
 		// start the child again so we can get the next signal
 		r = ptrace( PTRACE_CONT, pid, 0, 0 );
@@ -341,7 +343,7 @@ void PTRACE_ADRESS_SPACE_IMPL::Run( void *TebBaseAddress, PCONTEXT ctx, int sing
 
 		if (sig == SIGCONT)
 		{
-			trace("got SIGCONT\n");
+			TRACE("got SIGCONT\n");
 			continue;
 		}
 
@@ -359,7 +361,7 @@ void PTRACE_ADRESS_SPACE_IMPL::Run( void *TebBaseAddress, PCONTEXT ctx, int sing
 			if (siginfo.si_code == 0x80)
 			{
 				// assumes int $3 (0xcc, not 0xcd 0x03)
-				trace("breakpoint!\n");
+				TRACE("breakpoint!\n");
 				ctx->Eip--;
 				exec->HandleBreakpoint();
 			}
@@ -367,7 +369,7 @@ void PTRACE_ADRESS_SPACE_IMPL::Run( void *TebBaseAddress, PCONTEXT ctx, int sing
 			{
 				// assumes int $0x80 (0xcd 0x80)
 				ctx->Eip -= 2;
-				trace("syscall!\n");
+				TRACE("syscall!\n");
 				exec->HandleFault();
 			}
 			continue;
@@ -385,7 +387,7 @@ void PTRACE_ADRESS_SPACE_IMPL::Run( void *TebBaseAddress, PCONTEXT ctx, int sing
 		if (single_step)
 			break;
 
-		trace("stopped, signal %d\n", WEXITSTATUS(status));
+		TRACE("stopped, signal %d\n", WEXITSTATUS(status));
 		exec->HandleBreakpoint();
 		break;
 	}

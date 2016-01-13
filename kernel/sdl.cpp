@@ -40,6 +40,8 @@
 #include "ntwin32.h"
 #include "sdl.h"
 
+DEFAULT_DEBUG_CHANNEL(sdl);
+
 #if defined (HAVE_SDL) && defined (HAVE_SDL_SDL_H)
 #include <SDL/SDL.h>
 
@@ -128,7 +130,7 @@ COLORREF SDL_16BPP_BITMAP::GetPixel( INT x, INT y )
 
 BOOL SDL_16BPP_BITMAP::Rectangle(INT left, INT top, INT right, INT bottom, BRUSH* brush )
 {
-	trace("sdl_16bpp_bitmap_t::rectangle\n");
+	TRACE("sdl_16bpp_bitmap_t::rectangle\n");
 	Lock();
 	CBITMAP::Rectangle( left, top, right, bottom, brush );
 	Unlock();
@@ -196,11 +198,11 @@ WORD SDL_SLEEPER::SdlKeysumToVkey( SDLKey sym )
 		mk(RIGHT)
 		//mk(ESCAPE)
 		case SDLK_ESCAPE:
-			trace("escape!\n");
+			FIXME("escape!\n");
 			return VK_ESCAPE;
 #undef mk
 		default:
-			trace("%d unhandled\n", sym);
+			FIXME("%d unhandled\n", sym);
 			return 0;
 	}
 }
@@ -216,7 +218,7 @@ ULONG SDL_SLEEPER::GetMouseButton( Uint8 button, bool up )
 	case SDL_BUTTON_MIDDLE:
 		return up ? MOUSEEVENTF_MIDDLEUP : MOUSEEVENTF_MIDDLEDOWN;
 	default:
-		trace("unknown mouse button %d\n", button );
+		FIXME("unknown mouse button %d\n", button );
 		return 0;
 	}
 }
@@ -232,7 +234,7 @@ bool SDL_SLEEPER::HandleSdlEvent( SDL_Event& event )
 
 	case SDL_KEYDOWN:
 	case SDL_KEYUP:
-		trace("got SDL keyboard event\n");
+		TRACE("got SDL keyboard event\n");
 		input.type = INPUT_KEYBOARD;
 		input.ki.time = TIMEOUT::GetTickCount();
 		input.ki.wVk = SdlKeysumToVkey( event.key.keysym.sym );
@@ -244,7 +246,7 @@ bool SDL_SLEEPER::HandleSdlEvent( SDL_Event& event )
 
 	case SDL_MOUSEBUTTONDOWN:
 	case SDL_MOUSEBUTTONUP:
-		trace("got SDL mouse button event\n");
+		TRACE("got SDL mouse button event\n");
 		input.type = INPUT_MOUSE;
 		input.mi.dx = event.button.x;
 		input.mi.dy = event.button.y;
@@ -256,7 +258,7 @@ bool SDL_SLEEPER::HandleSdlEvent( SDL_Event& event )
 		break;
 
 	case SDL_MOUSEMOTION:
-		trace("got SDL mouse motion event\n");
+		TRACE("got SDL mouse motion event\n");
 		input.type = INPUT_MOUSE;
 		input.mi.dx = event.motion.x;
 		input.mi.dy = event.motion.y;
@@ -318,7 +320,7 @@ bool SDL_SLEEPER::CheckEvents( bool wait )
 	}
 	else
 	{
-		trace("SDL_WaitEvent returned error\n");
+		ERR("SDL_WaitEvent returned error\n");
 		quit = true;
 	}
 
@@ -336,7 +338,7 @@ int WIN32K_SDL::GetCaps( int index )
 	case BITSPIXEL:
 		return Screen->format->BitsPerPixel;
 	default:
-		trace("%d\n", index );
+		FIXME("%d\n", index );
 		return 0;
 	}
 }
@@ -430,7 +432,7 @@ CBITMAP* SDL_DEVICE_CONTEXT::GetBitmap()
 
 HANDLE SDL_DEVICE_CONTEXT::SelectBitmap( CBITMAP *bitmap )
 {
-	trace("trying to change device's bitmap...\n");
+	FIXME("trying to change device's bitmap...\n");
 	return 0;
 }
 
@@ -442,7 +444,7 @@ int SDL_DEVICE_CONTEXT::GetCaps( int index )
 
 DEVICE_CONTEXT* WIN32K_SDL::AllocScreenDcPtr()
 {
-	trace("allocating SDL DC sdl_bitmap = %p\n", SdlBitmap);
+	TRACE("allocating SDL DC sdl_bitmap = %p\n", SdlBitmap);
 	return new SDL_DEVICE_CONTEXT( SdlBitmap );
 }
 

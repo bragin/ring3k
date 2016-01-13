@@ -29,6 +29,8 @@
 #include "file.h"
 #include "debug.h"
 
+DEFAULT_DEBUG_CHANNEL(random);
+
 class RANDOM_DEV : public IO_OBJECT
 {
 public:
@@ -43,13 +45,13 @@ RANDOM_DEV::RANDOM_DEV()
 
 NTSTATUS RANDOM_DEV::Read( PVOID Buffer, ULONG Length, ULONG *read )
 {
-	trace("RANDOM_DEV::Read\n");
+	FIXME("RANDOM_DEV::Read\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS RANDOM_DEV::Write( PVOID Buffer, ULONG Length, ULONG *written )
 {
-	trace("RANDOM_DEV::Write\n");
+	FIXME("RANDOM_DEV::Write\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 

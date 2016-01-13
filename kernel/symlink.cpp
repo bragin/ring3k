@@ -30,9 +30,12 @@
 
 #include "debug.h"
 #include "object.h"
-#include "object.inl"
 #include "ntcall.h"
 #include "symlink.h"
+
+DEFAULT_DEBUG_CHANNEL(symlink);
+
+#include "object.inl"
 
 SYMLINK::SYMLINK( const UNICODE_STRING& us )
 {
@@ -62,7 +65,7 @@ NTSTATUS SYMLINK::Open( OBJECT *&out, OPEN_INFO& info )
 	if (info.Path.Length != 0)
 	{
 		// follow the link
-		trace("following %pus\n", &target );
+		TRACE("following %pus\n", &target );
 		SYMLINK_OPENER target_info;
 		target_info.Attributes = info.Attributes;
 		target_info.Path.Set( target );
@@ -77,10 +80,10 @@ NTSTATUS SYMLINK::Open( OBJECT *&out, OPEN_INFO& info )
 		return target_object->Open( out, info );
 	}
 
-	trace("opening symlinks oa.Attributes = %08lx\n", info.Attributes);
+	TRACE("opening symlinks oa.Attributes = %08lx\n", info.Attributes);
 	if (info.Attributes & OBJ_OPENLINK)
 	{
-		trace("OBJ_OPENLINK specified\n");
+		FIXME("OBJ_OPENLINK specified\n");
 		return STATUS_INVALID_PARAMETER;
 	}
 
@@ -104,7 +107,7 @@ SYMLINK_FACTORY::SYMLINK_FACTORY(const UNICODE_STRING& _target) :
 
 NTSTATUS SYMLINK_FACTORY::AllocObject(OBJECT** obj)
 {
-	trace("allocating object\n");
+	TRACE("allocating object\n");
 	if (target.Length == 0)
 		return STATUS_INVALID_PARAMETER;
 

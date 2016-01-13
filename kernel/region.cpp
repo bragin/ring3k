@@ -110,6 +110,8 @@ SOFTWARE.
 #include "win32mgr.h"
 #include "region.h"
 
+DEFAULT_DEBUG_CHANNEL(region);
+
 const int REGION::RGN_DEFAULT_RECTS = 2;
 
 void CRECT::Clear()
@@ -130,7 +132,7 @@ void CRECT::Set( int l, int t, int r, int b )
 
 void CRECT::Dump() const
 {
-	trace("%ld,%ld-%ld,%ld\n", left, top, right, bottom);
+	TRACE("%ld,%ld-%ld,%ld\n", left, top, right, bottom);
 }
 
 void CRECT::Fix()
@@ -382,7 +384,7 @@ BOOL REGION::OverlapsRect( const RECT& rect )
 
 INT REGION::IntersectRgn( REGION *reg1, REGION *reg2 )
 {
-	trace("%ld %ld\n", reg1->NumRects, reg2->NumRects);
+	TRACE("%ld %ld\n", reg1->NumRects, reg2->NumRects);
 	/* check for trivial reject */
 	if ( !reg1->NumRects || !reg2->NumRects ||
 		!reg1->Rgn->Extents.Overlaps( reg2->Rgn->Extents ))

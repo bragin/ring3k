@@ -32,6 +32,9 @@
 #include "object.h"
 #include "ntcall.h"
 #include "section.h"
+
+DEFAULT_DEBUG_CHANNEL(port);
+
 #include "object.inl"
 
 class CPORT_MESSAGE;
@@ -196,14 +199,14 @@ void CPORT_MESSAGE::Dump()
 {
 	if (!OptionTrace)
 		return;
-	trace("DataSize    = %d\n", Req.DataSize);
-	trace("MessageSize = %d\n", Req.MessageSize);
-	trace("MessageType = %d (%s)\n", Req.MessageType, MsgType());
-	trace("Offset      = %d\n", Req.VirtualRangesOffset);
-	trace("ClientId    = %04x, %04x\n",
+	TRACE("DataSize    = %d\n", Req.DataSize);
+	TRACE("MessageSize = %d\n", Req.MessageSize);
+	TRACE("MessageType = %d (%s)\n", Req.MessageType, MsgType());
+	TRACE("Offset      = %d\n", Req.VirtualRangesOffset);
+	TRACE("ClientId    = %04x, %04x\n",
 		  (int)Req.ClientId.UniqueProcess, (int)Req.ClientId.UniqueThread);
-	trace("MessageId   = %ld\n", Req.MessageId);
-	trace("SectionSize = %08lx\n", Req.SectionSize);
+	TRACE("MessageId   = %ld\n", Req.MessageId);
+	TRACE("SectionSize = %08lx\n", Req.SectionSize);
 	DumpMem(&Req.Data, Req.DataSize);
 }
 
@@ -226,7 +229,7 @@ void SendTerminateMessage(
 	assert(port);
 	create_time.QuadPart = 0;
 
-	trace("Thread = %p Port = %p\n", thread, port);
+	TRACE("Thread = %p Port = %p\n", thread, port);
 
 	ULONG data_size = sizeof create_time;
 	ULONG msg_size = FIELD_OFFSET(LPC_MESSAGE, Data) + data_size;
@@ -263,7 +266,7 @@ bool SendException( THREAD *thread, EXCEPTION_RECORD& rec )
 
 	PORT *port = static_cast<PORT*>(thread->Process->ExceptionPort);
 
-	trace("Thread = %p Port = %p\n", thread, port);
+	TRACE("Thread = %p Port = %p\n", thread, port);
 
 	ULONG status = STATUS_PENDING;
 	while (1)
@@ -302,7 +305,7 @@ bool SendException( THREAD *thread, EXCEPTION_RECORD& rec )
 			thread->Process->Terminate(rec.ExceptionCode);
 			return true;
 		default:
-			trace("status = %08lx\n", status);
+			FIXME("status = %08lx\n", status);
 			continue;
 		}
 	}
@@ -518,6 +521,8 @@ NTSTATUS PORT::SendReply( CPORT_MESSAGE *reply )
 			return STATUS_SUCCESS;
 		}
 	}
+
+	WARN("\n");
 	return STATUS_REPLY_MESSAGE_MISMATCH;
 }
 
@@ -576,7 +581,7 @@ NTSTATUS ConnectPort(
 	OBJECT *obj = NULL;
 	PORT *port;
 
-	trace("%pus\n", name);
+	TRACE("%pus\n", name);
 
 	oa.Length = sizeof oa;
 	oa.RootDirectory = 0;
@@ -648,7 +653,7 @@ NTSTATUS ConnectPort(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("ServerSharedMemory = %p\n", ServerSharedMemory);
+	TRACE("ServerSharedMemory = %p\n", ServerSharedMemory);
 	if (ServerSharedMemory)
 	{
 		LPC_SECTION_READ read_sec;
@@ -730,7 +735,7 @@ NTSTATUS PORT::AcceptConnect(
 		if (r < STATUS_SUCCESS)
 			return r;
 
-		trace("ours=%p theirs=%p\n", t->Port->OtherSectionBase, OurSectionBase);
+		TRACE("ours=%p theirs=%p\n", t->Port->OtherSectionBase, OurSectionBase);
 	}
 
 	// map the Other side's Section into our process
@@ -748,7 +753,7 @@ NTSTATUS PORT::AcceptConnect(
 								   MEM_COMMIT, PAGE_READWRITE );
 		if (r < STATUS_SUCCESS)
 			return r;
-		trace("theirs=%p ours=%p\n", OtherSectionBase, t->Port->OurSectionBase);
+		TRACE("theirs=%p ours=%p\n", OtherSectionBase, t->Port->OurSectionBase);
 	}
 
 	server_write_sec->ViewBase = OurSectionBase;
@@ -790,7 +795,7 @@ void PORT::RequestWaitReply( CPORT_MESSAGE *msg, CPORT_MESSAGE *&reply )
 
 NTSTATUS PORT::ReplyWaitReceive( CPORT_MESSAGE *reply, CPORT_MESSAGE *& received )
 {
-	trace("%p %p %p\n", this, reply, received );
+	TRACE("%p %p %p\n", this, reply, received);
 
 	if (reply)
 	{
@@ -828,7 +833,7 @@ NTSTATUS NTAPI NtCreatePort(
 	NTSTATUS r;
 	OBJECT *p = NULL;
 
-	trace("%p %p %lu %lu %p\n", Port, ObjectAttributes, MaxConnectInfoLength, MaxDataLength, Reserved);
+	TRACE("%p %p %lu %lu %p\n", Port, ObjectAttributes, MaxConnectInfoLength, MaxDataLength, Reserved);
 
 	r = VerifyForWrite( Port, sizeof *Port );
 	if (r < STATUS_SUCCESS)
@@ -848,7 +853,7 @@ NTSTATUS NTAPI NtCreatePort(
 	if (MaxConnectInfoLength > RealMaxConnectInfoLength)
 		return STATUS_INVALID_PARAMETER_3;
 
-	trace("root = %p Port = %pus\n", oa.RootDirectory, oa.ObjectName );
+	TRACE("root = %p Port = %pus\n", oa.RootDirectory, oa.ObjectName);
 
 	r = CreateNamedPort( &p, &oa, RealMaxConnectInfoLength, MaxDataLength );
 	if (r == STATUS_SUCCESS)
@@ -867,7 +872,7 @@ NTSTATUS NTAPI NtListenPort(
 	PORT *port = 0;
 	NTSTATUS r;
 
-	trace("%p %p\n", PortHandle, ConnectionRequest);
+	TRACE("%p %p\n", PortHandle, ConnectionRequest);
 
 	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
@@ -900,7 +905,7 @@ NTSTATUS NTAPI NtConnectPort(
 	PVOID ConnectionInfo,
 	PULONG ConnectionInfoLength )
 {
-	trace("%p %p %p %p %p %p %p %p\n", ClientPortHandle, ServerPortName,
+	TRACE("%p %p %p %p %p %p %p %p\n", ClientPortHandle, ServerPortName,
 		  SecurityQos, ClientSharedMemory, ServerSharedMemory,
 		  MaximumMessageLength, ConnectionInfo, ConnectionInfoLength);
 
@@ -923,7 +928,7 @@ NTSTATUS NTAPI NtSecureConnectPort(
 	CUNICODE_STRING name;
 	NTSTATUS r;
 
-	trace("%p %p %p %p %p %p %p %p %p\n", ClientPortHandle, ServerPortName,
+	TRACE("%p %p %p %p %p %p %p %p %p\n", ClientPortHandle, ServerPortName,
 		  SecurityQos, ClientSharedMemory, ServerSid, ServerSharedMemory,
 		  MaximumMessageLength, ConnectionInfo, ConnectionInfoLength);
 
@@ -1043,7 +1048,7 @@ NTSTATUS NTAPI NtReplyWaitReceivePort(
 	CPORT_MESSAGE *reply_msg = NULL;
 	NTSTATUS r;
 
-	trace("%p %p %p %p\n", PortHandle, ReceivePortHandle, Reply, IncomingRequest);
+	TRACE("%p %p %p %p\n", PortHandle, ReceivePortHandle, Reply, IncomingRequest);
 
 	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
@@ -1095,7 +1100,7 @@ NTSTATUS NTAPI NtRequestWaitReplyPort(
 	PORT *port = 0;
 	NTSTATUS r;
 
-	trace("%p %p %p\n", PortHandle, Request, Reply );
+	TRACE("%p %p %p\n", PortHandle, Request, Reply);
 
 	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
@@ -1127,7 +1132,7 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 {
 	NTSTATUS r;
 
-	trace("%p %lx %p %u %p %p\n", ServerPortHandle, PortIdentifier,
+	TRACE("%p %lx %p %u %p %p\n", ServerPortHandle, PortIdentifier,
 		  ConnectionReply, AcceptConnection, ServerSharedMemory, ClientSharedMemory );
 
 	CPORT_MESSAGE *reply = 0;
@@ -1167,10 +1172,10 @@ NTSTATUS NTAPI NtAcceptConnectPort(
 	if (!t)
 		return STATUS_INVALID_CID;
 
-	trace("%08lx %08lx\n", t->MessageId, reply->Req.MessageId);
+	TRACE("%08lx %08lx\n", t->MessageId, reply->Req.MessageId);
 	if (t->MessageId != reply->Req.MessageId)
 	{
-		trace("reply message mismatch\n");
+		ERR("reply message mismatch\n");
 		return STATUS_REPLY_MESSAGE_MISMATCH;
 	}
 
@@ -1244,7 +1249,7 @@ NTSTATUS NTAPI NtCompleteConnectPort(
 	PORT *port = 0;
 	NTSTATUS r;
 
-	trace("%p\n", PortHandle);
+	TRACE("%p\n", PortHandle);
 
 	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
@@ -1261,7 +1266,7 @@ NTSTATUS NTAPI NtReplyPort(
 	CPORT_MESSAGE *msg = NULL;
 	NTSTATUS r;
 
-	trace("%p %p\n", PortHandle, reply );
+	TRACE("%p %p\n", PortHandle, reply);
 
 	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
@@ -1286,7 +1291,7 @@ NTSTATUS NTAPI NtRegisterThreadTerminatePort(
 	PORT *port = 0;
 	NTSTATUS r;
 
-	trace("%p\n", PortHandle);
+	TRACE("%p\n", PortHandle);
 
 	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
@@ -1304,7 +1309,7 @@ NTSTATUS NTAPI NtRequestPort(
 	PORT *port = 0;
 	NTSTATUS r;
 
-	trace("%p %p\n", PortHandle, Request);
+	TRACE("%p %p\n", PortHandle, Request);
 
 	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
@@ -1325,13 +1330,13 @@ NTSTATUS NTAPI NtSetDefaultHardErrorPort(
 	PORT *port = 0;
 	NTSTATUS r;
 
-	trace("%p\n", PortHandle );
+	TRACE("%p\n", PortHandle);
 
 	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("does nothing\n");
+	FIXME("does nothing\n");
 
 	return STATUS_SUCCESS;
 }
@@ -1347,7 +1352,7 @@ NTSTATUS NTAPI NtQueryInformationPort(
 	PORT *port = 0;
 	NTSTATUS r;
 
-	trace("%p\n", PortHandle );
+	TRACE("%p\n", PortHandle);
 
 	r = PortFromHandle( PortHandle, port );
 	if (r < STATUS_SUCCESS)
@@ -1358,6 +1363,8 @@ NTSTATUS NTAPI NtQueryInformationPort(
 	default:
 		return STATUS_INVALID_INFO_CLASS;
 	}
+
+	FIXME("\n");
 
 	return STATUS_SUCCESS;
 }

@@ -32,6 +32,8 @@
 #include "ntcall.h"
 #include "ntwin32.h"
 
+DEFAULT_DEBUG_CHANNEL(syscall);
+
 typedef struct _NtCallDesc
 {
 	const char *name;
@@ -142,7 +144,7 @@ NTSTATUS DoNtSyscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
 	}
 	else
 	{
-		trace("invalid syscall %ld ret=%08lx\n", func, retaddr);
+		ERR("invalid syscall %ld ret=%08lx\n", func, retaddr);
 		return r;
 	}
 
@@ -188,7 +190,7 @@ NTSTATUS DoNtSyscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)
 	/* debug info for this call */
 	if (!ntcall->func)
 	{
-		fprintf(stderr, "syscall %s (%02lx) not implemented\n", ntcall->name, func);
+		FIXME("syscall %s (%02lx) not implemented\n", ntcall->name, func);
 		r = STATUS_NOT_IMPLEMENTED;
 		goto end;
 	}

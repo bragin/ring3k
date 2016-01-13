@@ -52,6 +52,8 @@
 #include "symlink.h"
 #include "alloc_bitmap.h"
 
+DEFAULT_DEBUG_CHANNEL(main);
+
 PROCESS_LIST Processes;
 THREAD *Current;
 OBJECT *NtDLLSection;
@@ -175,7 +177,7 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 	ctx.Eip = (DWORD) GetEntryPoint( p );
 	ctx.Esp = (DWORD) pstack + stack_size - 8;
 
-	trace("entry point = %08lx\n", ctx.Eip);
+	TRACE("entry point = %08lx\n", ctx.Eip);
 
 	/* when starting nt processes, make the PEB the first arg of NtProcessStartup */
 	r = p->Vm->CopyToUser( (BYTE*) ctx.Esp + 4, &p->PebBaseAddress, sizeof p->PebBaseAddress );
@@ -210,7 +212,7 @@ NTSTATUS InitNtDLL( void )
 		Die("failed to create ntdll section\n");
 
 	KiIntSystemCall = GetProcAddress( NtDLLSection, "KiIntSystemCall" );
-	trace("KiIntSystemCall = %08lx\n", KiIntSystemCall);
+	TRACE("KiIntSystemCall = %08lx\n", KiIntSystemCall);
 	InitSyscalls(KiIntSystemCall != 0);
 
 	Release( file );

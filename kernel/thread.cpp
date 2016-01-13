@@ -33,12 +33,15 @@
 #include "debug.h"
 #include "mem.h"
 #include "object.h"
-#include "object.inl"
 #include "ntcall.h"
 #include "section.h"
 #include "timer.h"
 #include "file.h"
 #include "queue.h"
+
+DEFAULT_DEBUG_CHANNEL(thread);
+
+#include "object.inl"
 
 class THREAD_IMPL;
 
@@ -291,13 +294,13 @@ NTSTATUS THREAD_IMPL::KernelDebuggerOutputString( struct KERNEL_DEBUG_STRING_OUT
 	r = CopyFromUser( &header, hdr, sizeof header );
 	if (r < STATUS_SUCCESS)
 	{
-		trace("debug string output header invalid\n");
+		ERR("debug string output header invalid\n");
 		return r;
 	}
 
 	if ( header.Length > 0x1000 )
 	{
-		trace("too long %d\n", header.Length );
+		ERR("too long %d\n", header.Length );
 		return STATUS_SUCCESS;
 	}
 
@@ -346,7 +349,7 @@ NTSTATUS THREAD_IMPL::KernelDebuggerCall( ULONG func, void *arg1, void *arg2 )
 		break;
 		default:
 			DumpRegs( &Ctx );
-			trace("unhandled function %ld\n", func );
+			FIXME("unhandled function %ld\n", func );
 			r = STATUS_NOT_IMPLEMENTED;
 	}
 	if (r < STATUS_SUCCESS)
@@ -366,7 +369,7 @@ BOOLEAN THREAD_IMPL::SoftwareInterrupt( BYTE number )
 {
 	if (number > 0x2e || number < 0x2b)
 	{
-		trace("Unhandled software interrupt %02x\n", number);
+		FIXME("Unhandled software interrupt %02x\n", number);
 		return FALSE;
 	}
 
@@ -425,7 +428,7 @@ bool THREAD_IMPL::TracedAccess()
 
 void THREAD_IMPL::HandleUserSegv( ULONG code )
 {
-	trace("%04lx: exception at %08lx\n", TraceId(), Ctx.Eip);
+	WARN("%04lx: exception at %08lx\n", TraceId(), Ctx.Eip);
 	if (OptionTrace)
 	{
 		DumpRegs( &Ctx );
@@ -452,11 +455,11 @@ void THREAD_IMPL::StartExceptionHandler(EXCEPTION_STACK_FRAME& info)
 {
 	if (0)
 	{
-		trace("ExceptionCode	%08lx\n", info.Rec.ExceptionCode);
-		trace("ExceptionFlags   %08lx\n", info.Rec.ExceptionFlags);
-		trace("ExceptionRecord  %p\n", info.Rec.ExceptionRecord);
-		trace("ExceptionAddress %p\n", info.Rec.ExceptionAddress);
-		trace("NumberParameters %ld\n", info.Rec.NumberParameters);
+		TRACE("ExceptionCode	%08lx\n", info.Rec.ExceptionCode);
+		TRACE("ExceptionFlags   %08lx\n", info.Rec.ExceptionFlags);
+		TRACE("ExceptionRecord  %p\n", info.Rec.ExceptionRecord);
+		TRACE("ExceptionAddress %p\n", info.Rec.ExceptionAddress);
+		TRACE("NumberParameters %ld\n", info.Rec.NumberParameters);
 	}
 
 	if (SendException( this, info.Rec ))
@@ -474,7 +477,7 @@ void THREAD_IMPL::StartExceptionHandler(EXCEPTION_STACK_FRAME& info)
 	// hack to stop looping
 	if (info.Ctx.Eip & 0x80000000)
 	{
-		trace("Eip invalid %08lx\n", info.Ctx.Eip);
+		ERR("Eip invalid %08lx\n", info.Ctx.Eip);
 		Terminate(STATUS_ACCESS_VIOLATION);
 		return;
 	}
@@ -488,7 +491,7 @@ void THREAD_IMPL::StartExceptionHandler(EXCEPTION_STACK_FRAME& info)
 	NTSTATUS r = CopyToUser( stack, &info, sizeof info );
 	if (r < STATUS_SUCCESS)
 	{
-		trace("%04lx: invalid stack handling exception at %08lx\n", Id, Ctx.Eip);
+		ERR("%04lx: invalid stack handling exception at %08lx\n", Id, Ctx.Eip);
 		Terminate(r);
 		return;
 	}
@@ -583,7 +586,7 @@ NTSTATUS THREAD_IMPL::DoUserCallback( ULONG index, ULONG &length, PVOID &buffer)
 	NTSTATUS r = CopyToUser( (void*) new_esp, &frame, sizeof frame );
 	if (r < STATUS_SUCCESS)
 	{
-		trace("%04lx: invalid stack handling exception at %08lx\n", Id, Ctx.Eip);
+		ERR("%04lx: invalid stack handling exception at %08lx\n", Id, Ctx.Eip);
 		Terminate(r);
 		return r;
 	}
@@ -602,7 +605,7 @@ NTSTATUS THREAD_IMPL::DoUserCallback( ULONG index, ULONG &length, PVOID &buffer)
 	Ctx.Esp = new_esp;
 
 	// recurse, resume user execution here
-	trace("continuing execution at %08lx\n", Ctx.Eip);
+	TRACE("continuing execution at %08lx\n", Ctx.Eip);
 	Run();
 
 	if (IsTerminated())
@@ -611,7 +614,7 @@ NTSTATUS THREAD_IMPL::DoUserCallback( ULONG index, ULONG &length, PVOID &buffer)
 	// fetch return values out of the frame
 	old_frame.GetReturn(r, length, buffer);
 	ContextChanged = 0;
-	trace("callback returned %08lx\n", r);
+	TRACE("callback returned %08lx\n", r);
 
 	return r;
 }
@@ -626,7 +629,7 @@ NTSTATUS THREAD_IMPL::UserCallbackReturn( PVOID Result, ULONG ResultLength, NTST
 		NTSTATUS r = CopyFromUser( retvals, Result, sizeof retvals );
 		if (r >= STATUS_SUCCESS)
 		{
-			trace("Result = %08lx %08lx %08lx\n",
+			TRACE("Result = %08lx %08lx %08lx\n",
 				  retvals[0], retvals[1], retvals[2]);
 		}
 	}
@@ -769,7 +772,7 @@ void THREAD_IMPL::SetContext( CONTEXT& c, bool override_return )
 {
 	CopyRegisters( Ctx, c, c.ContextFlags );
 	ContextChanged = override_return;
-	DumpRegs( &Ctx );
+	//DumpRegs( &Ctx );
 }
 
 NTSTATUS THREAD_IMPL::CopyToUser( void *dest, const void *src, size_t count )
@@ -817,7 +820,7 @@ NTSTATUS THREAD_IMPL::Terminate( NTSTATUS status )
 	if (ThreadState == StateTerminated)
 		return STATUS_INVALID_PARAMETER;
 
-	trace("%04lx: terminated\n", TraceId());
+	TRACE("%04lx: terminated\n", TraceId());
 
 	ExitStatus = status;
 	SetState( StateTerminated );
@@ -835,7 +838,7 @@ NTSTATUS THREAD_IMPL::Terminate( NTSTATUS status )
 	// if we just killed the last thread in the process, kill the process too
 	if (Process->IsSignalled())
 	{
-		trace("last Thread in process exited %08lx\n", status);
+		TRACE("last Thread in process exited %08lx\n", status);
 		Process->Terminate( status );
 	}
 
@@ -863,7 +866,7 @@ int THREAD_IMPL::Run()
 
 		if (ThreadState != StateRunning)
 		{
-			trace("%04lx: Thread state wrong (%d)!\n", TraceId(), ThreadState);
+			ERR("%04lx: Thread state wrong (%d)!\n", TraceId(), ThreadState);
 			assert (0);
 		}
 
@@ -914,7 +917,7 @@ void THREAD_IMPL::HandleFault()
 			!SoftwareInterrupt( inst[1] ))
 	{
 		if (inst[0] == 0xcc)
-			trace("breakpoint (cc)!\n");
+			ERR("breakpoint (cc)!\n");
 		if (TracedAccess())
 			return;
 		if (option_debug)
@@ -1041,7 +1044,7 @@ NTSTATUS NTAPI NtResumeThread(
 	ULONG count = 0;
 	NTSTATUS r;
 
-	trace("%p %p\n", ThreadHandle, PreviousSuspendCount );
+	TRACE("%p %p\n", ThreadHandle, PreviousSuspendCount);
 
 	r = ObjectFromHandle( thread, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
@@ -1059,7 +1062,7 @@ NTSTATUS NTAPI NtSuspendThread(
 	HANDLE ThreadHandle,
 	PULONG PreviousSuspendCount)
 {
-	trace("%p %p\n", ThreadHandle, PreviousSuspendCount );
+	FIXME("%p %p\n", ThreadHandle, PreviousSuspendCount );
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -1208,7 +1211,7 @@ NTSTATUS THREAD_IMPL::WaitOnHandles(
 	// iterate the array and wait on each handle
 	for (ULONG i=0; i<count; i++)
 	{
-		trace("handle[%ld] = %08lx\n", i, (ULONG) handles[i]);
+		TRACE("handle[%ld] = %08lx\n", i, (ULONG)handles[i]);
 		OBJECT *any = 0;
 		r = ObjectFromHandle( any, handles[i], SYNCHRONIZE );
 		if (r < STATUS_SUCCESS)
@@ -1286,7 +1289,7 @@ NTSTATUS NTAPI NtWaitForSingleObject(
 {
 	NTSTATUS r;
 
-	trace("%p %d %p\n", Handle, Alertable, Timeout);
+	TRACE("%p %d %p\n", Handle, Alertable, Timeout);
 
 	OBJECT *any = 0;
 	r = ObjectFromHandle( any, Handle, SYNCHRONIZE );
@@ -1320,7 +1323,7 @@ NTSTATUS NTAPI NtWaitForMultipleObjects(
 {
 	NTSTATUS r;
 
-	trace("%lu %p %u %u %p\n", HandleCount, Handles, WaitType, Alertable, Timeout);
+	TRACE("%lu %p %u %u %p\n", HandleCount, Handles, WaitType, Alertable, Timeout);
 
 	if (HandleCount < 1 || HandleCount > MAXIMUM_WAIT_OBJECTS)
 		return STATUS_INVALID_PARAMETER_1;
@@ -1354,7 +1357,7 @@ NTSTATUS NTAPI NtDelayExecution( BOOLEAN Alertable, PLARGE_INTEGER Interval )
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("timeout = %llx\n", timeout.QuadPart);
+	TRACE("timeout = %llx\n", timeout.QuadPart);
 	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( Current );
 	assert( thread );
 	r = thread->WaitOnHandles( 0, 0, WaitAny, Alertable, &timeout );
@@ -1392,7 +1395,7 @@ NTSTATUS CreateThread( THREAD **pthread, PROCESS *p, PCLIENT_ID id, CONTEXT *ctx
 	NTSTATUS r = t->Create( ctx, init_teb, suspended );
 	if (r < STATUS_SUCCESS)
 	{
-		trace("releasing partially built Thread\n");
+		WARN("releasing partially built Thread\n");
 		Release( t );
 		t = 0;
 	}
@@ -1465,7 +1468,7 @@ NTSTATUS THREAD_IMPL::Create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspe
 	if (!pKiUserApcDispatcher)
 		Die("failed to find KiUserApcDispatcher in ntdll\n");
 
-	trace("LdrInitializeThunk = %p pKiUserApcDispatcher = %p\n",
+	TRACE("LdrInitializeThunk = %p pKiUserApcDispatcher = %p\n",
 		  pLdrInitializeThunk, pKiUserApcDispatcher );
 
 	// FIXME: should set initial registers then queue an APC
@@ -1476,7 +1479,7 @@ NTSTATUS THREAD_IMPL::Create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspe
 	/* setup the registers */
 	int err = SetInitialRegs( pKiUserApcDispatcher, stack );
 	if (0>err)
-		trace("SetInitialRegs failed (%d)\n", err);
+		ERR("SetInitialRegs failed (%d)\n", err);
 
 	memset( &init_stack, 0, sizeof init_stack );
 	init_stack.pntdll = Process->PNtDLL;  /* set to pexe if running a win32 program */
@@ -1488,7 +1491,7 @@ NTSTATUS THREAD_IMPL::Create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspe
 
 	r = Process->Vm->CopyToUser( stack, &init_stack, sizeof init_stack );
 	if (r < STATUS_SUCCESS)
-		trace("failed to copy initial stack data\n");
+		ERR("failed to copy initial stack data\n");
 
 	if (!suspended)
 		Resume( NULL );
@@ -1515,7 +1518,7 @@ NTSTATUS NTAPI NtCreateThread(
 	THREAD *t = NULL;
 	CLIENT_ID id;
 
-	trace("%p %08lx %p %p %p %p %p %d\n", Thread, DesiredAccess, ObjectAttributes,
+	TRACE("%p %08lx %p %p %p %p %p %d\n", Thread, DesiredAccess, ObjectAttributes,
 		  Process, ClientId, Context, InitialTeb, CreateSuspended);
 
 	r = CopyFromUser( &ctx, Context, sizeof ctx );
@@ -1551,7 +1554,7 @@ NTSTATUS NTAPI NtContinue(
 {
 	NTSTATUS r;
 
-	trace("%p %d\n", Context, RaiseAlert);
+	TRACE("%p %d\n", Context, RaiseAlert);
 
 	CONTEXT c;
 	r = CopyFromUser( &c, Context, sizeof c );
@@ -1582,7 +1585,7 @@ NTSTATUS NTAPI NtTerminateThread(
 	THREAD *t;
 	NTSTATUS r;
 
-	trace("%p %08lx\n", ThreadHandle, Status);
+	TRACE("%p %08lx\n", ThreadHandle, Status);
 
 	if (ThreadHandle == 0)
 		t = Current;
@@ -1625,7 +1628,7 @@ NTSTATUS NTAPI NtQueryInformationThread(
 	NTSTATUS r;
 	THREAD_IMPL *t;
 
-	trace("%p %d %p %lu %p\n", ThreadHandle,
+	TRACE("%p %d %p %lu %p\n", ThreadHandle,
 		  ThreadInformationClass, ThreadInformation, ThreadInformationLength, ReturnLength);
 
 	switch( ThreadInformationClass )
@@ -1640,7 +1643,7 @@ NTSTATUS NTAPI NtQueryInformationThread(
 		sz = sizeof info.last_thread;
 		break;
 	default:
-		trace("info class %d\n", ThreadInformationClass);
+		FIXME("info class %d\n", ThreadInformationClass);
 		return STATUS_INVALID_INFO_CLASS;
 	}
 
@@ -1689,7 +1692,7 @@ NTSTATUS NTAPI NtAlertThread(
 	NTSTATUS r;
 	THREAD_IMPL *t = 0;
 
-	trace("%p\n", ThreadHandle);
+	TRACE("%p\n", ThreadHandle);
 
 	r = ObjectFromHandle( t, ThreadHandle, 0 );
 	if (r < STATUS_SUCCESS)
@@ -1702,7 +1705,7 @@ NTSTATUS NTAPI NtAlertResumeThread(
 	HANDLE ThreadHandle,
 	PULONG PreviousSuspendCount)
 {
-	trace("%p %p\n", ThreadHandle, PreviousSuspendCount);
+	FIXME("%p %p\n", ThreadHandle, PreviousSuspendCount);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -1748,7 +1751,7 @@ NTSTATUS NTAPI NtSetInformationThread(
 	PVOID ThreadInformation,
 	ULONG ThreadInformationLength)
 {
-	trace("%p %u %p %lu\n", ThreadHandle, ThreadInformationClass,
+	TRACE("%p %u %p %lu\n", ThreadHandle, ThreadInformationClass,
 		  ThreadInformation, ThreadInformationLength);
 
 	THREAD_IMPL *t = 0;
@@ -1759,7 +1762,9 @@ NTSTATUS NTAPI NtSetInformationThread(
 	switch (ThreadInformationClass)
 	{
 		case ThreadPriority:
+			FIXME("\n");
 			return STATUS_SUCCESS;
+			FIXME("\n");
 		case ThreadBasePriority:
 			return STATUS_SUCCESS;
 		case ThreadImpersonationToken:
@@ -1776,7 +1781,7 @@ NTSTATUS NTAPI NtSetInformationThread(
 				r = ObjectFromHandle(token, TokenHandle, 0);
 				if (r < STATUS_SUCCESS)
 				{
-					trace("invalid token handle, status: 0x%08lx\n", r);
+					ERR("invalid token handle, status: 0x%08lx\n", r);
 					return r;
 				}
 			}
@@ -1802,6 +1807,8 @@ NTSTATUS NTAPI NtSetInformationThread(
 		default:
 			break;
 	}
+
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -1812,7 +1819,7 @@ NTSTATUS NTAPI NtQueueApcThread(
 	PVOID Arg2,
 	PVOID Arg3)
 {
-	trace("%p %p %p %p %p\n", ThreadHandle, ApcRoutine, Arg1, Arg2, Arg3);
+	TRACE("%p %p %p %p %p\n", ThreadHandle, ApcRoutine, Arg1, Arg2, Arg3);
 
 	THREAD *t = 0;
 	NTSTATUS r = ObjectFromHandle( t, ThreadHandle, 0 );
@@ -1828,7 +1835,7 @@ NTSTATUS output_debug_string( EXCEPTION_RECORD& exrec )
 
 	if (exrec.NumberParameters != 2)
 	{
-		trace("OutputDebugStringA with %ld args\n",
+		ERR("OutputDebugStringA with %ld args\n",
 			  exrec.NumberParameters);
 		return STATUS_INVALID_PARAMETER;
 	}
@@ -1842,7 +1849,7 @@ NTSTATUS output_debug_string( EXCEPTION_RECORD& exrec )
 	r = CopyFromUser( buffer, str, len );
 	if (r != STATUS_SUCCESS)
 	{
-		trace("OutputDebugStringA %p %ld (unreadable)\n", str, len);
+		ERR("OutputDebugStringA %p %ld (unreadable)\n", str, len);
 		return r;
 	}
 	buffer[len] = 0;
@@ -1876,6 +1883,7 @@ NTSTATUS NTAPI NtRaiseException( PEXCEPTION_RECORD ExceptionRecord, PCONTEXT Con
 		return STATUS_SUCCESS;
 	}
 
+	ERR("Breaking into debugger due to user-mode exception\n");
 	Debugger();
 
 	// FIXME: perhaps we should blow away everything pushed on after the current frame
@@ -1947,7 +1955,7 @@ NTSTATUS NTAPI NtOpenThread(
 	THREAD *Thread = NULL;
 	NTSTATUS Status;
 	
-	trace("%p %08lx %p %p\n", ThreadHandle, DesiredAccess, ObjectAttributes, ClientId);
+	TRACE("%p %08lx %p %p\n", ThreadHandle, DesiredAccess, ObjectAttributes, ClientId);
 	
 	Status = CopyFromUser(&SafeObjectAttributes, ObjectAttributes, sizeof SafeObjectAttributes);
 	if (Status < STATUS_SUCCESS)
@@ -1970,11 +1978,11 @@ NTSTATUS NTAPI NtOpenThread(
 			return Status;
 	}
 
-	trace("client id %p %p\n", SafeClientId.UniqueProcess, SafeClientId.UniqueThread);
+	TRACE("client id %p %p\n", SafeClientId.UniqueProcess, SafeClientId.UniqueThread);
 
 	if (SafeObjectAttributes.ObjectName == 0)
 	{
-		trace("cid\n");
+		TRACE("cid\n");
 		if (SafeClientId.UniqueProcess)
 		{
 			Thread = FindThreadByClientId(&SafeClientId);
@@ -1990,7 +1998,7 @@ NTSTATUS NTAPI NtOpenThread(
 	}
 	else
 	{
-		trace("objectname\n");
+		TRACE("objectname\n");
 
 		if (!SafeObjectAttributes.ObjectName)
 			return STATUS_INVALID_PARAMETER;
@@ -2012,7 +2020,7 @@ NTSTATUS NTAPI NtOpenThread(
 		Status = AllocUserHandle(Thread, DesiredAccess, ThreadHandle);
 	}
 
-	trace("returning 0x%08lx\n", Status);
+	TRACE("returning 0x%08lx\n", Status);
 	
 	return Status;
 }
@@ -2021,7 +2029,7 @@ NTSTATUS NTAPI NtSetThreadExecutionState(
 	EXECUTION_STATE ExecutionState,
 	PEXECUTION_STATE PreviousExecutionState )
 {
-	trace("%ld %p\n", ExecutionState, PreviousExecutionState );
+	FIXME("%ld %p\n", ExecutionState, PreviousExecutionState );
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -2029,7 +2037,7 @@ NTSTATUS NTAPI NtGetContextThread(
 	HANDLE ThreadHandle,
 	PCONTEXT Context)
 {
-	trace("%p %p\n", ThreadHandle, Context );
+	TRACE("%p %p\n", ThreadHandle, Context);
 
 	THREAD *t = 0;
 	NTSTATUS r = ObjectFromHandle( t, ThreadHandle, 0 );
@@ -2051,7 +2059,7 @@ NTSTATUS NTAPI NtSetContextThread(
 	HANDLE ThreadHandle,
 	PCONTEXT Context)
 {
-	trace("%p %p\n", ThreadHandle, Context );
+	TRACE("%p %p\n", ThreadHandle, Context);
 
 	THREAD_IMPL *t = 0;
 	NTSTATUS r = ObjectFromHandle( t, ThreadHandle, 0 );
@@ -2071,7 +2079,7 @@ NTSTATUS NTAPI NtQueryDefaultLocale(
 	BOOLEAN ThreadOrSystem,
 	PLCID Locale)
 {
-	trace("%x %p\n", ThreadOrSystem, Locale);
+	TRACE("%x %p\n", ThreadOrSystem, Locale);
 
 	LCID lcid = MAKELCID( MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), SORT_DEFAULT );
 
@@ -2097,7 +2105,7 @@ NTSTATUS NTAPI NtImpersonateThread(
 	HANDLE TargetThreadHandle,
 	PSECURITY_QUALITY_OF_SERVICE SecurityQoS)
 {
-	trace("\n");
+	FIXME("\n");
 
 	THREAD *t = 0;
 	NTSTATUS r = ObjectFromHandle( t, ThreadHandle, 0 );

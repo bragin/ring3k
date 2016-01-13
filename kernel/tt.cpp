@@ -51,6 +51,8 @@
 #include "client.h"
 #include "ptrace_base.h"
 
+DEFAULT_DEBUG_CHANNEL(tt);
+
 const char StubName[] = "ring3k-client";
 char StubPath[MAX_PATH];
 
@@ -212,7 +214,7 @@ bool InitTt( const char *kernel_path )
 {
 	GetStubPath( kernel_path );
 	CheckProc();
-	trace("using thread tracing, kernel %s, client %s\n", kernel_path, StubPath );
+	TRACE("using thread tracing, kernel %s, client %s\n", kernel_path, StubPath);
 	PTRACE_ADRESS_SPACE_IMPL::SetSignals();
 	pCreateAddressSpace = &CreateTTAddressSpace;
 	return true;

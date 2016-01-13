@@ -24,7 +24,7 @@ template<class T> NTSTATUS NtOpenObject(
 		oa.ObjectName = &us;
 	}
 
-	trace("object = %pus\n", oa.ObjectName );
+	TRACE("object = %pus\n", oa.ObjectName );
 
 	OBJECT *object = NULL;
 
