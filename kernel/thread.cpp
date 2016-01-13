@@ -1876,6 +1876,8 @@ NTSTATUS NTAPI NtRaiseException( PEXCEPTION_RECORD ExceptionRecord, PCONTEXT Con
 		return STATUS_SUCCESS;
 	}
 
+	Debugger();
+
 	// FIXME: perhaps we should blow away everything pushed on after the current frame
 
 	THREAD_IMPL *thread = dynamic_cast<THREAD_IMPL*>( Current );
