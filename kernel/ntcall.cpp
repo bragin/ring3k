@@ -237,7 +237,7 @@ NTSTATUS NTAPI NtFlushInstructionCache(
 	PVOID BaseAddress,
 	SIZE_T NumberOfBytesToFlush )
 {
-	FIXME("%p %p %08lx\n", Process, BaseAddress, NumberOfBytesToFlush);
+	TRACE("%p %p %08lx\n", Process, BaseAddress, NumberOfBytesToFlush);
 	return STATUS_SUCCESS;
 }
 

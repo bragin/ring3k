@@ -293,7 +293,7 @@ bool OBJECT::CheckAccess( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK 
 
 bool OBJECT::AccessAllowed( ACCESS_MASK access, ACCESS_MASK handle_access )
 {
-	FIXME("fixme: no access check\n");
+	TRACE("fixme: no access check\n");
 	return true;
 }
 

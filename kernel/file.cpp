@@ -1338,7 +1338,7 @@ NTSTATUS NTAPI NtLockFile(
 	BOOLEAN FailImmediately,
 	BOOLEAN ExclusiveLock)
 {
-	FIXME("just returns success...\n");
+	TRACE("just returns success...\n");
 	return STATUS_SUCCESS;
 }
 
@@ -1349,7 +1349,7 @@ NTSTATUS NTAPI NtUnlockFile(
 	PULARGE_INTEGER LockLength,
 	ULONG Key)
 {
-	FIXME("just returns success...\n");
+	TRACE("just returns success...\n");
 	return STATUS_SUCCESS;
 }
 

@@ -72,6 +72,24 @@ and one for ring3k-bin.  You can load them alternately into gdb as follows:
  $ gdb --core=core-1234
  (gdb) symbol-file kernel/ring3k-bin
 
+Debug Logs
+--------------------------
+Logging system is very similar to Wine's one. Use R3KDEBUG env var to control
+your debug options.
+Syntax of R3KDEBUG variable:
+R3KDEBUG=[class]+xxx,[class]-yyy,...
+
+Example: WINEDEBUG=+all,warn-heap
+turns on all messages except warning heap messages
+
+Silenced debug messages
+--------------------------
+Some messages are too annoying and unimportant so they have been downgraded
+from FIXME to TRACE. Please keep list of those places here.
+ "fixme: no access check\n" in OBJECT::AccessAllowed, object.cpp
+ NtLockFile and NtUnlockFile in file.cpp
+ NtFlushInstructionCache in ntcall.cpp
+ NtProtectVirtualMemory in mem.cpp
 
 Files
 -----

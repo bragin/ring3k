@@ -895,7 +895,7 @@ NTSTATUS NTAPI NtProtectVirtualMemory(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	FIXME("%p %08lx\n", addr, size );
+	TRACE("%p %08lx\n", addr, size );
 
 	return STATUS_SUCCESS;
 }
