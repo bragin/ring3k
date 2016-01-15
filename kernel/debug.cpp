@@ -338,6 +338,20 @@ BYTE* DumpUserMem( BYTE *address )
 	return address + sizeof mem;
 }
 
+BOOLEAN KdbpPrintModuleAddress(PVOID ptr)
+{
+	ADDRESS_SPACE *vm = Current->Process->Vm;
+	MBLOCK *mem = vm->FindBlock((BYTE *)ptr);
+	if (!mem) return FALSE;
+
+	PE_SECTION *pe = (PE_SECTION *)mem->GetSection();
+	if (!pe) return FALSE;
+
+	KdbpPrint("%pus+%x\n", &pe->ImageFileName, (ULONG)ptr - (ULONG)mem->GetBaseAddress());
+
+	return TRUE;
+}
+
 void DebuggerBacktrace(PCONTEXT ctx)
 {
 	ULONG frame, stack, x[2], i;
@@ -349,7 +363,10 @@ void DebuggerBacktrace(PCONTEXT ctx)
 	r = CopyFromUser( &x[0], (void*) stack, sizeof x );
 	if (r == STATUS_SUCCESS)
 	{
-		fprintf(stderr, "sysret = %08lx\n", x[0]);
+		fprintf(stderr, "sysret = ");
+		if (!KdbpPrintModuleAddress((PVOID)x[0]))
+			fprintf(stderr, "%08lx\n", x[0]);
+
 	}
 
 	for (i=0; i<0x10; i++)
@@ -368,7 +385,10 @@ void DebuggerBacktrace(PCONTEXT ctx)
 			break;
 		}
 
-		fprintf(stderr, "ret = %08lx\n", x[1]);
+		fprintf(stderr, "ret = ");
+		if (!KdbpPrintModuleAddress((PVOID)x[1]))
+			fprintf(stderr, "%08lx\n", x[1]);
+
 		if (!x[1])
 			break;
 
