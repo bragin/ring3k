@@ -998,6 +998,27 @@ NTSTATUS NTAPI NtSetSecurityObject(
 	return STATUS_SUCCESS;
 }
 
+NTSTATUS NTAPI
+NtSetInformationToken(
+	IN HANDLE TokenHandle,
+	IN TOKEN_INFORMATION_CLASS TokenInformationClass,
+	IN PVOID TokenInformation,
+	IN ULONG TokenInformationLength)
+{
+	TOKEN *Token;
+	ULONG Len;
+	NTSTATUS Status;
+
+	FIXME("UNIMPLEMENTED: %08lx %08lx\n", TokenHandle, TokenInformationClass);
+
+	Status = ObjectFromHandle(token, TokenHandle, TOKEN_QUERY);
+	if (Status < STATUS_SUCCESS)
+		return Status;
+
+	return STATUS_SUCCESS;
+}
+
+
 NTSTATUS NTAPI NtDuplicateToken(
 	HANDLE ExistingToken,
 	ACCESS_MASK DesiredAccess,

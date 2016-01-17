@@ -314,7 +314,7 @@
 	IMP( NtSetInformationObject, 4 ),
 	IMP( NtSetInformationProcess, 4 ),
 	IMP( NtSetInformationThread, 4 ),
-	DEC( NtSetInformationToken, 4 ),
+	IMP( NtSetInformationToken, 4 ),
 	DEC( NtSetIntervalProfile, 2 ),
 #ifdef SYSCALL_WINXP
 	IMP( NtSetIoCompletion, 5 ),
