@@ -343,7 +343,7 @@ NTSTATUS THREAD_IMPL::KernelDebuggerCall( ULONG func, void *arg1, void *arg2 )
 			if (sym)
 				fprintf(stderr, "%lx.%lx: %s called\n", Process->Id, Id, sym);
 			else
-				fprintf(stderr, "%lx.lx: %p called\n", Process->Id, Id, arg1);
+				fprintf(stderr, "%lx.%lx: %p called\n", Process->Id, Id, arg1);
 		}
 		r = 0;
 		break;
