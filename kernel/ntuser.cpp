@@ -298,8 +298,8 @@ bool MessageMapOnAccess( BYTE *address, ULONG eip )
 		ULONG ofs = address - MessageMaps[i].Bitmap;
 		if (ofs > MessageMaps[i].MaxMessage/8)
 			continue;
-		fprintf(stderr, "%04lx: accessed message map[%ld][%04lx] from %08lx\n",
-				Current->TraceId(), i, ofs, eip);
+		fprintf(stderr, "%lx.%lx: accessed message map[%ld][%04lx] from %08lx\n",
+			Current->Process->Id, Current->GetID(), i, ofs, eip);
 		return true;
 	}
 	return false;
@@ -336,8 +336,8 @@ void NTUSERSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 			name = " (max_window_handle)";
 			break;
 		}
-		fprintf(stderr, "%04lx: accessed ushm[%04lx]%s from %08lx\n",
-				Current->TraceId(), ofs, name, eip);
+		fprintf(stderr, "%lx.%lx: accessed ushm[%04lx]%s from %08lx\n",
+			Current->Process->Id, Current->GetID(), ofs, name, eip);
 		return;
 	}
 
@@ -347,8 +347,8 @@ void NTUSERSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 	if (WindowOnAccess( address, eip ))
 		return;
 
-	fprintf(stderr, "%04lx: accessed ushm[%04lx] from %08lx\n",
-			Current->TraceId(), ofs, eip);
+	fprintf(stderr, "%lx.%lx: accessed ushm[%04lx] from %08lx\n",
+		Current->Process->Id, Current->GetID(), ofs, eip);
 }
 
 static NTUSERSHM_TRACER NtUserShmTrace;
@@ -383,8 +383,8 @@ void NTUSERHANDLE_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 		field = "unknown";
 	}
 
-	fprintf(stderr, "%04lx: accessed user handle[%04lx]+%s (%ld) from %08lx\n",
-			Current->TraceId(), number, field, ofs%sz, eip);
+	fprintf(stderr, "%lx.%lx: accessed user handle[%04lx]+%s (%ld) from %08lx\n",
+		Current->Process->Id, Current->GetID(), number, field, ofs%sz, eip);
 }
 static NTUSERHANDLE_TRACER NtUserHandleTrace;
 
@@ -1181,7 +1181,7 @@ bool WINDOW::OnAccess( BYTE *address, ULONG eip )
 		f( 0x60, wndcls )
 #undef f
 	}
-	fprintf(stderr, "%04lx: accessed window[%p][%04lx] %s from %08lx\n", Current->TraceId(), handle, ofs, field, eip);
+	fprintf(stderr, "%lx.%lx: accessed window[%p][%04lx] %s from %08lx\n", Current->Process->Id, Current->GetID(), handle, ofs, field, eip);
 	return true;
 }
 

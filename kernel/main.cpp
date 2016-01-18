@@ -256,15 +256,18 @@ static void BacktraceAndQuit()
 	void *bt[max_frames];
 	char **names;
 	int n=0, size;
-	ULONG id = 0;
+	ULONG pid = 0, tid = 0;
 
 	if (Current)
-		id = Current->TraceId();
+	{
+		tid = Current->GetID();
+		pid = Current->Process->Id;
+	}
 
 	size = backtrace(bt, max_frames);
 	names = backtrace_symbols(bt, size);
 
-	fprintf(stderr, "%04lx: caught kernel SEGV (%d frames):\n", id, size);
+	fprintf(stderr, "%lx.%lx: caught kernel SEGV (%d frames):\n", pid, tid, size);
 	for (n=0; n<size; n++)
 	{
 		fprintf(stderr, "%d: %s\n", n, names[n]);

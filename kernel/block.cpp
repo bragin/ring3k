@@ -442,8 +442,8 @@ void MBLOCK::SetSection( OBJECT *s )
 
 void BLOCK_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG Eip )
 {
-	fprintf(stderr, "%04lx: accessed %p from %08lx\n",
-			Current->TraceId(), address, Eip );
+	fprintf(stderr, "%lx.%lx: accessed %p from %08lx\n",
+			Current->Process->Id, Current->GetID(), address, Eip );
 }
 
 bool BLOCK_TRACER::Enabled() const

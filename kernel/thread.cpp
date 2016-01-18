@@ -312,10 +312,10 @@ NTSTATUS THREAD_IMPL::KernelDebuggerOutputString( struct KERNEL_DEBUG_STRING_OUT
 			header.Length--;
 
 		string[header.Length] = 0;
-		fprintf(stderr, "%04lx: debug: %s\n", TraceId(), string);
+		fprintf(stderr, "%lx.%lx: debug: %s\n", Process->Id, Id, string);
 	}
 	else
-		fprintf(stderr, "%04lx: debug - bad address\n", TraceId());
+		fprintf(stderr, "%lx.%lx: debug - bad address\n", Process->Id, Id);
 
 	delete[] string;
 	return r;
@@ -341,9 +341,9 @@ NTSTATUS THREAD_IMPL::KernelDebuggerCall( ULONG func, void *arg1, void *arg2 )
 		{
 			const char *sym = Process->Vm->GetSymbol( (BYTE*) arg1 );
 			if (sym)
-				fprintf(stderr, "%04lx: %s called\n", TraceId(), sym);
+				fprintf(stderr, "%lx.%lx: %s called\n", Process->Id, Id, sym);
 			else
-				fprintf(stderr, "%04lx: %p called\n", TraceId(), arg1);
+				fprintf(stderr, "%lx.lx: %p called\n", Process->Id, Id, arg1);
 		}
 		r = 0;
 		break;
@@ -428,7 +428,7 @@ bool THREAD_IMPL::TracedAccess()
 
 void THREAD_IMPL::HandleUserSegv( ULONG code )
 {
-	WARN("%04lx: exception at %08lx\n", TraceId(), Ctx.Eip);
+	WARN("%lx.%lx: exception at %08lx\n", Process->Id, Id, Ctx.Eip);
 	if (OptionTrace)
 	{
 		DumpRegs( &Ctx );
@@ -820,7 +820,7 @@ NTSTATUS THREAD_IMPL::Terminate( NTSTATUS status )
 	if (ThreadState == StateTerminated)
 		return STATUS_INVALID_PARAMETER;
 
-	TRACE("%04lx: terminated\n", TraceId());
+	TRACE("%lx.%lx: terminated\n", Process->Id, Id);
 
 	ExitStatus = status;
 	SetState( StateTerminated );
@@ -866,7 +866,7 @@ int THREAD_IMPL::Run()
 
 		if (ThreadState != StateRunning)
 		{
-			ERR("%04lx: Thread state wrong (%d)!\n", TraceId(), ThreadState);
+			ERR("%lx.%lx: Thread state wrong (%d)!\n", Process->Id, Id, ThreadState);
 			assert (0);
 		}
 
@@ -1381,8 +1381,8 @@ bool TEB_TRACER::Enabled() const
 void TEB_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 {
 	ULONG ofs = address - mb->GetBaseAddress();
-	fprintf(stderr, "%04lx: accessed Teb[%04lx] from %08lx\n",
-			Current->TraceId(), ofs, eip);
+	fprintf(stderr, "%lx.%lx: accessed Teb[%04lx] from %08lx\n",
+		Current->Process->Id, Current->GetID(), ofs, eip);
 }
 
 TEB_TRACER TEBTrace;
@@ -1854,7 +1854,7 @@ NTSTATUS output_debug_string( EXCEPTION_RECORD& exrec )
 	}
 	buffer[len] = 0;
 
-	if (OptionTrace)
+	//if (OptionTrace)
 		fprintf(stderr, "OutputDebugString: %s\n", buffer );
 
 	return STATUS_SUCCESS;

@@ -205,8 +205,8 @@ void KSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 #undef kshmfield
 	}
 
-	fprintf(stderr, "%04lx: accessed kshm[%04lx]%s from %08lx\n",
-			Current->TraceId(), ofs, field, eip);
+	fprintf(stderr, "%lx.%lx: accessed kshm[%04lx]%s from %08lx\n",
+		Current->Process->Id, Current->GetID(), ofs, field, eip);
 }
 
 KSHM_TRACER KSHM_TRACE;
@@ -394,6 +394,7 @@ PROCESS::PROCESS() :
 	Id = AllocateId();
 	memset( &HandleTable, 0, sizeof HandleTable );
 	Processes.Append( this );
+	TRACE("New process created, id 0x%lx\n", Id);
 }
 
 PROCESS::~PROCESS()
@@ -402,6 +403,7 @@ PROCESS::~PROCESS()
 		delete Win32kInfo;
 	Processes.Unlink( this );
 	ExceptionPort = 0;
+	TRACE("Process terminated, id 0x%lx\n", Id);
 }
 
 void PROCESS::Terminate( NTSTATUS status )
@@ -445,8 +447,8 @@ void PEB_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 #undef pebfield
 	}
 
-	fprintf(stderr, "%04lx: accessed peb[%04lx]%s from %08lx\n",
-			Current->TraceId(), ofs, field, eip);
+	fprintf(stderr, "%lx.%lx: accessed peb[%04lx]%s from %08lx\n",
+		Current->Process->Id, Current->GetID(), ofs, field, eip);
 }
 
 PEB_TRACER PEB_TRACE;

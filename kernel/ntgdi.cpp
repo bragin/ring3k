@@ -125,12 +125,12 @@ void NTGDISHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 			field = unk;
 			sprintf(unk, "unk_%04lx", ofs);
 		}
-		fprintf(stderr, "%04lx: accessed gdi handle[%04lx]:%s from %08lx\n",
-				Current->TraceId(), ofs>>4, field, eip);
+		fprintf(stderr, "%lx.%lx: accessed gdi handle[%04lx]:%s from %08lx\n",
+			Current->Process->Id, Current->GetID(), ofs >> 4, field, eip);
 	}
 	else
-		fprintf(stderr, "%04lx: accessed gshm[%04lx] from %08lx\n",
-				Current->TraceId(), ofs, eip);
+		fprintf(stderr, "%lx.%lx: accessed gshm[%04lx] from %08lx\n",
+			Current->Process->Id, Current->GetID(), ofs, eip);
 }
 
 static NTGDISHM_TRACER ntgdishm_trace;
@@ -494,14 +494,14 @@ void gdishm_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 	{
 		gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
 		ULONG ofs = address - (BYTE*) table[n].user_info;
-		fprintf(stderr, "%04lx: accessed gdishm[%04lx][%04lx] from %08lx\n",
-				Current->TraceId(), n, ofs, eip);
+		fprintf(stderr, "%lx.%lx: accessed gdishm[%04lx][%04lx] from %08lx\n",
+			Current->Process->Id, Current->GetID(), n, ofs, eip);
 	}
 	else
 	{
 		ULONG ofs = address - mb->GetBaseAddress();
-		fprintf(stderr, "%04lx: accessed gdishm[%04lx] from %08lx\n",
-				Current->TraceId(), ofs, eip);
+		fprintf(stderr, "%lx.%lx: accessed gdishm[%04lx] from %08lx\n",
+			Current->Process->Id, Current->GetID(), ofs, eip);
 	}
 }
 

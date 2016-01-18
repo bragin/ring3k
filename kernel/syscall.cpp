@@ -105,7 +105,7 @@ void TraceSyscallEnter(ULONG id, NtCallDesc *ntcall, ULONG *args, ULONG retaddr)
 	if (!OptionTrace)
 		return;
 
-	fprintf(stderr,"%04lx: %s(", id, ntcall->name);
+	fprintf(stderr,"%lx.%lx: %s(", id >> 8, id & 0xFF, ntcall->name);
 	if (ntcall->numargs)
 	{
 		unsigned int i;
@@ -121,8 +121,8 @@ void TraceSyscallExit(ULONG id, NtCallDesc *ntcall, ULONG r, ULONG retaddr)
 	if (!OptionTrace)
 		return;
 
-	fprintf(stderr, "%04lx: %s retval=%08lx ret=%08lx\n",
-			id, ntcall->name, r, retaddr);
+	fprintf(stderr, "%lx.%lx: %s retval=%08lx ret=%08lx\n",
+		id >> 8, id & 0xFF, ntcall->name, r, retaddr);
 }
 
 NTSTATUS DoNtSyscall(ULONG id, ULONG func, ULONG *uargs, ULONG retaddr)

@@ -220,7 +220,7 @@ void DebugPrintf(const char *file, const char *func, int line, const char *fmt, 
 	ULONG pid = 0;
 	ULONG tid = 0;
 	if (Current) {
-		tid = Current->TraceId();
+		tid = Current->GetID();
 		if (Current->Process)
 			pid = Current->Process->Id;
 	}
@@ -246,7 +246,16 @@ int DebugPrintfEx(enum __kdbp_debug_class cls, struct __kdbp_debug_channel *chan
 	vDebugPrintf(buffer, sz, format, va);
 	va_end(va);
 
-	fprintf(stderr, "%s:%s:%s %s", KdbpDebugClasses[cls], channel->name, func, buffer);
+	// Get current tid/pid
+	ULONG pid = 0;
+	ULONG tid = 0;
+	if (Current) {
+		tid = Current->GetID();
+		if (Current->Process)
+			pid = Current->Process->Id;
+	}
+
+	fprintf(stderr, "%lx.%lx:%s:%s:%s %s", pid, tid, KdbpDebugClasses[cls], channel->name, func, buffer);
 
 	return 0;
 }
