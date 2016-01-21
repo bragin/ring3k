@@ -356,10 +356,12 @@ BOOLEAN THREAD_MESSAGE_QUEUE::GetMessage(
 
 BOOLEAN NTAPI NtUserGetMessage(PMSG Message, HWND Window, ULONG MinMessage, ULONG MaxMessage)
 {
-	// no input queue...
-	THREAD_MESSAGE_QUEUE* queue = Current->Queue;
-	if (!queue)
-		return FALSE;
+	// create a thread message queue if necessary
+	if (!Current->Queue)
+	{
+		WARN("Calling GetMessage for a thread without input queue, creating it!\n");
+		Current->Queue = new THREAD_MESSAGE_QUEUE;
+	}
 
 	NTSTATUS r = VerifyForWrite( Message, sizeof *Message );
 	if (r != STATUS_SUCCESS)
@@ -367,7 +369,7 @@ BOOLEAN NTAPI NtUserGetMessage(PMSG Message, HWND Window, ULONG MinMessage, ULON
 
 	MSG msg;
 	memset( &msg, 0, sizeof msg );
-	if (queue->GetMessage( msg, Window, MinMessage, MaxMessage ))
+	if (Current->Queue->GetMessage(msg, Window, MinMessage, MaxMessage))
 		CopyToUser( Message, &msg, sizeof msg );
 
 	if (OptionTrace)
