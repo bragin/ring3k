@@ -1006,12 +1006,12 @@ NtSetInformationToken(
 	IN ULONG TokenInformationLength)
 {
 	TOKEN *Token;
-	ULONG Len;
+	//ULONG Len;
 	NTSTATUS Status;
 
 	FIXME("UNIMPLEMENTED: %08lx %08lx\n", TokenHandle, TokenInformationClass);
 
-	Status = ObjectFromHandle(token, TokenHandle, TOKEN_QUERY);
+	Status = ObjectFromHandle(Token, TokenHandle, TOKEN_QUERY);
 	if (Status < STATUS_SUCCESS)
 		return Status;
 
