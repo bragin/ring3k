@@ -86,6 +86,15 @@
    </k>
    <k n="Microsoft">
     <k n="Rpc">
+     <k n="SecurityService">
+      <s n="1">secur32.dll</s>
+      <s n="10">secur32.dll</s>
+      <s n="14">schannel.dll</s>
+      <s n="16">secur32.dll</s>
+      <s n="18">secur32.dll</s>
+      <s n="68">netlogon.dll</s>
+      <s n="9">secur32.dll</s>
+     </k>
     </k>
     <k n="Windows">
      <k n="CurrentVersion">
