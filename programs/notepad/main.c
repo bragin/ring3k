@@ -32,6 +32,21 @@
 #include "dialog.h"
 #include "notepad_res.h"
 
+void dprintf( const char *format, ... )
+{
+    char str[0x100];
+    va_list va;
+    int len;
+
+    va_start( va, format );
+    vsprintf( str, format, va );
+    va_end( va );
+    len = strlen(str);
+    if (len && str[len - 1] == '\n')
+        str[len-1] = 0;
+    OutputDebugString( str );
+}
+
 WCHAR *strchrW( const WCHAR *str, WCHAR ch )
 {
     do { if (*str == ch) return (WCHAR *)(ULONG_PTR)str; } while (*str++);
@@ -40,7 +55,6 @@ WCHAR *strchrW( const WCHAR *str, WCHAR ch )
 
 NOTEPAD_GLOBALS Globals;
 static ATOM aFINDMSGSTRING;
-static RECT main_rect;
 
 static const WCHAR notepad_reg_key[] = {'S','o','f','t','w','a','r','e','\\',
                                         'M','i','c','r','o','s','o','f','t','\\','N','o','t','e','p','a','d','\0'};
@@ -131,14 +145,14 @@ static VOID NOTEPAD_SaveSettingToRegistry(void)
 
         wndpl.length = sizeof(WINDOWPLACEMENT);
         GetWindowPlacement(Globals.hMainWnd, &wndpl);
-        main_rect = wndpl.rcNormalPosition;
+        Globals.main_rect = wndpl.rcNormalPosition;
 
 #define SET_NOTEPAD_REG(hkey, value_name, value_data) do { DWORD data = value_data; RegSetValueExW(hkey, value_name, 0, REG_DWORD, (LPBYTE)&data, sizeof(DWORD)); }while(0)
         SET_NOTEPAD_REG(hkey, value_fWrap,            Globals.bWrapLongLines);
-        SET_NOTEPAD_REG(hkey, value_iWindowPosX,      main_rect.left);
-        SET_NOTEPAD_REG(hkey, value_iWindowPosY,      main_rect.top);
-        SET_NOTEPAD_REG(hkey, value_iWindowPosDX,     main_rect.right - main_rect.left);
-        SET_NOTEPAD_REG(hkey, value_iWindowPosDY,     main_rect.bottom - main_rect.top);
+        SET_NOTEPAD_REG(hkey, value_iWindowPosX,      Globals.main_rect.left);
+        SET_NOTEPAD_REG(hkey, value_iWindowPosY,      Globals.main_rect.top);
+        SET_NOTEPAD_REG(hkey, value_iWindowPosDX,     Globals.main_rect.right - Globals.main_rect.left);
+        SET_NOTEPAD_REG(hkey, value_iWindowPosDY,     Globals.main_rect.bottom - Globals.main_rect.top);
         SET_NOTEPAD_REG(hkey, value_lfCharSet,        Globals.lfFont.lfCharSet);
         SET_NOTEPAD_REG(hkey, value_lfClipPrecision,  Globals.lfFont.lfClipPrecision);
         SET_NOTEPAD_REG(hkey, value_lfEscapement,     Globals.lfFont.lfEscapement);
@@ -190,7 +204,7 @@ static VOID NOTEPAD_LoadSettingFromRegistry(void)
 
     dx = base_length * .95;
     dy = dx * 3 / 4;
-    SetRect( &main_rect, 0, 0, dx, dy );
+    SetRect( &Globals.main_rect, 0, 0, dx, dy );
 
     Globals.bWrapLongLines  = TRUE;
     Globals.iMarginTop = 2500;
@@ -225,8 +239,8 @@ static VOID NOTEPAD_LoadSettingFromRegistry(void)
 
 #define QUERY_NOTEPAD_REG(hkey, value_name, ret) do { DWORD type, data; DWORD size = sizeof(DWORD); if(RegQueryValueExW(hkey, value_name, 0, &type, (LPBYTE)&data, &size) == ERROR_SUCCESS) if(type == REG_DWORD) ret = data; } while(0)
         QUERY_NOTEPAD_REG(hkey, value_fWrap,            Globals.bWrapLongLines);
-        QUERY_NOTEPAD_REG(hkey, value_iWindowPosX,      main_rect.left);
-        QUERY_NOTEPAD_REG(hkey, value_iWindowPosY,      main_rect.top);
+        QUERY_NOTEPAD_REG(hkey, value_iWindowPosX,      Globals.main_rect.left);
+        QUERY_NOTEPAD_REG(hkey, value_iWindowPosY,      Globals.main_rect.top);
         QUERY_NOTEPAD_REG(hkey, value_iWindowPosDX,     dx);
         QUERY_NOTEPAD_REG(hkey, value_iWindowPosDY,     dy);
         QUERY_NOTEPAD_REG(hkey, value_lfCharSet,        Globals.lfFont.lfCharSet);
@@ -246,8 +260,8 @@ static VOID NOTEPAD_LoadSettingFromRegistry(void)
         QUERY_NOTEPAD_REG(hkey, value_iMarginRight,     Globals.iMarginRight);
 #undef QUERY_NOTEPAD_REG
 
-        main_rect.right = main_rect.left + dx;
-        main_rect.bottom = main_rect.top + dy;
+        Globals.main_rect.right = Globals.main_rect.left + dx;
+        Globals.main_rect.bottom = Globals.main_rect.top + dy;
 
         size = sizeof(DWORD);
         if(RegQueryValueExW(hkey, value_iPointSize, 0, &type, (LPBYTE)&data, &size) == ERROR_SUCCESS)
@@ -737,6 +751,9 @@ static void HandleCommandLine(LPWSTR cmdline)
  */
 int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE prev, LPSTR cmdline, int show)
 {
+
+    dprintf("test printf\n");
+
     MSG msg;
     HACCEL hAccel;
     WNDCLASSEXW class;
@@ -765,25 +782,31 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE prev, LPSTR cmdline, int show)
     class.lpszMenuName  = MAKEINTRESOURCEW(MAIN_MENU);
     class.lpszClassName = className;
 
+    
+    dprintf("rect left %d right %d top %d bottom %d\n",Globals.main_rect.left, 
+        Globals.main_rect.right, Globals.main_rect.top, Globals.main_rect.bottom);
+
     if (!RegisterClassExW(&class)) return FALSE;
 
-    /* Setup windows */
 
-    monitor = MonitorFromRect( &main_rect, MONITOR_DEFAULTTOPRIMARY );
+    /* Setup windows */
+    dprintf("rect left %d right %d top %d bottom %d\n",Globals.main_rect.left, 
+        Globals.main_rect.right, Globals.main_rect.top, Globals.main_rect.bottom);
+    monitor = MonitorFromRect( &Globals.main_rect, MONITOR_DEFAULTTOPRIMARY );
     info.cbSize = sizeof(info);
     GetMonitorInfoW( monitor, &info );
 
-    x = main_rect.left;
-    y = main_rect.top;
-    if (main_rect.left >= info.rcWork.right ||
-        main_rect.top >= info.rcWork.bottom ||
-        main_rect.right < info.rcWork.left ||
-        main_rect.bottom < info.rcWork.top)
+    x = Globals.main_rect.left;
+    y = Globals.main_rect.top;
+    if (Globals.main_rect.left >= info.rcWork.right ||
+        Globals.main_rect.top >= info.rcWork.bottom ||
+        Globals.main_rect.right < info.rcWork.left ||
+        Globals.main_rect.bottom < info.rcWork.top)
         x = y = CW_USEDEFAULT;
 
     Globals.hMainWnd =
         CreateWindowW(className, winName, WS_OVERLAPPEDWINDOW, x, y,
-                      main_rect.right - main_rect.left, main_rect.bottom - main_rect.top,
+                      Globals.main_rect.right - Globals.main_rect.left, Globals.main_rect.bottom - Globals.main_rect.top,
                       NULL, NULL, Globals.hInstance, NULL);
     if (!Globals.hMainWnd)
     {

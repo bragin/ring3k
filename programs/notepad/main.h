@@ -54,6 +54,7 @@ typedef struct
   ENCODING encFile;
   WCHAR    szFilter[2 * MAX_STRING_LEN + 100];
   ENCODING encOfnCombo;  /* Encoding selected in IDC_OFN_ENCCOMBO */
+  RECT     main_rect;
   BOOL     bOfnIsOpenDialog;
   INT      iMarginTop;
   INT      iMarginBottom;
