@@ -240,6 +240,16 @@ REGVAL::~REGVAL()
 	delete[] Data;
 }
 
+VOID PrintKey(REGKEY *key)
+{
+	while (key) {
+		if (!key->Name.Buffer)
+			break;
+		trace("%pws\n",key->Name.Buffer);
+		key = key->Parent;
+	}
+}
+
 ULONG SkipSlashes( UNICODE_STRING *str )
 {
 	ULONG len;
@@ -359,6 +369,8 @@ NTSTATUS OpenKey( REGKEY **out, OBJECT_ATTRIBUTES *oa )
 	}
 	else
 		key = RootKey;
+
+	PrintKey(key);
 
 	memcpy( &parsed_name, oa->ObjectName, sizeof parsed_name );
 	r = OpenParseKey( key, &parsed_name, oa->Attributes & OBJ_CASE_INSENSITIVE );
