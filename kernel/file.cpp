@@ -42,6 +42,9 @@
 
 #include "debug.h"
 #include "object.h"
+
+DEFAULT_DEBUG_CHANNEL(file);
+
 #include "object.inl"
 #include "mem.h"
 #include "ntcall.h"
@@ -75,17 +78,20 @@ void IO_OBJECT::SetCompletionPort( COMPLETION_PORT *port, ULONG key )
 
 NTSTATUS IO_OBJECT::SetPosition( LARGE_INTEGER& ofs )
 {
+	ERR("\n");
 	return STATUS_OBJECT_TYPE_MISMATCH;
 }
 
 NTSTATUS IO_OBJECT::FSControl( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 								  PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS IO_OBJECT::SetPipeInfo( FILE_PIPE_INFORMATION& pipe_info )
 {
+	ERR("\n");
 	return STATUS_OBJECT_TYPE_MISMATCH;
 }
 
@@ -153,7 +159,7 @@ FILE_CREATE_INFO::FILE_CREATE_INFO( ULONG _Attributes, ULONG _CreateOptions, ULO
 
 NTSTATUS FILE_CREATE_INFO::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 {
-	trace("FILE_CREATE_INFO::on_open()\n");
+	TRACE("FILE_CREATE_INFO::on_open()\n");
 	if (!obj)
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 	return STATUS_SUCCESS;
@@ -203,6 +209,7 @@ NTSTATUS CFILE::Write( PVOID Buffer, ULONG Length, ULONG *written )
 		int ret = ::write( fd, p, len );
 		if (ret < 0)
 		{
+			ERR("Write failed\n");
 			r = STATUS_IO_DEVICE_ERROR;
 			break;
 		}
@@ -222,7 +229,7 @@ NTSTATUS CFILE::SetPosition( LARGE_INTEGER& ofs )
 	ret = lseek( fd, ofs.QuadPart, SEEK_SET );
 	if (ret < 0)
 	{
-		trace("seek failed\n");
+		ERR("seek failed\n");
 		return STATUS_UNSUCCESSFUL;
 	}
 	return STATUS_SUCCESS;
@@ -245,7 +252,7 @@ NTSTATUS CFILE::Remove()
 	if (0 > unlink( path ) &&
 		0 > rmdir( path ))
 	{
-		fprintf(stderr, "Failed to delete %s\n", path);
+		ERR("Failed to delete %s\n", path);
 		// FIXME: check errno
 		return STATUS_ACCESS_DENIED;
 	}
@@ -331,11 +338,13 @@ DIRECTORY::~DIRECTORY()
 
 NTSTATUS DIRECTORY::Read( PVOID Buffer, ULONG Length, ULONG *bytes_read )
 {
+	ERR("\n");
 	return STATUS_OBJECT_TYPE_MISMATCH;
 }
 
 NTSTATUS DIRECTORY::Write( PVOID Buffer, ULONG Length, ULONG *bytes_read )
 {
+	ERR("\n");
 	return STATUS_OBJECT_TYPE_MISMATCH;
 }
 
@@ -501,7 +510,7 @@ bool DIRECTORY::Match(CUNICODE_STRING &name) const
 
 void DIRECTORY::AddEntry(const char *name)
 {
-	trace("adding dir entry: %s\n", name);
+	TRACE("adding dir entry: %s\n", name);
 	DIRECTORY_ENTRY *ent = new DIRECTORY_ENTRY;
 	ent->name.Copy(name);
 	/* FIXME: Should symlinks be deferenced?
@@ -516,7 +525,7 @@ void DIRECTORY::AddEntry(const char *name)
 		delete ent;
 		return;
 	}
-	trace("matched mask %pus\n", &mask);
+	TRACE("matched mask %pus\n", &mask);
 	//trace("mode = %o\n", ent->st.st_mode);
 	entries.Append(ent);
 	count++;
@@ -536,11 +545,11 @@ void DIRECTORY::ScanDir()
 	r = lseek( GetFD(), 0, SEEK_SET );
 	if (r == -1)
 	{
-		trace("lseek failed (%d)\n", errno);
+		ERR("lseek failed (%d)\n", errno);
 		return;
 	}
 
-	trace("reading entries:\n");
+	TRACE("reading entries:\n");
 	// . and .. always come first
 	AddEntry(".");
 	AddEntry("..");
@@ -550,7 +559,7 @@ void DIRECTORY::ScanDir()
 		r = ::Getdents64( GetFD(), buffer, sizeof buffer );
 		if (r < 0)
 		{
-			trace("getdents64 failed (%d)\n", r);
+			ERR("getdents64 failed (%d)\n", r);
 			break;
 		}
 
@@ -694,11 +703,11 @@ int DIRECTORY::OpenUnicodeFile( const char *unix_path, int flags, bool &created 
 {
 	int r = -1;
 
-	trace("open file : %s\n", unix_path);
+	TRACE("open file : %s\n", unix_path);
 	r = ::open( unix_path, flags&~O_CREAT );
 	if (r < 0 && (flags & O_CREAT))
 	{
-		trace("create file : %s\n", unix_path);
+		TRACE("create file : %s\n", unix_path);
 		r = ::open( unix_path, flags, 0666 );
 		if (r >= 0)
 			created = true;
@@ -712,14 +721,14 @@ int DIRECTORY::OpenUnicodeDir( const char *unix_path, int flags, bool &created )
 
 	if (flags & O_CREAT)
 	{
-		trace("create dir : %s\n", unix_path);
+		TRACE("create dir : %s\n", unix_path);
 		r = ::mkdir( unix_path, 0777 );
 		if (r == 0)
 			created = true;
 	}
-	trace("open name : %s\n", unix_path);
+	TRACE("open name : %s\n", unix_path);
 	r = ::open( unix_path, flags & ~O_CREAT );
-	trace("r = %d\n", r);
+	TRACE("r = %d\n", r);
 	return r;
 }
 
@@ -734,7 +743,7 @@ NTSTATUS DIRECTORY::OpenFile(
 {
 	int file_fd;
 
-	trace("name = %pus\n", &path );
+	TRACE("name = %pus\n", &path);
 
 	int mode = O_RDONLY;
 	switch (CreateDisposition)
@@ -749,7 +758,7 @@ NTSTATUS DIRECTORY::OpenFile(
 		mode = O_CREAT;
 		break;
 	default:
-		trace("CreateDisposition = %ld\n", CreateDisposition);
+		FIXME("CreateDisposition = %ld\n", CreateDisposition);
 		return STATUS_NOT_IMPLEMENTED;
 	}
 
@@ -764,7 +773,7 @@ NTSTATUS DIRECTORY::OpenFile(
 		if (file_fd == -1)
 			return STATUS_OBJECT_PATH_NOT_FOUND;
 
-		trace("file_fd = %d\n", file_fd );
+		TRACE("file_fd = %d\n", file_fd);
 		file = new DIRECTORY( file_fd );
 		if (!file)
 		{
@@ -794,7 +803,7 @@ NTSTATUS DIRECTORY::Open( OBJECT *&out, OPEN_INFO& info )
 {
 	CFILE *file = 0;
 
-	trace("DIRECTORY::open %pus\n", &info.Path );
+	TRACE("DIRECTORY::open %pus\n", &info.Path);
 
 	FILE_CREATE_INFO *file_info = dynamic_cast<FILE_CREATE_INFO*>( &info );
 	if (!file_info)
@@ -835,7 +844,7 @@ void InitDrives()
 	r = factory.CreateKernel( obj, dirname );
 	if (r < STATUS_SUCCESS)
 	{
-		trace( "failed to create %pus\n", &dirname);
+		ERR("failed to create %pus\n", &dirname);
 		Die("fatal\n");
 	}
 
@@ -844,7 +853,7 @@ void InitDrives()
 	r = CreateSymlink( c_link, dirname );
 	if (r < STATUS_SUCCESS)
 	{
-		trace( "failed to create symlink %pus (%08lx)\n", &c_link, r);
+		ERR( "failed to create symlink %pus (%08lx)\n", &c_link, r);
 		Die("fatal\n");
 	}
 }
@@ -870,7 +879,7 @@ NTSTATUS NTAPI NtCreateFile(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("root %p attr %08lx %pus\n",
+	TRACE("root %p attr %08lx %pus\n",
 		  oa.RootDirectory, oa.Attributes, oa.ObjectName);
 
 	r = VerifyForWrite( IoStatusBlock, sizeof *IoStatusBlock );
@@ -932,7 +941,7 @@ NTSTATUS NTAPI NtFsControlFile(
 	PVOID OutputBuffer,
 	ULONG OutputBufferLength )
 {
-	trace("%p %p %p %p %p %08lx %p %lu %p %lu\n", FileHandle,
+	TRACE("%p %p %p %p %p %08lx %p %lu %p %lu\n", FileHandle,
 		  EventHandle, ApcRoutine, ApcContext, IoStatusBlock, FsControlCode,
 		  InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength );
 
@@ -949,14 +958,15 @@ NTSTATUS NTAPI NtFsControlFile(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-#if 0
 	if (EventHandle)
 	{
+		FIXME("\n");
+#if 0
 		r = ObjectFromHandle( event, EventHandle, SYNCHRONIZE );
 		if (r < STATUS_SUCCESS)
 			return r;
-	}
 #endif
+	}
 
 	r = io->FSControl( event, iosb, FsControlCode,
 						InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength );
@@ -980,7 +990,7 @@ NTSTATUS NTAPI NtDeviceIoControlFile(
 	PVOID OutputBuffer,
 	ULONG OutputBufferLength )
 {
-	trace("%p %p %p %p %p %08lx %p %lu %p %lu\n",
+	FIXME("%p %p %p %p %p %08lx %p %lu %p %lu\n",
 		  File, Event, ApcRoutine, ApcContext, IoStatusBlock, IoControlCode,
 		  InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength );
 	return STATUS_SUCCESS;
@@ -998,7 +1008,7 @@ NTSTATUS NTAPI NtWriteFile(
 	PULONG Key )
 {
 
-	trace("%p %p %p %p %p %p %lu %p %p\n", FileHandle, Event, ApcRoutine,
+	TRACE("%p %p %p %p %p %p %lu %p %p\n", FileHandle, Event, ApcRoutine,
 		  ApcContext, IoStatusBlock, Buffer, Length, ByteOffset, Key);
 
 	IO_OBJECT *io = 0;
@@ -1034,13 +1044,13 @@ NTSTATUS NTAPI NtQueryAttributesFile(
 	NTSTATUS r;
 	FILE_BASIC_INFORMATION info;
 
-	trace("%p %p\n", ObjectAttributes, FileInformation);
+	TRACE("%p %p\n", ObjectAttributes, FileInformation);
 
 	r = oa.CopyFromUser( ObjectAttributes );
 	if (r)
 		return r;
 
-	trace("root %p attr %08lx %pus\n",
+	TRACE("root %p attr %08lx %pus\n",
 		  oa.RootDirectory, oa.Attributes, oa.ObjectName);
 
 	if (!oa.ObjectName || !oa.ObjectName->Buffer)
@@ -1076,7 +1086,7 @@ NTSTATUS NTAPI NtQueryVolumeInformationFile(
 	ULONG VolumeInformationLength,
 	FS_INFORMATION_CLASS VolumeInformationClass )
 {
-	trace("%p %p %p %lu %u\n", FileHandle, IoStatusBlock, VolumeInformation,
+	FIXME("%p %p %p %lu %u\n", FileHandle, IoStatusBlock, VolumeInformation,
 		  VolumeInformationLength, VolumeInformationClass );
 	return STATUS_NOT_IMPLEMENTED;
 }
@@ -1092,7 +1102,7 @@ NTSTATUS NTAPI NtReadFile(
 	PLARGE_INTEGER ByteOffset,
 	PULONG Key)
 {
-	trace("%p %p %p %p %p %p %lu %p %p\n", FileHandle, EventHandle,
+	TRACE("%p %p %p %p %p %p %lu %p %p\n", FileHandle, EventHandle,
 		  ApcRoutine, ApcContext, IoStatusBlock,
 		  Buffer, Length, ByteOffset, Key);
 
@@ -1127,13 +1137,13 @@ NTSTATUS NTAPI NtDeleteFile(
 	COBJECT_ATTRIBUTES oa;
 	NTSTATUS r;
 
-	trace("%p\n", ObjectAttributes);
+	TRACE("%p\n", ObjectAttributes);
 
 	r = oa.CopyFromUser( ObjectAttributes );
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("root %p attr %08lx %pus\n",
+	TRACE("root %p attr %08lx %pus\n",
 		  oa.RootDirectory, oa.Attributes, oa.ObjectName);
 
 	if (!oa.ObjectName || !oa.ObjectName->Buffer)
@@ -1161,7 +1171,7 @@ NTSTATUS NTAPI NtFlushBuffersFile(
 	HANDLE FileHandle,
 	PIO_STATUS_BLOCK IoStatusBlock)
 {
-	trace("%p %p\n", FileHandle, IoStatusBlock);
+	FIXME("%p %p\n", FileHandle, IoStatusBlock);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -1169,7 +1179,7 @@ NTSTATUS NTAPI NtCancelIoFile(
 	HANDLE FileHandle,
 	PIO_STATUS_BLOCK IoStatusBlock)
 {
-	trace("%p %p\n", FileHandle, IoStatusBlock);
+	FIXME("%p %p\n", FileHandle, IoStatusBlock);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -1210,7 +1220,7 @@ NTSTATUS NTAPI NtSetInformationFile(
 		len = sizeof info.pipe;
 		break;
 	default:
-		trace("Unknown information class %d\n", FileInformationClass );
+		FIXME("Unknown information class %d\n", FileInformationClass );
 		return STATUS_INVALID_PARAMETER;
 	}
 
@@ -1223,7 +1233,7 @@ NTSTATUS NTAPI NtSetInformationFile(
 	switch (FileInformationClass)
 	{
 	case FileDispositionInformation:
-		trace("delete = %d\n", info.dispos.DeleteFile);
+		FIXME("delete = %d\n", info.dispos.DeleteFile);
 		break;
 	case FileCompletionInformation:
 		r = ObjectFromHandle( completion_port, info.completion.CompletionPort, IO_COMPLETION_MODIFY_STATE );
@@ -1251,7 +1261,7 @@ NTSTATUS NTAPI NtQueryInformationFile(
 	ULONG FileInformationLength,
 	FILE_INFORMATION_CLASS FileInformationClass)
 {
-	trace("%p %p %p %lu %u\n", FileHandle, IoStatusBlock,
+	TRACE("%p %p %p %lu %u\n", FileHandle, IoStatusBlock,
 		  FileInformation, FileInformationLength, FileInformationClass);
 
 	CFILE *file = 0;
@@ -1285,7 +1295,7 @@ NTSTATUS NTAPI NtQueryInformationFile(
 		r = file->QueryInformation( info.attrib_info );
 		break;
 	default:
-		trace("Unknown information class %d\n", FileInformationClass );
+		FIXME("Unknown information class %d\n", FileInformationClass );
 		r = STATUS_INVALID_PARAMETER;
 	}
 
@@ -1304,7 +1314,7 @@ NTSTATUS NTAPI NtSetQuotaInformationFile(
 	PFILE_USER_QUOTA_INFORMATION FileInformation,
 	ULONG FileInformationLength)
 {
-	trace("%p %p %p %lu\n", FileHandle, IoStatusBlock,
+	FIXME("%p %p %p %lu\n", FileHandle, IoStatusBlock,
 		  FileInformation, FileInformationLength);
 
 	return STATUS_NOT_IMPLEMENTED;
@@ -1312,7 +1322,7 @@ NTSTATUS NTAPI NtSetQuotaInformationFile(
 
 NTSTATUS NTAPI NtQueryQuotaInformationFile(HANDLE,PIO_STATUS_BLOCK,PFILE_USER_QUOTA_INFORMATION,ULONG,BOOLEAN,PFILE_QUOTA_LIST_INFORMATION,ULONG,PSID,BOOLEAN)
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -1328,7 +1338,7 @@ NTSTATUS NTAPI NtLockFile(
 	BOOLEAN FailImmediately,
 	BOOLEAN ExclusiveLock)
 {
-	trace("just returns success...\n");
+	TRACE("just returns success...\n");
 	return STATUS_SUCCESS;
 }
 
@@ -1339,7 +1349,7 @@ NTSTATUS NTAPI NtUnlockFile(
 	PULARGE_INTEGER LockLength,
 	ULONG Key)
 {
-	trace("just returns success...\n");
+	TRACE("just returns success...\n");
 	return STATUS_SUCCESS;
 }
 
@@ -1371,12 +1381,12 @@ NTSTATUS NTAPI NtQueryDirectoryFile(
 		if (r < STATUS_SUCCESS)
 			return r;
 
-		trace("Filename = %pus (len=%d)\n", &mask, mask.Length);
+		TRACE("Filename = %pus (len=%d)\n", &mask, mask.Length);
 	}
 
 	if (FileInformationClass != FileBothDirectoryInformation)
 	{
-		trace("unimplemented FileInformationClass %d\n", FileInformationClass);
+		FIXME("unimplemented FileInformationClass %d\n", FileInformationClass);
 		return STATUS_NOT_IMPLEMENTED;
 	}
 
@@ -1438,7 +1448,7 @@ NTSTATUS NTAPI NtQueryFullAttributesFile(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("name = %pus\n", oa.ObjectName);
+	FIXME("name = %pus\n", oa.ObjectName);
 
 	return STATUS_NOT_IMPLEMENTED;
 }

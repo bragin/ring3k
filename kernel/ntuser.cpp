@@ -36,11 +36,14 @@
 #include "win32mgr.h"
 #include "mem.h"
 #include "debug.h"
-#include "object.inl"
 #include "alloc_bitmap.h"
 #include "queue.h"
 #include "message.h"
 #include "win.h"
+
+DEFAULT_DEBUG_CHANNEL(ntuser);
+
+#include "object.inl"
 
 WNDCLS_LIST WndclsList;
 WINDOW *ActiveWindow;
@@ -66,7 +69,7 @@ ULONG NTAPI NtUserGetThreadState( ULONG InfoClass )
 	case 0x11: // sets TEB->Win32ThreadInfo for the current thread
 		return 1;
 	default:
-		trace("%ld\n", InfoClass );
+		FIXME("%ld\n", InfoClass );
 	}
 	return 0;
 }
@@ -126,7 +129,7 @@ void CheckMaxWindowHandle( ULONG n )
 	n++;
 	if (UserShared->MaxWindowHandle<n)
 		UserShared->MaxWindowHandle = n;
-	trace("max_window_handle = %04lx\n", UserShared->MaxWindowHandle);
+	TRACE("max_window_handle = %04lx\n", UserShared->MaxWindowHandle);
 }
 
 void InitUserHandleTable()
@@ -164,7 +167,7 @@ void FreeUserHandle( HANDLE handle )
 	UINT n = (UINT) handle;
 	USHORT lowpart = n&0xffff;
 
-	trace("freeing handle %08x\n", n);
+	TRACE("freeing handle %08x\n", n);
 	UserHandleTable[lowpart].Type = 0;
 	UserHandleTable[lowpart].Owner = 0;
 	UserHandleTable[lowpart].Object = 0;
@@ -179,7 +182,7 @@ void FreeUserHandle( HANDLE handle )
 void DeleteUserObject( ULONG i )
 {
 	USER_HANDLE_ENTRY *entry = UserHandleTable+i;
-	trace("deleting user handle %ld\n", i);
+	TRACE("deleting user handle %ld\n", i);
 	assert(entry->Object != NULL);
 	switch (entry->Type)
 	{
@@ -187,7 +190,7 @@ void DeleteUserObject( ULONG i )
 		delete (WINDOW*) entry->Object;
 		break;
 	default:
-		trace("object %ld (%p), type = %08x owner = %p\n",
+		FIXME("object %ld (%p), type = %08x owner = %p\n",
 			  i, entry->Object, entry->Type, entry->Owner);
 		assert(0);
 	}
@@ -266,8 +269,8 @@ void *InitUserSharedMemory()
 		UserShared->ButtonDkShadow = RGB(64,64,64);
 	}
 
-	trace("user_handle_table at %p\n", UserHandleTable );
-	trace("user_shared at %p\n", UserShared );
+	TRACE("user_handle_table at %p\n", UserHandleTable);
+	TRACE("user_shared at %p\n", UserShared);
 
 	return UserShared;
 }
@@ -295,8 +298,8 @@ bool MessageMapOnAccess( BYTE *address, ULONG eip )
 		ULONG ofs = address - MessageMaps[i].Bitmap;
 		if (ofs > MessageMaps[i].MaxMessage/8)
 			continue;
-		fprintf(stderr, "%04lx: accessed message map[%ld][%04lx] from %08lx\n",
-				Current->TraceId(), i, ofs, eip);
+		fprintf(stderr, "%lx.%lx: accessed message map[%ld][%04lx] from %08lx\n",
+			Current->Process->Id, Current->GetID(), i, ofs, eip);
 		return true;
 	}
 	return false;
@@ -333,8 +336,8 @@ void NTUSERSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 			name = " (max_window_handle)";
 			break;
 		}
-		fprintf(stderr, "%04lx: accessed ushm[%04lx]%s from %08lx\n",
-				Current->TraceId(), ofs, name, eip);
+		fprintf(stderr, "%lx.%lx: accessed ushm[%04lx]%s from %08lx\n",
+			Current->Process->Id, Current->GetID(), ofs, name, eip);
 		return;
 	}
 
@@ -344,8 +347,8 @@ void NTUSERSHM_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 	if (WindowOnAccess( address, eip ))
 		return;
 
-	fprintf(stderr, "%04lx: accessed ushm[%04lx] from %08lx\n",
-			Current->TraceId(), ofs, eip);
+	fprintf(stderr, "%lx.%lx: accessed ushm[%04lx] from %08lx\n",
+		Current->Process->Id, Current->GetID(), ofs, eip);
 }
 
 static NTUSERSHM_TRACER NtUserShmTrace;
@@ -380,8 +383,8 @@ void NTUSERHANDLE_TRACER::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 		field = "unknown";
 	}
 
-	fprintf(stderr, "%04lx: accessed user handle[%04lx]+%s (%ld) from %08lx\n",
-			Current->TraceId(), number, field, ofs%sz, eip);
+	fprintf(stderr, "%lx.%lx: accessed user handle[%04lx]+%s (%ld) from %08lx\n",
+		Current->Process->Id, Current->GetID(), number, field, ofs%sz, eip);
 }
 static NTUSERHANDLE_TRACER NtUserHandleTrace;
 
@@ -393,7 +396,7 @@ BYTE* AllocMessageBitmap( PROCESS* proc, MESSAGE_MAP_SHARED_MEMORY& map, ULONG l
 	ULONG ofs = (BYTE*)msg_map - (BYTE*)UserShared;
 	map.Bitmap = (BYTE*) (proc->Win32kInfo->UserSharedMem + ofs);
 	map.MaxMessage = last_message;
-	trace("bitmap = %p last = %ld\n", map.Bitmap, map.MaxMessage);
+	TRACE("bitmap = %p last = %ld\n", map.Bitmap, map.MaxMessage);
 	return msg_map;
 }
 
@@ -458,7 +461,7 @@ NTSTATUS MapUserSharedMemory( PROCESS *proc )
 	if (r < STATUS_SUCCESS)
 		return STATUS_UNSUCCESSFUL;
 
-	trace("user shared at %p\n", user_shared_mem);
+	TRACE("user shared at %p\n", user_shared_mem);
 
 	return STATUS_SUCCESS;
 }
@@ -498,7 +501,7 @@ NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSi
 
 	if (BufferSize != sizeof info.winxp && BufferSize != sizeof info.win2k)
 	{
-		trace("buffer size wrong %ld (not WinXP or Win2K?)\n", BufferSize);
+		ERR("buffer size wrong %ld (not WinXP or Win2K?)\n", BufferSize);
 		return STATUS_UNSUCCESSFUL;
 	}
 
@@ -508,7 +511,7 @@ NTSTATUS NTAPI NtUserProcessConnect(HANDLE Process, PVOID Buffer, ULONG BufferSi
 
 	if (info.winxp.Version != version)
 	{
-		trace("version wrong %08lx %08lx\n", info.winxp.Version, version);
+		ERR("version wrong %08lx %08lx\n", info.winxp.Version, version);
 		return STATUS_UNSUCCESSFUL;
 	}
 
@@ -575,11 +578,13 @@ BOOLEAN NTAPI NtUserInitializeClientPfnArrays(
 
 BOOLEAN NTAPI NtUserInitialize(ULONG u_arg1, ULONG u_arg2, ULONG u_arg3)
 {
+	FIXME("\n");
 	return TRUE;
 }
 
 ULONG NTAPI NtUserCallNoParam(ULONG Index)
 {
+	FIXME("Index: 0x%lx\n", Index);
 	switch (Index)
 	{
 	case 0:
@@ -613,13 +618,13 @@ ULONG NTAPI NtUserCallNoParam(ULONG Index)
 
 BOOLEAN NtReleaseDC( HANDLE hdc )
 {
-	trace("%p\n", hdc );
+	TRACE("%p\n", hdc );
 	return Win32kManager->ReleaseDC( hdc );
 }
 
 BOOLEAN NtPostQuitMessage( ULONG ret )
 {
-	trace("%08lx\n", ret );
+	TRACE("%08lx\n", ret);
 	if (Current->Queue)
 		Current->Queue->PostQuitMessage( ret );
 	return TRUE;
@@ -627,7 +632,7 @@ BOOLEAN NtPostQuitMessage( ULONG ret )
 
 PVOID NtGetWindowPointer( HWND window )
 {
-	trace("%p\n", window );
+	TRACE("%p\n", window);
 	WINDOW *win = WindowFromHandle( window );
 	if (!win)
 		return 0;
@@ -636,6 +641,7 @@ PVOID NtGetWindowPointer( HWND window )
 
 ULONG NTAPI NtUserCallOneParam(ULONG Param, ULONG Index)
 {
+	FIXME("Index: 0x%lx\n", Index);
 	switch (Index)
 	{
 	case 0x16: // BeginDeferWindowPos
@@ -713,40 +719,40 @@ ULONG NTAPI NtUserCallTwoParam(ULONG Param2, ULONG Param1, ULONG Index)
 	switch (Index)
 	{
 	case 0x53:  // EnableWindow
-		trace("EnableWindow (%08lx, %08lx)\n", Param1, Param2);
+		FIXME("EnableWindow (%08lx, %08lx)\n", Param1, Param2);
 		break;
 	case 0x55:  // ShowOwnedPopups
-		trace("ShowOwnedPopups (%08lx, %08lx)\n", Param1, Param2);
+		FIXME("ShowOwnedPopups (%08lx, %08lx)\n", Param1, Param2);
 		break;
 	case 0x56:  // SwitchToThisWindow
-		trace("SwitchToThisWindow (%08lx, %08lx)\n", Param1, Param2);
+		FIXME("SwitchToThisWindow (%08lx, %08lx)\n", Param1, Param2);
 		break;
 	case 0x57:  // ValidateRgn
-		trace("ValidateRgn (%08lx, %08lx)\n", Param1, Param2);
+		FIXME("ValidateRgn (%08lx, %08lx)\n", Param1, Param2);
 		break;
 	case 0x59: // GetMonitorInfo
-		trace("GetMonitorInfo (%08lx, %08lx)\n", Param1, Param2);
+		FIXME("GetMonitorInfo (%08lx, %08lx)\n", Param1, Param2);
 		break;
 	case 0x5b:  // RegisterLogonProcess
-		trace("RegisterLogonProcess (%08lx, %08lx)\n", Param1, Param2);
+		FIXME("RegisterLogonProcess (%08lx, %08lx)\n", Param1, Param2);
 		break;
 	case 0x5c:  // RegisterSystemThread
-		trace("RegisterSystemThread (%08lx, %08lx)\n", Param1, Param2);
+		FIXME("RegisterSystemThread (%08lx, %08lx)\n", Param1, Param2);
 		break;
 	case 0x5e:  // SetCaretPos
-		trace("SetCaretPos (%08lx, %08lx)\n", Param1, Param2);
+		FIXME("SetCaretPos (%08lx, %08lx)\n", Param1, Param2);
 		break;
 	case 0x5f:  // SetCursorPos
-		trace("SetCursorPos (%08lx, %08lx)\n", Param1, Param2);
+		FIXME("SetCursorPos (%08lx, %08lx)\n", Param1, Param2);
 		break;
 	case 0x60:  // UnhookWindowsHook
-		trace("UnhookWindowsHook (%08lx, %08lx)\n", Param1, Param2);
+		FIXME("UnhookWindowsHook (%08lx, %08lx)\n", Param1, Param2);
 		break;
 	case 0x61:  // UserRegisterWowHandlers
-		trace("UserRegisterWowHandlers (%08lx, %08lx)\n", Param1, Param2);
+		FIXME("UserRegisterWowHandlers (%08lx, %08lx)\n", Param1, Param2);
 		break;
 	default:
-		trace("%lu (%08lx, %08lx)\n", Index, Param1, Param2);
+		FIXME("%lu (%08lx, %08lx)\n", Index, Param1, Param2);
 		break;
 	}
 	return TRUE;
@@ -757,6 +763,7 @@ HANDLE NTAPI NtUserGetThreadDesktop(
 	ULONG ThreadId,
 	ULONG u_arg2)
 {
+	FIXME("\n");
 	return (HANDLE) 0xde5;
 }
 
@@ -769,15 +776,15 @@ HANDLE NTAPI NtUserFindExistingCursorIcon(PUNICODE_STRING Library, PUNICODE_STRI
 
 	r = us.CopyFromUser( Library );
 	if (r == STATUS_SUCCESS)
-		trace("Library=\'%pus\'\n", &us);
+		TRACE("Library=\'%pus\'\n", &us);
 
 	r = us.CopyFromUser( str2 );
 	if (r == STATUS_SUCCESS)
-		trace("str2=\'%pus\'\n", &us);
+		TRACE("str2=\'%pus\'\n", &us);
 
 	r = CopyFromUser( &index, p_arg3, sizeof index );
 	if (r == STATUS_SUCCESS)
-		trace("index = %lu\n", index);
+		TRACE("index = %lu\n", index);
 
 	return 0;
 }
@@ -805,6 +812,7 @@ BOOLEAN NTAPI NtUserSetCursorIconData(
 	PUNICODE_STRING ResourceName,
 	PICONINFO IconInfo)
 {
+	FIXME("\n");
 	return TRUE;
 }
 
@@ -816,12 +824,13 @@ BOOLEAN NTAPI NtUserGetIconInfo(
 	LPDWORD pbpp,
 	BOOL bInternal)
 {
+	FIXME("\n");
 	return TRUE;
 }
 
 void* WNDCLS::operator new(size_t sz)
 {
-	trace("allocating window\n");
+	TRACE("allocating window\n");
 	assert( sz == sizeof (WNDCLS));
 	return UserSharedBitmap.Alloc( sz );
 }
@@ -887,7 +896,7 @@ ATOM NTAPI NtUserRegisterClassExWOW(
 	if (r < STATUS_SUCCESS)
 		return 0;
 
-	trace("window class = %pus  menu = %pus\n", &clsstr, &menuname);
+	TRACE("window class = %pus  menu = %pus\n", &clsstr, &menuname);
 
 	static ATOM atom = 0xc001;
 	WNDCLS* cls = new WNDCLS( clsinfo, clsstr, menuname, atom );
@@ -911,7 +920,7 @@ NtUserUnregisterClass(
 	if (Status < STATUS_SUCCESS)
 		return FALSE;
 
-	trace("UNIMPLEMENTED window class = %pus, hInstance = %lx, pClassMenuName %p\n", &clsstr, (ULONG)hInstance, pClassMenuName);
+	FIXME("UNIMPLEMENTED window class = %pus, hInstance = %lx, pClassMenuName %p\n", &clsstr, (ULONG)hInstance, pClassMenuName);
 	return TRUE;
 }
 
@@ -921,13 +930,13 @@ NTSTATUS NTAPI NtUserSetInformationThread(
 	PVOID Buffer,
 	ULONG BufferLength)
 {
-	trace("%p %08lx %p %08lx\n", ThreadHandle, InfoClass, Buffer, BufferLength);
+	FIXME("%p %08lx %p %08lx\n", ThreadHandle, InfoClass, Buffer, BufferLength);
 	return STATUS_SUCCESS;
 }
 
 NTSTATUS NTAPI NtUserGetKeyboardLayoutList(ULONG x1, ULONG x2)
 {
-	trace("%08lx, %08lx\n", x1, x2);
+	FIXME("%08lx, %08lx\n", x1, x2);
 	return STATUS_SUCCESS;
 }
 
@@ -941,7 +950,7 @@ HANDLE NTAPI NtUserCreateWindowStation(
 	PVOID x2,
 	ULONG Locale)
 {
-	trace("%p %08lx %p %08lx %p %08lx\n",
+	TRACE("%p %08lx %p %08lx %p %08lx\n",
 		  WindowStationName, DesiredAccess, ObjectDirectory, x1, x2, Locale);
 
 	// print out the name
@@ -957,7 +966,7 @@ HANDLE NTAPI NtUserCreateWindowStation(
 	if (r < STATUS_SUCCESS)
 		return 0;
 
-	trace("name = %pus\n", &us );
+	TRACE("name = %pus\n", &us);
 
 	return (HANDLE) g_HackDesktop++;
 }
@@ -976,8 +985,8 @@ HANDLE NTAPI NtUserCreateDesktop(
 	if (r < STATUS_SUCCESS)
 		return 0;
 
-	trace("name = %pus\n", oa.ObjectName );
-	trace("root = %p\n", oa.RootDirectory );
+	TRACE("name = %pus\n", oa.ObjectName);
+	TRACE("root = %p\n", oa.RootDirectory);
 
 	return (HANDLE) g_HackDesktop++;
 }
@@ -990,34 +999,34 @@ HANDLE NTAPI NtUserOpenDesktop(POBJECT_ATTRIBUTES DesktopName, ULONG, ACCESS_MAS
 	if (r < STATUS_SUCCESS)
 		return 0;
 
-	trace("name = %pus\n", oa.ObjectName );
-	trace("root = %p\n", oa.RootDirectory );
+	TRACE("name = %pus\n", oa.ObjectName);
+	TRACE("root = %p\n", oa.RootDirectory);
 
 	return (HANDLE) g_HackDesktop++;
 }
 
 BOOLEAN NTAPI NtUserSetProcessWindowStation(HANDLE WindowStation)
 {
-	trace("\n");
+	TRACE("\n");
 	Current->Process->WindowStation = WindowStation;
 	return TRUE;
 }
 
 HANDLE NTAPI NtUserGetProcessWindowStation(void)
 {
-	trace("\n");
+	TRACE("\n");
 	return Current->Process->WindowStation;
 }
 
 BOOLEAN NTAPI NtUserSetThreadDesktop(HANDLE Desktop)
 {
-	trace("\n");
+	FIXME("\n");
 	return TRUE;
 }
 
 BOOLEAN NTAPI NtUserSetImeHotKey(ULONG x1, ULONG x2, ULONG x3, ULONG x4, ULONG x5)
 {
-	trace("\n");
+	FIXME("\n");
 	return TRUE;
 }
 
@@ -1029,31 +1038,31 @@ BOOLEAN NTAPI NtUserLoadKeyboardLayoutEx(
 	ULONG locale,
 	ULONG flags)
 {
-	trace("\n");
+	FIXME("\n");
 	return TRUE;
 }
 
 BOOLEAN NTAPI NtUserUpdatePerUserSystemParameters(ULONG x1, ULONG x2)
 {
-	trace("\n");
+	FIXME("\n");
 	return TRUE;
 }
 
 BOOLEAN NTAPI NtUserSystemParametersInfo(ULONG x1, ULONG x2, ULONG x3, ULONG x4)
 {
-	trace("\n");
+	FIXME("\n");
 	return TRUE;
 }
 
 BOOLEAN NTAPI NtUserSetWindowStationUser(HANDLE WindowStation, PVOID, ULONG, ULONG)
 {
-	trace("\n");
+	FIXME("\n");
 	return TRUE;
 }
 
 ULONG NTAPI NtUserGetCaretBlinkTime(void)
 {
-	trace("\n");
+	FIXME("\n");
 	return 100;
 }
 
@@ -1061,21 +1070,21 @@ ULONG MessageNo = 0xc001;
 
 ULONG NTAPI NtUserRegisterWindowMessage(PUNICODE_STRING Message)
 {
-	trace("\n");
+	FIXME("\n");
 	CUNICODE_STRING us;
 
 	NTSTATUS r = us.CopyFromUser( Message );
 	if (r < STATUS_SUCCESS)
 		return 0;
 
-	trace("message = %pus -> %04lx\n", &us, MessageNo);
+	FIXME("message = %pus -> %04lx\n", &us, MessageNo);
 
 	return MessageNo++;
 }
 
 BOOL NTAPI NtUserRegisterHotKey(HWND hWnd, INT id, UINT fsModifiers, UINT vk)
 {
-	trace("hWnd: %x, id: %x, fsModifiers: %x, vk: %x\n", hWnd, id, fsModifiers, vk);
+	FIXME("hWnd: %x, id: %x, fsModifiers: %x, vk: %x\n", hWnd, id, fsModifiers, vk);
 	return TRUE;
 }
 
@@ -1132,7 +1141,7 @@ void WINDOW::UnlinkWindow()
 
 void* WINDOW::operator new(size_t sz)
 {
-	trace("allocating window\n");
+	TRACE("allocating window\n");
 	assert( sz == sizeof (WINDOW));
 	return UserSharedBitmap.Alloc( sz );
 }
@@ -1172,7 +1181,7 @@ bool WINDOW::OnAccess( BYTE *address, ULONG eip )
 		f( 0x60, wndcls )
 #undef f
 	}
-	fprintf(stderr, "%04lx: accessed window[%p][%04lx] %s from %08lx\n", Current->TraceId(), handle, ofs, field, eip);
+	fprintf(stderr, "%lx.%lx: accessed window[%p][%04lx] %s from %08lx\n", Current->Process->Id, Current->GetID(), handle, ofs, field, eip);
 	return true;
 }
 
@@ -1180,10 +1189,10 @@ WINDOW::~WINDOW()
 {
 	UnlinkWindow();
 	FreeUserHandle( handle );
-	trace("active window = %p this = %p\n", ActiveWindow, this);
+	TRACE("active window = %p this = %p\n", ActiveWindow, this);
 	if (ActiveWindow == this)
 	{
-		trace("cleared active window handle\n");
+		TRACE("cleared active window handle\n");
 		ActiveWindow = 0;
 	}
 }
@@ -1204,7 +1213,7 @@ NTSTATUS WINDOW::Send( MESSAGE& msg )
 	teb->CachedWindowHandle = handle;
 	teb->CachedWindowPointer = GetWininfo();
 
-	trace("sending %s\n", msg.Description());
+	TRACE("sending %s\n", msg.Description());
 
 	msg.SetWindowInfo( this );
 
@@ -1292,7 +1301,7 @@ HANDLE NTAPI NtUserCreateWindowEx(
 
 WINDOW* WINDOW::DoCreate( CUNICODE_STRING& name, CUNICODE_STRING& cls, NTCREATESTRUCT& cs )
 {
-	trace("window = %pus class = %pus\n", &name, &cls );
+	TRACE("window = %pus class = %pus\n", &name, &cls);
 
 	WINDOW* parent_win = 0;
 	if (cs.hwndParent)
@@ -1324,7 +1333,7 @@ WINDOW* WINDOW::DoCreate( CUNICODE_STRING& name, CUNICODE_STRING& cls, NTCREATES
 
 	// allocate a window
 	WINDOW *win = new WINDOW;
-	trace("new window %p\n", win);
+	TRACE("new window %p\n", win);
 	if (!win)
 		return NULL;
 
@@ -1380,7 +1389,7 @@ WINDOW* WINDOW::DoCreate( CUNICODE_STRING& name, CUNICODE_STRING& cls, NTCREATES
 
 	if (win->style & WS_VISIBLE)
 	{
-		trace("Window has WS_VISIBLE\n");
+		TRACE("Window has WS_VISIBLE\n");
 		win->SetWindowPos( SWP_SHOWWINDOW | SWP_NOMOVE );
 
 		// move manually afterwards
@@ -1550,13 +1559,14 @@ BOOLEAN WINDOW::Destroy()
 
 BOOLEAN NTAPI NtUserSetLogonNotifyWindow( HWND Window )
 {
+	FIXME("\n");
 	return TRUE;
 }
 
 LONG NTAPI NtUserSetWindowLong(HWND hWnd, INT Index, LONG NewValue, BOOL Ansi)
 {
-	trace("hwnd: %x, Index: %x, Value: %x, Ansi: %d\n", hWnd, Index, NewValue, Ansi);
-	trace("FIXME: Always returning 0 as a previous windows long\n");
+	FIXME("hwnd: %x, Index: %x, Value: %x, Ansi: %d\n", hWnd, Index, NewValue, Ansi);
+	FIXME("FIXME: Always returning 0 as a previous windows long\n");
 	return 0;
 }
 
@@ -1571,28 +1581,32 @@ LONG NTAPI NtUserGetClassInfo(
 	NTSTATUS r = class_name.CopyFromUser( ClassName );
 	if (r < STATUS_SUCCESS)
 		return r;
-	trace("%pus\n", &class_name );
+	FIXME("%pus\n", &class_name );
 
 	return 0;
 }
 
 BOOLEAN NTAPI NtUserNotifyProcessCreate( ULONG NewProcessId, ULONG CreatorId, ULONG, ULONG )
 {
+	FIXME("\n");
 	return TRUE;
 }
 
 BOOLEAN NTAPI NtUserConsoleControl( ULONG Id, PVOID Information, ULONG Length )
 {
+	FIXME("\n");
 	return TRUE;
 }
 
 BOOLEAN NTAPI NtUserGetObjectInformation( HANDLE Object, ULONG InformationClass, PVOID Buffer, ULONG Length, PULONG ReturnLength)
 {
+	FIXME("\n");
 	return TRUE;
 }
 
 BOOLEAN NTAPI NtUserResolveDesktop(HANDLE Process, PVOID, PVOID, PHANDLE Desktop )
 {
+	FIXME("\n");
 	return TRUE;
 }
 
@@ -1607,6 +1621,7 @@ BOOLEAN NTAPI NtUserShowWindow( HWND Window, INT Show )
 
 HANDLE NTAPI NtUserCreateAcceleratorTable( PVOID Accelerators, UINT Count )
 {
+	FIXME("\n");
 	static UINT accelerator = 1;
 	return (HANDLE) accelerator++;
 }
@@ -1703,7 +1718,7 @@ LRESULT NTAPI NtUserDispatchMessage( PMSG Message )
 		}
 		break;
 	default:
-		trace("unknown message %04x\n", msg.message);
+		FIXME("unknown message %04x\n", msg.message);
 	}
 
 	return 0;
@@ -1738,6 +1753,7 @@ BOOLEAN NTAPI NtUserInvalidateRect( HWND Window, const RECT* Rectangle, BOOLEAN 
 
 BOOLEAN NTAPI NtUserMessageCall( HWND Window, ULONG, ULONG, PVOID, ULONG, ULONG, ULONG)
 {
+	FIXME("\n");
 	return TRUE;
 }
 
@@ -1752,11 +1768,13 @@ BOOLEAN NTAPI NtUserDestroyWindow( HWND Window )
 
 BOOLEAN NTAPI NtUserValidateRect( HWND Window, PRECT Rect )
 {
+	FIXME("\n");
 	return TRUE;
 }
 
 BOOLEAN NTAPI NtUserGetUpdateRgn( HWND Window, HRGN Region, BOOLEAN Erase )
 {
+	FIXME("\n");
 	return TRUE;
 }
 
@@ -1785,31 +1803,37 @@ HDC NTAPI NtUserBeginPaint( HWND Window, PAINTSTRUCT* pps)
 
 BOOLEAN NTAPI NtUserEndPaint( HWND Window, PAINTSTRUCT* pps )
 {
+	FIXME("\n");
 	return TRUE;
 }
 
 BOOLEAN NTAPI NtUserCallHwnd( HWND Window, ULONG )
 {
+	FIXME("\n");
 	return TRUE;
 }
 
 BOOLEAN NTAPI NtUserSetMenu( HWND Window, ULONG, ULONG )
 {
+	FIXME("\n");
 	return TRUE;
 }
 
 HWND NTAPI NtUserSetCapture( HWND Window )
 {
+	FIXME("\n");
 	return 0;
 }
 
 int NTAPI NtUserTranslateAccelerator( HWND Window, HACCEL AcceleratorTable, PMSG Message )
 {
+	FIXME("\n");
 	return 0;
 }
 
 BOOLEAN NTAPI NtUserTranslateMessage( PMSG Message, ULONG )
 {
+	FIXME("\n");
 	return 0;
 }
 

@@ -36,6 +36,7 @@ public:
 	virtual CSID_AND_ATTRIBUTES& GetUser() = 0;
 	virtual CSID& GetPrimaryGroup() = 0;
 	virtual CTOKEN_GROUPS& GetGroups() = 0;
+	virtual CTOKEN_GROUPS& GetRestrictedSids() = 0;
 	virtual CACL& GetDefaultDacl() = 0;
 	virtual NTSTATUS Adjust(CTOKEN_PRIVILEGES& privs) = 0;
 };

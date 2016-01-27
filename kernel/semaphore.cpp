@@ -27,6 +27,9 @@
 #include "debug.h"
 #include "object.h"
 #include "ntcall.h"
+
+DEFAULT_DEBUG_CHANNEL(semaphore);
+
 #include "object.inl"
 
 class SEMAPHORE : public SYNC_OBJECT
@@ -105,7 +108,7 @@ NTSTATUS NTAPI NtCreateSemaphore(
 	ULONG InitialCount,
 	ULONG MaximumCount )
 {
-	trace("%p %08lx %p %lu %lu\n", SemaphoreHandle, DesiredAccess,
+	TRACE("%p %08lx %p %lu %lu\n", SemaphoreHandle, DesiredAccess,
 		  ObjectAttributes, InitialCount, MaximumCount);
 
 	SEMAPHORE_FACTORY factory(InitialCount, MaximumCount);
@@ -119,7 +122,7 @@ NTSTATUS NTAPI NtReleaseSemaphore(
 {
 	NTSTATUS r;
 
-	trace("%p %ld %p\n", SemaphoreHandle, ReleaseCount, PreviousCount);
+	TRACE("%p %ld %p\n", SemaphoreHandle, ReleaseCount, PreviousCount);
 
 	if (ReleaseCount<1)
 		return STATUS_INVALID_PARAMETER;
@@ -144,7 +147,7 @@ NTSTATUS NTAPI NtOpenSemaphore(
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
-	trace("%p %ld %p\n", SemaphoreHandle, DesiredAccess, ObjectAttributes);
+	FIXME("%p %ld %p\n", SemaphoreHandle, DesiredAccess, ObjectAttributes);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -155,7 +158,7 @@ NTSTATUS NTAPI NtQuerySemaphore(
 	ULONG SemaphoreInformationLength,
 	PULONG ReturnLength)
 {
-	trace("%p %d %p %lu %p\n", SemaphoreHandle, SemaphoreInformationClass,
+	FIXME("%p %d %p %lu %p\n", SemaphoreHandle, SemaphoreInformationClass,
 		  SemaphoreInformation, SemaphoreInformationLength, ReturnLength);
 	return STATUS_NOT_IMPLEMENTED;
 }

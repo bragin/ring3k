@@ -33,12 +33,15 @@
 
 #include "debug.h"
 #include "object.h"
-#include "object.inl"
 #include "mem.h"
 #include "ntcall.h"
 #include "unicode.h"
 
 #include "list.h"
+
+DEFAULT_DEBUG_CHANNEL(registry);
+
+#include "object.inl"
 
 struct REGVAL;
 struct REGKEY;
@@ -184,7 +187,7 @@ ULONG REGKEY::NumSubkeys(ULONG& max_name_len, ULONG& max_class_len)
 
 void REGKEY::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls )
 {
-	trace("full information\n");
+	TRACE("full information\n");
 	info.LastWriteTime.QuadPart = 0LL;
 	info.TitleIndex = 0;
 	info.ClassOffset = FIELD_OFFSET( KEY_FULL_INFORMATION, Class );
@@ -192,12 +195,12 @@ void REGKEY::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls )
 	info.SubKeys = NumSubkeys(info.MaxNameLen, info.MaxClassLen);
 	info.Values = NumValues(info.MaxValueNameLen, info.MaxValueDataLen);
 	keycls = Cls;
-	trace("class = %pus\n", &Cls );
+	TRACE("class = %pus\n", &Cls );
 }
 
 void REGKEY::Query( KEY_BASIC_INFORMATION& info, UNICODE_STRING& namestr )
 {
-	trace("basic information\n");
+	TRACE("basic information\n");
 	info.LastWriteTime.QuadPart = 0LL;
 	info.TitleIndex = 0;
 	info.NameLength = Name.Length;
@@ -318,7 +321,7 @@ NTSTATUS OpenParseKey( REGKEY *&key, UNICODE_STRING *name, bool case_insensitive
 
 	if (name->Length)
 	{
-		trace("remaining = %pus\n", name);
+		TRACE("remaining = %pus\n", name);
 		if (name->Length == GetNextSegment( name ))
 			return STATUS_OBJECT_NAME_NOT_FOUND;
 
@@ -431,7 +434,7 @@ NTSTATUS DeleteValue( REGKEY *key, UNICODE_STRING *us )
 	if (!val)
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 
-	trace("deleting %pus\n", &val->Name);
+	TRACE("deleting %pus\n", &val->Name);
 	key->Values.Unlink( val );
 	delete val;
 	return STATUS_SUCCESS;
@@ -455,7 +458,7 @@ NTSTATUS RegQueryValue(
 
 	len = 0;
 
-	trace("%pus\n", &val->Name );
+	TRACE("%pus\n", &val->Name);
 
 	memset( &info, 0, sizeof info );
 
@@ -512,7 +515,7 @@ NTSTATUS RegQueryValue(
 	case KeyValueFullInformationAlign64:
 	case KeyValuePartialInformationAlign64:
 	default:
-		trace("RegQueryValue: UNIMPLEMENTED case %ld\n", KeyValueInformationClass);
+		FIXME("RegQueryValue: UNIMPLEMENTED case %ld\n", KeyValueInformationClass);
 		r = STATUS_NOT_IMPLEMENTED;
 	}
 
@@ -532,7 +535,7 @@ NTSTATUS NTAPI NtCreateKey(
 	NTSTATUS r;
 	REGKEY *key = NULL;
 
-	trace("%p %08lx %p %lu %p %lu %p\n", KeyHandle, DesiredAccess,
+	TRACE("%p %08lx %p %lu %p %lu %p\n", KeyHandle, DesiredAccess,
 		  ObjectAttributes, TitleIndex, Class, CreateOptions, Disposition );
 
 	if (Disposition)
@@ -546,7 +549,7 @@ NTSTATUS NTAPI NtCreateKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("len %08lx root %p attr %08lx %pus\n",
+	TRACE("len %08lx root %p attr %08lx %pus\n",
 		  oa.Length, oa.RootDirectory, oa.Attributes, oa.ObjectName);
 
 	CUNICODE_STRING cls;
@@ -583,7 +586,7 @@ NTSTATUS NTAPI NtOpenKey(
 	NTSTATUS r;
 	REGKEY *key = NULL;
 
-	trace("%p %08lx %p\n", KeyHandle, DesiredAccess, ObjectAttributes );
+	TRACE("%p %08lx %p\n", KeyHandle, DesiredAccess, ObjectAttributes);
 
 	// copies the unicode string before validating object attributes struct
 	r = CopyFromUser( &oa, ObjectAttributes, sizeof oa );
@@ -598,12 +601,12 @@ NTSTATUS NTAPI NtOpenKey(
 	if (oa.Length != sizeof oa)
 		return STATUS_INVALID_PARAMETER;
 
-	trace("len %08lx root %p attr %08lx %pus\n",
+	TRACE("len %08lx root %p attr %08lx %pus\n",
 		  oa.Length, oa.RootDirectory, oa.Attributes, oa.ObjectName);
 
 	r = OpenKey( &key, &oa );
 
-	trace("OpenKey returned %08lx\n", r);
+	TRACE("OpenKey returned %08lx\n", r);
 
 	if (r == STATUS_SUCCESS)
 	{
@@ -617,7 +620,7 @@ NTSTATUS NTAPI NtOpenKey(
 NTSTATUS NTAPI NtInitializeRegistry(
 	BOOLEAN Setup )
 {
-	trace("%d\n", Setup);
+	FIXME("%d\n", Setup);
 	return STATUS_SUCCESS;
 }
 
@@ -633,7 +636,7 @@ NTSTATUS check_key_value_info_class( KEY_VALUE_INFORMATION_CLASS KeyValueInforma
 		break;
 	case KeyValueFullInformationAlign64:
 	case KeyValuePartialInformationAlign64:
-		trace("not implemented %d\n", KeyValueInformationClass);
+		FIXME("not implemented %d\n", KeyValueInformationClass);
 		return STATUS_NOT_IMPLEMENTED;
 	default:
 		return STATUS_INVALID_PARAMETER;
@@ -655,7 +658,7 @@ NTSTATUS NTAPI NtQueryValueKey(
 	REGKEY *key;
 	REGVAL *val;
 
-	trace("%p %p %d %p %lu %p\n", KeyHandle, ValueName, KeyValueInformationClass,
+	TRACE("%p %p %d %p %lu %p\n", KeyHandle, ValueName, KeyValueInformationClass,
 		  KeyValueInformation, KeyValueInformationLength, ResultLength );
 
 	r = check_key_value_info_class( KeyValueInformationClass );
@@ -674,7 +677,7 @@ NTSTATUS NTAPI NtQueryValueKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("%pus\n", &us );
+	TRACE("%pus\n", &us);
 
 	val = KeyFindValue( key, &us );
 	if (!val)
@@ -700,7 +703,7 @@ NTSTATUS NTAPI NtSetValueKey(
 	REGKEY *key;
 	NTSTATUS r;
 
-	trace("%p %p %lu %lu %p %lu\n", KeyHandle, ValueName, TitleIndex, Type, Data, DataSize );
+	TRACE("%p %p %lu %lu %p %lu\n", KeyHandle, ValueName, TitleIndex, Type, Data, DataSize);
 
 	r = ObjectFromHandle( key, KeyHandle, KEY_SET_VALUE );
 	if (r < STATUS_SUCCESS)
@@ -742,7 +745,7 @@ NTSTATUS NTAPI NtEnumerateValueKey(
 	ULONG len = 0;
 	NTSTATUS r = STATUS_SUCCESS;
 
-	trace("%p %lu %u %p %lu %p\n", KeyHandle, Index, KeyValueInformationClass,
+	TRACE("%p %lu %u %p %lu %p\n", KeyHandle, Index, KeyValueInformationClass,
 		  KeyValueInformation, KeyValueInformationLength, ResultLength );
 
 	r = ObjectFromHandle( key, KeyHandle, KEY_QUERY_VALUE );
@@ -776,7 +779,7 @@ NTSTATUS NTAPI NtDeleteValueKey(
 	NTSTATUS r;
 	REGKEY *key;
 
-	trace("%p %p\n", KeyHandle, ValueName);
+	TRACE("%p %p\n", KeyHandle, ValueName);
 
 	r = us.CopyFromUser( ValueName );
 	if (r < STATUS_SUCCESS)
@@ -811,7 +814,7 @@ NTSTATUS NTAPI NtFlushKey(
 	NTSTATUS r = ObjectFromHandle( key, KeyHandle, 0 );
 	if (r < STATUS_SUCCESS)
 		return r;
-	trace("flush!\n");
+	FIXME("flush!\n");
 	return r;
 }
 
@@ -819,7 +822,7 @@ NTSTATUS NTAPI NtSaveKey(
 	HANDLE KeyHandle,
 	HANDLE FileHandle)
 {
-	trace("%p %p\n", KeyHandle, FileHandle);
+	FIXME("%p %p\n", KeyHandle, FileHandle);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -828,7 +831,7 @@ NTSTATUS NTAPI NtSaveMergedKeys(
 	HANDLE KeyHandle2,
 	HANDLE FileHandle)
 {
-	trace("%p %p %p\n", KeyHandle1, KeyHandle2, FileHandle);
+	FIXME("%p %p %p\n", KeyHandle1, KeyHandle2, FileHandle);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -837,7 +840,7 @@ NTSTATUS NTAPI NtRestoreKey(
 	HANDLE FileHandle,
 	ULONG Flags)
 {
-	trace("%p %p %08lx\n", KeyHandle, FileHandle, Flags);
+	FIXME("%p %p %08lx\n", KeyHandle, FileHandle, Flags);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -845,14 +848,14 @@ NTSTATUS NTAPI NtLoadKey(
 	POBJECT_ATTRIBUTES KeyObjectAttributes,
 	POBJECT_ATTRIBUTES FileObjectAttributes)
 {
-	trace("%p %p\n", KeyObjectAttributes, FileObjectAttributes);
+	FIXME("%p %p\n", KeyObjectAttributes, FileObjectAttributes);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS NTAPI NtUnloadKey(
 	POBJECT_ATTRIBUTES KeyObjectAttributes)
 {
-	trace("%p\n", KeyObjectAttributes);
+	FIXME("%p\n", KeyObjectAttributes);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -860,7 +863,7 @@ NTSTATUS NTAPI NtQueryOpenSubKeys(
 	POBJECT_ATTRIBUTES KeyObjectAttributes,
 	PULONG NumberOfKeys)
 {
-	trace("%p %p\n", KeyObjectAttributes, NumberOfKeys);
+	FIXME("%p %p\n", KeyObjectAttributes, NumberOfKeys);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -869,7 +872,7 @@ NTSTATUS NTAPI NtReplaceKey(
 	HANDLE KeyHandle,
 	POBJECT_ATTRIBUTES OldFileObjectAttributes)
 {
-	trace("%p %p %p\n", NewFileObjectAttributes,
+	FIXME("%p %p %p\n", NewFileObjectAttributes,
 		  KeyHandle, OldFileObjectAttributes);
 	return STATUS_NOT_IMPLEMENTED;
 }
@@ -933,7 +936,7 @@ NTSTATUS NTAPI NtNotifyChangeKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("does nothing...\n");
+	FIXME("does nothing...\n");
 
 	return STATUS_SUCCESS;
 }
@@ -952,6 +955,7 @@ NTSTATUS NTAPI NtNotifyChangeMultipleKeys(
 	ULONG BufferLength,
 	BOOLEAN Asynchronous)
 {
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -1025,13 +1029,13 @@ NTSTATUS REGKEY::Query(
 		if (r < STATUS_SUCCESS)
 			break;
 
-		trace("keycls = %pus\n", &keycls);
+		TRACE("keycls = %pus\n", &keycls);
 		r = CopyToUser( (BYTE*)KeyInformation + FIELD_OFFSET( KEY_FULL_INFORMATION, Class ), keycls.Buffer, keycls.Length );
 
 		break;
 
 	case KeyNodeInformation:
-		trace("KeyNodeInformation\n");
+		FIXME("KeyNodeInformation\n");
 	default:
 		assert(0);
 	}
@@ -1130,7 +1134,7 @@ void DumpVal( REGVAL *val )
 {
 	ULONG i;
 
-	trace("%pus = ", &val->Name );
+	TRACE("%pus = ", &val->Name );
 	switch( val->Type )
 	{
 	case 7:
@@ -1148,7 +1152,7 @@ void DumpVal( REGVAL *val )
 		break;
 	case 1:
 	case 2:
-		trace("%pws\n", val->Data );
+		TRACE("%pws\n", val->Data );
 		break;
 	}
 }

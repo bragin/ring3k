@@ -38,12 +38,15 @@
 #include "ntwin32.h"
 #include "mem.h"
 #include "debug.h"
-#include "object.inl"
 #include "list.h"
 #include "timer.h"
 #include "win.h"
 #include "queue.h"
 #include "spy.h"
+
+DEFAULT_DEBUG_CHANNEL(queue);
+
+#include "object.inl"
 
 CMSG::CMSG( HWND _hwnd, UINT _message, WPARAM _wparam, LPARAM _lparam ) :
 	HWnd( _hwnd ),
@@ -262,7 +265,7 @@ BOOLEAN THREAD_MESSAGE_QUEUE::SetTimer( HWND Window, UINT Identifier, UINT Elaps
 		TimerList.Unlink( timer );
 	else
 		timer = new WIN_TIMER( Window, Identifier );
-	trace("adding timer %p hwnd %p id %d\n", timer, Window, Identifier );
+	TRACE("adding timer %p hwnd %p id %d\n", timer, Window, Identifier );
 	timer->Period = Elapse;
 	timer->LParam = TimerProc;
 	TimerAdd( timer );
@@ -274,7 +277,7 @@ BOOLEAN THREAD_MESSAGE_QUEUE::KillTimer( HWND Window, UINT Identifier )
 	WIN_TIMER* timer = FindTimer( Window, Identifier );
 	if (!timer)
 		return FALSE;
-	trace("deleting timer %p hwnd %p id %d\n", timer, Window, Identifier );
+	TRACE("deleting timer %p hwnd %p id %d\n", timer, Window, Identifier );
 	TimerList.Unlink( timer );
 	delete timer;
 	return TRUE;
@@ -353,10 +356,12 @@ BOOLEAN THREAD_MESSAGE_QUEUE::GetMessage(
 
 BOOLEAN NTAPI NtUserGetMessage(PMSG Message, HWND Window, ULONG MinMessage, ULONG MaxMessage)
 {
-	// no input queue...
-	THREAD_MESSAGE_QUEUE* queue = Current->Queue;
-	if (!queue)
-		return FALSE;
+	// create a thread message queue if necessary
+	if (!Current->Queue)
+	{
+		WARN("Calling GetMessage for a thread without input queue, creating it!\n");
+		Current->Queue = new THREAD_MESSAGE_QUEUE;
+	}
 
 	NTSTATUS r = VerifyForWrite( Message, sizeof *Message );
 	if (r != STATUS_SUCCESS)
@@ -364,12 +369,12 @@ BOOLEAN NTAPI NtUserGetMessage(PMSG Message, HWND Window, ULONG MinMessage, ULON
 
 	MSG msg;
 	memset( &msg, 0, sizeof msg );
-	if (queue->GetMessage( msg, Window, MinMessage, MaxMessage ))
+	if (Current->Queue->GetMessage(msg, Window, MinMessage, MaxMessage))
 		CopyToUser( Message, &msg, sizeof msg );
 
 	if (OptionTrace)
 	{
-		fprintf(stderr, "%04lx: %s\n", Current->TraceId(), __FUNCTION__);
+		fprintf(stderr, "%lx.%lx: %s\n", Current->Process->Id, Current->GetID(), __FUNCTION__);
 		fprintf(stderr, " msg.hwnd    = %p\n", msg.hwnd);
 		fprintf(stderr, " msg.message = %08x (%s)\n", msg.message, GetMessageName(msg.message));
 		fprintf(stderr, " msg.wParam  = %08x\n", msg.wParam);

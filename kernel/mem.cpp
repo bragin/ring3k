@@ -43,6 +43,8 @@
 #include "list.h"
 #include "platform.h"
 
+DEFAULT_DEBUG_CHANNEL(mem);
+
 #define MAX_CORE_MEMORY 0x10000000
 
 static inline BOOLEAN MemAllocationTypeIsValid(ULONG state)
@@ -99,14 +101,14 @@ void ADDRESS_SPACE_IMPL::Verify()
 	ULONG sz = (size_t) highest_address;
 	if (free_blocks || bad_xlate)
 	{
-		trace("invalid VM... %d free blocks %d bad xlate entries\n",
+		ERR("invalid VM... %d free blocks %d bad xlate entries\n",
 			  free_blocks, bad_xlate);
 		for ( MBLOCK_ITER i(blocks); i; i.Next() )
 		{
 			MBLOCK *mb = i;
 			mb->Dump();
 		}
-		trace("total %08lx in %ld allocations, %08lx\n", total, count, sz);
+		TRACE("total %08lx in %ld allocations, %08lx\n", total, count, sz);
 	}
 
 	assert( free_blocks == 0 );
@@ -356,13 +358,13 @@ NTSTATUS ADDRESS_SPACE_IMPL::GetMemRegion( BYTE *start, size_t length, int state
 
 	if (!(flags & AREA_VALID))
 	{
-		trace("area not found\n");
+		WARN("area not found\n");
 		return STATUS_NO_MEMORY;
 	}
 
 	if ((state & MEM_RESERVE) && !(flags & AREA_FREE))
 	{
-		trace("memory not free\n");
+		WARN("memory not free\n");
 		return STATUS_CONFLICTING_ADDRESSES;
 	}
 
@@ -532,7 +534,7 @@ NTSTATUS ADDRESS_SPACE_IMPL::FreeVirtualMemory( void *start, size_t length, ULON
 	mb = GetMBLOCK( addr );
 	if (!mb)
 	{
-		trace("no areas found!\n");
+		WARN("no areas found!\n");
 		return STATUS_NO_MEMORY;
 	}
 
@@ -542,7 +544,7 @@ NTSTATUS ADDRESS_SPACE_IMPL::FreeVirtualMemory( void *start, size_t length, ULON
 	mb = SplitArea( mb, addr, length );
 	if (!mb)
 	{
-		trace("failed to split area!\n");
+		WARN("failed to split area!\n");
 		return STATUS_NO_MEMORY;
 	}
 
@@ -560,7 +562,7 @@ NTSTATUS ADDRESS_SPACE_IMPL::UnmapView( void *start )
 	MBLOCK *mb = GetMBLOCK( addr );
 	if (!mb)
 	{
-		trace("no areas found!\n");
+		WARN("no areas found!\n");
 		return STATUS_NO_MEMORY;
 	}
 
@@ -577,7 +579,7 @@ NTSTATUS ADDRESS_SPACE_IMPL::Query( BYTE *start, MEMORY_BASIC_INFORMATION *info 
 	mb = GetMBLOCK( start );
 	if (!mb)
 	{
-		trace("no areas found!\n");
+		WARN("no areas found!\n");
 		return STATUS_INVALID_PARAMETER;
 	}
 
@@ -628,7 +630,7 @@ NTSTATUS ADDRESS_SPACE_IMPL::GetKernelAddress( BYTE **address, size_t *len )
 
 const char *ADDRESS_SPACE_IMPL::GetSymbol( BYTE *address )
 {
-	trace("%p\n", address );
+	TRACE("%p\n", address );
 	MBLOCK *mb = GetMBLOCK( address );
 	if (!mb)
 		return 0;
@@ -687,7 +689,7 @@ NTSTATUS ADDRESS_SPACE_IMPL::CopyToUser( void *dest, const void *src, size_t len
 	}
 
 	if (len)
-		trace("status %08lx copying to %p\n", r, dest );
+		TRACE("status %08lx copying to %p\n", r, dest );
 
 	return r;
 }
@@ -803,7 +805,7 @@ NTSTATUS NTAPI NtAllocateVirtualMemory(
 
 	r = process->Vm->AllocateVirtualMemory( &addr, ZeroBits, size, AllocationType, Protect );
 
-	trace("returns  %p %08lx  %08lx\n", addr, size, r);
+	TRACE("returns  %p %08lx  %08lx\n", addr, size, r);
 
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -829,7 +831,7 @@ NTSTATUS NTAPI NtQueryVirtualMemory(
 	SIZE_T len;
 	NTSTATUS r;
 
-	trace("%p %p %d %p %lu %p\n", ProcessHandle,
+	TRACE("%p %p %d %p %lu %p\n", ProcessHandle,
 		  BaseAddress, MemoryInformationClass, MemoryInformation,
 		  MemoryInformationLength, ReturnLength);
 
@@ -878,7 +880,7 @@ NTSTATUS NTAPI NtProtectVirtualMemory(
 	ULONG size = 0;
 	NTSTATUS r;
 
-	trace("%p %p %p %lu %p\n", ProcessHandle, BaseAddress,
+	TRACE("%p %p %p %lu %p\n", ProcessHandle, BaseAddress,
 		  NumberOfBytesToProtect, NewAccessProtection, OldAccessProtection);
 
 	r = ProcessFromHandle( ProcessHandle, &process );
@@ -893,7 +895,7 @@ NTSTATUS NTAPI NtProtectVirtualMemory(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("%p %08lx\n", addr, size );
+	TRACE("%p %08lx\n", addr, size );
 
 	return STATUS_SUCCESS;
 }
@@ -910,7 +912,7 @@ NTSTATUS NTAPI NtWriteVirtualMemory(
 	NTSTATUS r = STATUS_SUCCESS;
 	PROCESS *p;
 
-	trace("%p %p %p %08lx %p\n", ProcessHandle, BaseAddress, Buffer, NumberOfBytesToWrite, NumberOfBytesWritten );
+	TRACE("%p %p %p %08lx %p\n", ProcessHandle, BaseAddress, Buffer, NumberOfBytesToWrite, NumberOfBytesWritten );
 
 	r = ProcessFromHandle( ProcessHandle, &p );
 	if (r < STATUS_SUCCESS)
@@ -931,7 +933,7 @@ NTSTATUS NTAPI NtWriteVirtualMemory(
 		if (r < STATUS_SUCCESS)
 			break;
 
-		trace("%p <- %p %u\n", dest, src, (unsigned int) len);
+		TRACE("%p <- %p %u\n", dest, src, (unsigned int) len);
 
 		memcpy( dest, src, len );
 
@@ -941,7 +943,7 @@ NTSTATUS NTAPI NtWriteVirtualMemory(
 		written += len;
 	}
 
-	trace("wrote %d bytes\n", (unsigned int) written);
+	TRACE("wrote %d bytes\n", (unsigned int) written);
 
 	if (NumberOfBytesWritten)
 		r = CopyToUser( NumberOfBytesWritten, &written, sizeof written );
@@ -960,7 +962,7 @@ NTSTATUS NTAPI NtFreeVirtualMemory(
 	ULONG size = 0;
 	NTSTATUS r;
 
-	trace("%p %p %p %lu\n", ProcessHandle, BaseAddress, RegionSize, FreeType);
+	TRACE("%p %p %p %lu\n", ProcessHandle, BaseAddress, RegionSize, FreeType);
 
 	switch (FreeType)
 	{
@@ -1001,14 +1003,14 @@ NTSTATUS NTAPI NtFreeVirtualMemory(
 
 	r = CopyFromUser( &addr, BaseAddress, sizeof (PVOID) );
 
-	trace("returning %08lx\n", r);
+	TRACE("returning %08lx\n", r);
 
 	return r;
 }
 
 NTSTATUS NTAPI NtAreMappedFilesTheSame(PVOID Address1, PVOID Address2)
 {
-	trace("%p %p\n", Address1, Address2);
+	FIXME("%p %p\n", Address1, Address2);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -1017,7 +1019,7 @@ NTSTATUS NTAPI NtAllocateUserPhysicalPages(
 	PULONG NumberOfPages,
 	PULONG PageFrameNumbers)
 {
-	trace("%p %p %p\n", ProcessHandle, NumberOfPages, PageFrameNumbers);
+	FIXME("%p %p %p\n", ProcessHandle, NumberOfPages, PageFrameNumbers);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -1027,7 +1029,7 @@ NTSTATUS NTAPI NtFlushVirtualMemory(
 	PULONG FlushSize,
 	PIO_STATUS_BLOCK IoStatusBlock)
 {
-	trace("%p %p %p %p\n", ProcessHandle,
+	FIXME("%p %p %p %p\n", ProcessHandle,
 		  BaseAddress, FlushSize, IoStatusBlock);
 	return STATUS_NOT_IMPLEMENTED;
 }
@@ -1038,6 +1040,6 @@ NTSTATUS NTAPI NtLockVirtualMemory(
 	PULONG Length,
 	ULONG LockType)
 {
-	trace("does nothing\n");
+	FIXME("does nothing\n");
 	return STATUS_SUCCESS;
 }

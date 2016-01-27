@@ -34,6 +34,9 @@
 #include "debug.h"
 #include "mem.h"
 #include "object.h"
+
+DEFAULT_DEBUG_CHANNEL(kthread);
+
 #include "object.inl"
 #include "ntcall.h"
 #include "section.h"
@@ -257,7 +260,7 @@ int SECURITY_REFERENCE_MONITOR::Run()
 		if (r < STATUS_SUCCESS)
 			Die("NtReplyWaitReceivePort(SeRmCommandPort) failed r = %08lx\n", r);
 
-		trace("got message %ld\n", req->MessageId );
+		TRACE("got message %ld\n", req->MessageId );
 
 		// send something back...
 		r = NtReplyPort( port, req );
@@ -268,7 +271,7 @@ int SECURITY_REFERENCE_MONITOR::Run()
 			Die("NtReplyPort(SeRmCommandPort) failed r = %08lx\n", r);
 	}
 
-	trace("done\n");
+	TRACE("done\n");
 	return 0;
 }
 
@@ -310,7 +313,7 @@ int PLUG_AND_PLAY::Run()
 	if (r == STATUS_THREAD_IS_TERMINATING)
 		return 0;
 	if (r < STATUS_SUCCESS)
-		trace("failed to create ntsvcs %08lx\n", r);
+		TRACE("failed to create ntsvcs %08lx\n", r);
 
 	if (Terminated)
 		Stop();
@@ -319,7 +322,7 @@ int PLUG_AND_PLAY::Run()
 	if (r == STATUS_THREAD_IS_TERMINATING)
 		return 0;
 	if (r < STATUS_SUCCESS)
-		trace("failed to connect ntsvcs %08lx\n", r);
+		TRACE("failed to connect ntsvcs %08lx\n", r);
 
 	Stop();
 	return 0;

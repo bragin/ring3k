@@ -52,6 +52,8 @@
 #include "symlink.h"
 #include "alloc_bitmap.h"
 
+DEFAULT_DEBUG_CHANNEL(main);
+
 PROCESS_LIST Processes;
 THREAD *Current;
 OBJECT *NtDLLSection;
@@ -175,7 +177,7 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 	ctx.Eip = (DWORD) GetEntryPoint( p );
 	ctx.Esp = (DWORD) pstack + stack_size - 8;
 
-	trace("entry point = %08lx\n", ctx.Eip);
+	TRACE("entry point = %08lx\n", ctx.Eip);
 
 	/* when starting nt processes, make the PEB the first arg of NtProcessStartup */
 	r = p->Vm->CopyToUser( (BYTE*) ctx.Esp + 4, &p->PebBaseAddress, sizeof p->PebBaseAddress );
@@ -210,7 +212,7 @@ NTSTATUS InitNtDLL( void )
 		Die("failed to create ntdll section\n");
 
 	KiIntSystemCall = GetProcAddress( NtDLLSection, "KiIntSystemCall" );
-	trace("KiIntSystemCall = %08lx\n", KiIntSystemCall);
+	TRACE("KiIntSystemCall = %08lx\n", KiIntSystemCall);
 	InitSyscalls(KiIntSystemCall != 0);
 
 	Release( file );
@@ -254,15 +256,18 @@ static void BacktraceAndQuit()
 	void *bt[max_frames];
 	char **names;
 	int n=0, size;
-	ULONG id = 0;
+	ULONG pid = 0, tid = 0;
 
 	if (Current)
-		id = Current->TraceId();
+	{
+		tid = Current->GetID();
+		pid = Current->Process->Id;
+	}
 
 	size = backtrace(bt, max_frames);
 	names = backtrace_symbols(bt, size);
 
-	fprintf(stderr, "%04lx: caught kernel SEGV (%d frames):\n", id, size);
+	fprintf(stderr, "%lx.%lx: caught kernel SEGV (%d frames):\n", pid, tid, size);
 	for (n=0; n<size; n++)
 	{
 		fprintf(stderr, "%d: %s\n", n, names[n]);
@@ -461,6 +466,9 @@ int main(int argc, char **argv)
 	{
 		exename = argv[optind];
 	}
+
+	// Read debug channels options
+	DebugInit();
 
 	// the skas3 patch is deprecated...
 	if (0) InitSkas();

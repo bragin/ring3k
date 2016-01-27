@@ -35,9 +35,12 @@
 #include "debug.h"
 #include "object.h"
 #include "objdir.h"
-#include "object.inl"
 #include "mem.h"
 #include "ntcall.h"
+
+DEFAULT_DEBUG_CHANNEL(object);
+
+#include "object.inl"
 
 OPEN_INFO::OPEN_INFO() :
 	Attributes( 0 ),
@@ -69,7 +72,7 @@ NTSTATUS OBJECT::Open( OBJECT *&out, OPEN_INFO& info )
 {
 	if (info.Path.Length != 0)
 	{
-		trace("length not zero\n");
+		WARN("length not zero\n");
 		return STATUS_OBJECT_PATH_NOT_FOUND;
 	}
 	AddRef( this );
@@ -229,7 +232,7 @@ NTSTATUS OBJECT_FACTORY::Create(
 		if (r < STATUS_SUCCESS)
 			return r;
 
-		trace("name = %pus\n", oa.ObjectName);
+		TRACE("name = %pus\n", oa.ObjectName);
 	}
 
 	if (oa.ObjectName && oa.ObjectName->Length)
@@ -250,7 +253,7 @@ NTSTATUS OBJECT_FACTORY::Create(
 	// maybe this should be done in AllocObject ?
 	NTSTATUS r2 = AllocUserHandle( obj, AccessMask, Handle );
 	if (r2 == STATUS_SUCCESS && (oa.Attributes & OBJ_PERMANENT ))
-		trace("permanent object\n");
+		TRACE("permanent object\n");
 	else
 		Release( obj );
 
@@ -290,7 +293,7 @@ bool OBJECT::CheckAccess( ACCESS_MASK required, ACCESS_MASK handle, ACCESS_MASK 
 
 bool OBJECT::AccessAllowed( ACCESS_MASK access, ACCESS_MASK handle_access )
 {
-	trace("fixme: no access check\n");
+	TRACE("fixme: no access check\n");
 	return true;
 }
 
@@ -335,7 +338,7 @@ BOOLEAN SYNC_OBJECT::Satisfy( void )
 
 NTSTATUS NTAPI NtClose( HANDLE Handle )
 {
-	trace("%p\n", Handle );
+	TRACE("%p\n", Handle );
 	return Current->Process->HandleTable.FreeHandle( Handle );
 }
 
@@ -346,7 +349,7 @@ NTSTATUS NTAPI NtQueryObject(
 	ULONG ObjectInformationLength,
 	PULONG ReturnLength)
 {
-	trace("%p %d %p %lu %p\n", Object, ObjectInformationClass,
+	TRACE("%p %d %p %lu %p\n", Object, ObjectInformationClass,
 		  ObjectInformation, ObjectInformationLength, ReturnLength);
 
 	union
@@ -400,7 +403,7 @@ NTSTATUS NTAPI NtSetInformationObject(
 	PVOID ObjectInformation,
 	ULONG ObjectInformationLength)
 {
-	trace("%p %d %p %lu\n", Object, ObjectInformationClass,
+	TRACE("%p %d %p %lu\n", Object, ObjectInformationClass,
 		  ObjectInformation, ObjectInformationLength);
 
 	union
@@ -418,7 +421,7 @@ NTSTATUS NTAPI NtSetInformationObject(
 	case ObjectNameInformation:
 	case ObjectTypeInformation:
 	case ObjectAllTypesInformation:
-		trace("unimplemented class %d\n", ObjectInformationClass);
+		FIXME("unimplemented class %d\n", ObjectInformationClass);
 	default:
 		return STATUS_INVALID_INFO_CLASS;
 	}
@@ -456,7 +459,7 @@ NTSTATUS NTAPI NtDuplicateObject(
 	ULONG Attributes,
 	ULONG Options)
 {
-	trace("%p %p %p %p %08lx %08lx %08lx\n",
+	TRACE("%p %p %p %p %08lx %08lx %08lx\n",
 		  SourceProcessHandle, SourceHandle, TargetProcessHandle,
 		  TargetHandle, DesiredAccess, Attributes, Options);
 
@@ -467,7 +470,7 @@ NTSTATUS NTAPI NtDuplicateObject(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("source process %p\n", sp );
+	TRACE("source process %p\n", sp );
 
 	OBJECT *obj = 0;
 	r = sp->HandleTable.ObjectFromHandle( obj, SourceHandle, DesiredAccess );
@@ -486,12 +489,12 @@ NTSTATUS NTAPI NtDuplicateObject(
 	// put the object into the target process's handle table
 	PROCESS *tp = 0;
 	r = ProcessFromHandle( TargetProcessHandle, &tp );
-	trace("target process %p\n", tp );
+	TRACE("target process %p\n", tp );
 	if (r == STATUS_SUCCESS)
 	{
 		HANDLE handle;
 		r = ProcessAllocUserHandle( tp, obj, DesiredAccess, TargetHandle, &handle );
-		trace("new handle is %p\n", handle );
+		TRACE("new handle is %p\n", handle );
 	}
 
 	Release( obj );
@@ -522,7 +525,7 @@ NTSTATUS NTAPI NtQuerySecurityObject(
 	ULONG sz = sizeof sdr;
 
 #define SINF(x) ((SecurityInformation & (x)) ? #x " " : "")
-	trace("%08lx = %s%s%s%s\n", SecurityInformation,
+	TRACE("%08lx = %s%s%s%s\n", SecurityInformation,
 		  SINF(OWNER_SECURITY_INFORMATION),
 		  SINF(GROUP_SECURITY_INFORMATION),
 		  SINF(SACL_SECURITY_INFORMATION),
@@ -567,7 +570,7 @@ NTSTATUS NTAPI NtPrivilegeObjectAuditAlarm(
 	r = us.CopyFromUser( SubsystemName );
 	if (r < STATUS_SUCCESS)
 		return r;
-	trace("SubsystemName = %pus\n", &us);
+	FIXME("SubsystemName = %pus\n", &us);
 
 	return STATUS_UNSUCCESSFUL;
 }
@@ -579,7 +582,7 @@ NTSTATUS NTAPI NtPrivilegedServiceAuditAlarm(
 	PPRIVILEGE_SET Privileges,
 	BOOLEAN AccessGranted)
 {
-	trace("\n");
+	TRACE("\n");
 
     CUNICODE_STRING SubsystemNameSafe, ServiceNameSafe;
     NTSTATUS Status;
@@ -590,7 +593,7 @@ NTSTATUS NTAPI NtPrivilegedServiceAuditAlarm(
     Status = ServiceNameSafe.CopyFromUser(ServiceName);
     if (Status < STATUS_SUCCESS) return Status;
 
-    trace("Subsystem: %pus, Service: %pus\n", &SubsystemNameSafe, &ServiceNameSafe);
+    FIXME("Subsystem: %pus, Service: %pus\n", &SubsystemNameSafe, &ServiceNameSafe);
 
     return STATUS_SUCCESS;;
 }
@@ -606,7 +609,7 @@ NTSTATUS NTAPI NtCloseObjectAuditAlarm(
 	r = us.CopyFromUser( SubsystemName );
 	if (r < STATUS_SUCCESS)
 		return r;
-	trace("SubsystemName = %pus\n", &us);
+	FIXME("SubsystemName = %pus\n", &us);
 
 	return STATUS_SUCCESS;
 }

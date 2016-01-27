@@ -28,24 +28,26 @@
 
 #include "debug.h"
 
+DEFAULT_DEBUG_CHANNEL(driver);
+
 NTSTATUS NTAPI NtLoadDriver(
 	PUNICODE_STRING DriverServiceName)
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS NTAPI NtUnloadDriver(
 	PUNICODE_STRING DriverServiceName)
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS NTAPI NtCancelDeviceWakeupRequest(
 	HANDLE DeviceHandle)
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -53,7 +55,7 @@ NTSTATUS NTAPI NtGetDevicePowerState(
 	HANDLE DeviceHandle,
 	PDEVICE_POWER_STATE DevicePowerState)
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -63,7 +65,7 @@ NTSTATUS NTAPI NtInitiatePowerAction(
 	ULONG Flags,
 	BOOLEAN Asynchronous)
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -74,7 +76,7 @@ NTSTATUS NTAPI NtPowerInformation(
 	PVOID OutputBuffer,
 	ULONG OutputBufferLength)
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -83,12 +85,12 @@ NTSTATUS NTAPI NtSetSystemPowerState(
 	SYSTEM_POWER_STATE MinSystemState,
 	ULONG Flags)
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
 BOOLEAN NTAPI NtIsSystemResumeAutomatic(void)
 {
-	trace("\n");
+	FIXME("\n");
 	return FALSE;
 }

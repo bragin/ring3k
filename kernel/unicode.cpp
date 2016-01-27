@@ -28,6 +28,8 @@
 #include "ntcall.h"
 #include "debug.h"
 
+DEFAULT_DEBUG_CHANNEL(unicode);
+
 UINT StrLenW(LPCWSTR str)
 {
 	UINT n = 0;
@@ -187,7 +189,7 @@ ULONG CUNICODE_STRING::Utf8ToWChar( const unsigned char *str, ULONG len, WCHAR *
 			n++;
 			continue;
 		}
-		trace("invalid utf8 string %02x %02x %02x\n", str[i], str[i+1], str[i+2]);
+		ERR("invalid utf8 string %02x %02x %02x\n", str[i], str[i+1], str[i+2]);
 		break;
 	}
 	if (buf)

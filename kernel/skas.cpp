@@ -49,6 +49,8 @@
 
 #include "ptrace_base.h"
 
+DEFAULT_DEBUG_CHANNEL(skas);
+
 class SKAS3_ADDRESS_SPACE_IMPL: public PTRACE_ADRESS_SPACE_IMPL
 {
 	static int NumAddressSpaces;
@@ -150,7 +152,7 @@ pid_t SKAS3_ADDRESS_SPACE_IMPL::CreateTrace(void)
 				 CLONE_FILES | CLONE_STOPPED | SIGCHLD, NULL );
 	if (pid == -1)
 	{
-		trace("clone failed (%d)\n", errno);
+		ERR("clone failed (%d)\n", errno);
 		return pid;
 	}
 	if (pid == 0)
@@ -162,7 +164,7 @@ pid_t SKAS3_ADDRESS_SPACE_IMPL::CreateTrace(void)
 	int r = ::ptrace( PTRACE_ATTACH, pid, 0, 0 );
 	if (r < 0)
 	{
-		trace("ptrace_attach failed (%d)\n", errno);
+		ERR("ptrace_attach failed (%d)\n", errno);
 		return -1;
 	}
 
@@ -230,11 +232,11 @@ bool InitSkas()
 	int fd = PtraceAllocAddressSpaceFD();
 	if (fd < 0)
 	{
-		trace("skas3 patch not present\n");
+		TRACE("skas3 patch not present\n");
 		return false;
 	}
 	close( fd );
-	trace("using skas3\n");
+	TRACE("using skas3\n");
 	PTRACE_ADRESS_SPACE_IMPL::SetSignals();
 	pCreateAddressSpace = &CreateSkas3AddressSpace;
 	return true;

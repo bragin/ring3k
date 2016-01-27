@@ -28,12 +28,14 @@
 
 #include "debug.h"
 
+DEFAULT_DEBUG_CHANNEL(job);
+
 NTSTATUS NTAPI NtCreateJobObject(
 	PHANDLE JobHandle,
 	ACCESS_MASK AccessMask,
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
-	trace("%p %08lx %p\n", JobHandle, AccessMask, ObjectAttributes);
+	FIXME("%p %08lx %p\n", JobHandle, AccessMask, ObjectAttributes);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -42,7 +44,7 @@ NTSTATUS NTAPI NtOpenJobObject(
 	ACCESS_MASK AccessMask,
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
-	trace("%p %08lx %p\n", JobHandle, AccessMask, ObjectAttributes);
+	FIXME("%p %08lx %p\n", JobHandle, AccessMask, ObjectAttributes);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -50,7 +52,7 @@ NTSTATUS NTAPI NtAssignProcessToJobObject(
 	HANDLE JobHandle,
 	HANDLE ProcessHandle)
 {
-	trace("%p %p\n", JobHandle, ProcessHandle);
+	FIXME("%p %p\n", JobHandle, ProcessHandle);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -58,7 +60,7 @@ NTSTATUS NTAPI NtTerminateJobObject(
 	HANDLE JobHandle,
 	NTSTATUS ExitStatus)
 {
-	trace("%p %08lx\n", JobHandle, ExitStatus);
+	FIXME("%p %08lx\n", JobHandle, ExitStatus);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -69,7 +71,7 @@ NTSTATUS NTAPI NtQueryInformationJobObject(
 	ULONG JobObjectInformationSize,
 	PULONG ReturnLength)
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_ACCESS_DENIED;
 }
 
@@ -79,5 +81,6 @@ NTSTATUS NTAPI NtSetInformationJobObject(
 	PVOID JobObjectInformation,
 	ULONG JobObjectInformationSize)
 {
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }

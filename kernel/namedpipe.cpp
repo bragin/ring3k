@@ -33,6 +33,8 @@
 #include "objdir.h"
 #include "debug.h"
 
+DEFAULT_DEBUG_CHANNEL(namedpipe);
+
 class PIPE_SERVER;
 class PIPE_CLIENT;
 class PIPE_CONTAINER;
@@ -192,7 +194,7 @@ NTSTATUS PIPE_DEVICE::Open( OBJECT *&out, OPEN_INFO& info )
 		return OBJECT_DIR_IMPL::Open( out, info );
 
 	// appears to be a flat namespace under the pipe device
-	trace("pipe = %pus\n", &info.Path );
+	TRACE("pipe = %pus\n", &info.Path );
 	out = Lookup( info.Path, info.CaseInsensitive() );
 
 	// not the NtCreateNamedPipeFile case?
@@ -204,7 +206,7 @@ NTSTATUS PIPE_DEVICE::Open( OBJECT *&out, OPEN_INFO& info )
 
 NTSTATUS PIPE_CONTAINER::Open( OBJECT *&out, OPEN_INFO& info )
 {
-	trace("allocating pipe client = %pus\n", &info.Path );
+	TRACE("allocating pipe client = %pus\n", &info.Path );
 	PIPE_CLIENT *pipe = 0;
 	NTSTATUS r = CreateClient( pipe );
 	if (r < STATUS_SUCCESS)
@@ -236,11 +238,13 @@ void InitPipeDevice()
 
 NTSTATUS PIPE_DEVICE::Read( PVOID buffer, ULONG length, ULONG *read )
 {
+	ERR("\n");
 	return STATUS_ACCESS_DENIED;
 }
 
 NTSTATUS PIPE_DEVICE::Write( PVOID buffer, ULONG length, ULONG *written )
 {
+	ERR("\n");
 	return STATUS_ACCESS_DENIED;
 }
 
@@ -299,7 +303,7 @@ NTSTATUS WAIT_SERVER_INFO::CopyFromUser( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG 
 
 void WAIT_SERVER_INFO::Dump()
 {
-	trace("pipe server wait name=%pus\n", &Name );
+	TRACE("pipe server wait name=%pus\n", &Name );
 }
 
 NTSTATUS PIPE_DEVICE::WaitServerAvailable( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULONG Length )
@@ -315,7 +319,7 @@ NTSTATUS PIPE_DEVICE::WaitServerAvailable( PFILE_PIPE_WAIT_FOR_BUFFER pwfb, ULON
 	OBJECT* obj = Lookup( info.Name, true );
 	if (!obj)
 	{
-		trace("no pipe server (%pus)\n", &info.Name );
+		WARN("no pipe server (%pus)\n", &info.Name );
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 	}
 
@@ -339,7 +343,7 @@ NTSTATUS PIPE_DEVICE::FSControl( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsCon
 	if (FsControlCode == FSCTL_PIPE_WAIT)
 		return WaitServerAvailable( (PFILE_PIPE_WAIT_FOR_BUFFER) InputBuffer, InputBufferLength );
 
-	trace("unimplemented %08lx\n", FsControlCode);
+	FIXME("unimplemented %08lx\n", FsControlCode);
 
 	return STATUS_NOT_IMPLEMENTED;
 }
@@ -358,7 +362,7 @@ void PIPE_CONTAINER::Unlink( PIPE_SERVER *pipe )
 
 NTSTATUS PIPE_CONTAINER::CreateServer( PIPE_SERVER *& pipe, ULONG max_inst )
 {
-	trace("creating pipe server\n");
+	TRACE("creating pipe server\n");
 	if (max_inst != max_instances)
 		return STATUS_INVALID_PARAMETER;
 
@@ -398,7 +402,7 @@ void PIPE_SERVER::SetClient( PIPE_CLIENT* pipe_client )
 	Client = pipe_client;
 	Client->Server = this;
 	State = pipe_connected;
-	trace("connect server %p to client %p\n", this, Client );
+	TRACE("connect server %p to client %p\n", this, Client );
 }
 
 PIPE_SERVER* PIPE_CONTAINER::FindIdleServer()
@@ -436,7 +440,7 @@ PIPE_SERVER::~PIPE_SERVER()
 NTSTATUS PIPE_SERVER::Open( OBJECT *&out, OPEN_INFO& info )
 {
 	// should return a pointer to a pipe client
-	trace("implement\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -545,14 +549,14 @@ NTSTATUS PIPE_SERVER::Disconnect()
 NTSTATUS PIPE_SERVER::FSControl( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 									PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
-	trace("PIPE_SERVER %08lx\n", FsControlCode);
+	TRACE("PIPE_SERVER %08lx\n", FsControlCode);
 	if (FsControlCode == FSCTL_PIPE_LISTEN)
 		return Connect();
 
 	if (FsControlCode == FSCTL_PIPE_DISCONNECT)
 		return Disconnect();
 
-	trace("implement\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -651,10 +655,12 @@ NTSTATUS PIPE_CLIENT::Write( PVOID buffer, ULONG length, ULONG *written )
 NTSTATUS PIPE_CLIENT::FSControl( EVENT* event, IO_STATUS_BLOCK iosb, ULONG FsControlCode,
 									PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength )
 {
-	trace("PIPE_CLIENT %08lx\n", FsControlCode);
+	TRACE("PIPE_CLIENT %08lx\n", FsControlCode);
 
 	if (FsControlCode == FSCTL_PIPE_TRANSCEIVE)
 		return Transceive( InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength );
+
+	FIXME("\n");
 
 	return STATUS_INVALID_PARAMETER;
 }
@@ -678,7 +684,7 @@ NTSTATUS PIPE_CLIENT::Transceive(
 
 NTSTATUS PIPE_CLIENT::SetPipeInfo( FILE_PIPE_INFORMATION& pipe_info )
 {
-	trace("%ld %ld\n", pipe_info.ReadModeMessage, pipe_info.WaitModeBlocking);
+	FIXME("%ld %ld\n", pipe_info.ReadModeMessage, pipe_info.WaitModeBlocking);
 	return STATUS_SUCCESS;
 }
 
@@ -697,7 +703,7 @@ NTSTATUS PIPE_FACTORY::OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info )
 {
 	NTSTATUS r;
 
-	trace("PIPE_FACTORY()\n");
+	TRACE("PIPE_FACTORY()\n");
 	PIPE_CONTAINER *container = 0;
 	if (!obj)
 	{

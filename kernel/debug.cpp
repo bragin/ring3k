@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+# include <sys/stat.h>
+
 #include "ntstatus.h"
 #define WIN32_NO_STATUS
 #include "windef.h"
@@ -40,6 +42,8 @@
 
 #include "types.h"
 #include "extern.h"
+
+DEFAULT_DEBUG_CHANNEL(debug);
 
 #define RTL_NUMBER_OF(A) (sizeof(A)/sizeof((A)[0]))
 
@@ -54,9 +58,16 @@ static BOOLEAN KdbpQuit(ULONG Argc, PCHAR Argv[]);
 
 static BOOLEAN KdbpCmdProc(ULONG Argc, PCHAR Argv[]);
 
+unsigned char __KdbpDbgGetChannelFlags(struct __kdbp_debug_channel *channel);
+
 /* GLOBALS *******************************************************************/
+#define MAX_DEBUG_OPTIONS 256
 
 CONTEXT KdbpContext;
+UCHAR KdbpDefaultFlags = (1 << __KDBP_DBCL_ERR) | (1 << __KDBP_DBCL_FIXME);
+static INT nb_debug_options = -1;
+static struct __kdbp_debug_channel KdbpDebugOptions[MAX_DEBUG_OPTIONS];
+static const char * const KdbpDebugClasses[] = { "fixme", "err", "warn", "trace" };
 
 /* FUNCTIONS *****************************************************************/
 
@@ -209,7 +220,7 @@ void DebugPrintf(const char *file, const char *func, int line, const char *fmt, 
 	ULONG pid = 0;
 	ULONG tid = 0;
 	if (Current) {
-		tid = Current->TraceId();
+		tid = Current->GetID();
 		if (Current->Process)
 			pid = Current->Process->Id;
 	}
@@ -217,6 +228,36 @@ void DebugPrintf(const char *file, const char *func, int line, const char *fmt, 
 #else
 	fprintf( stderr, "%s %s", func, buffer );
 #endif
+}
+
+int DebugPrintfEx(enum __kdbp_debug_class cls, struct __kdbp_debug_channel *channel,
+	const char *func, const char *format, ...)
+{
+	char buffer[0x100];
+	int sz;
+	va_list va;
+
+	// Check if that message should be omitted
+	if (!(__KdbpDbgGetChannelFlags(channel) & (1 << cls))) return -1;
+
+	sz = sizeof buffer - 1;
+
+	va_start(va, format);
+	vDebugPrintf(buffer, sz, format, va);
+	va_end(va);
+
+	// Get current tid/pid
+	ULONG pid = 0;
+	ULONG tid = 0;
+	if (Current) {
+		tid = Current->GetID();
+		if (Current->Process)
+			pid = Current->Process->Id;
+	}
+
+	fprintf(stderr, "%lx.%lx:%s:%s:%s %s", pid, tid, KdbpDebugClasses[cls], channel->name, func, buffer);
+
+	return 0;
 }
 
 VOID
@@ -306,6 +347,20 @@ BYTE* DumpUserMem( BYTE *address )
 	return address + sizeof mem;
 }
 
+BOOLEAN KdbpPrintModuleAddress(PVOID ptr)
+{
+	ADDRESS_SPACE *vm = Current->Process->Vm;
+	MBLOCK *mem = vm->FindBlock((BYTE *)ptr);
+	if (!mem) return FALSE;
+
+	PE_SECTION *pe = (PE_SECTION *)mem->GetSection();
+	if (!pe) return FALSE;
+
+	KdbpPrint("%pus+%x\n", &pe->ImageFileName, (ULONG)ptr - (ULONG)mem->GetBaseAddress());
+
+	return TRUE;
+}
+
 void DebuggerBacktrace(PCONTEXT ctx)
 {
 	ULONG frame, stack, x[2], i;
@@ -317,7 +372,10 @@ void DebuggerBacktrace(PCONTEXT ctx)
 	r = CopyFromUser( &x[0], (void*) stack, sizeof x );
 	if (r == STATUS_SUCCESS)
 	{
-		fprintf(stderr, "sysret = %08lx\n", x[0]);
+		fprintf(stderr, "sysret = ");
+		if (!KdbpPrintModuleAddress((PVOID)x[0]))
+			fprintf(stderr, "%08lx\n", x[0]);
+
 	}
 
 	for (i=0; i<0x10; i++)
@@ -336,7 +394,10 @@ void DebuggerBacktrace(PCONTEXT ctx)
 			break;
 		}
 
-		fprintf(stderr, "ret = %08lx\n", x[1]);
+		fprintf(stderr, "ret = ");
+		if (!KdbpPrintModuleAddress((PVOID)x[1]))
+			fprintf(stderr, "%08lx\n", x[1]);
+
 		if (!x[1])
 			break;
 
@@ -764,4 +825,137 @@ void Debugger( void )
 
 		if (!KdbpDoCommand(buf)) return;
 	}
+}
+
+// Debug output related functions
+
+static int cmp_name(const void *p1, const void *p2)
+{
+	const char *name = (const char *)p1;
+	const struct __kdbp_debug_channel *chan = (const struct __kdbp_debug_channel *)p2;
+	return strcmp(name, chan->name);
+}
+
+/* get the flags to use for a given channel, possibly setting them too in case of lazy init */
+unsigned char __KdbpDbgGetChannelFlags(struct __kdbp_debug_channel *channel)
+{
+	if (nb_debug_options)
+	{
+		struct __kdbp_debug_channel *opt = (struct __kdbp_debug_channel *)bsearch(channel->name, KdbpDebugOptions, nb_debug_options,
+			sizeof(KdbpDebugOptions[0]), cmp_name);
+		if (opt) return opt->flags;
+	}
+	/* no option for this channel */
+	if (channel->flags & (1 << __KDBP_DBCL_INIT)) channel->flags = KdbpDefaultFlags;
+	return KdbpDefaultFlags;
+}
+
+/* add a new debug option at the end of the option list */
+static void AddOption(const char *name, unsigned char set, unsigned char clear)
+{
+	int min = 0, max = nb_debug_options - 1, pos, res;
+
+	if (!name[0])  /* "all" option */
+	{
+		KdbpDefaultFlags = (KdbpDefaultFlags & ~clear) | set;
+		return;
+	}
+	if (strlen(name) >= sizeof(KdbpDebugOptions[0].name)) return;
+
+	while (min <= max)
+	{
+		pos = (min + max) / 2;
+		res = strcmp(name, KdbpDebugOptions[pos].name);
+		if (!res)
+		{
+			KdbpDebugOptions[pos].flags = (KdbpDebugOptions[pos].flags & ~clear) | set;
+			return;
+		}
+		if (res < 0) max = pos - 1;
+		else min = pos + 1;
+	}
+	if (nb_debug_options >= MAX_DEBUG_OPTIONS) return;
+
+	pos = min;
+	if (pos < nb_debug_options) memmove(&KdbpDebugOptions[pos + 1], &KdbpDebugOptions[pos],
+		(nb_debug_options - pos) * sizeof(KdbpDebugOptions[0]));
+	strcpy(KdbpDebugOptions[pos].name, name);
+	KdbpDebugOptions[pos].flags = (KdbpDefaultFlags & ~clear) | set;
+	nb_debug_options++;
+}
+
+
+/* parse a set of debugging option specifications and add them to the option list */
+static void ParseDebugOptions(const char *str)
+{
+	char *opt, *next, *options;
+	unsigned int i;
+
+	if (!(options = strdup(str))) return;
+	for (opt = options; opt; opt = next)
+	{
+		const char *p;
+		unsigned char set = 0, clear = 0;
+
+		if ((next = strchr(opt, ','))) *next++ = 0;
+
+		p = opt + strcspn(opt, "+-");
+		if (!p[0]) p = opt;  /* assume it's a debug channel name */
+
+		if (p > opt)
+		{
+			for (i = 0; i < sizeof(KdbpDebugClasses) / sizeof(KdbpDebugClasses[0]); i++)
+			{
+				int len = strlen(KdbpDebugClasses[i]);
+				if (len != (p - opt)) continue;
+				if (!memcmp(opt, KdbpDebugClasses[i], len))  /* found it */
+				{
+					if (*p == '+') set |= 1 << i;
+					else clear |= 1 << i;
+					break;
+				}
+			}
+			if (i == sizeof(KdbpDebugClasses) / sizeof(KdbpDebugClasses[0])) /* bad class name, skip it */
+				continue;
+		}
+		else
+		{
+			if (*p == '-') clear = ~0;
+			else set = ~0;
+		}
+		if (*p == '+' || *p == '-') p++;
+		if (!p[0]) continue;
+
+		if (!strcmp(p, "all"))
+			KdbpDefaultFlags = (KdbpDefaultFlags & ~clear) | set;
+		else
+			AddOption(p, set, clear);
+	}
+	free(options);
+}
+
+
+void DebugInit(void)
+{
+	char *kdbp_debug;
+	struct stat st1, st2;
+
+	nb_debug_options = 0;
+
+	/* check for stderr pointing to /dev/null */
+	if (!fstat(2, &st1) && S_ISCHR(st1.st_mode) &&
+		!stat("/dev/null", &st2) && S_ISCHR(st2.st_mode) &&
+		st1.st_rdev == st2.st_rdev)
+	{
+		KdbpDefaultFlags = 0;
+		return;
+	}
+	if ((kdbp_debug = getenv("R3KDEBUG")))
+	{
+		//if (!strcmp(wine_debug, "help")) debug_usage();
+		ParseDebugOptions(kdbp_debug);
+		printf("channels: %s\n", kdbp_debug);
+	}
+
+	TRACE("Debugging initialized!\n");
 }

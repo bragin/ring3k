@@ -28,12 +28,14 @@
 
 #include "debug.h"
 
+DEFAULT_DEBUG_CHANNEL(atom);
+
 NTSTATUS NTAPI NtAddAtom(
 	PWSTR String,
 	ULONG StringLength,
 	PUSHORT Atom)
 {
-	trace("%p %lu %p\n", String, StringLength, Atom);
+	FIXME("%p %lu %p\n", String, StringLength, Atom);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -42,14 +44,14 @@ NTSTATUS NTAPI NtFindAtom(
 	ULONG StringLength,
 	PUSHORT Atom)
 {
-	trace("%p %lu %p\n", String, StringLength, Atom);
+	FIXME("%p %lu %p\n", String, StringLength, Atom);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS NTAPI NtDeleteAtom(
 	USHORT Atom)
 {
-	trace("%u\n", Atom);
+	FIXME("%u\n", Atom);
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -60,6 +62,6 @@ NTSTATUS NTAPI NtQueryInformationAtom(
 	ULONG AtomInformationLength,
 	PULONG ReturnLength)
 {
-	trace("%u\n", Atom);
+	FIXME("%u\n", Atom);
 	return STATUS_NOT_IMPLEMENTED;
 }

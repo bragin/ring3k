@@ -30,9 +30,12 @@
 #include "debug.h"
 #include "object.h"
 #include "objdir.h"
-#include "object.inl"
 #include "ntcall.h"
 #include "symlink.h"
+
+DEFAULT_DEBUG_CHANNEL(objdir);
+
+#include "object.inl"
 
 static OBJECT_DIR_IMPL *Root = 0;
 
@@ -187,7 +190,7 @@ NTSTATUS OBJECT_DIR_IMPL::Open( OBJECT*& obj, OPEN_INFO& info )
 	ULONG n = 0;
 	UNICODE_STRING& path = info.Path;
 
-	trace("path = %pus\n", &path );
+	TRACE("path = %pus\n", &path );
 
 	while (n < path.Length/2 && path.Buffer[n] != '\\')
 		n++;
@@ -223,7 +226,7 @@ public:
 
 NTSTATUS FIND_OBJECT::OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 {
-	trace("FIND_OBJECT::on_open %pus %s\n", &info.Path,
+	TRACE("FIND_OBJECT::on_open %pus %s\n", &info.Path,
 		  obj ? "exists" : "doesn't exist");
 	if (!obj)
 		return STATUS_OBJECT_NAME_NOT_FOUND;
@@ -277,11 +280,11 @@ NAME_OBJECT::NAME_OBJECT( OBJECT *in ) :
 
 NTSTATUS NAME_OBJECT::OnOpen( OBJECT_DIR *dir, OBJECT*& obj, OPEN_INFO& info )
 {
-	trace("NAME_OBJECT::on_open %pus\n", &info.Path);
+	TRACE("NAME_OBJECT::on_open %pus\n", &info.Path);
 
 	if (obj)
 	{
-		trace("object already exists\n");
+		WARN("object already exists\n");
 		return STATUS_OBJECT_NAME_COLLISION;
 	}
 
@@ -310,7 +313,7 @@ NTSTATUS NameObject( OBJECT *obj, const OBJECT_ATTRIBUTES *oa )
 	if (!oa->ObjectName->Length)
 		return STATUS_SUCCESS;
 
-	trace("NAME_OBJECT %pus\n", oa->ObjectName);
+	TRACE("NAME_OBJECT %pus\n", oa->ObjectName);
 
 	NAME_OBJECT oi( obj );
 	oi.Attributes = oa->Attributes;
@@ -352,7 +355,7 @@ NTSTATUS NTAPI NtCreateDirectoryObject(
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes )
 {
-	trace("%p %08lx %p\n", DirectoryHandle, DesiredAccess, ObjectAttributes );
+	TRACE("%p %08lx %p\n", DirectoryHandle, DesiredAccess, ObjectAttributes );
 
 	OBJECT_DIR_FACTORY factory;
 	return factory.Create( DirectoryHandle, DesiredAccess, ObjectAttributes );
@@ -375,7 +378,7 @@ NTSTATUS NTAPI NtQueryDirectoryObject(
 	PULONG Offset,  // called Context in Native API reference
 	PULONG ReturnLength)
 {
-	trace("%p %p %lu %u %u %p %p\n", DirectoryHandle, Buffer, BufferLength,
+	TRACE("%p %p %lu %u %u %p %p\n", DirectoryHandle, Buffer, BufferLength,
 		  ReturnSingleEntry, RestartScan, Offset, ReturnLength);
 
 	ULONG ofs = 0;
@@ -388,7 +391,7 @@ NTSTATUS NTAPI NtQueryDirectoryObject(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("fixme\n");
+	FIXME("fixme\n");
 
 	return STATUS_NO_MORE_ENTRIES;
 }

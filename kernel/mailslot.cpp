@@ -31,6 +31,8 @@
 #include "file.h"
 #include "debug.h"
 
+DEFAULT_DEBUG_CHANNEL(mailslot);
+
 class MAILSLOT : public IO_OBJECT
 {
 public:
@@ -40,13 +42,13 @@ public:
 
 NTSTATUS MAILSLOT::Read( PVOID Buffer, ULONG Length, ULONG *Read )
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS MAILSLOT::Write( PVOID Buffer, ULONG Length, ULONG *Written )
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -75,7 +77,7 @@ NTSTATUS NTAPI NtCreateMailslotFile(
 	ULONG MaxMessageSize,
 	PLARGE_INTEGER ReadTimeout)
 {
-	trace("%p %08lx %p %p %08lx %lu %lu %p\n", MailslotHandle, AccessMask,
+	TRACE("%p %08lx %p %p %08lx %lu %lu %p\n", MailslotHandle, AccessMask,
 		  ObjectAttributes, IoStatusBlock, CreateOptions,
 		  InBufferSize, MaxMessageSize, ReadTimeout);
 

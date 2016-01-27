@@ -30,8 +30,12 @@
 #include "object.h"
 #include "ntcall.h"
 #include "unicode.h"
+
+DEFAULT_DEBUG_CHANNEL(event);
+
 #include "object.inl"
 #include "event.h"
+
 
 class EVENT_IMPL : public EVENT
 {
@@ -192,7 +196,7 @@ EVENT* CreateSyncEvent( PWSTR name, BOOL InitialState )
 		NTSTATUS r = NameObject( event, &oa );
 		if (r < STATUS_SUCCESS)
 		{
-			trace("name_object failed\n");
+			ERR("name_object failed\n");
 			Release( event );
 			event = 0;
 		}
@@ -207,7 +211,7 @@ NTSTATUS NTAPI NtCreateEvent(
 	EVENT_TYPE EventType,
 	BOOLEAN InitialState )
 {
-	trace("%p %08lx %p %u %u\n", EventHandle, DesiredAccess,
+	TRACE("%p %08lx %p %u %u\n", EventHandle, DesiredAccess,
 		  ObjectAttributes, EventType, InitialState);
 
 	EVENT_FACTORY factory( EventType, InitialState );
@@ -219,7 +223,7 @@ NTSTATUS NTAPI NtOpenEvent(
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
-	trace("%p %08lx %p\n", EventHandle, DesiredAccess, ObjectAttributes );
+	TRACE("%p %08lx %p\n", EventHandle, DesiredAccess, ObjectAttributes );
 	return NtOpenObject<EVENT>( EventHandle, DesiredAccess, ObjectAttributes );
 }
 
@@ -275,7 +279,7 @@ NTSTATUS NTAPI NtClearEvent(
 	EVENT *event;
 	NTSTATUS r;
 
-	trace("%p\n", Handle);
+	TRACE("%p\n", Handle);
 
 	r = ObjectFromHandle( event, Handle, EVENT_MODIFY_STATE );
 	if (r < STATUS_SUCCESS)
@@ -369,6 +373,7 @@ NTSTATUS EVENT_PAIR::WaitHigh()
 		return STATUS_NO_MEMORY;
 
 	return ww->notify();*/
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -379,6 +384,7 @@ NTSTATUS EVENT_PAIR::WaitLow()
 		return STATUS_NO_MEMORY;
 
 	return ww->notify();*/
+	FIXME("\n");
 	return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -424,7 +430,7 @@ NTSTATUS NTAPI NtCreateEventPair(
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
-	trace("%p %08lx %p\n", EventPairHandle, DesiredAccess, ObjectAttributes);
+	TRACE("%p %08lx %p\n", EventPairHandle, DesiredAccess, ObjectAttributes);
 	EVENT_PAIR_FACTORY factory;
 	return factory.Create( EventPairHandle, DesiredAccess, ObjectAttributes );
 }
@@ -434,61 +440,61 @@ NTSTATUS NTAPI NtOpenEventPair(
 	ACCESS_MASK DesiredAccess,
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
-	trace("%p %08lx %p\n", EventPairHandle, DesiredAccess, ObjectAttributes );
+	TRACE("%p %08lx %p\n", EventPairHandle, DesiredAccess, ObjectAttributes );
 	return NtOpenObject<EVENT_PAIR>( EventPairHandle, DesiredAccess, ObjectAttributes );
 }
 
 NTSTATUS NTAPI NtSetHighEventPair(
 	HANDLE EventPairHandle)
 {
-	trace("%p\n", EventPairHandle );
+	TRACE("%p\n", EventPairHandle);
 	return EventPairOperation( EventPairHandle, &EVENT_PAIR::SetHigh );
 }
 
 NTSTATUS NTAPI NtSetHighWaitLowEventPair(
 	HANDLE EventPairHandle)
 {
-	trace("%p\n", EventPairHandle );
+	TRACE("%p\n", EventPairHandle);
 	return EventPairOperation( EventPairHandle, &EVENT_PAIR::SetHighWaitLow );
 }
 
 NTSTATUS NTAPI NtSetLowEventPair(
 	HANDLE EventPairHandle)
 {
-	trace("%p\n", EventPairHandle );
+	TRACE("%p\n", EventPairHandle);
 	return EventPairOperation( EventPairHandle, &EVENT_PAIR::SetLow );
 }
 
 NTSTATUS NTAPI NtSetLowWaitHighEventPair(
 	HANDLE EventPairHandle)
 {
-	trace("%p\n", EventPairHandle );
+	TRACE("%p\n", EventPairHandle);
 	return EventPairOperation( EventPairHandle, &EVENT_PAIR::SetLowWaitHigh );
 }
 
 NTSTATUS NTAPI NtWaitHighEventPair(
 	HANDLE EventPairHandle)
 {
-	trace("%p\n", EventPairHandle );
+	TRACE("%p\n", EventPairHandle);
 	return EventPairOperation( EventPairHandle, &EVENT_PAIR::WaitHigh );
 }
 
 NTSTATUS NTAPI NtWaitLowEventPair(
 	HANDLE EventPairHandle)
 {
-	trace("%p\n", EventPairHandle );
+	TRACE("%p\n", EventPairHandle);
 	return EventPairOperation( EventPairHandle, &EVENT_PAIR::WaitLow );
 }
 
 NTSTATUS NTAPI NtSetLowWaitHighThread(void)
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NO_EVENT_PAIR;
 }
 
 NTSTATUS NTAPI NtSetHighWaitLowThread(void)
 {
-	trace("\n");
+	FIXME("\n");
 	return STATUS_NO_EVENT_PAIR;
 }
 

@@ -31,6 +31,9 @@
 #include "ntcall.h"
 #include "object.h"
 #include "debug.h"
+
+DEFAULT_DEBUG_CHANNEL(timer);
+
 #include "object.inl"
 
 TIMEOUT_LIST TIMEOUT::g_Timeouts;
@@ -372,7 +375,7 @@ NTSTATUS NTAPI NtCreateTimer(
 	POBJECT_ATTRIBUTES ObjectAttributes,
 	TIMER_TYPE Type)
 {
-	trace("%p %08lx %p %u\n", TimerHandle, AccessMask, ObjectAttributes, Type );
+	TRACE("%p %08lx %p %u\n", TimerHandle, AccessMask, ObjectAttributes, Type );
 
 	TIMER_FACTORY factory( Type );
 	return factory.Create( TimerHandle, AccessMask, ObjectAttributes );
@@ -383,7 +386,7 @@ NTSTATUS NtOpenTimer(
 	ACCESS_MASK AccessMask,
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
-	trace("\n");
+	TRACE("\n");
 	return NtOpenObject<NTTIMER>( TimerHandle, AccessMask, ObjectAttributes );
 }
 
@@ -429,7 +432,7 @@ NTSTATUS NtSetTimer(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	trace("due = %llx\n", due.QuadPart);
+	TRACE("due = %llx\n", due.QuadPart);
 
 	NTTIMER* timer = 0;
 	r = ObjectFromHandle( timer, TimerHandle, TIMER_MODIFY_STATE );

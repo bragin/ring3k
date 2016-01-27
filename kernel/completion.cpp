@@ -31,6 +31,9 @@
 #include "thread.h"
 #include "file.h"
 #include "debug.h"
+
+DEFAULT_DEBUG_CHANNEL(completion);
+
 #include "object.inl"
 
 // COMPLETION_PACKET holds the data for one I/O completion
@@ -321,7 +324,7 @@ NTSTATUS NTAPI NtCreateIoCompletion(
 	POBJECT_ATTRIBUTES ObjectAttributes,
 	ULONG NumberOfConcurrentThreads)
 {
-	trace("%p %08lx %p %ld\n", IoCompletionHandle, DesiredAccess,
+	TRACE("%p %08lx %p %ld\n", IoCompletionHandle, DesiredAccess,
 		  ObjectAttributes, NumberOfConcurrentThreads);
 	COMPLETION_FACTORY factory( NumberOfConcurrentThreads );
 	return factory.Create( IoCompletionHandle, DesiredAccess, ObjectAttributes );
@@ -332,7 +335,7 @@ NTSTATUS NTAPI NtOpenIoCompletion(
 	ACCESS_MASK AccessMask,
 	POBJECT_ATTRIBUTES ObjectAttributes)
 {
-	trace("%p %08lx %p\n", IoCompletionHandle, AccessMask,
+	TRACE("%p %08lx %p\n", IoCompletionHandle, AccessMask,
 		  ObjectAttributes);
 	return NtOpenObject<COMPLETION_PORT>( IoCompletionHandle, AccessMask, ObjectAttributes );
 }
@@ -347,7 +350,7 @@ NTSTATUS NTAPI NtRemoveIoCompletion(
 {
 	NTSTATUS r;
 
-	trace("%p %p %p %p %p\n", IoCompletionHandle, IoCompletionKey,
+	TRACE("%p %p %p %p %p\n", IoCompletionHandle, IoCompletionKey,
 		  IoCompletionValue, IoStatusBlock, TimeOut);
 
 	COMPLETION_PORT_IMPL *port = 0;
@@ -414,7 +417,7 @@ NTSTATUS NTAPI NtSetIoCompletion(
 {
 	NTSTATUS r;
 
-	trace("%p %08lx %08lx %08lx %08lx\n", IoCompletionHandle, IoCompletionKey,
+	TRACE("%p %08lx %08lx %08lx %08lx\n", IoCompletionHandle, IoCompletionKey,
 		  IoCompletionValue, Status, Information);
 
 	COMPLETION_PORT_IMPL *port = 0;

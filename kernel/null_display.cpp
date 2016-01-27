@@ -37,6 +37,8 @@
 #include "debug.h"
 #include "win32mgr.h"
 
+DEFAULT_DEBUG_CHANNEL(null_display);
+
 class WIN32K_NULL : public WIN32K_MANAGER
 {
 public:
@@ -57,7 +59,7 @@ void WIN32K_NULL::Fini()
 
 int WIN32K_NULL::GetCaps( int index )
 {
-	trace("%d\n", index);
+	FIXME("%d\n", index);
 	return 0;
 }
 

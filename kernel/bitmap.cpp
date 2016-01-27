@@ -36,6 +36,8 @@
 #include "debug.h"
 #include "win32mgr.h"
 
+DEFAULT_DEBUG_CHANNEL(bitmap);
+
 template<>
 COLORREF BitmapImpl<1>::GetPixel( int x, int y )
 {
@@ -138,7 +140,7 @@ COLORREF CBITMAP::GetPixel( int x, int y )
 		return RGB( (val & 0xf800) >> 8, (val & 0x07e0) >> 3, (val & 0x1f) << 3 );
 	}
 	default:
-		trace("%d bpp not implemented\n", Bpp);
+		FIXME("%d bpp not implemented\n", Bpp);
 	}
 	return 0;
 }
@@ -176,7 +178,7 @@ BOOL CBITMAP::SetPixelL( int x, int y, COLORREF color )
 			((GetBValue(color)&0xf8) >> 3);
 		break;
 	default:
-		trace("%d bpp not implemented\n", Bpp);
+		FIXME("%d bpp not implemented\n", Bpp);
 	}
 	return TRUE;
 }
@@ -192,9 +194,9 @@ BOOL CBITMAP::BitBlt(
 	CBITMAP *src,
 	INT xSrc, INT ySrc, ULONG rop )
 {
-	trace("%d,%d %dx%d <- %d,%d\n", xDest, yDest, cx, cy, xSrc, ySrc );
+	TRACE("%d,%d %dx%d <- %d,%d\n", xDest, yDest, cx, cy, xSrc, ySrc );
 	if (rop != SRCCOPY)
-		trace("ROP %ld not supported\n", rop);
+		FIXME("ROP %ld not supported\n", rop);
 
 	// copy the pixels
 	COLORREF pixel;
@@ -318,7 +320,7 @@ BOOL CBITMAP::LineWide( INT x0, INT y0, INT x1, INT y1, PEN *pen )
 		ydelta = 1;
 	}
 
-	trace("%d,%d-%d,%d\n", x0, y0, x1, y1);
+	TRACE("%d,%d-%d,%d\n", x0, y0, x1, y1);
 
 	INT width = pen->GetWidth();
 	INT color = pen->GetColor();
@@ -382,7 +384,7 @@ BOOL CBITMAP::Rectangle(INT left, INT top, INT right, INT bottom, BRUSH* brush)
 	// FIXME: use correct pen color
 	pen_val = RGB( 0, 0, 0 );
 	brush_val = brush->GetColor();
-	trace("brush color = %08lx\n", brush->GetColor());
+	TRACE("brush color = %08lx\n", brush->GetColor());
 
 	// top line
 	DrawHLine(left, top, right, pen_val);
@@ -446,7 +448,7 @@ CBITMAP* AllocBitmap( int width, int height, int depth )
 		bm = new BitmapImpl<24>( width, height );
 		break;
 	default:
-		fprintf(stderr, "%d bpp not supported\n", depth);
+		FIXME("%d bpp not supported\n", depth);
 		assert( 0 );
 	}
 

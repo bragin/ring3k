@@ -33,10 +33,13 @@
 #include "mem.h"
 #include "object.h"
 #include "ntcall.h"
-#include "object.inl"
 #include "section.h"
 #include "unicode.h"
 #include "file.h"
+
+DEFAULT_DEBUG_CHANNEL(section);
+
+#include "object.inl"
 
 SECTION::~SECTION()
 {
@@ -61,7 +64,7 @@ void SECTION::Release()
 
 NTSTATUS SECTION::Mapit( ADDRESS_SPACE *vm, BYTE *&addr, ULONG ZeroBits, ULONG State, ULONG prot )
 {
-	trace("anonymous map\n");
+	TRACE("anonymous map\n");
 	if ((prot&0xff) > (Protect&0xff))
 		return STATUS_INVALID_PARAMETER;
 	NTSTATUS r = vm->MapFD( &addr, ZeroBits, Len, State, prot, this );
@@ -188,7 +191,7 @@ NTSTATUS CreateSection(SECTION **section, CFILE *file, PLARGE_INTEGER psz, ULONG
 	addr = (BYTE*) mmap( NULL, len, mmap_prot, MAP_SHARED, fd, ofs );
 	if (addr == (BYTE*) -1)
 	{
-		trace("map failed!\n");
+		ERR("map failed!\n");
 		return STATUS_UNSUCCESSFUL;
 	}
 
@@ -286,7 +289,7 @@ bool PE_SECTION::AddRelayStub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG func, U
 	NTSTATUS r = vm->CopyToUser( stub_addr, &stub, sizeof stub );
 	if (r < STATUS_SUCCESS)
 	{
-		trace("stub copy failed %08lx\n", r);
+		ERR("stub copy failed %08lx\n", r);
 		return false;
 	}
 
@@ -295,7 +298,7 @@ bool PE_SECTION::AddRelayStub( ADDRESS_SPACE *vm, BYTE *stub_addr, ULONG func, U
 	r = vm->CopyToUser( user_addr, &ofs, sizeof ofs );
 	if (r < STATUS_SUCCESS)
 	{
-		trace("failed to set address %08lx\n", r);
+		ERR("failed to set address %08lx\n", r);
 		return false;
 	}
 
@@ -318,13 +321,13 @@ void PE_SECTION::AddRelay(ADDRESS_SPACE *vm)
 	exp = (IMAGE_EXPORT_DIRECTORY*) VirtualAddrToOffset( export_data_dir->VirtualAddress );
 	if (!exp)
 	{
-		trace("no exports\n");
+		ERR("no exports\n");
 		return;
 	}
 
 	BYTE *p = 0;
 	ULONG sz = (exp->NumberOfNames * sizeof (relay_stub) + 0xfff) & ~0xfff;
-	trace("relay stubs at %p, %08lx\n", p, sz);
+	TRACE("relay stubs at %p, %08lx\n", p, sz);
 	NTSTATUS r = vm->AllocateVirtualMemory( &p, 0, sz, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	if (r < STATUS_SUCCESS)
 	{
@@ -342,7 +345,7 @@ void PE_SECTION::AddRelay(ADDRESS_SPACE *vm)
 	r = vm->CopyToUser( p, RelayCode, RelayCodeSize );
 	if (r < STATUS_SUCCESS)
 	{
-		trace("relay copy failed %08lx\n", r);
+		ERR("relay copy failed %08lx\n", r);
 		return;
 	}
 
@@ -375,11 +378,11 @@ NTSTATUS PE_SECTION::Mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, ULON
 		return STATUS_UNSUCCESSFUL;
 
 	p = (BYTE*) nt->OptionalHeader.ImageBase;
-	trace("image at %p\n", p);
+	TRACE("image at %p\n", p);
 	r = vm->AllocateVirtualMemory( &p, ZeroBits, 0x1000, MEM_COMMIT, PAGE_READONLY );
 	if (r < STATUS_SUCCESS)
 	{
-		trace("map failed\n");
+		ERR("map failed\n");
 		goto fail;
 	}
 
@@ -390,19 +393,17 @@ NTSTATUS PE_SECTION::Mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, ULON
 
 	r = vm->CopyToUser( p, Addr, 0x1000 );
 	if (r < STATUS_SUCCESS)
-		trace("copy_to_user failed\n");
+		ERR("copy_to_user failed\n");
 
 	sections = (IMAGE_SECTION_HEADER*) (Addr + dos->e_lfanew + sizeof (*nt));
 
-	if (OptionTrace)
-		trace("read %d sections, load at %08lx\n",
+	TRACE("read %d sections, load at %08lx\n",
 			  nt->FileHeader.NumberOfSections,
 			  nt->OptionalHeader.ImageBase);
 
 	for ( i=0; i<nt->FileHeader.NumberOfSections; i++ )
 	{
-		if (OptionTrace)
-			trace("%-8s %08lx %08lx %08lx %08lx\n",
+		TRACE("%-8s %08lx %08lx %08lx %08lx\n",
 				  sections[i].Name,
 				  sections[i].VirtualAddress,
 				  sections[i].PointerToRawData,
@@ -427,7 +428,7 @@ NTSTATUS PE_SECTION::Mapit( ADDRESS_SPACE *vm, BYTE *&base, ULONG ZeroBits, ULON
 		{
 			r = vm->CopyToUser( p, Addr + sections[i].PointerToRawData, sections[i].SizeOfRawData);
 			if (r < STATUS_SUCCESS)
-				trace("copy_to_user failed\n");
+				ERR("copy_to_user failed\n");
 		}
 	}
 
@@ -477,7 +478,7 @@ IMAGE_EXPORT_DIRECTORY* PE_SECTION::GetExportsTable()
 
 DWORD PE_SECTION::GetProcAddress( const char *name )
 {
-	trace("%s\n", name);
+	TRACE("%s\n", name);
 
 	IMAGE_EXPORT_DIRECTORY *exp = GetExportsTable();
 	if (!exp)
@@ -567,11 +568,11 @@ const char *PE_SECTION::GetSymbol( ULONG address )
 
 const char *GetSectionSymbol( OBJECT *object, ULONG address )
 {
-	trace("%p %08lx\n", object, address);
+	TRACE("%p %08lx\n", object, address);
 	if (!object)
 		return 0;
 	SECTION *section = dynamic_cast<SECTION*>( object );
-	trace("%p %08lx\n", section, address);
+	TRACE("%p %08lx\n", section, address);
 	return section->GetSymbol( address );
 }
 
@@ -651,7 +652,7 @@ NTSTATUS NTAPI NtCreateSection(
 	OBJECT *file = NULL;
 	LARGE_INTEGER sz;
 
-	trace("%p %08lx %p %p %08lx %08lx %p\n", SectionHandle, DesiredAccess,
+	TRACE("%p %08lx %p %p %08lx %08lx %p\n", SectionHandle, DesiredAccess,
 		  ObjectAttributes, SectionSize, Protect, Attributes, FileHandle );
 
 	// check there's no bad flags
@@ -757,7 +758,7 @@ NTSTATUS NTAPI NtMapViewOfSection(
 	BYTE *addr = NULL;
 	NTSTATUS r;
 
-	trace("%p %p %p %lu %08lx %p %p %u %08lx %08lx\n",
+	TRACE("%p %p %p %lu %08lx %p %p %u %08lx %08lx\n",
 		  SectionHandle, ProcessHandle, BaseAddress, ZeroBits, CommitSize,
 		  SectionOffset, ViewSize, InheritDisposition, AllocationType, Protect );
 
@@ -775,7 +776,7 @@ NTSTATUS NTAPI NtMapViewOfSection(
 		return r;
 
 	if (addr)
-		trace("requested specific address %p\n", addr);
+		TRACE("requested specific address %p\n", addr);
 
 	r = VerifyForWrite( ViewSize, sizeof *ViewSize );
 	if (r < STATUS_SUCCESS)
@@ -788,7 +789,7 @@ NTSTATUS NTAPI NtMapViewOfSection(
 
 	r = CopyToUser( BaseAddress, &addr, sizeof addr );
 
-	trace("mapped at %p\n", addr );
+	TRACE("mapped at %p\n", addr);
 
 	return r;
 }
@@ -800,7 +801,7 @@ NTSTATUS NTAPI NtUnmapViewOfSection(
 	PROCESS *p = NULL;
 	NTSTATUS r;
 
-	trace("%p %p\n", ProcessHandle, BaseAddress );
+	TRACE("%p %p\n", ProcessHandle, BaseAddress);
 
 	r = ProcessFromHandle( ProcessHandle, &p );
 	if (r < STATUS_SUCCESS)
@@ -826,7 +827,7 @@ NTSTATUS NTAPI NtQuerySection(
 	NTSTATUS r;
 	ULONG len;
 
-	trace("%p %u %p %lu %p\n", SectionHandle, SectionInformationClass,
+	TRACE("%p %u %p %lu %p\n", SectionHandle, SectionInformationClass,
 		  SectionInformation, SectionInformationLength, ResultLength );
 
 	SECTION *section = 0;
@@ -849,6 +850,7 @@ NTSTATUS NTAPI NtQuerySection(
 		break;
 
 	default:
+		FIXME("\n");
 		r = STATUS_INVALID_PARAMETER;
 	}
 
