@@ -248,7 +248,7 @@ VOID PrintKey(REGKEY *key)
 	while (key) {
 		if (!key->Name.Buffer)
 			break;
-		trace("%pws\n",key->Name.Buffer);
+		TRACE("%pws\n",key->Name.Buffer);
 		key = key->Parent;
 	}
 }
