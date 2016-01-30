@@ -807,9 +807,6 @@ NTSTATUS DIRECTORY::OpenFile(
 	case FILE_OVERWRITE_IF:
 		mode = O_RDWR | O_TRUNC | O_CREAT;
 		break;
-	case FILE_OVERWRITE_IF:
-		mode = O_CREAT | O_TRUNC | O_RDWR;
-		break;
 	default:
 		FIXME("CreateDisposition = %ld\n", CreateDisposition);
 		return STATUS_NOT_IMPLEMENTED;
