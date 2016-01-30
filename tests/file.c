@@ -81,7 +81,7 @@ void test_file_open( void )
 	ok( r == STATUS_ACCESS_VIOLATION, "failed to open file %08lx\n", r);
 
 	r = NtOpenFile( &file, GENERIC_READ, &oa, &iosb, FILE_SHARE_READ, 0 );
-	ok( r == STATUS_OBJECT_PATH_NOT_FOUND, "failed to open file %08lx\n", r);
+	ok( r == STATUS_OBJECT_NAME_NOT_FOUND, "failed to open file %08lx\n", r);
 
 	oa.Attributes = OBJ_CASE_INSENSITIVE;
 
@@ -332,11 +332,169 @@ void test_query_directory( void )
 	ok( r == STATUS_SUCCESS, "failed to delete directory %08lx\n", r);
 }
 
+
+void test_file_create( void )
+{
+	WCHAR filename[] = L"\\??\\c:\\testfile.txt";
+    char szWrite[] = {"Test String"};
+	OBJECT_ATTRIBUTES oa;
+	HANDLE file;
+	IO_STATUS_BLOCK iosb;
+	UNICODE_STRING path;
+	NTSTATUS r;
+
+	init_us(&path, filename);
+	oa.Length = sizeof oa;
+	oa.RootDirectory = 0;
+	oa.ObjectName = &path;
+	oa.Attributes = OBJ_CASE_INSENSITIVE;
+	oa.SecurityDescriptor = 0;
+	oa.SecurityQualityOfService = 0;
+
+	//error, no such file
+	r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_OPEN, FILE_NON_DIRECTORY_FILE, NULL, 0);
+	ok( r == STATUS_OBJECT_NAME_NOT_FOUND, "failed to check file existance %08lx\n", r);
+
+	//ok, creating file
+	r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_CREATE, FILE_NON_DIRECTORY_FILE, NULL, 0);
+	ok( r == STATUS_SUCCESS, "failed to create file %08lx\n", r);
+	ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status);
+	ok( iosb.Information == FILE_CREATED, "information wrong %08lx\n", iosb.Information);
+
+	r = NtClose(file);
+	ok( r == STATUS_SUCCESS, "failed to close file %08lx\n", r);
+
+	//not implemented
+	//error, file already opened
+	//r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE, &oa, &iosb, 0,
+    //            FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_CREATE, FILE_NON_DIRECTORY_FILE, NULL, 0);
+	//ok( r == STATUS_OBJECT_NAME_COLLISION, "error, opening already opened file %08lx\n", r);
+
+	//ok, opening file
+    r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_OPEN, FILE_NON_DIRECTORY_FILE, NULL, 0);
+    ok( r == STATUS_SUCCESS, "failed to open file %08lx\n", r );
+    ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status );
+    ok( iosb.Information == FILE_OPENED, "information wrong %08lx\n", iosb.Information);
+
+	r = NtClose(file);
+	ok( r == STATUS_SUCCESS, "failed to close file %08lx\n", r);
+
+    //ok, file exists FILE_OPEN_IF
+    r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_OPEN_IF, FILE_NON_DIRECTORY_FILE, NULL, 0);
+    ok( r == STATUS_SUCCESS, "failed to open file %08lx\n", r );
+    ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status );
+    ok( iosb.Information == FILE_OPENED, "information wrong %08lx\n", iosb.Information);
+
+	r = NtClose(file);
+	ok( r == STATUS_SUCCESS, "failed to close file %08lx\n", r);
+
+	r = NtDeleteFile(&oa);
+	ok( r == STATUS_SUCCESS, "failed to delete file %08lx\n", r);
+
+	//ok, file doesn't exist, but we create one
+    r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_OPEN_IF, FILE_NON_DIRECTORY_FILE, NULL, 0);
+    ok( r == STATUS_SUCCESS, "failed to open file %08lx\n", r );
+    ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status );
+    ok( iosb.Information == FILE_CREATED, "information wrong %08lx\n", iosb.Information);
+
+	r = NtClose(file);
+	ok( r == STATUS_SUCCESS, "failed to close file %08lx\n", r);
+
+	r = NtDeleteFile(&oa);
+	ok( r == STATUS_SUCCESS, "failed to delete file %08lx\n", r);
+
+	//error, no such file
+	r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, 0, FILE_OVERWRITE, FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
+	ok( r == STATUS_OBJECT_NAME_NOT_FOUND, "failed to check file existance %08lx\n", r );
+
+	//ok, create file
+	r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, 0, FILE_CREATE, FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
+    ok( r == STATUS_SUCCESS, "failed to open file %08lx\n", r );
+    ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status );
+    ok( iosb.Information == FILE_CREATED, "information wrong %08lx\n", iosb.Information);
+
+    //ok, write some data
+    r = NtWriteFile(file, NULL, NULL, NULL, &iosb, szWrite, strlen(szWrite), 0, 0);
+    ok( r == STATUS_SUCCESS, "failed to write in file %08lx\n", r);
+    ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status);
+    ok( iosb.Information == strlen(szWrite), "information wrong %d, strlen %d\n", iosb.Information, strlen(szWrite));
+
+	r = NtClose(file);
+	ok( r == STATUS_SUCCESS, "failed to close file %08lx\n", r);
+
+	//ok, now we should overwrite file
+	r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, 0, FILE_OVERWRITE, FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
+    ok( r == STATUS_SUCCESS, "failed to open file %08lx\n", r );
+    ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status );
+    ok( iosb.Information == FILE_OVERWRITTEN, "information wrong %08lx\n", iosb.Information);
+
+    //ok, file must be empty
+    char data[100];
+    memset(data, 0, 100);
+    r = NtReadFile(file, NULL, NULL, NULL, &iosb, data, 100, NULL, NULL);
+    ok( r == STATUS_END_OF_FILE, "failed to read file %08lx\n", r );
+    ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status );
+    ok( iosb.Information == 0, "wrong size %08lx\n", iosb.Information);
+
+	r = NtClose(file);
+	ok( r == STATUS_SUCCESS, "failed to close file %08lx\n", r);
+	r = NtDeleteFile(&oa);
+	ok( r == STATUS_SUCCESS, "failed to delete file %08lx\n", r);
+
+	//ok, we create new file
+	r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, 0, FILE_OVERWRITE_IF, FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
+    ok( r == STATUS_SUCCESS, "failed to open file %08lx\n", r );
+    ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status );
+    ok( iosb.Information == FILE_CREATED, "information wrong %08lx\n", iosb.Information);
+
+	r = NtClose(file);
+	ok( r == STATUS_SUCCESS, "failed to close file %08lx\n", r);
+	r = NtDeleteFile(&oa);
+	ok( r == STATUS_SUCCESS, "failed to delete file %08lx\n", r);
+
+
+	//ok, create new file with only read rights
+	r = NtCreateFile(&file, FILE_GENERIC_READ, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, 0, FILE_CREATE, FILE_SYNCHRONOUS_IO_NONALERT, NULL, NULL);
+    ok( r == STATUS_SUCCESS, "failed to open file %08lx\n", r );
+    ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status );
+    ok( iosb.Information == FILE_CREATED, "information wrong %08lx\n", iosb.Information);
+
+    //error, no access
+    r = NtWriteFile(file, NULL, NULL, NULL, &iosb, szWrite, strlen(szWrite), 0, 0);
+    //not correct, should return STATUS_ACCESS_DENIED
+	ok( r == STATUS_IO_DEVICE_ERROR, "failed to check access rights %08lx\n", r );
+
+	//ok
+	r = NtReadFile(file, NULL, NULL, NULL, &iosb, data, 0, NULL, NULL);
+    ok( r == STATUS_SUCCESS, "failed to open file %08lx\n", r );
+    ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status );
+    ok( iosb.Information == 0, "information wrong %08lx\n", iosb.Information);
+
+
+
+	r = NtClose(file);
+	ok( r == STATUS_SUCCESS, "failed to close file %08lx\n", r);
+	r = NtDeleteFile(&oa);
+	ok( r == STATUS_SUCCESS, "failed to delete file %08lx\n", r);
+
+}
+
 void NtProcessStartup( void )
 {
 	log_init();
 
 	test_rtl_path();
+	test_file_create();
 	test_file_open();
 	test_query_directory();
 

@@ -97,6 +97,7 @@ NTSTATUS IO_OBJECT::SetPipeInfo( FILE_PIPE_INFORMATION& pipe_info )
 
 CFILE::~CFILE()
 {
+	TRACE("Closing file %d\n", fd);
 	close( fd );
 }
 
@@ -140,16 +141,18 @@ CFILE::CFILE(int f, UNICODE_STRING *Path) :
 class FILE_CREATE_INFO : public OPEN_INFO
 {
 public:
+	ACCESS_MASK DesiredAccess;
 	ULONG FileAttributes;
 	ULONG CreateOptions;
 	ULONG CreateDisposition;
 	bool created;
 public:
-	FILE_CREATE_INFO( ULONG _Attributes, ULONG _CreateOptions, ULONG _CreateDisposition );
+	FILE_CREATE_INFO( ACCESS_MASK _DesiredAccess, ULONG _Attributes, ULONG _CreateOptions, ULONG _CreateDisposition );
 	virtual NTSTATUS OnOpen( OBJECT_DIR* dir, OBJECT*& obj, OPEN_INFO& info );
 };
 
-FILE_CREATE_INFO::FILE_CREATE_INFO( ULONG _Attributes, ULONG _CreateOptions, ULONG _CreateDisposition ) :
+FILE_CREATE_INFO::FILE_CREATE_INFO( ACCESS_MASK _DesiredAccess, ULONG _Attributes, ULONG _CreateOptions, ULONG _CreateDisposition ) :
+	DesiredAccess( _DesiredAccess ),
 	FileAttributes( _Attributes ),
 	CreateOptions( _CreateOptions ),
 	CreateDisposition( _CreateDisposition ),
@@ -169,7 +172,8 @@ NTSTATUS CFILE::Read( PVOID Buffer, ULONG Length, ULONG *bytes_read )
 {
 	NTSTATUS r = STATUS_SUCCESS;
 	ULONG ofs = 0;
-	while (ofs < Length)
+	int ret = 1;
+	while (ofs < Length && ret)
 	{
 		BYTE *p = (BYTE*)Buffer+ofs;
 		size_t len = Length - ofs;
@@ -178,14 +182,15 @@ NTSTATUS CFILE::Read( PVOID Buffer, ULONG Length, ULONG *bytes_read )
 		if (r < STATUS_SUCCESS)
 			break;
 
-		int ret = ::read( fd, p, len );
+		ret = ::read( fd, p, len );
 		if (ret < 0)
 		{
 			r = STATUS_IO_DEVICE_ERROR;
 			break;
 		}
 
-		ofs += len;
+		ofs += ret;
+
 	}
 
 	*bytes_read = ofs;
@@ -202,14 +207,14 @@ NTSTATUS CFILE::Write( PVOID Buffer, ULONG Length, ULONG *written )
 		BYTE *p = (BYTE*)Buffer+ofs;
 		size_t len = Length - ofs;
 
-		NTSTATUS r = Current->Process->Vm->GetKernelAddress( &p, &len );
+		r = Current->Process->Vm->GetKernelAddress( &p, &len );
 		if (r < STATUS_SUCCESS)
 			break;
 
 		int ret = ::write( fd, p, len );
 		if (ret < 0)
 		{
-			ERR("Write failed\n");
+			ERR("Write failed %d\n", errno);
 			r = STATUS_IO_DEVICE_ERROR;
 			break;
 		}
@@ -299,7 +304,7 @@ public:
 	NTSTATUS SetMask(CUNICODE_STRING *mask);
 	int GetNumEntries() const;
 	virtual NTSTATUS Open( OBJECT *&out, OPEN_INFO& info );
-	NTSTATUS OpenFile( CFILE *&file, UNICODE_STRING& path, ULONG Attributes,
+	NTSTATUS OpenFile( CFILE *&file, UNICODE_STRING& path, ACCESS_MASK DesiredAccess, ULONG Attributes,
 						ULONG Options, ULONG CreateDisposition, bool &created, bool case_insensitive );
 };
 
@@ -699,16 +704,35 @@ char *GetUnixPath( int fd, UNICODE_STRING& str, bool case_insensitive )
 	return file;
 }
 
+void PrintFlags( int flags )
+{
+	TRACE("flags:\n");
+	if (flags & O_RDONLY) 	TRACE("	O_RDONLY\n");
+	if (flags & O_WRONLY) 	TRACE("	O_WRONLY\n");
+	if (flags & O_RDWR) 	TRACE("	O_RDWR\n");
+	if (flags & O_APPEND) 	TRACE("	O_APPEND\n");
+	if (flags & O_CREAT) 	TRACE("	O_CREAT\n");
+	if (flags & O_DSYNC) 	TRACE("	O_DSYNC\n");
+	if (flags & O_EXCL) 	TRACE("	O_EXCL\n");
+	if (flags & O_NOCTTY) 	TRACE("	O_NOCTTY\n");
+	if (flags & O_NONBLOCK) TRACE("	O_NONBLOCK\n");
+	if (flags & O_RSYNC) 	TRACE("	O_RSYNC\n");
+	if (flags & O_SYNC) 	TRACE("	O_SYNC\n");
+	if (flags & O_TRUNC) 	TRACE("	O_TRUNC\n");
+}
+
 int DIRECTORY::OpenUnicodeFile( const char *unix_path, int flags, bool &created )
 {
 	int r = -1;
 
-	TRACE("open file : %s\n", unix_path);
+	TRACE("file %s\n", unix_path);
+	PrintFlags(flags);
 	r = ::open( unix_path, flags&~O_CREAT );
 	if (r < 0 && (flags & O_CREAT))
 	{
 		TRACE("create file : %s\n", unix_path);
 		r = ::open( unix_path, flags, 0666 );
+		TRACE("file fd = %d\n", r);
 		if (r >= 0)
 			created = true;
 	}
@@ -718,6 +742,8 @@ int DIRECTORY::OpenUnicodeFile( const char *unix_path, int flags, bool &created 
 int DIRECTORY::OpenUnicodeDir( const char *unix_path, int flags, bool &created )
 {
 	int r = -1;
+	TRACE("folder %s\n", unix_path);
+	PrintFlags(flags);
 
 	if (flags & O_CREAT)
 	{
@@ -728,13 +754,30 @@ int DIRECTORY::OpenUnicodeDir( const char *unix_path, int flags, bool &created )
 	}
 	TRACE("open name : %s\n", unix_path);
 	r = ::open( unix_path, flags & ~O_CREAT );
-	TRACE("r = %d\n", r);
+	TRACE("r = %d created = %s\n", r, created? "true":"false");
 	return r;
+}
+
+int ProcessDesiredAccess(int mode, ACCESS_MASK DesiredAccess)
+{
+	if ( DesiredAccess & FILE_LIST_DIRECTORY)
+		return mode;
+
+	if (( DesiredAccess & FILE_WRITE_DATA ) || ( DesiredAccess & GENERIC_WRITE ))
+	{
+		if (( DesiredAccess & FILE_READ_DATA ) || ( DesiredAccess & GENERIC_READ ))
+			mode |= O_RDWR;
+		else
+			mode |= O_WRONLY;
+	}
+
+	return mode;
 }
 
 NTSTATUS DIRECTORY::OpenFile(
 	CFILE *&file,
 	UNICODE_STRING& path,
+	ACCESS_MASK DesiredAccess,
 	ULONG Attributes,
 	ULONG Options,
 	ULONG CreateDisposition,
@@ -742,10 +785,11 @@ NTSTATUS DIRECTORY::OpenFile(
 	bool case_insensitive )
 {
 	int file_fd;
+	NTSTATUS r;
 
 	TRACE("name = %pus\n", &path);
 
-	int mode = O_RDONLY;
+	int mode = 0;
 	switch (CreateDisposition)
 	{
 	case FILE_OPEN:
@@ -755,12 +799,20 @@ NTSTATUS DIRECTORY::OpenFile(
 		mode = O_CREAT;
 		break;
 	case FILE_OPEN_IF:
-		mode = O_CREAT;
+		mode = O_CREAT | O_RDONLY;
+		break;
+	case FILE_OVERWRITE:
+		mode = O_RDWR | O_TRUNC;
+		break;
+	case FILE_OVERWRITE_IF:
+		mode = O_RDWR | O_TRUNC | O_CREAT;
 		break;
 	default:
 		FIXME("CreateDisposition = %ld\n", CreateDisposition);
 		return STATUS_NOT_IMPLEMENTED;
 	}
+
+	mode = ProcessDesiredAccess(mode, DesiredAccess);
 
 	char *unix_path = GetUnixPath( GetFD(), path, case_insensitive );
 	if (!unix_path)
@@ -784,9 +836,25 @@ NTSTATUS DIRECTORY::OpenFile(
 	else
 	{
 		file_fd = OpenUnicodeFile( unix_path, mode, created );
+
+		if (file_fd == -1) {
+			//need to check, is directory doesn't exists, or only file
+			int idx = strlen(unix_path) - 1;
+			while (idx >= 0 && unix_path[idx] != '/') {
+				unix_path[idx] = '\0';
+				idx--;
+			}
+			TRACE("check path %s\n", unix_path);
+			if (access(unix_path, F_OK) != -1) {
+				r = STATUS_OBJECT_NAME_NOT_FOUND;
+			} else {
+				r = STATUS_OBJECT_PATH_NOT_FOUND;
+			}
+		}
 		delete[] unix_path;
-		if (file_fd == -1)
-			return STATUS_OBJECT_PATH_NOT_FOUND;
+		if (file_fd == -1) {
+			return r;
+		}
 
 		file = new CFILE( file_fd, &path);
 		if (!file)
@@ -809,7 +877,7 @@ NTSTATUS DIRECTORY::Open( OBJECT *&out, OPEN_INFO& info )
 	if (!file_info)
 		return STATUS_OBJECT_TYPE_MISMATCH;
 
-	NTSTATUS r = OpenFile( file, info.Path, file_info->Attributes, file_info->CreateOptions,
+	NTSTATUS r = OpenFile( file, info.Path, file_info->DesiredAccess, file_info->Attributes, file_info->CreateOptions,
 							file_info->CreateDisposition, file_info->created, info.CaseInsensitive() );
 	if (r < STATUS_SUCCESS)
 		return r;
@@ -819,7 +887,7 @@ NTSTATUS DIRECTORY::Open( OBJECT *&out, OPEN_INFO& info )
 
 NTSTATUS OpenFile( CFILE *&file, UNICODE_STRING& name )
 {
-	FILE_CREATE_INFO info( 0, 0, FILE_OPEN );
+	FILE_CREATE_INFO info( 0, 0, 0, FILE_OPEN );
 	info.Path.Set( name );
 	info.Attributes = OBJ_CASE_INSENSITIVE;
 	OBJECT *obj = 0;
@@ -896,7 +964,7 @@ NTSTATUS NTAPI NtCreateFile(
 	if (!oa.ObjectName)
 		return STATUS_OBJECT_PATH_NOT_FOUND;
 
-	FILE_CREATE_INFO info( Attributes, CreateOptions, CreateDisposition );
+	FILE_CREATE_INFO info( DesiredAccess, Attributes, CreateOptions, CreateDisposition );
 
 	info.Path.Set( *oa.ObjectName );
 	info.Attributes = oa.Attributes;
@@ -910,7 +978,10 @@ NTSTATUS NTAPI NtCreateFile(
 	}
 
 	iosb.Status = r;
-	iosb.Information = info.created ? FILE_CREATED : FILE_OPENED;
+	if ( ( CreateDisposition == FILE_OVERWRITE || CreateDisposition == FILE_OVERWRITE_IF ) && !info.created )
+		iosb.Information = FILE_OVERWRITTEN;
+	else
+		iosb.Information = info.created ? FILE_CREATED : FILE_OPENED;
 
 	CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
 
@@ -1058,7 +1129,7 @@ NTSTATUS NTAPI NtQueryAttributesFile(
 
 	// FIXME: use oa.RootDirectory
 	OBJECT *obj = 0;
-	FILE_CREATE_INFO open_info( 0, 0, FILE_OPEN );
+	FILE_CREATE_INFO open_info( 0, 0, 0, FILE_OPEN );
 	open_info.Path.Set( *oa.ObjectName );
 	open_info.Attributes = oa.Attributes;
 	r = OpenRoot( obj, open_info );
@@ -1128,6 +1199,9 @@ NTSTATUS NTAPI NtReadFile(
 
 	r = CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
 
+	if ( ofs != Length )
+		return STATUS_END_OF_FILE;
+
 	return STATUS_SUCCESS;
 }
 
@@ -1151,7 +1225,7 @@ NTSTATUS NTAPI NtDeleteFile(
 
 	// FIXME: use oa.RootDirectory
 	OBJECT *obj = 0;
-	FILE_CREATE_INFO open_info( 0, 0, FILE_OPEN );
+	FILE_CREATE_INFO open_info( 0, 0, 0, FILE_OPEN );
 	open_info.Path.Set( *oa.ObjectName );
 	open_info.Attributes = oa.Attributes;
 	r = OpenRoot( obj, open_info );
