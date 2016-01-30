@@ -166,11 +166,12 @@ NTSTATUS CreateInitialProcess( THREAD **t, UNICODE_STRING& us )
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	/* teb initialization data */
+	/* TEB initialization data.
+       StackBase > StackLimit because stack grows downward  */
 	memset( &init_teb, 0, sizeof init_teb );
-	init_teb.StackReserved = pstack;
-	init_teb.StackCommit = (BYTE*)init_teb.StackReserved + stack_size;
-	init_teb.StackCommitMax = (BYTE*)init_teb.StackCommit - PAGE_SIZE;
+	init_teb.AllocatedStackBase = pstack;
+	init_teb.StackBase = (BYTE*)init_teb.AllocatedStackBase + stack_size;
+	init_teb.StackLimit = (BYTE*)init_teb.AllocatedStackBase + PAGE_SIZE;
 
 	/* initialize the first thread's context */
 	p->Vm->InitContext( ctx );

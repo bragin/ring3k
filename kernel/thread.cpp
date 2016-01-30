@@ -1449,10 +1449,9 @@ NTSTATUS THREAD_IMPL::Create( CONTEXT *ctx, INITIAL_TEB *init_teb, BOOLEAN suspe
 	Teb->StaticUnicodeString.MaximumLength = sizeof pteb->StaticUnicodeBuffer;
 	Teb->StaticUnicodeString.Length = sizeof pteb->StaticUnicodeBuffer;
 
-	// FIXME: need a good Thread test for these
-	Teb->DeallocationStack = init_teb->StackReserved;
-	Teb->Tib.StackBase = init_teb->StackCommit;
-	Teb->Tib.StackLimit = init_teb->StackReserved;
+	Teb->DeallocationStack = init_teb->AllocatedStackBase;
+	Teb->Tib.StackBase = init_teb->StackBase;
+	Teb->Tib.StackLimit = init_teb->StackLimit;
 
 	GetClientID( &Teb->ClientId );
 

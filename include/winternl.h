@@ -1958,11 +1958,11 @@ typedef struct _DIRECTORY_BASIC_INFORMATION {
 } DIRECTORY_BASIC_INFORMATION, *PDIRECTORY_BASIC_INFORMATION;
 
 typedef struct _INITIAL_TEB {
+  PVOID PreviousStackBase;
+  PVOID PreviousStackLimit;
   PVOID StackBase;
   PVOID StackLimit;
-  PVOID StackCommit;
-  PVOID StackCommitMax;
-  PVOID StackReserved;
+  PVOID AllocatedStackBase;
 } INITIAL_TEB, *PINITIAL_TEB;
 
 typedef enum _PORT_INFORMATION_CLASS {
