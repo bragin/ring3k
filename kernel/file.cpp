@@ -807,6 +807,9 @@ NTSTATUS DIRECTORY::OpenFile(
 	case FILE_OVERWRITE_IF:
 		mode = O_RDWR | O_TRUNC | O_CREAT;
 		break;
+	case FILE_OVERWRITE_IF:
+		mode = O_CREAT | O_TRUNC | O_RDWR;
+		break;
 	default:
 		FIXME("CreateDisposition = %ld\n", CreateDisposition);
 		return STATUS_NOT_IMPLEMENTED;
@@ -899,6 +902,24 @@ NTSTATUS OpenFile( CFILE *&file, UNICODE_STRING& name )
 	return STATUS_SUCCESS;
 }
 
+void InitCdrom()
+{
+	int fd = open("cdrom", O_RDONLY);
+	if (fd < 0)
+		Die("cdrom does not exist");
+	DIRECTORY_FACTORY factory(fd);
+	CUNICODE_STRING dirname;
+	dirname.Copy(L"\\Device\\CdRom0");
+	OBJECT *obj = 0;
+	NTSTATUS r;
+	r = factory.CreateKernel(obj, dirname);
+	if (r < STATUS_SUCCESS)
+	{
+		ERR("failed to create %pus\n", &dirname);
+		Die("fatal\n");
+	}
+}
+
 void InitDrives()
 {
 	int fd = open( "drive", O_RDONLY );
@@ -924,6 +945,8 @@ void InitDrives()
 		ERR( "failed to create symlink %pus (%08lx)\n", &c_link, r);
 		Die("fatal\n");
 	}
+
+	//InitCdrom();
 }
 
 NTSTATUS NTAPI NtCreateFile(

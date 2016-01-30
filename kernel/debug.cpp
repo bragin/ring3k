@@ -311,11 +311,6 @@ void Die(const char *fmt, ...)
 	exit(1);
 }
 
-void DumpRegs(CONTEXT *ctx)
-{
-	fprintf(stderr, "DumpRegs\n");
-}
-
 BYTE* DumpUserMem( BYTE *address )
 {
 	BYTE mem[0x80];
@@ -356,7 +351,7 @@ BOOLEAN KdbpPrintModuleAddress(PVOID ptr)
 	PE_SECTION *pe = (PE_SECTION *)mem->GetSection();
 	if (!pe) return FALSE;
 
-	KdbpPrint("%pus+%x\n", &pe->ImageFileName, (ULONG)ptr - (ULONG)mem->GetBaseAddress());
+	KdbpPrint("%pus+%x (%p)\n", &pe->ImageFileName, (ULONG)ptr - (ULONG)mem->GetBaseAddress(), ptr);
 
 	return TRUE;
 }
@@ -474,10 +469,8 @@ static BOOLEAN KdbpCmdContinue(ULONG Argc, PCHAR Argv[])
 	return FALSE;
 }
 
-static BOOLEAN KdbpCmdRegs(ULONG Argc, PCHAR Argv[])
+void DumpRegs(CONTEXT *ctx)
 {
-	CONTEXT *ctx = &KdbpContext;
-
 	fprintf(stderr, "eax %08lx ebx %08lx ecx %08lx edx %08lx\n"
 		"esi %08lx edi %08lx ebp %08lx efl %08lx\n"
 		"cs:eip %04lx:%08lx ss:esp %04lx:%08lx\n"
@@ -486,6 +479,13 @@ static BOOLEAN KdbpCmdRegs(ULONG Argc, PCHAR Argv[])
 		ctx->Esi, ctx->Edi, ctx->Ebp, ctx->EFlags,
 		ctx->SegCs, ctx->Eip, ctx->SegSs, ctx->Esp,
 		ctx->SegDs, ctx->SegEs, ctx->SegFs, ctx->SegGs);
+}
+
+static BOOLEAN KdbpCmdRegs(ULONG Argc, PCHAR Argv[])
+{
+	CONTEXT *ctx = &KdbpContext;
+
+	DumpRegs(ctx);
 
 	return TRUE;
 }
