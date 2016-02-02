@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#include <wchar.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -32,8 +33,9 @@
 #include <errno.h>
 #include <linux/types.h>
 #include <linux/unistd.h>
+#include <linux/magic.h>
 #include <sys/syscall.h>
-
+#include <sys/statfs.h>
 #include "ntstatus.h"
 #define WIN32_NO_STATUS
 #include "windef.h"
@@ -57,6 +59,14 @@ WCHAR Lowercase(const WCHAR ch)
 	if (ch >= 'A' && ch <='Z')
 		return ch | 0x20;
 	return ch;
+}
+
+int lstrlenW(const wchar_t *a)
+{
+	short n = 0;
+	while (a[n])
+		n++;
+	return n;
 }
 
 IO_OBJECT::IO_OBJECT() :
@@ -946,6 +956,32 @@ void InitDrives()
 	//InitCdrom();
 }
 
+NTSTATUS GetFsAttributeInformation(CFILE* File, FILE_FS_ATTRIBUTE_INFORMATION* FsAttribbute, const wchar_t** FilesystemName)
+{
+	struct statfs Buf;
+
+	if (fstatfs(File->GetFD(), &Buf) < 0)
+		return STATUS_UNSUCCESSFUL;
+
+	switch (Buf.f_type)
+	{
+	case EXT2_SUPER_MAGIC:
+		*FilesystemName = L"Ext2";
+		break;
+	default:
+		*FilesystemName = L"Unknown";
+		FIXME("Cannot get filesystem name");
+	}
+
+	FsAttribbute->FileSystemNameLength = sizeof(wchar_t) * lstrlenW(*FilesystemName);
+
+	FIXME("Get real params instead of hardcored\n");
+	FsAttribbute->MaximumComponentNameLength = Buf.f_namelen;
+	FsAttribbute->FileSystemAttribute = FILE_CASE_PRESERVED_NAMES | FILE_CASE_SENSITIVE_SEARCH | FILE_UNICODE_ON_DISK;
+
+	return STATUS_SUCCESS;
+}
+
 NTSTATUS NTAPI NtCreateFile(
 	PHANDLE FileHandle,
 	ACCESS_MASK DesiredAccess,
@@ -1167,6 +1203,8 @@ NTSTATUS NTAPI NtQueryAttributesFile(
 		r = STATUS_OBJECT_TYPE_MISMATCH;
 	Release( obj );
 
+	FIXME("BROKEN\n");
+
 	return r;
 }
 
@@ -1177,9 +1215,62 @@ NTSTATUS NTAPI NtQueryVolumeInformationFile(
 	ULONG VolumeInformationLength,
 	FS_INFORMATION_CLASS VolumeInformationClass )
 {
-	FIXME("%p %p %p %lu %u\n", FileHandle, IoStatusBlock, VolumeInformation,
-		  VolumeInformationLength, VolumeInformationClass );
-	return STATUS_NOT_IMPLEMENTED;
+
+	TRACE("%x %p %p %ld %x\n", FileHandle, IoStatusBlock, VolumeInformation, VolumeInformationLength, VolumeInformationClass);
+	NTSTATUS r;
+	IO_OBJECT *io = 0;
+	IO_STATUS_BLOCK iosb;
+	iosb.Status = STATUS_SUCCESS;
+	iosb.Information = 0;
+
+	r = ObjectFromHandle( io, FileHandle, 0 );
+	if (r < STATUS_SUCCESS)
+		return r;
+
+	CFILE *File = dynamic_cast<CFILE*>( io );
+	if (!File) {
+		FIXME("Check is volume or external storage\n");
+		return STATUS_OBJECT_TYPE_MISMATCH;
+	}
+
+	r = VerifyForWrite( IoStatusBlock, sizeof *IoStatusBlock );
+	if (r < STATUS_SUCCESS)
+		return r;
+
+	switch (VolumeInformationClass)
+	{
+	case FileFsAttributeInformation:
+		{
+			const wchar_t *FilesystemName;
+			FILE_FS_ATTRIBUTE_INFORMATION Info;
+			r = GetFsAttributeInformation(File, &Info, &FilesystemName);
+			if (r < STATUS_SUCCESS)
+				return r;
+
+			r = CopyToUser( VolumeInformation, &Info, sizeof Info );
+			if (r < STATUS_SUCCESS)
+				return r;
+
+			const ULONG ofs = FIELD_OFFSET(FILE_FS_ATTRIBUTE_INFORMATION, FileSystemName);
+			PWSTR p = (PWSTR)((PBYTE)VolumeInformation + ofs);
+			r = CopyToUser( p, FilesystemName, Info.FileSystemNameLength );
+			if (r < STATUS_SUCCESS)
+				return r;
+
+			iosb.Information = ofs + Info.FileSystemNameLength;
+			r = CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
+			if (r < STATUS_SUCCESS)
+				return r;
+		}
+		break;
+	default:
+		FIXME("Unknown VolumeInformationClass %x\n", VolumeInformationClass);
+		r = STATUS_UNSUCCESSFUL;
+	}
+
+
+
+	return r;
 }
 
 NTSTATUS NTAPI NtReadFile(
@@ -1342,6 +1433,7 @@ NTSTATUS NTAPI NtSetInformationFile(
 		r = file->SetPipeInfo( info.pipe );
 		break;
 	default:
+		FIXME("Unknown FileInformationClass\n");
 		break;
 	}
 
