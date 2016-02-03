@@ -1263,9 +1263,26 @@ NTSTATUS NTAPI NtQueryVolumeInformationFile(
 				return r;
 		}
 		break;
+	case FileFsDeviceInformation:
+		{
+			FIXME("Fake data returned\n");
+			FILE_FS_DEVICE_INFORMATION Info;
+			Info.DeviceType = FILE_DEVICE_DISK;
+			Info.Characteristics = FILE_DEVICE_IS_MOUNTED;
+
+			r = CopyToUser( VolumeInformation, &Info, sizeof Info );
+			if (r < STATUS_SUCCESS)
+				return r;
+
+			iosb.Information = sizeof Info;
+			r = CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
+			if (r < STATUS_SUCCESS)
+				return r;
+		}
+		break;
 	default:
 		FIXME("Unknown VolumeInformationClass %x\n", VolumeInformationClass);
-		r = STATUS_UNSUCCESSFUL;
+		r = STATUS_NOT_IMPLEMENTED;
 	}
 
 

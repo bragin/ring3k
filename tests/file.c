@@ -509,6 +509,7 @@ void test_query_volume()
 	ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status);
 	ok( iosb.Information == FILE_CREATED, "information wrong %08lx\n", iosb.Information);
 
+	//bad way to allocate 
 	const int size = FIELD_OFFSET(FILE_FS_ATTRIBUTE_INFORMATION, FileSystemName) + 64;
 	char data[size];
     FILE_FS_ATTRIBUTE_INFORMATION* fs_attr = (FILE_FS_ATTRIBUTE_INFORMATION*) data;
@@ -525,6 +526,11 @@ void test_query_volume()
     //ok
     r = NtQueryVolumeInformationFile(file, &iosb, fs_attr, size, FileFsAttributeInformation);
     ok( r == STATUS_SUCCESS, "failed to get volume information %08lx\n", r);
+
+    FILE_FS_DEVICE_INFORMATION* fs_device = (FILE_FS_DEVICE_INFORMATION*) data;
+    r = NtQueryVolumeInformationFile(file, &iosb, fs_device, size, FileFsDeviceInformation);
+    ok( r == STATUS_SUCCESS, "failed to get device info %08lx\n", r);
+
     
 
     r = NtClose(file);
