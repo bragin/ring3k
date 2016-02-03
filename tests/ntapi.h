@@ -613,6 +613,32 @@ typedef enum _TIMER_INFORMATION_CLASS {
 	TimerBasicInformation,
 } TIMER_INFORMATION_CLASS;
 
+typedef enum _FSINFOCLASS {
+    FileFsVolumeInformation = 1,
+    FileFsLabelInformation,
+    FileFsSizeInformation,
+    FileFsDeviceInformation,
+    FileFsAttributeInformation,
+    FileFsControlInformation,
+    FileFsFullSizeInformation,
+    FileFsObjectIdInformation,
+    FileFsDriverPathInformation,
+    FileFsVolumeFlagsInformation,
+    FileFsMaximumInformation
+} FS_INFORMATION_CLASS, *PFS_INFORMATION_CLASS;
+
+typedef struct _FILE_FS_ATTRIBUTE_INFORMATION {
+    ULONG FileSystemAttributes;
+    ULONG MaximumComponentNameLength;
+    ULONG FileSystemNameLength;
+    WCHAR FileSystemName[1];
+} FILE_FS_ATTRIBUTE_INFORMATION, *PFILE_FS_ATTRIBUTE_INFORMATION;
+
+typedef struct _FILE_FS_DEVICE_INFORMATION {
+	DEVICE_TYPE DeviceType;
+	ULONG       Characteristics;
+} FILE_FS_DEVICE_INFORMATION, *PFILE_FS_DEVICE_INFORMATION;
+
 typedef struct _TIMER_BASIC_INFORMATION {
 	LARGE_INTEGER TimeRemaining;
 	BOOLEAN SignalState;
@@ -712,6 +738,7 @@ NTSTATUS NTAPI NtQueryInformationAtom(USHORT,ATOM_INFORMATION_CLASS,PVOID,ULONG,
 NTSTATUS NTAPI NtQueryInformationJobObject(HANDLE,JOBOBJECTINFOCLASS,PVOID,ULONG,PULONG);
 NTSTATUS NTAPI NtQueryInformationProcess(HANDLE,PROCESS_INFORMATION_CLASS,PVOID,ULONG,PULONG);
 NTSTATUS NTAPI NtQueryInformationThread(HANDLE,THREADINFOCLASS,PVOID,ULONG,PULONG);
+  NTSTATUS NTAPI NtQueryVolumeInformationFile(HANDLE hFile,PIO_STATUS_BLOCK io,PVOID ptr,ULONG len,FS_INFORMATION_CLASS FsInformationClass);
 NTSTATUS NTAPI NtQueryTimer(HANDLE,TIMER_INFORMATION_CLASS,PVOID,ULONG,PULONG);
 NTSTATUS NTAPI NtQueryInformationToken(HANDLE,TOKEN_INFORMATION_CLASS,PVOID,ULONG,PULONG);
 NTSTATUS NTAPI NtQueryKey(HANDLE,KEY_INFORMATION_CLASS,PVOID,ULONG,PULONG);
