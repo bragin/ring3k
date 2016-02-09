@@ -3,7 +3,7 @@
 extern bool isDebugMode;
 
 Parser::Parser(QObject *parent) :
-    QObject(parent)
+    AbstractParser(parent)
 {
     m_ptr = 0;
 }
@@ -14,7 +14,11 @@ QSharedPointer<RegNode> Parser::parse(const QByteArray &array) {
 
     split(array);
 
+    qDebug()<<"splitted";
+
     checkHeader();
+
+    qDebug()<<"header checked";
 
     while (isSection()) {
         parseSection(root);
@@ -23,6 +27,10 @@ QSharedPointer<RegNode> Parser::parse(const QByteArray &array) {
     replaceHKEY(root);
 
     return root;
+}
+
+QString Parser::name() {
+    return "regedit";
 }
 
 void Parser::checkHeader() {
@@ -109,29 +117,39 @@ void Parser::addKeyValue(QSharedPointer<RegNode> node) {
 
 void Parser::split(const QByteArray &array) {
 
+    qDebug()<<"split";
+
     int i=0;
-    while (i < array.size()) {
+
+
+    while (i+1 < array.size()) {
         QByteArray a;
-        while (array.at(i) != 0 || array.at(i+1) != 0) {
+
+
+        while (!(array.at(i) == 0 && array.at(i+1) == '\n' && array.at(i+2) == 0)) {
             a.append(array.at(i));
             a.append(array.at(i+1));
             i += 2;
         }
-        i += 2;
+        i += 3;
+
 
         if (a.size()) {
             a.append('\0');
-            m_data.append(QString::fromUtf16(reinterpret_cast<const unsigned short*>(a.constData())));
+            auto str = QString::fromUtf16(reinterpret_cast<const unsigned short*>(a.constData()));
+            qDebug()<<"Adding:"<<str;
+            m_data.push_back(str);
         }
     }
 
+
     if (isDebugMode) {
         qDebug()<<m_data.size();
-        for (int i=0;i<30;i++) {
+        for (int i=0;i<30 && i<m_data.size();i++) {
             qDebug()<<m_data[i];
         }
         qDebug()<<"....";
-        for (int i=30;i>=0;i--) {
+        for (int i=std::min(30,m_data.size()-31);i>=0;i--) {
             qDebug()<<m_data[m_data.size() - 1 - i];
         }
     }

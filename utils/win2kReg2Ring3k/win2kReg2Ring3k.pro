@@ -20,10 +20,12 @@ SOURCES += main.cpp \
     regnode.cpp \
     regvalue.cpp \
     storage.cpp \
-    parser.cpp
+    parser.cpp \
+    abstractparser.cpp
 
 HEADERS += \
     regnode.h \
     regvalue.h \
     storage.h \
-    parser.h
+    parser.h \
+    abstractparser.h
