@@ -34,6 +34,7 @@ Requirements
 * isoinfo from http://cdrecord.berlios.de (read the CD)
 * On x86-64, the compiler should be able to generate 32-bit code
   (Debian users should install gcc-multilib, g++-multilib, ia32-libs)
+* Increased number of file descriptors (e.g. https://underyx.me/2015/05/18/raising-the-maximum-number-of-file-descriptors)
 
 Instructions
 ------------
