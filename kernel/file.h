@@ -68,6 +68,8 @@ public:
 	virtual NTSTATUS Write( PVOID Buffer, ULONG Length, ULONG *written );
 	virtual NTSTATUS QueryInformation( FILE_BASIC_INFORMATION& info );
 	virtual NTSTATUS QueryInformation( FILE_ATTRIBUTE_TAG_INFORMATION& info );
+	virtual NTSTATUS QueryInformation( FILE_NETWORK_OPEN_INFORMATION& info );
+	virtual NTSTATUS QueryInformation( FILE_POSITION_INFORMATION& info );
 	virtual NTSTATUS SetPosition( LARGE_INTEGER& ofs );
 	virtual NTSTATUS Remove();
 	int GetFD();
