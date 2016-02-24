@@ -541,6 +541,44 @@ void test_query_volume()
 
 }
 
+void test_query_file()
+{
+	WCHAR filename[] = L"\\??\\c:\\testfile.txt";
+	OBJECT_ATTRIBUTES oa;
+	HANDLE file;
+	IO_STATUS_BLOCK iosb;
+	UNICODE_STRING path;
+	NTSTATUS r;
+
+	init_us(&path, filename);
+	oa.Length = sizeof oa;
+	oa.RootDirectory = 0;
+	oa.ObjectName = &path;
+	oa.Attributes = OBJ_CASE_INSENSITIVE;
+	oa.SecurityDescriptor = 0;
+	oa.SecurityQualityOfService = 0;
+
+	//create file
+	r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_CREATE, FILE_NON_DIRECTORY_FILE, NULL, 0);
+	ok( r == STATUS_SUCCESS, "failed to create file %08lx\n", r);
+	ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status);
+	ok( iosb.Information == FILE_CREATED, "information wrong %08lx\n", iosb.Information);
+
+	FILE_BASIC_INFORMATION info;
+    memset(&info, 0, sizeof info);
+    r = NtQueryAttributesFile(&oa, &info);
+    ok( r == STATUS_SUCCESS, "failed to get basic attributes %08lx\n", r);
+    ok( info.CreationTime.QuadPart != 0, "time attributes must be non zero %08lx\n", info.CreationTime.QuadPart);
+    ok( info.FileAttributes == 0, "file attributes should be zero %08lx\n", info.FileAttributes);
+
+    r = NtClose(file);
+    ok( r == STATUS_SUCCESS, "failed to close file %08lx\n", r);
+
+    r = NtDeleteFile(&oa);
+    ok( r == STATUS_SUCCESS, "failed to delete file %08lx\n", r);
+}
+
 void NtProcessStartup( void )
 {
 	log_init();
@@ -548,6 +586,7 @@ void NtProcessStartup( void )
 	test_rtl_path();
 	test_file_create();
 	test_file_open();
+	test_query_file();
 	test_query_directory();
 	test_query_volume();
 
