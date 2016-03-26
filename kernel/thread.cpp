@@ -1883,6 +1883,9 @@ NTSTATUS NTAPI NtRaiseException( PEXCEPTION_RECORD ExceptionRecord, PCONTEXT Con
 	}
 
 	ERR("Breaking into debugger due to user-mode exception\n");
+	ERR("Exception code: %lx, flags: %lx, address: %p\n",
+		info.Rec.ExceptionCode, info.Rec.ExceptionFlags, info.Rec.ExceptionAddress);
+
 	Debugger();
 
 	// FIXME: perhaps we should blow away everything pushed on after the current frame

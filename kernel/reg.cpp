@@ -248,7 +248,7 @@ VOID PrintKey(REGKEY *key)
 	while (key) {
 		if (!key->Name.Buffer)
 			break;
-		TRACE("%pws\n",key->Name.Buffer);
+		TRACE("%pus\n",&key->Name);
 		key = key->Parent;
 	}
 }
@@ -678,6 +678,8 @@ NTSTATUS NTAPI NtQueryValueKey(
 		return r;
 
 	TRACE("%pus\n", &us);
+
+	PrintKey( key );
 
 	val = KeyFindValue( key, &us );
 	if (!val)

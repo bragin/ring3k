@@ -130,6 +130,11 @@ NTSTATUS PE_SECTION::Query( SECTION_IMAGE_INFORMATION *image )
 	image->ImageMachineType = 0x10000 | nt->FileHeader.Machine;
 	//image->ImageMachineType = 0;
 	//info.image.Unknown2[3];
+
+	if (image->StackCommit < 0x4000) image->StackCommit = 0x4000;
+
+	FIXME("Stack reserve size: 0x%lx, Stack commit size: 0x%lx\n", image->StackReserved, image->StackCommit);
+
 	return STATUS_SUCCESS;
 }
 
@@ -146,8 +151,9 @@ NTSTATUS CreateSection(SECTION **section, CFILE *file, PLARGE_INTEGER psz, ULONG
 {
 	SECTION *s;
 	BYTE *addr;
-	int fd, ofs = 0, r;
+	int fd, ofs = 0;
 	ULONG len;
+	NTSTATUS Status = STATUS_SUCCESS;
 
 	if (file)
 	{
@@ -165,10 +171,14 @@ NTSTATUS CreateSection(SECTION **section, CFILE *file, PLARGE_INTEGER psz, ULONG
 			len = psz->QuadPart;
 		else
 		{
-			r = lseek( fd, 0, SEEK_END );
-			if (r < 0)
-				return STATUS_UNSUCCESSFUL;
-			len = r;
+			FILE_STANDARD_INFORMATION FileInfo;
+			Status = file->QueryInformation(FileInfo);
+			if (Status < 0)
+			{
+				ERR("Error 0x%08x querying file length\n", Status);
+				return Status;
+			}
+			len = FileInfo.EndOfFile.QuadPart;
 		}
 	}
 	else
@@ -205,7 +215,7 @@ NTSTATUS CreateSection(SECTION **section, CFILE *file, PLARGE_INTEGER psz, ULONG
 
 	*section = s;
 
-	return STATUS_SUCCESS;
+	return Status;
 }
 
 IMAGE_NT_HEADERS *PE_SECTION::GetNtHeader()

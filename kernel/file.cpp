@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#include <wchar.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -32,8 +33,9 @@
 #include <errno.h>
 #include <linux/types.h>
 #include <linux/unistd.h>
+#include <linux/magic.h>
 #include <sys/syscall.h>
-
+#include <sys/statfs.h>
 #include "ntstatus.h"
 #define WIN32_NO_STATUS
 #include "windef.h"
@@ -42,6 +44,9 @@
 
 #include "debug.h"
 #include "object.h"
+
+#include <unistd.h>
+#include <sys/types.h>
 
 DEFAULT_DEBUG_CHANNEL(file);
 
@@ -57,6 +62,14 @@ WCHAR Lowercase(const WCHAR ch)
 	if (ch >= 'A' && ch <='Z')
 		return ch | 0x20;
 	return ch;
+}
+
+int lstrlenW(const wchar_t *a)
+{
+	short n = 0;
+	while (a[n])
+		n++;
+	return n;
 }
 
 IO_OBJECT::IO_OBJECT() :
@@ -173,6 +186,7 @@ NTSTATUS CFILE::Read( PVOID Buffer, ULONG Length, ULONG *bytes_read )
 	NTSTATUS r = STATUS_SUCCESS;
 	ULONG ofs = 0;
 	int ret = 1;
+
 	while (ofs < Length && ret)
 	{
 		BYTE *p = (BYTE*)Buffer+ofs;
@@ -183,6 +197,19 @@ NTSTATUS CFILE::Read( PVOID Buffer, ULONG Length, ULONG *bytes_read )
 			break;
 
 		ret = ::read( fd, p, len );
+
+#ifdef VERBOSE_DEBUG_OUTPUT
+		char filePath[500];
+		char test[500];
+		sprintf(test, "/proc/self/fd/%d", fd);
+
+		memset(filePath, 0, sizeof(filePath));
+		readlink(test, filePath, sizeof(filePath) - 1);
+		TRACE("file name %s\n", filePath);
+
+		TRACE("Reading fd %d, read: %ld, len %d\n", fd, ret, len);
+#endif
+
 		if (ret < 0)
 		{
 			r = STATUS_IO_DEVICE_ERROR;
@@ -297,6 +324,7 @@ public:
 	NTSTATUS Read( PVOID Buffer, ULONG Length, ULONG *bytes_read );
 	NTSTATUS Write( PVOID Buffer, ULONG Length, ULONG *bytes_read );
 	virtual NTSTATUS QueryInformation( FILE_ATTRIBUTE_TAG_INFORMATION& info );
+	virtual NTSTATUS QueryInformation( FILE_BASIC_INFORMATION& info );
 	DIRECTORY_ENTRY* GetNext();
 	bool Match(CUNICODE_STRING &name) const;
 	void ScanDir();
@@ -620,6 +648,14 @@ NTSTATUS DIRECTORY::QueryInformation( FILE_ATTRIBUTE_TAG_INFORMATION& info )
 	return STATUS_SUCCESS;
 }
 
+NTSTATUS DIRECTORY::QueryInformation( FILE_BASIC_INFORMATION& info )
+{
+	NTSTATUS r;
+	r = CFILE::QueryInformation( info );
+	info.FileAttributes |= FILE_ATTRIBUTE_DIRECTORY;
+	return r;
+}
+
 int CFILE::GetFD()
 {
 	return fd;
@@ -627,7 +663,19 @@ int CFILE::GetFD()
 
 NTSTATUS CFILE::QueryInformation( FILE_BASIC_INFORMATION& info )
 {
-	info.FileAttributes = FILE_ATTRIBUTE_ARCHIVE;
+	struct stat st;
+	if (fstat( fd, &st ))
+	{
+		ERR("Cannot get stats for file fd %d\n", fd);
+		return STATUS_UNSUCCESSFUL;
+	}
+
+	info.LastAccessTime.QuadPart = st.st_atime;
+	info.LastWriteTime.QuadPart = st.st_mtime;
+	info.ChangeTime.QuadPart = st.st_ctime;
+	info.CreationTime.QuadPart = st.st_ctime;		//fixme
+	info.FileAttributes = 0;
+
 	return STATUS_SUCCESS;
 }
 
@@ -645,10 +693,35 @@ NTSTATUS CFILE::QueryInformation( FILE_STANDARD_INFORMATION& info )
 	return STATUS_SUCCESS;
 }
 
+NTSTATUS CFILE::QueryInformation(FILE_NETWORK_OPEN_INFORMATION& info)
+{
+	struct stat st;
+	if (0<fstat(fd, &st))
+	{
+		ERR("Cannot get stats for file fd %d\n", fd);
+		return STATUS_UNSUCCESSFUL;
+	}
+	info.FileAttributes = FILE_ATTRIBUTE_ARCHIVE;
+	info.EndOfFile.QuadPart = st.st_size;
+	info.AllocationSize.QuadPart = (st.st_size + 0x1ff)&~0x1ff;
+
+	// TODO: Times are broken
+	FIXME("Not returning times for the file. EndOfFile: %lld!\n", info.EndOfFile.QuadPart);
+
+	return STATUS_SUCCESS;
+}
+
 NTSTATUS CFILE::QueryInformation( FILE_ATTRIBUTE_TAG_INFORMATION& info )
 {
 	info.FileAttributes = FILE_ATTRIBUTE_ARCHIVE;
 	info.ReparseTag = 0;
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS CFILE::QueryInformation( FILE_POSITION_INFORMATION& info )
+{
+	off_t position = lseek(fd, 0, SEEK_CUR);
+	info.CurrentByteOffset.QuadPart = position;
 	return STATUS_SUCCESS;
 }
 
@@ -946,6 +1019,32 @@ void InitDrives()
 	//InitCdrom();
 }
 
+NTSTATUS GetFsAttributeInformation(CFILE* File, FILE_FS_ATTRIBUTE_INFORMATION* FsAttribbute, const wchar_t** FilesystemName)
+{
+	struct statfs Buf;
+
+	if (fstatfs(File->GetFD(), &Buf) < 0)
+		return STATUS_UNSUCCESSFUL;
+
+	switch (Buf.f_type)
+	{
+	case EXT2_SUPER_MAGIC:
+		*FilesystemName = L"Ext2";
+		break;
+	default:
+		*FilesystemName = L"Unknown";
+		FIXME("Cannot get filesystem name");
+	}
+
+	FsAttribbute->FileSystemNameLength = sizeof(wchar_t) * lstrlenW(*FilesystemName);
+
+	FIXME("Get real params instead of hardcored\n");
+	FsAttribbute->MaximumComponentNameLength = Buf.f_namelen;
+	FsAttribbute->FileSystemAttribute = FILE_CASE_PRESERVED_NAMES | FILE_CASE_SENSITIVE_SEARCH | FILE_UNICODE_ON_DISK;
+
+	return STATUS_SUCCESS;
+}
+
 NTSTATUS NTAPI NtCreateFile(
 	PHANDLE FileHandle,
 	ACCESS_MASK DesiredAccess,
@@ -967,8 +1066,97 @@ NTSTATUS NTAPI NtCreateFile(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	TRACE("root %p attr %08lx %pus\n",
+	TRACE("DesiredAccess:\n");
+	ACCESS_MASK _DesiredAccess = DesiredAccess;
+
+#define CHECK(val, flag) if (val & flag) {TRACE(#flag"\n");val &= ~flag;}
+
+	CHECK(_DesiredAccess, DELETE);
+	CHECK(_DesiredAccess, FILE_READ_DATA);
+	CHECK(_DesiredAccess, FILE_READ_ATTRIBUTES);
+	CHECK(_DesiredAccess, FILE_READ_EA);
+	CHECK(_DesiredAccess, READ_CONTROL);
+	CHECK(_DesiredAccess, FILE_WRITE_DATA);
+	CHECK(_DesiredAccess, FILE_WRITE_ATTRIBUTES);
+	CHECK(_DesiredAccess, FILE_WRITE_EA);
+	CHECK(_DesiredAccess, FILE_APPEND_DATA);
+	CHECK(_DesiredAccess, WRITE_DAC);
+	CHECK(_DesiredAccess, WRITE_OWNER);
+	CHECK(_DesiredAccess, SYNCHRONIZE);
+	CHECK(_DesiredAccess, FILE_EXECUTE);
+	CHECK(_DesiredAccess, GENERIC_READ);
+	CHECK(_DesiredAccess, GENERIC_WRITE);
+	CHECK(_DesiredAccess, GENERIC_EXECUTE);
+	CHECK(_DesiredAccess, GENERIC_ALL);
+
+
+	if (_DesiredAccess != 0) {
+		TRACE("ALSO DesiredAccess %x\n", _DesiredAccess);
+	}
+
+	TRACE("ObjectAttributes root %p attr %08lx %pus\n",
 		  oa.RootDirectory, oa.Attributes, oa.ObjectName);
+
+	ULONG _Attributes = Attributes;
+	TRACE("FileAttributes:\n");
+	CHECK(_Attributes, FILE_ATTRIBUTE_READONLY);
+	CHECK(_Attributes, FILE_ATTRIBUTE_HIDDEN);
+	CHECK(_Attributes, FILE_ATTRIBUTE_SYSTEM);
+	CHECK(_Attributes, FILE_ATTRIBUTE_DIRECTORY);
+	CHECK(_Attributes, FILE_ATTRIBUTE_ARCHIVE);
+	CHECK(_Attributes, FILE_ATTRIBUTE_NORMAL);
+	CHECK(_Attributes, FILE_ATTRIBUTE_TEMPORARY);
+	CHECK(_Attributes, FILE_ATTRIBUTE_SPARSE_FILE);
+	CHECK(_Attributes, FILE_ATTRIBUTE_REPARSE_POINT);
+	CHECK(_Attributes, FILE_ATTRIBUTE_COMPRESSED);
+	CHECK(_Attributes, FILE_ATTRIBUTE_OFFLINE);
+	CHECK(_Attributes, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
+	CHECK(_Attributes, FILE_ATTRIBUTE_ENCRYPTED);
+
+	if (_Attributes != 0) {
+		TRACE("ALSO Attributes %x\n", _Attributes);
+	}
+
+	ULONG _ShareAccess = ShareAccess;
+	TRACE("ShareAccess:\n");
+	CHECK(_ShareAccess, FILE_SHARE_READ);
+	CHECK(_ShareAccess, FILE_SHARE_WRITE);
+	CHECK(_ShareAccess, FILE_SHARE_DELETE);
+
+	if (_ShareAccess != 0) {
+		TRACE("ALSO %x\n", _ShareAccess);
+	}
+
+	ULONG _CreateDisposition = CreateDisposition;
+	TRACE("CreateDisposition:\n");
+	CHECK(_CreateDisposition, FILE_SUPERSEDE);
+	CHECK(_CreateDisposition, FILE_CREATE);
+	CHECK(_CreateDisposition, FILE_OPEN);
+	CHECK(_CreateDisposition, FILE_OPEN_IF);
+	CHECK(_CreateDisposition, FILE_OVERWRITE);
+	CHECK(_CreateDisposition, FILE_OVERWRITE_IF);
+
+	if (_CreateDisposition != 0) {
+		TRACE("ALSO %x\n", _CreateDisposition);
+	}
+
+	ULONG _CreateOptions = CreateOptions;
+	TRACE("CreateOptions:\n");
+	CHECK(_CreateOptions, FILE_DIRECTORY_FILE);
+	CHECK(_CreateOptions, FILE_WRITE_THROUGH);
+	CHECK(_CreateOptions, FILE_SEQUENTIAL_ONLY);
+	CHECK(_CreateOptions, FILE_NO_INTERMEDIATE_BUFFERING);
+	CHECK(_CreateOptions, FILE_SYNCHRONOUS_IO_ALERT);
+	CHECK(_CreateOptions, FILE_SYNCHRONOUS_IO_NONALERT);
+	CHECK(_CreateOptions, FILE_NON_DIRECTORY_FILE);
+	CHECK(_CreateOptions, FILE_CREATE_TREE_CONNECTION);
+	CHECK(_CreateOptions, FILE_COMPLETE_IF_OPLOCKED);
+	CHECK(_CreateOptions, FILE_NO_EA_KNOWLEDGE);
+	CHECK(_CreateOptions, FILE_OPEN_FOR_RECOVERY);
+
+	if (_CreateOptions != 0) {
+		TRACE("ALSO %x\n", _CreateOptions);
+	}
 
 	r = VerifyForWrite( IoStatusBlock, sizeof *IoStatusBlock );
 	if (r < STATUS_SUCCESS)
@@ -1036,6 +1224,13 @@ NTSTATUS NTAPI NtFsControlFile(
 		  EventHandle, ApcRoutine, ApcContext, IoStatusBlock, FsControlCode,
 		  InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength );
 
+	ULONG FsCcDeviceType = FsControlCode >> 16;
+	ULONG FsCcAccess = (FsControlCode >> 14) & 0x3;
+	ULONG FsCcFunction = (FsControlCode >> 2) & 0xFFF;
+	ULONG FsCcMethod = FsControlCode & 0x3;
+
+	TRACE("Device Type: 0x%lx, Access: %ld, Function: %ld, Method: %ld\n", FsCcDeviceType, FsCcAccess, FsCcFunction, FsCcMethod);
+
 	IO_STATUS_BLOCK iosb;
 	IO_OBJECT *io = 0;
 	EVENT *event = 0;
@@ -1059,8 +1254,16 @@ NTSTATUS NTAPI NtFsControlFile(
 #endif
 	}
 
-	r = io->FSControl( event, iosb, FsControlCode,
-						InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength );
+	// Just return success
+	if (FsControlCode == FSCTL_IS_VOLUME_MOUNTED)
+	{
+		r = STATUS_SUCCESS;
+	}
+	else
+	{
+		r = io->FSControl(event, iosb, FsControlCode,
+			InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength);
+	}
 
 	iosb.Status = r;
 
@@ -1167,6 +1370,57 @@ NTSTATUS NTAPI NtQueryAttributesFile(
 		r = STATUS_OBJECT_TYPE_MISMATCH;
 	Release( obj );
 
+	r = CopyToUser( FileInformation, &info, sizeof info );
+	if (r < STATUS_SUCCESS)
+		return r;
+
+	return r;
+}
+
+NTSTATUS NTAPI NtQueryFullAttributesFile(
+	POBJECT_ATTRIBUTES ObjectAttributes,
+	PFILE_NETWORK_OPEN_INFORMATION FileInformation)
+{
+	COBJECT_ATTRIBUTES oa;
+	NTSTATUS r;
+	FILE_NETWORK_OPEN_INFORMATION info;
+
+	TRACE("%p %p\n", ObjectAttributes, FileInformation);
+
+	r = oa.CopyFromUser(ObjectAttributes);
+	if (r)
+		return r;
+
+	TRACE("root %p attr %08lx %pus\n",
+		oa.RootDirectory, oa.Attributes, oa.ObjectName);
+
+	if (!oa.ObjectName || !oa.ObjectName->Buffer)
+		return STATUS_INVALID_PARAMETER;
+
+	// FIXME: use oa.RootDirectory
+	OBJECT *obj = 0;
+	FILE_CREATE_INFO open_info(0, 0, 0, FILE_OPEN);
+	open_info.Path.Set(*oa.ObjectName);
+	open_info.Attributes = oa.Attributes;
+	r = OpenRoot(obj, open_info);
+	if (r < STATUS_SUCCESS)
+		return r;
+
+	CFILE *file = dynamic_cast<CFILE*>(obj);
+	if (file)
+	{
+
+		memset(&info, 0, sizeof info);
+		r = file->QueryInformation(info);
+	}
+	else
+		r = STATUS_OBJECT_TYPE_MISMATCH;
+	Release(obj);
+
+	r = CopyToUser( FileInformation, &info, sizeof info );
+	if (r < STATUS_SUCCESS)
+		return r;
+
 	return r;
 }
 
@@ -1177,9 +1431,79 @@ NTSTATUS NTAPI NtQueryVolumeInformationFile(
 	ULONG VolumeInformationLength,
 	FS_INFORMATION_CLASS VolumeInformationClass )
 {
-	FIXME("%p %p %p %lu %u\n", FileHandle, IoStatusBlock, VolumeInformation,
-		  VolumeInformationLength, VolumeInformationClass );
-	return STATUS_NOT_IMPLEMENTED;
+
+	TRACE("%x %p %p %ld %x\n", FileHandle, IoStatusBlock, VolumeInformation, VolumeInformationLength, VolumeInformationClass);
+	NTSTATUS r;
+	IO_OBJECT *io = 0;
+	IO_STATUS_BLOCK iosb;
+	iosb.Status = STATUS_SUCCESS;
+	iosb.Information = 0;
+
+	r = ObjectFromHandle( io, FileHandle, 0 );
+	if (r < STATUS_SUCCESS)
+		return r;
+
+	CFILE *File = dynamic_cast<CFILE*>( io );
+	if (!File) {
+		FIXME("Check is volume or external storage\n");
+		return STATUS_OBJECT_TYPE_MISMATCH;
+	}
+
+	r = VerifyForWrite( IoStatusBlock, sizeof *IoStatusBlock );
+	if (r < STATUS_SUCCESS)
+		return r;
+
+	switch (VolumeInformationClass)
+	{
+	case FileFsAttributeInformation:
+		{
+			const wchar_t *FilesystemName;
+			FILE_FS_ATTRIBUTE_INFORMATION Info;
+			r = GetFsAttributeInformation(File, &Info, &FilesystemName);
+			if (r < STATUS_SUCCESS)
+				return r;
+
+			r = CopyToUser( VolumeInformation, &Info, sizeof Info );
+			if (r < STATUS_SUCCESS)
+				return r;
+
+			const ULONG ofs = FIELD_OFFSET(FILE_FS_ATTRIBUTE_INFORMATION, FileSystemName);
+			PWSTR p = (PWSTR)((PBYTE)VolumeInformation + ofs);
+			r = CopyToUser( p, FilesystemName, Info.FileSystemNameLength );
+			if (r < STATUS_SUCCESS)
+				return r;
+
+			iosb.Information = ofs + Info.FileSystemNameLength;
+			r = CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
+			if (r < STATUS_SUCCESS)
+				return r;
+		}
+		break;
+	case FileFsDeviceInformation:
+		{
+			FIXME("Fake data returned\n");
+			FILE_FS_DEVICE_INFORMATION Info;
+			Info.DeviceType = FILE_DEVICE_DISK;
+			Info.Characteristics = FILE_DEVICE_IS_MOUNTED;
+
+			r = CopyToUser( VolumeInformation, &Info, sizeof Info );
+			if (r < STATUS_SUCCESS)
+				return r;
+
+			iosb.Information = sizeof Info;
+			r = CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
+			if (r < STATUS_SUCCESS)
+				return r;
+		}
+		break;
+	default:
+		FIXME("Unknown VolumeInformationClass %x\n", VolumeInformationClass);
+		r = STATUS_NOT_IMPLEMENTED;
+	}
+
+
+
+	return r;
 }
 
 NTSTATUS NTAPI NtReadFile(
@@ -1219,8 +1543,10 @@ NTSTATUS NTAPI NtReadFile(
 
 	r = CopyToUser( IoStatusBlock, &iosb, sizeof iosb );
 
-	if ( ofs != Length )
+	if ( ofs != Length ) {
+		ERR("Need to read %ld, but read %ld bytes\n", Length, ofs);
 		return STATUS_END_OF_FILE;
+	}
 
 	return STATUS_SUCCESS;
 }
@@ -1342,6 +1668,7 @@ NTSTATUS NTAPI NtSetInformationFile(
 		r = file->SetPipeInfo( info.pipe );
 		break;
 	default:
+		FIXME("Unknown FileInformationClass\n");
 		break;
 	}
 
@@ -1370,6 +1697,7 @@ NTSTATUS NTAPI NtQueryInformationFile(
 		FILE_BASIC_INFORMATION basic_info;
 		FILE_STANDARD_INFORMATION std_info;
 		FILE_ATTRIBUTE_TAG_INFORMATION attrib_info;
+		FILE_POSITION_INFORMATION position_info;
 	} info;
 	ULONG len;
 	memset( &info, 0, sizeof info );
@@ -1387,6 +1715,10 @@ NTSTATUS NTAPI NtQueryInformationFile(
 	case FileAttributeTagInformation:
 		len = sizeof info.attrib_info;
 		r = file->QueryInformation( info.attrib_info );
+		break;
+	case FilePositionInformation:
+		len = sizeof info.position_info;
+		r = file->QueryInformation( info.position_info );
 		break;
 	default:
 		FIXME("Unknown information class %d\n", FileInformationClass );
@@ -1531,18 +1863,4 @@ NTSTATUS NTAPI NtQueryDirectoryFile(
 	return r;
 }
 
-NTSTATUS NTAPI NtQueryFullAttributesFile(
-	POBJECT_ATTRIBUTES ObjectAttributes,
-	PFILE_NETWORK_OPEN_INFORMATION FileInformation)
-{
-	COBJECT_ATTRIBUTES oa;
-	NTSTATUS r;
 
-	r = oa.CopyFromUser( ObjectAttributes );
-	if (r < STATUS_SUCCESS)
-		return r;
-
-	FIXME("name = %pus\n", oa.ObjectName);
-
-	return STATUS_NOT_IMPLEMENTED;
-}

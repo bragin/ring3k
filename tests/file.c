@@ -170,7 +170,7 @@ void test_query_directory( void )
 	WCHAR dirname[] = L"\\??\\c:\\filetest";
 	WCHAR filename[] = L"\\??\\c:\\filetest\\edb.chk";
 	WCHAR edb[] = L"edb<\"*";
-	UNICODE_STRING path, mask, empty;
+	UNICODE_STRING path, mask;
 	OBJECT_ATTRIBUTES oa;
 	HANDLE dir, file;
 	IO_STATUS_BLOCK iosb;
@@ -179,10 +179,6 @@ void test_query_directory( void )
 
 	iosb.Status = ~0;
 	iosb.Information = ~0;
-
-	empty.Buffer = 0;
-	empty.Length = 0;
-	empty.MaximumLength = 0;
 
 	init_us(&mask, edb);
 
@@ -424,7 +420,7 @@ void test_file_create( void )
     r = NtWriteFile(file, NULL, NULL, NULL, &iosb, szWrite, strlen(szWrite), 0, 0);
     ok( r == STATUS_SUCCESS, "failed to write in file %08lx\n", r);
     ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status);
-    ok( iosb.Information == strlen(szWrite), "information wrong %d, strlen %d\n", iosb.Information, strlen(szWrite));
+    ok( iosb.Information == strlen(szWrite), "information wrong %ld, strlen %d\n", iosb.Information, strlen(szWrite));
 
 	r = NtClose(file);
 	ok( r == STATUS_SUCCESS, "failed to close file %08lx\n", r);
@@ -464,7 +460,7 @@ void test_file_create( void )
 
 	//ok, create new file with only read rights
 	r = NtCreateFile(&file, FILE_GENERIC_READ, &oa, &iosb, 0,
-                FILE_ATTRIBUTE_NORMAL, 0, FILE_CREATE, FILE_SYNCHRONOUS_IO_NONALERT, NULL, NULL);
+                FILE_ATTRIBUTE_NORMAL, 0, FILE_CREATE, FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
     ok( r == STATUS_SUCCESS, "failed to open file %08lx\n", r );
     ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status );
     ok( iosb.Information == FILE_CREATED, "information wrong %08lx\n", iosb.Information);
@@ -489,6 +485,100 @@ void test_file_create( void )
 
 }
 
+void test_query_volume()
+{
+	WCHAR filename[] = L"\\??\\c:\\testfile.txt";
+	OBJECT_ATTRIBUTES oa;
+	HANDLE file;
+	IO_STATUS_BLOCK iosb;
+	UNICODE_STRING path;
+	NTSTATUS r;
+
+	init_us(&path, filename);
+	oa.Length = sizeof oa;
+	oa.RootDirectory = 0;
+	oa.ObjectName = &path;
+	oa.Attributes = OBJ_CASE_INSENSITIVE;
+	oa.SecurityDescriptor = 0;
+	oa.SecurityQualityOfService = 0;
+
+	//create file
+	r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_CREATE, FILE_NON_DIRECTORY_FILE, NULL, 0);
+	ok( r == STATUS_SUCCESS, "failed to create file %08lx\n", r);
+	ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status);
+	ok( iosb.Information == FILE_CREATED, "information wrong %08lx\n", iosb.Information);
+
+	//bad way to allocate 
+	const int size = FIELD_OFFSET(FILE_FS_ATTRIBUTE_INFORMATION, FileSystemName) + 64;
+	char data[size];
+    FILE_FS_ATTRIBUTE_INFORMATION* fs_attr = (FILE_FS_ATTRIBUTE_INFORMATION*) data;
+
+    r = NtQueryVolumeInformationFile(0, &iosb, fs_attr, size, FileFsAttributeInformation);
+    ok( r == STATUS_INVALID_HANDLE, "wrong status %08lx\n", r);
+
+    r = NtQueryVolumeInformationFile(file, 0, fs_attr, size, FileFsAttributeInformation);
+    ok( r == STATUS_ACCESS_VIOLATION, "wrong status %08lx\n", r);
+
+    r = NtQueryVolumeInformationFile(file, &iosb, 0, size, FileFsAttributeInformation);
+    ok( r == STATUS_ACCESS_VIOLATION, "wrong status %08lx\n", r);
+
+    //ok
+    r = NtQueryVolumeInformationFile(file, &iosb, fs_attr, size, FileFsAttributeInformation);
+    ok( r == STATUS_SUCCESS, "failed to get volume information %08lx\n", r);
+
+    FILE_FS_DEVICE_INFORMATION* fs_device = (FILE_FS_DEVICE_INFORMATION*) data;
+    r = NtQueryVolumeInformationFile(file, &iosb, fs_device, size, FileFsDeviceInformation);
+    ok( r == STATUS_SUCCESS, "failed to get device info %08lx\n", r);
+
+    
+
+    r = NtClose(file);
+    ok( r == STATUS_SUCCESS, "failed to close file %08lx\n", r);
+
+    r = NtDeleteFile(&oa);
+    ok( r == STATUS_SUCCESS, "failed to delete file %08lx\n", r);
+
+}
+
+void test_query_file()
+{
+	WCHAR filename[] = L"\\??\\c:\\testfile.txt";
+	OBJECT_ATTRIBUTES oa;
+	HANDLE file;
+	IO_STATUS_BLOCK iosb;
+	UNICODE_STRING path;
+	NTSTATUS r;
+
+	init_us(&path, filename);
+	oa.Length = sizeof oa;
+	oa.RootDirectory = 0;
+	oa.ObjectName = &path;
+	oa.Attributes = OBJ_CASE_INSENSITIVE;
+	oa.SecurityDescriptor = 0;
+	oa.SecurityQualityOfService = 0;
+
+	//create file
+	r = NtCreateFile(&file, GENERIC_READ | GENERIC_WRITE, &oa, &iosb, 0,
+                FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_CREATE, FILE_NON_DIRECTORY_FILE, NULL, 0);
+	ok( r == STATUS_SUCCESS, "failed to create file %08lx\n", r);
+	ok( iosb.Status == STATUS_SUCCESS, "status wrong %08lx\n", iosb.Status);
+	ok( iosb.Information == FILE_CREATED, "information wrong %08lx\n", iosb.Information);
+
+	FILE_BASIC_INFORMATION info;
+    memset(&info, 0, sizeof info);
+    r = NtQueryAttributesFile(&oa, &info);
+    ok( r == STATUS_SUCCESS, "failed to get basic attributes %08lx\n", r);
+    ok( info.CreationTime.QuadPart != 0, "time attributes must be non zero %08lx\n", info.CreationTime.QuadPart);
+    ok( info.FileAttributes == 0, "file attributes should be zero %08lx\n", info.FileAttributes);
+
+    r = NtClose(file);
+    ok( r == STATUS_SUCCESS, "failed to close file %08lx\n", r);
+
+    r = NtDeleteFile(&oa);
+    ok( r == STATUS_SUCCESS, "failed to delete file %08lx\n", r);
+}
+
 void NtProcessStartup( void )
 {
 	log_init();
@@ -496,7 +586,9 @@ void NtProcessStartup( void )
 	test_rtl_path();
 	test_file_create();
 	test_file_open();
+	test_query_file();
 	test_query_directory();
+	test_query_volume();
 
 	log_fini();
 }

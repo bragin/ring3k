@@ -214,7 +214,10 @@ MBLOCK* AllocCorePages(BYTE* address, ULONG size)
 {
 	int fd = CreateMappingFD( size );
 	if (fd < 0)
+	{
+		ERR("Failed to create mapping fd, returning NULL!\n");
 		return NULL;
+	}
 	BACKING_STORE* backing = new ANONYMOUS_PAGES( fd );
 	MBLOCK *ret = new COREPAGES( address, size, backing );
 	backing->Release();

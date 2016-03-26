@@ -769,7 +769,7 @@ NTSTATUS NTAPI NtAllocateVirtualMemory(
 	NTSTATUS r;
 	PROCESS *process;
 
-	//trace("%p %p %lu %p %08lx %08lx\n", ProcessHandle, BaseAddress,
+	//TRACE("%p %p %lu %p %08lx %08lx\n", ProcessHandle, BaseAddress,
 	//		ZeroBits, AllocationSize, AllocationType, Protect);
 
 	/* check for a valid allocation type */
