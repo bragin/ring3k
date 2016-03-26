@@ -230,6 +230,7 @@ void FreeNtDLL( void )
 void DoCleanup( void )
 {
 	int num_threads = 0, num_processes = 0;
+	char process_name[1024];
 
 	for ( PROCESS_ITER pi(Processes); pi; pi.Next() )
 	{
@@ -237,7 +238,16 @@ void DoCleanup( void )
 		if (p->IsSignalled())
 			continue;
 		num_processes++;
-		fprintf(stderr, "process %04lx\n", p->Id);
+		fprintf(stderr, "process %04lx ", p->Id);
+		if (p->Exe)
+		{
+			//fprintf(stderr, "%ws\n",  (((PE_SECTION *)(p->Exe))->ImageFileName).Buffer);
+			SPrintUnicodeString(process_name, 1024, &(((PE_SECTION *)(p->Exe))->ImageFileName));
+			fprintf(stderr, "%s\n", process_name);
+		}
+		else
+			fprintf(stderr, "noname\n");
+
 		for ( SIBLING_ITER ti(p->Threads); ti; ti.Next() )
 		{
 			THREAD *t = ti;

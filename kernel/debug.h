@@ -50,7 +50,7 @@ void DebugPrintf(const char *file, const char *func, int line, const char *fmt, 
 void DumpMem(void *p, unsigned int len);
 void Die(const char *fmt, ...) __attribute__((format (printf,1,2))) __attribute__((noreturn));
 int dump_instruction(unsigned char *inst);
-void print_wide_string( unsigned short *str, int len );
+int SPrintUnicodeString( char *output, int len, UNICODE_STRING *us );
 int DebugPrintfEx(enum __kdbp_debug_class cls, struct __kdbp_debug_channel *channel, const char *func, const char *format, ...);
 
 extern int option_quiet;
