@@ -36,64 +36,71 @@ There are several aims for this project:
 ##Downloading
 
 To properly download this project, you have to execute several commands
+`
 git clone https://github.com/bragin/ring3k.git
 cd ring3k
 git submodule init
+`
 
 
 ##Instructions
 
 To run winlogon.exe, from the top level directory, do:
-
+`
 ./configure
 make
 ln -s /path/to/your/win2k.iso
 make test
 ./ring3k
-
+`
 To run a test (for example the semaphore test):
-
+`
 ./runtest sema
-
+`
 To run all the working tests, do:
-
+`
 make test
-
+`
+To run another executable please edit ./ring3k script
 
 ##Debugging ring3k using gdb
 
 As ring3k uses ptrace, it interferes with gdb.  You can still debug 
 ring3k coredumps as follows:
-
+`
  $ ulimit -c unlimited
  # echo "core-%p" > /proc/sys/kernel/core_pattern 
  # echo "1" > /proc/sys/kernel/core_uses_pid 
  $ ring3k --trace=core
-
+`
 If ring3k crashes, two core files will be generated, one for ring3k-client
 and one for ring3k-bin.  You can load them alternately into gdb as follows:
-
+`
  $ gdb --core=core-1234
  (gdb) symbol-file kernel/ring3k-bin
+`
 
 ##Debug Logs
 
 Logging system is very similar to Wine's one. Use R3KDEBUG env var to control
 your debug options.
 Syntax of R3KDEBUG variable:
+`
 R3KDEBUG=[class]+xxx,[class]-yyy,...
-
-Example: WINEDEBUG=+all,warn-heap
+`
+Example: `WINEDEBUG=+all,warn-heap`
 turns on all messages except warning heap messages
 
 ##Silenced debug messages
 
 Some messages are too annoying and unimportant so they have been downgraded
 from FIXME to TRACE. Please keep list of those places here.
+`
  "fixme: no access check\n" in OBJECT::AccessAllowed, object.cpp
  NtLockFile and NtUnlockFile in file.cpp
  NtFlushInstructionCache in ntcall.cpp
  NtProtectVirtualMemory in mem.cpp
+`
 
 ##Files
 
@@ -112,7 +119,7 @@ that has been written as much as possible.
 
 ##Coding style for kernel C++
 
-```
+```c++
 class CLASS_NAME
 {
 	ULONG m_Member;
@@ -130,33 +137,33 @@ Optionally, install kqemu
 One time setup:
 
 1. Create a 2G sparse disk image:
-    dd if=/dev/null of=win2k.img bs=1024 seek=2M
+    `dd if=/dev/null of=win2k.img bs=1024 seek=2M`
 
 2  Install Windows 2000:
-    qemu -hda win2k.img -cdrom win2k.iso -boot d -m 64
+    `qemu -hda win2k.img -cdrom win2k.iso -boot d -m 64`
 
 3. Run QEMU:
 
-	make qemu
+	`make qemu`
 
    OR
 
-	qemu -hda win2k.img -cdrom nttest.iso -m 64
+	`qemu -hda win2k.img -cdrom nttest.iso -m 64`
 
 4. To run a test, login and start cmd.exe.  To run the thread test, type:
 
-	d:
-	hostnt thread.exe
+	`d:
+	hostnt thread.exe`
 
 5. If you wish to rebuild a test case, do:
 
-	make
-	make cdrom
+	`make
+	make cdrom`
 
    To use the new ISO in QEMU, press <ALT><CTRL>2, to switch to the QEMU
    console and type:
 
-	eject cdrom
+	`eject cdrom`
 
    You need to make windows notice that there's no disk in the drive first by.
    Do this by pressing <ALT><CTRL>1, and try run the test case by up arrowing
@@ -164,7 +171,7 @@ One time setup:
    saying "There is no disk in drive...", switch back to the console using
    <ALT><CTRL>2, and type:
 
-	change cdrom nttest.iso
+	`change cdrom nttest.iso`
 
    Then <ALT><CTRL>1 back to Windows and select "Try Again"
    by up arrowing twice on the dialog and pressing enter.
@@ -179,23 +186,23 @@ when the image is booted.
 
 Mount the Windows 2000 disk image (as root):
 
-    mount -o loop,offset=32256 win2k.img /mnt/
+    `mount -o loop,offset=32256 win2k.img /mnt/`
 
 Backup winlogon.exe:
 
-    cp -i /mnt/winnt/system32/winlogon.exe /mnt/winnt/system32/_winlogon.exe
+    `cp -i /mnt/winnt/system32/winlogon.exe /mnt/winnt/system32/_winlogon.exe`
 
 Replace winlogon.exe:
 
-    cp -i ring3k/tools/minitris.exe /mnt/winnt/system32/winlogon.exe
+    `cp -i ring3k/tools/minitris.exe /mnt/winnt/system32/winlogon.exe`
 
 Unmount the Windows 2000 disk image:
 
-    umount /mnt
+    `umount /mnt`
 
 Run QEMU (as user, making sure you have umount'ed the image first!)
 
-    qemu -hda win2k.img
+    `qemu -hda win2k.img`
 
 
 ##Winlogon debugging
@@ -203,7 +210,7 @@ Run QEMU (as user, making sure you have umount'ed the image first!)
 
 Add the following to win.ini to enable Winlogon/GINA debug messages (https://technet.microsoft.com/en-US/aa374744):
 
-[WinlogonDebug]
-DebugFlags=Error,Init,Notify,SAS,State,Timeout,Trace,Warn
+`[WinlogonDebug]
+DebugFlags=Error,Init,Notify,SAS,State,Timeout,Trace,Warn`
 
 Don't forget to use checked build binaries for that!
