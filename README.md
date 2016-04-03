@@ -36,58 +36,56 @@ There are several aims for this project:
 ##Downloading
 
 To properly download this project, you have to execute several commands
-`
+```
 git clone https://github.com/bragin/ring3k.git
 cd ring3k
 git submodule init
-`
+```
 
 
 ##Instructions
 
 To run winlogon.exe, from the top level directory, do:
-`
+```
 ./configure
 make
 ln -s /path/to/your/win2k.iso
 make test
 ./ring3k
-`
+```
 To run a test (for example the semaphore test):
-`
-./runtest sema
-`
+`./runtest sema`
+
 To run all the working tests, do:
-`
-make test
-`
+`make test`
+
 To run another executable please edit ./ring3k script
 
 ##Debugging ring3k using gdb
 
 As ring3k uses ptrace, it interferes with gdb.  You can still debug 
 ring3k coredumps as follows:
-`
+```
  $ ulimit -c unlimited
  # echo "core-%p" > /proc/sys/kernel/core_pattern 
  # echo "1" > /proc/sys/kernel/core_uses_pid 
  $ ring3k --trace=core
-`
+```
 If ring3k crashes, two core files will be generated, one for ring3k-client
 and one for ring3k-bin.  You can load them alternately into gdb as follows:
-`
+```
  $ gdb --core=core-1234
  (gdb) symbol-file kernel/ring3k-bin
-`
+```
 
 ##Debug Logs
 
 Logging system is very similar to Wine's one. Use R3KDEBUG env var to control
 your debug options.
 Syntax of R3KDEBUG variable:
-`
-R3KDEBUG=[class]+xxx,[class]-yyy,...
-`
+
+`R3KDEBUG=[class]+xxx,[class]-yyy,...`
+
 Example: `WINEDEBUG=+all,warn-heap`
 turns on all messages except warning heap messages
 
@@ -95,12 +93,12 @@ turns on all messages except warning heap messages
 
 Some messages are too annoying and unimportant so they have been downgraded
 from FIXME to TRACE. Please keep list of those places here.
-`
+```
  "fixme: no access check\n" in OBJECT::AccessAllowed, object.cpp
  NtLockFile and NtUnlockFile in file.cpp
  NtFlushInstructionCache in ntcall.cpp
  NtProtectVirtualMemory in mem.cpp
-`
+```
 
 ##Files
 
