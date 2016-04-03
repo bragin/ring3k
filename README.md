@@ -40,6 +40,7 @@ To properly download this project, you have to execute several commands
 git clone https://github.com/bragin/ring3k.git
 cd ring3k
 git submodule init
+git submodule update
 ```
 
 
