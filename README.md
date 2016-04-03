@@ -1,16 +1,14 @@
 
- Ring 3 Kernel
+#Ring 3 Kernel
 
- Copyright (C) 2006-2009 Mike McCormack
+###Copyright (C) 2006-2009 Mike McCormack
 
-About
------
+##About
 
 This project aims to load the userspace of an NT system
 into a user space controlled by a usermode kernel.
 
-Why?
-----
+##Why?
 
 There are several aims for this project:
 
@@ -20,8 +18,7 @@ There are several aims for this project:
 * make application's address space indistinguishable from native Windows
 * move closed and non-free code out of ring 0
 
-Requirements
-------------
+##Requirements
 
 * A Linux (tm) 2.6.x kernel patches applied.
 * A Windows 2000 (tm) CD
@@ -36,10 +33,17 @@ Requirements
   (Debian users should install gcc-multilib, g++-multilib, ia32-libs)
 * Increased number of file descriptors (e.g. https://underyx.me/2015/05/18/raising-the-maximum-number-of-file-descriptors)
 
-Instructions
-------------
+##Downloading
 
-To run smss.exe, from the top level directory, do:
+To properly download this project, you have to execute several commands
+git clone https://github.com/bragin/ring3k.git
+cd ring3k
+git submodule init
+
+
+##Instructions
+
+To run winlogon.exe, from the top level directory, do:
 
 ./configure
 make
@@ -56,8 +60,7 @@ To run all the working tests, do:
 make test
 
 
-Debugging ring3k using gdb
---------------------------
+##Debugging ring3k using gdb
 
 As ring3k uses ptrace, it interferes with gdb.  You can still debug 
 ring3k coredumps as follows:
@@ -73,8 +76,8 @@ and one for ring3k-bin.  You can load them alternately into gdb as follows:
  $ gdb --core=core-1234
  (gdb) symbol-file kernel/ring3k-bin
 
-Debug Logs
---------------------------
+##Debug Logs
+
 Logging system is very similar to Wine's one. Use R3KDEBUG env var to control
 your debug options.
 Syntax of R3KDEBUG variable:
@@ -83,8 +86,8 @@ R3KDEBUG=[class]+xxx,[class]-yyy,...
 Example: WINEDEBUG=+all,warn-heap
 turns on all messages except warning heap messages
 
-Silenced debug messages
---------------------------
+##Silenced debug messages
+
 Some messages are too annoying and unimportant so they have been downgraded
 from FIXME to TRACE. Please keep list of those places here.
  "fixme: no access check\n" in OBJECT::AccessAllowed, object.cpp
@@ -92,8 +95,8 @@ from FIXME to TRACE. Please keep list of those places here.
  NtFlushInstructionCache in ntcall.cpp
  NtProtectVirtualMemory in mem.cpp
 
-Files
------
+##Files
+
 kernel/     - implementation of the userspace kernel
 libudis86/  - the udis86 disassembler
 libmspack/  - code to extract files from the windows install disk
@@ -101,14 +104,13 @@ tests/      - test cases that run on both NT and the loader
 tools/      - a collection of windows executables
 documents/  - a few notes
 
-Development
------------
+##Development
 
 Development of new code and bug fixes should be done with test cases.
 The test case should show how Windows functions, and should test the code
 that has been written as much as possible.
 
-Coding style for kernel C++
+##Coding style for kernel C++
 
 ```
 class CLASS_NAME
@@ -121,8 +123,7 @@ class CLASS_NAME
 In case the class name conflicts with the Win32/NT typename, then the name should be prefixed with C, like CBITMAP
 
 
-Using QEMU to run tests
------------------------
+##Using QEMU to run tests
 
 Optionally, install kqemu
 
@@ -169,8 +170,8 @@ One time setup:
    by up arrowing twice on the dialog and pressing enter.
 
 
-Starting minitris.exe or pixels.exe on a Windows 2000 QEMU image
-----------------------------------------------------------------
+##Starting minitris.exe or pixels.exe on a Windows 2000 QEMU image
+
 
 Assume you have a windows 2000 install on QEMU in a file named win2k.img,
 you can copy minitris.exe over the winlogon.exe on there and it will run
@@ -197,7 +198,7 @@ Run QEMU (as user, making sure you have umount'ed the image first!)
     qemu -hda win2k.img
 
 
-Winlogon debugging
+##Winlogon debugging
 ----------------------------------------------------------------
 
 Add the following to win.ini to enable Winlogon/GINA debug messages (https://technet.microsoft.com/en-US/aa374744):
