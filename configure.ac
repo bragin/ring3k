@@ -107,7 +107,8 @@ AC_CONFIG_FILES(
 	programs/pixels/Makefile
 	programs/winemine/Makefile
 	programs/winlogon/Makefile
-	regedit/Makefile
+	utils/Makefile
+	utils/regedit/Makefile
 	unpack/Makefile
 )
 
