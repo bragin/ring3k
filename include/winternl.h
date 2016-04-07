@@ -1714,6 +1714,12 @@ typedef struct _RTL_HANDLE_TABLE
 /* options for pipe's type */
 #define FILE_PIPE_TYPE_MESSAGE          0x00000001
 #define FILE_PIPE_TYPE_BYTE             0x00000000
+/* options for pipe's message mode */
+#define FILE_PIPE_MESSAGE_MODE          0x00000001
+#define FILE_PIPE_BYTE_STREAM_MODE      0x00000000
+/* options for pipe's blocking mode */
+#define FILE_PIPE_COMPLETE_OPERATION    0x00000001
+#define FILE_PIPE_QUEUE_OPERATION       0x00000000
 /* and client / server end */
 #define FILE_PIPE_SERVER_END            0x00000001
 #define FILE_PIPE_CLIENT_END            0x00000000
