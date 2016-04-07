@@ -1177,6 +1177,32 @@ NTSTATUS NTAPI NtCreateFile(
 	info.Path.Set( *oa.ObjectName );
 	info.Attributes = oa.Attributes;
 
+	// Check for NPFS aliases (hardcoded here for now)
+	CUNICODE_STRING NpfsLsassAlias[4];
+	NpfsLsassAlias[0].Set(L"\\??\\PIPE\\protected_storage");
+	NpfsLsassAlias[1].Set(L"\\??\\PIPE\\netlogon");
+	NpfsLsassAlias[2].Set(L"\\??\\PIPE\\lsarpc");
+	NpfsLsassAlias[3].Set(L"\\??\\PIPE\\samr");
+
+	CUNICODE_STRING NpfsNtsvcsAlias;
+	NpfsNtsvcsAlias.Set(L"\\??\\PIPE\\svcctl");
+
+	if (info.Path.IsEqual(NpfsNtsvcsAlias))
+	{
+		info.Path.Set(L"\\??\\PIPE\\ntsvcs");
+	}
+	else
+	{
+		for (ULONG i = 0; i < sizeof(NpfsLsassAlias) / sizeof(NpfsLsassAlias[0]); i++)
+		{
+			if (info.Path.IsEqual(NpfsLsassAlias[i]))
+			{
+				info.Path.Set(L"\\??\\PIPE\\lsass");
+				break;
+			}
+		}
+	}
+
 	OBJECT *obj = 0;
 	r = OpenRoot( obj, info );
 	if (r >= STATUS_SUCCESS)
