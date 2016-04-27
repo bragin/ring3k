@@ -224,7 +224,7 @@ void pipe_client( PVOID param )
 	IO_STATUS_BLOCK iosb;
 	HANDLE client = 0, event = 0, device = 0;
 	NTSTATUS r;
-	LARGE_INTEGER timeout;
+	//LARGE_INTEGER timeout;
 	ULONG i;
 	BYTE buf[0x100];
 	PFILE_PIPE_WAIT_FOR_BUFFER pwfb;
@@ -245,7 +245,7 @@ void pipe_client( PVOID param )
 	ok(r == STATUS_SUCCESS, "return wrong (%08lx)\n", r);
 
 	// wait named pipe here
-	timeout.QuadPart = -10000LL;
+	//timeout.QuadPart = -10000LL;
 	r = NtOpenFile( &device, SYNCHRONIZE | FILE_READ_ATTRIBUTES, &oa, &iosb, FILE_SHARE_READ|FILE_SHARE_WRITE, FILE_DEVICE_IS_MOUNTED );
 	ok(r == STATUS_SUCCESS, "return wrong %08lx\n", r);
 

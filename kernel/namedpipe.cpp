@@ -450,11 +450,17 @@ NTSTATUS PIPE_SERVER::Read( PVOID buffer, ULONG length, ULONG *read )
 
 	// only allow reading in the correct state
 	if (State != pipe_connected)
+	{
+		ERR("Reading from pipe which is not connected. Pipe state %d\n", State);
 		return STATUS_PIPE_BROKEN;
+	}
 
 	// only allow one reader at a time
 	if (Thread)
+	{
+		ERR("Reading from a busy pipe\n");
 		return STATUS_PIPE_BUSY;
+	}
 
 	// get a message
 	msg = ReceivedMessages.Head();
@@ -599,11 +605,17 @@ NTSTATUS PIPE_CLIENT::Read( PVOID buffer, ULONG length, ULONG *read )
 
 	// only allow reading in the correct state
 	if (Server == NULL || Server->State != PIPE_SERVER::pipe_connected)
+	{
+		ERR("Reading from pipe which is not connected, or server is missing. Server %p, Server->Pipe state %d\n", Server, Server ? Server->State : -1);
 		return STATUS_PIPE_BROKEN;
+	}
 
 	// only allow one reader at a time
 	if (Thread)
+	{
+		ERR("Reading from a busy pipe\n");
 		return STATUS_PIPE_BUSY;
+	}
 
 	// get a message
 	msg = Server->SentMessages.Head();
@@ -637,7 +649,11 @@ NTSTATUS PIPE_CLIENT::Write( PVOID buffer, ULONG length, ULONG *written )
 	PIPE_MESSAGE *msg = PIPE_MESSAGE::AllocPipeMessage( length );
 
 	if (Server == NULL || Server->State != PIPE_SERVER::pipe_connected)
+	{
+		ERR("Writing to pipe which is not connected, or server is missing. Server %p, Server->Pipe state %d\n", Server, Server ? Server->State : -1);
+
 		return STATUS_PIPE_BROKEN;
+	}
 
 	NTSTATUS r;
 	r = CopyFromUser( msg->DataPtr(), buffer, length );

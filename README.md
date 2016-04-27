@@ -27,6 +27,7 @@ There are several aims for this project:
 * glibc with the NPTL version of pthreads
 * gcc, g++ 4.2.1 or so
 * libxml2 (for registry code)
+* libqt4-dev (for regedit)
 * cabextract (extract windows cab files)
 * isoinfo from http://cdrecord.berlios.de (read the CD)
 * On x86-64, the compiler should be able to generate 32-bit code
