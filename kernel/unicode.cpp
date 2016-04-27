@@ -200,7 +200,7 @@ ULONG CUNICODE_STRING::Utf8ToWChar( const unsigned char *str, ULONG len, WCHAR *
 	return n;
 }
 
-ULONG CUNICODE_STRING::WCharToUtf8( char *str, ULONG max )
+ULONG CUNICODE_STRING::WCharToUtf8( char *str, ULONG max ) const
 {
 	ULONG n = 0;
 	for (ULONG i=0; i<Length/2; i++)
@@ -349,6 +349,47 @@ bool CUNICODE_STRING::Compare( PUNICODE_STRING b, BOOLEAN case_insensitive ) con
 		return FALSE;
 	}
 	return TRUE;
+}
+
+NTSTATUS CUNICODE_STRING::Concat(const UNICODE_STRING& str)
+{
+	return Concat( str.Buffer, str.Length );
+}
+
+NTSTATUS CUNICODE_STRING::Concat(const CUNICODE_STRING& str)
+{
+	return Concat( dynamic_cast<const UNICODE_STRING&>(str) );
+}
+
+NTSTATUS CUNICODE_STRING::Concat(PCWSTR Str)
+{
+	return Concat( Str, StrLenW(Str) );
+}
+
+bool CUNICODE_STRING::IsEmpty() const
+{
+	return Length == 0;
+}
+
+NTSTATUS CUNICODE_STRING::Concat(PCWSTR Str, LONG StrLen)
+{
+	TRACE("Concating %S len %ld\n", Str, StrLen);
+	if (Buf)
+		delete[] Buf;
+
+	Buf = new WCHAR[Length + StrLen + 1];
+	if (!Buf)
+		return STATUS_NO_MEMORY;
+
+	memcpy(Buf, Buffer, Length * sizeof(WCHAR));
+	memcpy(Buf + Length, Str, StrLen * sizeof(WCHAR));
+	Buf[Length + StrLen] = 0;
+
+	Buffer = Buf;
+	Length += StrLen;
+	MaximumLength += StrLen;
+
+	return STATUS_SUCCESS;
 }
 
 COBJECT_ATTRIBUTES::COBJECT_ATTRIBUTES()

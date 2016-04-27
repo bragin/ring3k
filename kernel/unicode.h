@@ -49,12 +49,23 @@ public:
 		return Copy( (PCWSTR) str );
 	}
 	bool IsEqual( const UNICODE_STRING& ptr ) const;
+	bool IsEmpty() const;
 	bool Compare( PUNICODE_STRING b, BOOLEAN case_insensitive ) const;
 	~CUNICODE_STRING();
 	CUNICODE_STRING& operator=(const CUNICODE_STRING& in);
 	void Clear();
 	NTSTATUS CopyWStrFromUser( PWSTR String, ULONG Length );
-	ULONG WCharToUtf8( char *str, ULONG max );
+	ULONG WCharToUtf8( char *str, ULONG max ) const;
+	NTSTATUS Concat( const CUNICODE_STRING& str );
+	NTSTATUS Concat( const UNICODE_STRING& str );
+	NTSTATUS Concat( PCWSTR str );
+	NTSTATUS Concat( const wchar_t* str )
+	{
+		return Concat( (PCWSTR) str);
+	}
+
+private:
+	NTSTATUS Concat( PCWSTR str, LONG size);
 };
 
 class COBJECT_ATTRIBUTES : public OBJECT_ATTRIBUTES
