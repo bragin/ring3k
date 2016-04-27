@@ -628,6 +628,7 @@ MINGW32AR
 MINGW32AS
 MINGW32STRIP
 MINGW32CC
+REDIS_SERVER
 QT_QMAKE
 FREETYPEINCL
 FREETYPELIBS
@@ -4103,6 +4104,50 @@ done
 test -n "$QT_QMAKE" || QT_QMAKE="true"
 
 
+for ac_prog in redis-server
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_REDIS_SERVER+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$REDIS_SERVER"; then
+  ac_cv_prog_REDIS_SERVER="$REDIS_SERVER" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_REDIS_SERVER="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+REDIS_SERVER=$ac_cv_prog_REDIS_SERVER
+if test -n "$REDIS_SERVER"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $REDIS_SERVER" >&5
+$as_echo "$REDIS_SERVER" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$REDIS_SERVER" && break
+done
+test -n "$REDIS_SERVER" || REDIS_SERVER="true"
+
+
 for ac_prog in i686-pc-mingw32-gcc i586-mingw32msvc-cc no
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -4436,7 +4481,7 @@ done
 
 MAKE_RULES=Make.rules
 
-ac_config_files="$ac_config_files Make.rules Makefile kernel/Makefile tests/Makefile tools/Makefile libudis86/Makefile libmspack/Makefile libntreg/Makefile programs/Makefile programs/clock/Makefile programs/minitris/Makefile programs/minshell/Makefile programs/pixels/Makefile programs/winemine/Makefile programs/winlogon/Makefile utils/Makefile utils/regedit/Makefile unpack/Makefile"
+ac_config_files="$ac_config_files Make.rules Makefile kernel/Makefile tests/Makefile tools/Makefile libudis86/Makefile libmspack/Makefile libntreg/Makefile programs/Makefile programs/clock/Makefile programs/minitris/Makefile programs/minshell/Makefile programs/pixels/Makefile programs/winemine/Makefile programs/winlogon/Makefile utils/Makefile utils/regedit/Makefile unpack/Makefile hiredis/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -5148,6 +5193,7 @@ do
     "utils/Makefile") CONFIG_FILES="$CONFIG_FILES utils/Makefile" ;;
     "utils/regedit/Makefile") CONFIG_FILES="$CONFIG_FILES utils/regedit/Makefile" ;;
     "unpack/Makefile") CONFIG_FILES="$CONFIG_FILES unpack/Makefile" ;;
+    "hiredis/Makefile") CONFIG_FILES="$CONFIG_FILES hiredis/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -5811,4 +5857,10 @@ if test "$QT_QMAKE" = "true"
 then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Qt is not present. (Debian package is libqt4-dev)" >&5
 $as_echo "$as_me: WARNING: Qt is not present. (Debian package is libqt4-dev)" >&2;}
+fi
+
+if test "$REDIS_SERVER" = "true"
+then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: redis-server is not present. (Debian package is redis-server)" >&5
+$as_echo "$as_me: WARNING: redis-server is not present. (Debian package is redis-server)" >&2;}
 fi

@@ -26,8 +26,10 @@ FREETYPEINCL = @FREETYPEINCL@
 
 INCLUDE_DIRS += $(srcdir)
 INCLUDE_DIRS += $(srcdir)/../include
+INCLUDE_DIRS += $(srcdir)/../hiredis
 INCLUDE_DIRS += $(srcdir)/../libudis86
 INCLUDE_DIRS += ../libudis86
+INCLUDE_DIRS += ../hiredis
 INCLUDE_DIRS += $(srcdir)/../include/common
 
 CFLAGS_COMMON += $(FREETYPEINCL)
@@ -43,6 +45,7 @@ LIBS += @XML2LIBS@
 LIBS += @LIBSDL@
 LIBS += @FREETYPELIBS@
 LIBS += ../libudis86/libudis86.a
+LIBS += ../hiredis/hiredis.a
 
 LDFLAGS = -rdynamic
 
@@ -92,6 +95,7 @@ CPP_SOURCES = \
 	queue.cpp \
 	random.cpp \
 	reg.cpp \
+	reg_new.cpp \
 	region.cpp \
 	sdl.cpp \
 	section.cpp \

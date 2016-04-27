@@ -74,6 +74,9 @@ fi
 dnl Check for qmake
 AC_CHECK_PROGS(QT_QMAKE, qmake, true)
 
+dnl Check for redis
+AC_CHECK_PROGS(REDIS_SERVER, redis-server, true)
+
 dnl Check for mingw32 cross compilation environment
 AC_CHECK_PROGS(MINGW32CC,i686-pc-mingw32-gcc i586-mingw32msvc-cc no)
 AC_CHECK_PROGS(MINGW32STRIP,i686-pc-mingw32-strip i586-mingw32msvc-strip no)
@@ -110,6 +113,7 @@ AC_CONFIG_FILES(
 	utils/Makefile
 	utils/regedit/Makefile
 	unpack/Makefile
+	hiredis/Makefile
 )
 
 AC_OUTPUT
@@ -146,4 +150,9 @@ fi
 if test "$QT_QMAKE" = "true"
 then
 	AC_MSG_WARN([Qt is not present. (Debian package is libqt4-dev)])
+fi
+
+if test "$REDIS_SERVER" = "true"
+then
+	AC_MSG_WARN([redis-server is not present. (Debian package is redis-server)])
 fi
