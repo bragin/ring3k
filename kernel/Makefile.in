@@ -94,8 +94,9 @@ CPP_SOURCES = \
 	ptrace_base.cpp \
 	queue.cpp \
 	random.cpp \
-	reg.cpp \
-	reg_new.cpp \
+	registry_xml.cpp \
+	registry_nt.cpp \
+	regkey_interface.cpp \
 	region.cpp \
 	sdl.cpp \
 	section.cpp \

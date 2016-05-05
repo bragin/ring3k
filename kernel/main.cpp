@@ -51,6 +51,8 @@
 #include "event.h"
 #include "symlink.h"
 #include "alloc_bitmap.h"
+#include "registry_interface.h"
+#include "registry_xml.h"
 
 DEFAULT_DEBUG_CHANNEL(main);
 
@@ -60,6 +62,18 @@ OBJECT *NtDLLSection;
 int option_debug = 0;
 ULONG KiIntSystemCall = 0;
 bool forced_quit;
+IREGISTRY* Registry = NULL;
+
+struct registry_ident {
+	const char* name;
+	IREGISTRY* (*create)();
+};
+
+struct registry_ident registry_list[] = {
+	{"xml", REGISTRY_XML::Create},
+	{NULL, NULL},
+};
+
 
 class DEFAULT_SLEEPER : public SLEEPER
 {
@@ -321,6 +335,15 @@ trace_option trace_option_list[] =
 
 int& OptionTrace = trace_option_list[0].enabled;
 
+void PrintRegistryDrivers()
+{
+	int i=0;
+	while (registry_list[i].name) {
+		printf("%s ", registry_list[i].name);
+		i++;
+	}
+}
+
 void Usage( void )
 {
 	const char usage[] =
@@ -329,6 +352,7 @@ void Usage( void )
 		"  -d,--debug    break into debugger on exceptions\n"
 		"  -g,--graphics select screen driver\n"
 		"  -h,--help     print this message\n"
+		"  -r,--registry select registry driver\n"
 		"  -q,--quiet    quiet, suppress debug messages\n"
 		"  -t,--trace=<options>    enable tracing\n"
 		"  -v,--version  print version\n\n"
@@ -344,6 +368,10 @@ void Usage( void )
 	// list the graphics drivers
 	printf("  graphics drivers: ");
 	ListGraphicsDrivers();
+	printf("\n");
+
+	printf("  registry drivers: ");
+	PrintRegistryDrivers();
 	printf("\n");
 
 	printf("\n");
@@ -406,7 +434,7 @@ void ParseTraceOptions( const char *options )
 		else
 			len = strlen( p );
 
-		len = min( len, sizeof str );
+		len = std::min( len, sizeof str );
 		memcpy( str, p, len );
 		str[len] = 0;
 		EnableTrace( str );
@@ -414,6 +442,23 @@ void ParseTraceOptions( const char *options )
 		if ( *p == ',')
 			p++;
 	}
+}
+
+bool SetRegistryDriver(const char* arg)
+{
+	int i = 0;
+	while (registry_list[i].name) {
+		if (strcmp(registry_list[i].name, arg) == 0)
+		{
+			if (registry_list[i].create) {
+				printf("Creating '%s' registry driver\n", arg);
+				Registry = registry_list[i].create();
+				return true;
+			}
+		}
+		i++;
+	}
+	return false;
 }
 
 void ParseOptions(int argc, char **argv)
@@ -428,10 +473,11 @@ void ParseOptions(int argc, char **argv)
 			{"help", no_argument, NULL, 'h' },
 			{"trace", optional_argument, NULL, 't' },
 			{"version", no_argument, NULL, 'v' },
+			{"registry", required_argument, NULL, 'r'},
 			{NULL, 0, 0, 0 },
 		};
 
-		int ch = getopt_long(argc, argv, "g:dhqt::v?", long_options, &option_index );
+		int ch = getopt_long(argc, argv, "g:r:dhqt::v?", long_options, &option_index );
 		if (ch == -1)
 			break;
 
@@ -454,6 +500,12 @@ void ParseOptions(int argc, char **argv)
 		case 't':
 			ParseTraceOptions( optarg );
 			break;
+		case 'r':
+			if (!SetRegistryDriver( optarg ))
+			{
+				fprintf(stderr, "unknown registry driver %s\n", optarg);
+				Usage();
+			}
 		case 'v':
 			Version();
 		}
@@ -477,6 +529,13 @@ int main(int argc, char **argv)
 	{
 		exename = argv[optind];
 	}
+
+
+	if (!Registry)
+	{
+		Registry = REGISTRY_XML::Create();
+	}
+	printf("created\n");
 
 	// Read debug channels options
 	DebugInit();
@@ -503,7 +562,6 @@ int main(int argc, char **argv)
 	SYSTEM_TIME_OF_DAY_INFORMATION dummy;
 	GetSystemTimeOfDay( dummy );
 
-	InitRegistry();
 	FIBER::FibersInit();
 	InitRoot();
 	CreateDirectoryObject( (PWSTR) L"\\" );
@@ -547,7 +605,6 @@ int main(int argc, char **argv)
 
 	FreeRoot();
 	FIBER::FibersFinish();
-	FreeRegistry();
 	FreeNtDLL();
 
 	return r;

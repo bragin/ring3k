@@ -50,7 +50,7 @@ public:
 	}
 	bool IsEqual( const UNICODE_STRING& ptr ) const;
 	bool IsEmpty() const;
-	bool Compare( PUNICODE_STRING b, BOOLEAN case_insensitive ) const;
+	bool Compare( const UNICODE_STRING* b, BOOLEAN case_insensitive ) const;
 	~CUNICODE_STRING();
 	CUNICODE_STRING& operator=(const CUNICODE_STRING& in);
 	void Clear();
@@ -63,10 +63,13 @@ public:
 	{
 		return Concat( (PCWSTR) str);
 	}
+	ULONG SkipSlashes();
 
 private:
 	NTSTATUS Concat( PCWSTR str, LONG size);
 };
+
+ULONG SkipSlashes(UNICODE_STRING* name);
 
 class COBJECT_ATTRIBUTES : public OBJECT_ATTRIBUTES
 {
@@ -82,5 +85,5 @@ public:
 UINT StrLenW( LPCWSTR str );
 LPWSTR StrCpyW( LPWSTR dest, LPCWSTR src );
 LPWSTR StrCatW( LPWSTR dest, LPCWSTR src );
-
+INT StrnCmpW( WCHAR *a, WCHAR *b, ULONG n );
 #endif // __UNICODE_H__

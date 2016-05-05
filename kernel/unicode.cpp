@@ -331,7 +331,7 @@ CUNICODE_STRING& CUNICODE_STRING::operator=(const CUNICODE_STRING& in)
 }
 
 // returns TRUE if strings are the same
-bool CUNICODE_STRING::Compare( PUNICODE_STRING b, BOOLEAN case_insensitive ) const
+bool CUNICODE_STRING::Compare( const UNICODE_STRING *b, BOOLEAN case_insensitive ) const
 {
 	if (Length != b->Length)
 		return FALSE;
@@ -390,6 +390,36 @@ NTSTATUS CUNICODE_STRING::Concat(PCWSTR Str, LONG StrLen)
 	MaximumLength += StrLen;
 
 	return STATUS_SUCCESS;
+}
+
+ULONG CUNICODE_STRING::SkipSlashes()
+{
+	ULONG len;
+
+	// skip slashes
+	len = 0;
+	while ((len*2) < Length && Buffer[len] == '\\')
+	{
+		Buffer ++;
+		Length -= sizeof (WCHAR);
+		len++;
+	}
+	return len;
+}
+
+ULONG SkipSlashes(UNICODE_STRING* str)
+{
+	ULONG len;
+
+	// skip slashes
+	len = 0;
+	while ((len*2) < str->Length && str->Buffer[len] == '\\')
+	{
+		str->Buffer ++;
+		str->Length -= sizeof (WCHAR);
+		len++;
+	}
+	return len;
 }
 
 COBJECT_ATTRIBUTES::COBJECT_ATTRIBUTES()
@@ -452,4 +482,21 @@ COBJECT_ATTRIBUTES::COBJECT_ATTRIBUTES( const WCHAR *str )
 	SecurityDescriptor = 0;
 	SecurityQualityOfService = 0;
 	ObjectName = &us;
+}
+
+// FIXME: should use windows case table
+INT StrnCmpW( WCHAR *a, WCHAR *b, ULONG n )
+{
+	ULONG i;
+	WCHAR ai, bi;
+
+	for ( i = 0; i < n; i++ )
+	{
+		ai = tolower( a[i] );
+		bi = tolower( b[i] );
+		if (ai == bi)
+			continue;
+		return ai < bi ? -1 : 1;
+	}
+	return 0;
 }
