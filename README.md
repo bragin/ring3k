@@ -34,16 +34,6 @@ There are several aims for this project:
   (Debian users should install gcc-multilib, g++-multilib, ia32-libs)
 * Increased number of file descriptors (e.g. https://underyx.me/2015/05/18/raising-the-maximum-number-of-file-descriptors)
 
-##Downloading
-
-To properly download this project, you have to execute several commands
-```
-git clone https://github.com/bragin/ring3k.git
-cd ring3k
-git submodule init
-git submodule update
-```
-
 
 ##Instructions
 
@@ -61,7 +51,7 @@ To run a test (for example the semaphore test):
 To run all the working tests, do:
 `make test`
 
-To run another executable please edit ./ring3k script
+To run another executable please edit `./ring3k script`
 
 ##Debugging ring3k using gdb
 
@@ -105,10 +95,15 @@ from FIXME to TRACE. Please keep list of those places here.
 ##Files
 
 kernel/     - implementation of the userspace kernel
+
 libudis86/  - the udis86 disassembler
+
 libmspack/  - code to extract files from the windows install disk
+
 tests/      - test cases that run on both NT and the loader
+
 tools/      - a collection of windows executables
+
 documents/  - a few notes
 
 ##Development

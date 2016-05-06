@@ -535,7 +535,6 @@ int main(int argc, char **argv)
 	{
 		Registry = REGISTRY_XML::Create();
 	}
-	printf("created\n");
 
 	// Read debug channels options
 	DebugInit();

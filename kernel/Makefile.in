@@ -45,7 +45,7 @@ LIBS += @XML2LIBS@
 LIBS += @LIBSDL@
 LIBS += @FREETYPELIBS@
 LIBS += ../libudis86/libudis86.a
-LIBS += ../hiredis/hiredis.a
+LIBS += ../hiredis/libhiredis.a
 
 LDFLAGS = -rdynamic
 

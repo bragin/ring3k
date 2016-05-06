@@ -107,6 +107,7 @@ AC_CONFIG_FILES(
 	programs/clock/Makefile
 	programs/minitris/Makefile
 	programs/minshell/Makefile
+	programs/notepad/Makefile
 	programs/pixels/Makefile
 	programs/winemine/Makefile
 	programs/winlogon/Makefile

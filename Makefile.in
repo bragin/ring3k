@@ -36,11 +36,11 @@ SUBDIRS = \
 	libudis86 \
 	libmspack \
 	libntreg \
+	hiredis \
 	kernel \
 	programs \
 	tests \
 	utils \
-	hiredis \
 	unpack
 #Commented, because for now qdf from tools folder is broken
 #	tools
