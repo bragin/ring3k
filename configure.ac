@@ -113,7 +113,6 @@ AC_CONFIG_FILES(
 	utils/Makefile
 	utils/regedit/Makefile
 	unpack/Makefile
-	hiredis/Makefile
 )
 
 AC_OUTPUT

@@ -12,8 +12,8 @@
 /* Define if you have the Freetype 2 library */
 #undef HAVE_FREETYPE
 
-/* Define to 1 if you have the <freetype/freetype.h> header file. */
-#undef HAVE_FREETYPE_FREETYPE_H
+/* Define to 1 if you have the <freetype2/freetype.h> header file. */
+#undef HAVE_FREETYPE2_FREETYPE_H
 
 /* Define to 1 if you have the `fstatat' function. */
 #undef HAVE_FSTATAT
@@ -77,6 +77,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
