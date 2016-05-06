@@ -32,7 +32,6 @@ public:
 
 	virtual NTSTATUS CreateKey( IREGKEY **out, OBJECT_ATTRIBUTES *oa, bool& opened_existing ) = 0;
 	virtual NTSTATUS OpenKey( IREGKEY **out, OBJECT_ATTRIBUTES *oa ) = 0;
-	virtual NTSTATUS OpenParseKey( IREGKEY *&key, UNICODE_STRING *name, bool case_insensitive ) = 0;
 };
 
 

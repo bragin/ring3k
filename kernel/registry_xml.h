@@ -37,12 +37,12 @@ public:
 
 	virtual NTSTATUS CreateKey( IREGKEY **out, OBJECT_ATTRIBUTES *oa, bool& opened_existing );
 	virtual NTSTATUS OpenKey( IREGKEY **out, OBJECT_ATTRIBUTES *oa );
-	virtual NTSTATUS OpenParseKey( IREGKEY *&key, UNICODE_STRING *name, bool case_insensitive );
 
 	static IREGISTRY* Create();
 
 
 private:
+	NTSTATUS OpenParseKey( IREGKEY *&key, UNICODE_STRING *name, bool case_insensitive );
 	void LoadRegKey( REGKEY_XML *parent, xmlNode *node );
 	REGKEY_XML *BuildKey( REGKEY_XML *root, CUNICODE_STRING *name );
 	NTSTATUS CreateParseKey( REGKEY_XML *&key, UNICODE_STRING *name, bool& opened_existing );
