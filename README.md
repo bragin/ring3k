@@ -205,7 +205,23 @@ Run QEMU (as user, making sure you have umount'ed the image first!)
 
 Add the following to win.ini to enable Winlogon/GINA debug messages (https://technet.microsoft.com/en-US/aa374744):
 
-`[WinlogonDebug]
-DebugFlags=Error,Init,Notify,SAS,State,Timeout,Trace,Warn`
+`; empty
+[WinlogonDebug]
+DebugFlags=Error,Init,Notify,SAS,State,Timeout,Trace,Warning,Verbose,WAPI,Helpers,RefMon,Scav,Cred,Neg,LPC,SAM,LSA,Special,Queue,Handles,NegLock,EFS
+
+[LsaDs]
+DebugFlags=Error,Init,Notify,SAS,State,Timeout,Trace,Warning,Verbose,WAPI,Helpers,RefMon,Scav,Cred,Neg,LPC,SAM,LSA,Special,Queue,Handles,NegLock,EFS
+
+[DsRole]
+DebugFlags=Error,Init,Notify,SAS,State,Timeout,Trace,Warning,Verbose,WAPI,Helpers,RefMon,Scav,Cred,Neg,LPC,SAM,LSA,Special,Queue,Handles,NegLock,EFS
+
+[SPM]
+DebugFlags=Error,Init,Notify,SAS,State,Timeout,Trace,Warning,Verbose,WAPI,Helpers,RefMon,Scav,Cred,Neg,LPC,SAM,LSA,Special,Queue,Handles,NegLock,EFS
+
+[DSysDebug]
+LsaDs=Error,Init,Notify,SAS,State,Timeout,Trace,Warning,Verbose,WAPI,Helpers,RefMon,Scav,Cred,Neg,LPC,SAM,LSA,Special,Queue,Handles,NegLock,EFS
+DsRole=Error,Init,Notify,SAS,State,Timeout,Trace,Warning,Verbose,WAPI,Helpers,RefMon,Scav,Cred,Neg,LPC,SAM,LSA,Special,Queue,Handles,NegLock,EFS
+SPM=Error,Init,Notify,SAS,State,Timeout,Trace,Warning,Verbose,WAPI,Helpers,RefMon,Scav,Cred,Neg,LPC,SAM,LSA,Special,Queue,Handles,NegLock,EFS
+DebugFlags=Error,Init,Notify,SAS,State,Timeout,Trace,Warning,Verbose,WAPI,Helpers,RefMon,Scav,Cred,Neg,LPC,SAM,LSA,Special,Queue,Handles,NegLock,EFS`
 
 Don't forget to use checked build binaries for that!
