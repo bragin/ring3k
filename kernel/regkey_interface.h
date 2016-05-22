@@ -37,19 +37,19 @@ public:
 
 	virtual void Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls ) = 0;
 	virtual void Query( KEY_BASIC_INFORMATION& info, UNICODE_STRING& namestr ) = 0;
-	virtual NTSTATUS Query(KEY_INFORMATION_CLASS KeyInformationClass, PVOID KeyInformation, ULONG KeyInformationLength, PULONG ReturnLength) = 0;
 	virtual IREGKEY *GetChild( ULONG Index ) = 0;
 	virtual bool AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle );
 	virtual NTSTATUS SetValue( const CUNICODE_STRING& name, ULONG Type, PVOID Data, ULONG DataSize ) = 0;
 	virtual IREGVAL* FindValue( const UNICODE_STRING *us ) = 0;
 	virtual NTSTATUS DeleteValue(const UNICODE_STRING *us ) = 0;
-	virtual void DeleteKey() = 0;
+	virtual NTSTATUS DeleteKey() = 0;
 	virtual NTSTATUS EnumerateValueKey(	ULONG Index, KEY_VALUE_INFORMATION_CLASS KeyValueInformationClass, PVOID KeyValueInformation, ULONG KeyValueInformationLength, ULONG &len ) = 0;
 	virtual NTSTATUS RegQueryValue( IREGVAL* val, ULONG KeyValueInformationClass, PVOID KeyValueInformation, ULONG KeyValueInformationLength, ULONG& len );
+	virtual NTSTATUS Query(KEY_INFORMATION_CLASS KeyInformationClass, PVOID KeyInformation, ULONG KeyInformationLength, PULONG ReturnLength);
 
-	const CUNICODE_STRING& Name() const { return m_Name; };
-	const CUNICODE_STRING& Cls() const { return m_Cls; };
-	void SetCls(const CUNICODE_STRING& cls) { m_Cls = cls; };
+	virtual const CUNICODE_STRING& Name() const { return m_Name; };
+	virtual const CUNICODE_STRING Cls() const { return m_Cls; };
+	virtual void SetCls(const CUNICODE_STRING& cls) { m_Cls = cls; };
 	virtual void PrintDescription() const = 0;
 };
 

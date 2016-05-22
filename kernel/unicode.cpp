@@ -51,7 +51,7 @@ LPWSTR StrCatW( LPWSTR dest, LPCWSTR src )
 		;
 	return dest;
 }
-
+#include <stdio.h>
 CUNICODE_STRING::CUNICODE_STRING() :
 	Buf(0)
 {
@@ -61,6 +61,15 @@ CUNICODE_STRING::CUNICODE_STRING() :
 }
 
 CUNICODE_STRING::CUNICODE_STRING( const UNICODE_STRING& source ) :
+	Buf(0)
+{
+	Buffer = 0;
+	Length = 0;
+	MaximumLength = 0;
+	assert (STATUS_SUCCESS == Copy( &source ));
+}
+
+CUNICODE_STRING::CUNICODE_STRING( CUNICODE_STRING& source ) :
 	Buf(0)
 {
 	Buffer = 0;
@@ -200,6 +209,11 @@ ULONG CUNICODE_STRING::Utf8ToWChar( const unsigned char *str, ULONG len, WCHAR *
 	return n;
 }
 
+bool CUNICODE_STRING::operator==(const CUNICODE_STRING& str) const
+{
+	return Compare(&str, FALSE);
+}
+
 ULONG CUNICODE_STRING::WCharToUtf8( char *str, ULONG max ) const
 {
 	ULONG n = 0;
@@ -312,22 +326,40 @@ CUNICODE_STRING::~CUNICODE_STRING()
 
 CUNICODE_STRING& CUNICODE_STRING::operator=(const CUNICODE_STRING& in)
 {
-	// free the old buffer
-	if (Buf)
-		delete[] Buf;
-
-	// copy the other string
-	Length = in.Length;
-	MaximumLength = in.MaximumLength;
-	if (in.Buf)
-	{
-		Buf = new WCHAR[ Length ];
-		memcpy( Buf, in.Buf, Length );
-		Buffer = Buf;
-	}
-	else
-		Buffer = 0;
+	Copy(&in);
 	return *this;
+}
+
+void CUNICODE_STRING::ReplaceChar( wchar_t which, wchar_t to )
+{
+	for (ULONG i=0;i<Length;i++)
+	{
+		if (Buffer[i] == which)
+			Buffer[i] = to;
+	}
+}
+
+void CUNICODE_STRING::ToLowerCase()
+{
+	for (ULONG i=0;i<Length/2;i++)
+	{
+		Buffer[i] = tolower(Buffer[i]);
+	}
+}
+
+bool CUNICODE_STRING::operator<(const CUNICODE_STRING& in) const
+{
+	if (!Buffer || !in.Buffer) return false;
+
+	if (Length != in.Length)
+		return Length < in.Length;
+
+	for (ULONG i=0; i<Length/2 ;i++) {
+		if (Buffer[i] != in.Buffer[i])
+			return Buffer[i] < in.Buffer[i];
+	}
+
+	return false;
 }
 
 // returns TRUE if strings are the same
@@ -353,6 +385,7 @@ bool CUNICODE_STRING::Compare( const UNICODE_STRING *b, BOOLEAN case_insensitive
 
 NTSTATUS CUNICODE_STRING::Concat(const UNICODE_STRING& str)
 {
+	assert(str.Length % 2 == 0);
 	return Concat( str.Buffer, str.Length );
 }
 
@@ -363,7 +396,7 @@ NTSTATUS CUNICODE_STRING::Concat(const CUNICODE_STRING& str)
 
 NTSTATUS CUNICODE_STRING::Concat(PCWSTR Str)
 {
-	return Concat( Str, StrLenW(Str) );
+	return Concat( Str, StrLenW(Str)*sizeof(WCHAR) );
 }
 
 bool CUNICODE_STRING::IsEmpty() const
@@ -371,24 +404,28 @@ bool CUNICODE_STRING::IsEmpty() const
 	return Length == 0;
 }
 
-NTSTATUS CUNICODE_STRING::Concat(PCWSTR Str, LONG StrLen)
+NTSTATUS CUNICODE_STRING::Concat(PCWSTR Str, LONG StrLenInBytes)
 {
-	TRACE("Concating %S len %ld\n", Str, StrLen);
-	if (Buf)
-		delete[] Buf;
+	assert(Length % 2 == 0);
+	assert(StrLenInBytes % 2 == 0);
 
-	Buf = new WCHAR[Length + StrLen + 1];
-	if (!Buf)
+
+	WCHAR *OldBuf = Buf;
+
+	Buf = new WCHAR[Length/2 + StrLenInBytes/2];
+	if (!Buf) {
+		delete[] OldBuf;
 		return STATUS_NO_MEMORY;
+	}
 
-	memcpy(Buf, Buffer, Length * sizeof(WCHAR));
-	memcpy(Buf + Length, Str, StrLen * sizeof(WCHAR));
-	Buf[Length + StrLen] = 0;
+	memcpy(Buf, Buffer, Length);
+	memcpy(Buf + Length/2, Str, StrLenInBytes);
 
 	Buffer = Buf;
-	Length += StrLen;
-	MaximumLength += StrLen;
+	Length += StrLenInBytes;
+	MaximumLength += Length;
 
+	delete[] OldBuf;
 	return STATUS_SUCCESS;
 }
 

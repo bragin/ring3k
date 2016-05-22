@@ -30,9 +30,10 @@ protected:
 	NTSTATUS CopyWStrFromUser();
 	ULONG Utf8ToWChar( const unsigned char *str, ULONG len, WCHAR *buf );
 public:
-	explicit CUNICODE_STRING();
-	explicit CUNICODE_STRING( const CUNICODE_STRING& source );
-	explicit CUNICODE_STRING( const UNICODE_STRING& source );
+	CUNICODE_STRING();
+	CUNICODE_STRING( CUNICODE_STRING& source );
+	CUNICODE_STRING( const CUNICODE_STRING& source );
+	CUNICODE_STRING( const UNICODE_STRING& source );
 	void Set( PCWSTR str );
 	void Set( const wchar_t* str )
 	{
@@ -53,6 +54,8 @@ public:
 	bool Compare( const UNICODE_STRING* b, BOOLEAN case_insensitive ) const;
 	~CUNICODE_STRING();
 	CUNICODE_STRING& operator=(const CUNICODE_STRING& in);
+	bool operator==(const CUNICODE_STRING& in) const;
+	bool operator<(const CUNICODE_STRING& in) const;
 	void Clear();
 	NTSTATUS CopyWStrFromUser( PWSTR String, ULONG Length );
 	ULONG WCharToUtf8( char *str, ULONG max ) const;
@@ -63,7 +66,9 @@ public:
 	{
 		return Concat( (PCWSTR) str);
 	}
+	void ReplaceChar( wchar_t which, wchar_t to );
 	ULONG SkipSlashes();
+	void ToLowerCase();
 
 private:
 	NTSTATUS Concat( PCWSTR str, LONG size);

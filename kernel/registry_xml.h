@@ -69,12 +69,12 @@ public:
 	virtual ~REGKEY_XML();
 	virtual void Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls );
 	virtual void Query( KEY_BASIC_INFORMATION& info, UNICODE_STRING& namestr );
-	virtual NTSTATUS Query(KEY_INFORMATION_CLASS KeyInformationClass, PVOID KeyInformation, ULONG KeyInformationLength, PULONG ReturnLength);
+	//virtual NTSTATUS Query(KEY_INFORMATION_CLASS KeyInformationClass, PVOID KeyInformation, ULONG KeyInformationLength, PULONG ReturnLength);
 	virtual IREGKEY *GetChild( ULONG Index );
 	virtual NTSTATUS SetValue( const CUNICODE_STRING& name, ULONG Type, PVOID Data, ULONG DataSize );
 	virtual IREGVAL *FindValue( const UNICODE_STRING *us );
 	virtual NTSTATUS DeleteValue(const UNICODE_STRING *us );
-	virtual void DeleteKey();
+	virtual NTSTATUS DeleteKey();
 	virtual NTSTATUS EnumerateValueKey(	ULONG Index, KEY_VALUE_INFORMATION_CLASS KeyValueInformationClass, PVOID KeyValueInformation, ULONG KeyValueInformationLength, ULONG &len );
 	ULONG NumValues(ULONG& max_name_len, ULONG& max_data_len);
 	ULONG NumSubkeys(ULONG& max_name_len, ULONG& max_class_len);

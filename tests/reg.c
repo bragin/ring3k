@@ -18,7 +18,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-
 #include "ntapi.h"
 #include "rtlapi.h"
 #include "log.h"
@@ -205,7 +204,7 @@ void test_queue_reg_val( void )
 	r = NtClose( key );
 	ok( r == STATUS_SUCCESS, "wrong return %08lx\n", r);
 
-	// create the key the first time
+	// create the key the second time
 	dispos = 0;
 	r = NtCreateKey( &key, KEY_ALL_ACCESS, &oa, 0, NULL, 0, &dispos );
 	ok( r == STATUS_SUCCESS, "wrong return %08lx\n", r);
@@ -521,7 +520,7 @@ void test_reg_query_val( void )
 	ok( partial->TitleIndex == 0, "TitleIndex wrong\n" );
 	ok( partial->Type == REG_DWORD, "Type wrong\n" );
 	ok( partial->DataLength == sizeof val, "DataLength wrong %ld\n", partial->DataLength );
-	ok( partial->Data[0] == 1, "value wrong\n");
+	ok( partial->Data[0] == 1, "value wrong %d\n", partial->Data[0]);
 	ok( check_bytes_zero( &partial->Data[1], sizeof buffer - sz ), "buffer not zero\n");
 
 	memset(buffer, 0, sizeof buffer);

@@ -484,7 +484,7 @@ NTSTATUS REGKEY_XML::EnumerateValueKey(
 	return r;
 }
 
-void REGKEY_XML::DeleteKey()
+NTSTATUS REGKEY_XML::DeleteKey()
 {
 	if ( Parent() )
 	{
@@ -492,6 +492,7 @@ void REGKEY_XML::DeleteKey()
 		SetParent(NULL);
 		Release( this );
 	}
+	return STATUS_SUCCESS;
 }
 
 void REGKEY_XML::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls )
@@ -504,7 +505,6 @@ void REGKEY_XML::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls )
 	info.SubKeys = NumSubkeys(info.MaxNameLen, info.MaxClassLen);
 	info.Values = NumValues(info.MaxValueNameLen, info.MaxValueDataLen);
 	keycls = Cls();
-	TRACE("class = %pus\n", &Cls() );
 }
 
 void REGKEY_XML::Query( KEY_BASIC_INFORMATION& info, UNICODE_STRING& namestr )
@@ -551,69 +551,6 @@ ULONG REGKEY_XML::NumSubkeys(ULONG& max_name_len, ULONG& max_class_len)
 	return n;
 }
 
-NTSTATUS REGKEY_XML::Query(
-	KEY_INFORMATION_CLASS KeyInformationClass,
-	PVOID KeyInformation,
-	ULONG KeyInformationLength,
-	PULONG ReturnLength)
-{
-	union
-	{
-		KEY_BASIC_INFORMATION basic;
-		KEY_FULL_INFORMATION full;
-	} info;
-	NTSTATUS r;
-
-	memset( &info, 0, sizeof info );
-	ULONG sz = 0;
-	UNICODE_STRING keycls, keyname;
-	keyname.Length = 0;
-	keyname.Buffer = 0;
-	keycls.Length = 0;
-	keycls.Buffer = 0;
-
-	switch (KeyInformationClass)
-	{
-	case KeyBasicInformation:
-		Query( info.basic, keyname );
-		sz = sizeof info.basic + keyname.Length;
-		if (sz > KeyInformationLength)
-			return STATUS_INFO_LENGTH_MISMATCH;
-
-		r = CopyToUser( KeyInformation, &info, sz );
-		if (r < STATUS_SUCCESS)
-			break;
-
-		r = CopyToUser( (BYTE*)KeyInformation + FIELD_OFFSET( KEY_BASIC_INFORMATION, Name ), keyname.Buffer, keyname.Length );
-
-		break;
-
-	case KeyFullInformation:
-		Query( info.full, keycls );
-		sz = sizeof info.full + keycls.Length;
-		if (sz > KeyInformationLength)
-			return STATUS_INFO_LENGTH_MISMATCH;
-
-		r = CopyToUser( KeyInformation, &info, sz );
-		if (r < STATUS_SUCCESS)
-			break;
-
-		TRACE("keycls = %pus\n", &keycls);
-		r = CopyToUser( (BYTE*)KeyInformation + FIELD_OFFSET( KEY_FULL_INFORMATION, Class ), keycls.Buffer, keycls.Length );
-
-		break;
-
-	case KeyNodeInformation:
-		FIXME("KeyNodeInformation\n");
-	default:
-		assert(0);
-	}
-
-	if (r == STATUS_SUCCESS)
-		CopyToUser( ReturnLength, &sz, sizeof sz );
-
-	return r;
-}
 
 IREGKEY *REGKEY_XML::GetChild( ULONG Index )
 {

@@ -95,6 +95,7 @@ CPP_SOURCES = \
 	queue.cpp \
 	random.cpp \
 	registry_xml.cpp \
+	registry_redis.cpp \
 	registry_nt.cpp \
 	regkey_interface.cpp \
 	region.cpp \

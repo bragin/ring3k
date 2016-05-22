@@ -203,6 +203,8 @@ NTSTATUS NTAPI NtQueryValueKey(
 	if (!val)
 		return STATUS_OBJECT_NAME_NOT_FOUND;
 
+	TRACE("val '%pus' type %d size %d\n", &val->Name(), val->Type(), val->Size());
+	
 	r = key->RegQueryValue( val, KeyValueInformationClass, KeyValueInformation,
 						 KeyValueInformationLength, len );
 
@@ -342,7 +344,7 @@ NTSTATUS NTAPI NtSetValueKey(
 
 	return r;
 }
-#include <stdio.h>
+
 NTSTATUS NTAPI NtEnumerateValueKey(
 	HANDLE KeyHandle,
 	ULONG Index,
@@ -406,7 +408,7 @@ NTSTATUS NTAPI NtDeleteKey(
 	if (r < STATUS_SUCCESS)
 		return r;
 
-	key->DeleteKey();
+	r = key->DeleteKey();
 
 	return r;
 }

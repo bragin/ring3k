@@ -28,6 +28,18 @@ do
 		tracespec=$1
 		shift
 		;;
+	--r*)
+		shift
+		registry="-r $1"
+		if [ "$1" = "redis" ]; then
+			echo "executing redis clean up script"
+			killall -9 redis-server
+			SCRIPTPATH=`pwd -P`
+			cp -n ./redis/original.rdb ./redis/redis.rdb
+			redis-server --dir "$SCRIPTPATH/redis" 2>/dev/null &
+		fi
+		shift
+		;;
 	-v)
 		valgrind=1
 		shift
@@ -53,4 +65,4 @@ fi
 cp -f "tests/win2k/ntwin32.dll" drive
 cp -f "tests/$t" drive/tests
 ntexepath="\\??\\c:\\tests\\$t"
-exec ${valgrind:+"valgrind"} "$kernel" ${debug:+"-d"} ${tracespec} ${tt:+"-s"} ${quiet:+"-q"} ${trace:+"-t"} "$ntexepath"
+exec ${valgrind:+"valgrind"} "$kernel" ${debug:+"-d"} ${tracespec} ${registry} ${tt:+"-s"} ${quiet:+"-q"} ${trace:+"-t"} "$ntexepath"

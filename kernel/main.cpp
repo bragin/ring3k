@@ -53,6 +53,7 @@
 #include "alloc_bitmap.h"
 #include "registry_interface.h"
 #include "registry_xml.h"
+#include "registry_redis.h"
 
 DEFAULT_DEBUG_CHANNEL(main);
 
@@ -62,6 +63,7 @@ OBJECT *NtDLLSection;
 int option_debug = 0;
 ULONG KiIntSystemCall = 0;
 bool forced_quit;
+int RegistryIndex = -1;
 IREGISTRY* Registry = NULL;
 
 struct registry_ident {
@@ -71,6 +73,7 @@ struct registry_ident {
 
 struct registry_ident registry_list[] = {
 	{"xml", REGISTRY_XML::Create},
+	{"redis", REGISTRY_REDIS::Create},
 	{NULL, NULL},
 };
 
@@ -501,11 +504,16 @@ void ParseOptions(int argc, char **argv)
 			ParseTraceOptions( optarg );
 			break;
 		case 'r':
-			if (!SetRegistryDriver( optarg ))
+		{
+			for (int i=0;registry_list[i].name;i++)
 			{
-				fprintf(stderr, "unknown registry driver %s\n", optarg);
-				Usage();
+				if (strcmp(registry_list[i].name, optarg) == 0)
+				{
+					RegistryIndex = i;
+					break;
+				}
 			}
+		} break;
 		case 'v':
 			Version();
 		}
@@ -518,6 +526,11 @@ int main(int argc, char **argv)
 	THREAD *initial_thread = NULL;
 	const char *exename;
 
+	for (int i=0;i<argc;i++)
+	{
+		printf("arg %s\n", argv[i]);
+	}
+
 	ParseOptions( argc, argv );
 
 	if (optind == argc)
@@ -528,12 +541,6 @@ int main(int argc, char **argv)
 	else
 	{
 		exename = argv[optind];
-	}
-
-
-	if (!Registry)
-	{
-		Registry = REGISTRY_XML::Create();
 	}
 
 	// Read debug channels options
@@ -552,6 +559,15 @@ int main(int argc, char **argv)
 		// enable backtraces
 		signal(SIGSEGV, SegvHandler);
 		signal(SIGABRT, AbortHandler);
+	}
+
+	if (RegistryIndex >= 0)
+	{
+		Registry = registry_list[RegistryIndex].create();
+	}
+	else
+	{
+		Registry = REGISTRY_XML::Create();
 	}
 
 	// quick sanity test

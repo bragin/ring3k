@@ -94,6 +94,7 @@ NTSTATUS IREGKEY::RegQueryValue(
 
 	case KeyValuePartialInformation:
 		info_sz = FIELD_OFFSET( KEY_VALUE_PARTIAL_INFORMATION, Data );
+		TRACE("info_sz %d val->Size() %d\n", info_sz, val->Size());
 		len = info_sz + val->Size();
 		if (KeyValueInformationLength < info_sz)
 			return STATUS_BUFFER_TOO_SMALL;
@@ -121,6 +122,71 @@ NTSTATUS IREGKEY::RegQueryValue(
 
 	return r;
 
+}
+
+
+NTSTATUS IREGKEY::Query(
+	KEY_INFORMATION_CLASS KeyInformationClass,
+	PVOID KeyInformation,
+	ULONG KeyInformationLength,
+	PULONG ReturnLength)
+{
+	union
+	{
+		KEY_BASIC_INFORMATION basic;
+		KEY_FULL_INFORMATION full;
+	} info;
+	NTSTATUS r;
+
+	memset( &info, 0, sizeof info );
+	ULONG sz = 0;
+	UNICODE_STRING keycls, keyname;
+	keyname.Length = 0;
+	keyname.Buffer = 0;
+	keycls.Length = 0;
+	keycls.Buffer = 0;
+
+	switch (KeyInformationClass)
+	{
+	case KeyBasicInformation:
+		Query( info.basic, keyname );
+		sz = sizeof info.basic + keyname.Length;
+		if (sz > KeyInformationLength)
+			return STATUS_INFO_LENGTH_MISMATCH;
+
+		r = CopyToUser( KeyInformation, &info, sz );
+		if (r < STATUS_SUCCESS)
+			break;
+
+		r = CopyToUser( (BYTE*)KeyInformation + FIELD_OFFSET( KEY_BASIC_INFORMATION, Name ), keyname.Buffer, keyname.Length );
+
+		break;
+
+	case KeyFullInformation:
+		Query( info.full, keycls );
+		sz = sizeof info.full + keycls.Length;
+		if (sz > KeyInformationLength)
+			return STATUS_INFO_LENGTH_MISMATCH;
+
+		r = CopyToUser( KeyInformation, &info, sz );
+		if (r < STATUS_SUCCESS)
+			break;
+
+		TRACE("keycls = %pus\n", &keycls);
+		r = CopyToUser( (BYTE*)KeyInformation + FIELD_OFFSET( KEY_FULL_INFORMATION, Class ), keycls.Buffer, keycls.Length );
+
+		break;
+
+	case KeyNodeInformation:
+		FIXME("KeyNodeInformation\n");
+	default:
+		assert(0);
+	}
+
+	if (r == STATUS_SUCCESS)
+		CopyToUser( ReturnLength, &sz, sizeof sz );
+
+	return r;
 }
 
 bool IREGKEY::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )

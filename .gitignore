@@ -1,6 +1,7 @@
 *.diff
 *.iso
 *.o
+*.o.d
 *.a
 *.lib
 *.dll

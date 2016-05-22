@@ -1,0 +1,38 @@
+# adapted from libudis86 Makefile
+
+srcdir  = .
+
+
+CC      = gcc -m32
+DEPFLAG = -Wp,-MD,.$@.d
+CFLAGS  = -I. -I$(srcdir) -Wall -O2 $(DEPFLAG)
+AR      = ar
+RM      = rm
+PERL    = perl
+
+.SUFFIXES: .c .o
+
+SRCS = \
+	async.c \
+	dict.c \
+	hiredis.c \
+	net.c \
+	read.c \
+	sds.c
+
+OBJS = $(SRCS:%.c=%.o)
+
+.PHONY: all clean
+
+all: hiredis.a
+
+include $(wildcard .*.d)
+
+hiredis.a: $(OBJS)
+	$(AR) -r hiredis.a $(OBJS)
+
+$(SRCS:%=$(srcdir)/%):
+
+clean:
+	$(RM) -f core *.o *.a mnemonics.c mnemonics.h .*.d
+
