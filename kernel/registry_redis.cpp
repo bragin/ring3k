@@ -524,7 +524,7 @@ IREGKEY *REGKEY_REDIS::GetChild( ULONG Index )
 	return NULL;
 }
 
-void REGKEY_REDIS::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls )
+void REGKEY_REDIS::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING* keycls )
 {
 	TRACE("full information\n");
 	info.LastWriteTime.QuadPart = 0LL;
@@ -532,7 +532,21 @@ void REGKEY_REDIS::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls )
 	info.ClassOffset = FIELD_OFFSET( KEY_FULL_INFORMATION, Class );
 	info.ClassLength = Cls().Length;
 	NumSubkeysAndValues(info.MaxNameLen, info.MaxClassLen, info.MaxValueNameLen, info.MaxValueDataLen, info.SubKeys, info.Values);
-	keycls = Cls();
+	
+	CUNICODE_STRING cls = Cls();
+	if (cls.Buffer) {
+		//copy
+		USHORT len = std::max(cls.MaximumLength, cls.Length);
+		
+		keycls->Buffer = new WCHAR[(len + 1)/sizeof(WCHAR)];
+		memcpy(keycls->Buffer, cls.Buffer, len);
+
+		keycls->MaximumLength = cls.MaximumLength;
+		keycls->Length = cls.Length;
+	} else {
+		*keycls = cls;
+	}
+	
 	TRACE("class = %pus\n", &keycls );
 }
 

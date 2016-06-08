@@ -42,7 +42,7 @@ class REGKEY_REDIS : public IREGKEY
 public:
 	REGKEY_REDIS(REGISTRY_REDIS* Redis, const CUNICODE_STRING& AbsolutePath);
 
-	virtual void Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls );
+	virtual void Query( KEY_FULL_INFORMATION& info, UNICODE_STRING* keycls );
 	virtual void Query( KEY_BASIC_INFORMATION& info, UNICODE_STRING& namestr );
 	virtual IREGKEY *GetChild( ULONG Index );
 	virtual NTSTATUS SetValue( const CUNICODE_STRING& name, ULONG Type, PVOID Data, ULONG DataSize );

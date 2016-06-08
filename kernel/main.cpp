@@ -563,10 +563,12 @@ int main(int argc, char **argv)
 
 	if (RegistryIndex >= 0)
 	{
+		TRACE("created registry: %s\n",registry_list[RegistryIndex].name);
 		Registry = registry_list[RegistryIndex].create();
 	}
 	else
 	{
+		TRACE("created registry: xml\n");
 		Registry = REGISTRY_XML::Create();
 	}
 

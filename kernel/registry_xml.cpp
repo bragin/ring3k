@@ -495,7 +495,7 @@ NTSTATUS REGKEY_XML::DeleteKey()
 	return STATUS_SUCCESS;
 }
 
-void REGKEY_XML::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls )
+void REGKEY_XML::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING* keycls )
 {
 	TRACE("full information\n");
 	info.LastWriteTime.QuadPart = 0LL;
@@ -504,7 +504,21 @@ void REGKEY_XML::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls )
 	info.ClassLength = Cls().Length;
 	info.SubKeys = NumSubkeys(info.MaxNameLen, info.MaxClassLen);
 	info.Values = NumValues(info.MaxValueNameLen, info.MaxValueDataLen);
-	keycls = Cls();
+	CUNICODE_STRING cls = Cls();
+
+	if (cls.Buffer) {
+		//copy
+		USHORT len = std::max(cls.MaximumLength, cls.Length);
+		
+		keycls->Buffer = new WCHAR[(len + 1)/sizeof(WCHAR)];
+		memcpy(keycls->Buffer, cls.Buffer, len);
+
+		keycls->MaximumLength = cls.MaximumLength;
+		keycls->Length = cls.Length;
+	} else {
+		*keycls = cls;
+	}
+
 }
 
 void REGKEY_XML::Query( KEY_BASIC_INFORMATION& info, UNICODE_STRING& namestr )
