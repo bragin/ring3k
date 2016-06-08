@@ -99,7 +99,7 @@ void CUNICODE_STRING::Set( PCWSTR str )
 {
 	Clear();
 	Buffer = const_cast<PWSTR>( str );
-	Length = StrLenW( str ) * 2;
+	Length = StrLenW( str ) * sizeof(WCHAR);
 	MaximumLength = 0;
 }
 
@@ -120,7 +120,7 @@ NTSTATUS CUNICODE_STRING::CopyWStrFromUser()
 		return STATUS_INVALID_PARAMETER;
 	if (Buffer)
 	{
-		Buf = new WCHAR[ Length/2 ];
+		Buf = new WCHAR[ Length/sizeof(WCHAR) ];
 		if (!Buf)
 			return STATUS_NO_MEMORY;
 		NTSTATUS r = ::CopyFromUser( Buf, Buffer, Length );
@@ -151,7 +151,7 @@ NTSTATUS CUNICODE_STRING::Copy( const UNICODE_STRING* ptr )
 	MaximumLength = ptr->MaximumLength;
 	if (ptr->Buffer)
 	{
-		Buf = new WCHAR[ Length/2 ];
+		Buf = new WCHAR[ Length/sizeof(WCHAR) ];
 		if (!Buf)
 			return STATUS_NO_MEMORY;
 		memcpy( Buf, ptr->Buffer, Length );
@@ -184,7 +184,7 @@ ULONG CUNICODE_STRING::Utf8ToWChar( const unsigned char *str, ULONG len, WCHAR *
 		{
 			if (buf)
 				buf[n] = ((str[i]&0x3f)<<6) | (str[i+1]&0x3f);
-			i+=2;
+			i+=sizeof(WCHAR);
 			n++;
 			continue;
 		}
@@ -217,7 +217,7 @@ bool CUNICODE_STRING::operator==(const CUNICODE_STRING& str) const
 ULONG CUNICODE_STRING::WCharToUtf8( char *str, ULONG max ) const
 {
 	ULONG n = 0;
-	for (ULONG i=0; i<Length/2; i++)
+	for (ULONG i=0; i<Length/sizeof(WCHAR); i++)
 	{
 		WCHAR ch = Buffer[i];
 		unsigned char ch1, ch2, ch3;
@@ -304,7 +304,7 @@ NTSTATUS CUNICODE_STRING::Copy( PCWSTR str )
 	Buf = new WCHAR[n];
 	if (!Buf)
 		return STATUS_NO_MEMORY;
-	Length = n*2;
+	Length = n*sizeof(WCHAR);
 	MaximumLength = Length;
 	Buffer = Buf;
 	memcpy( Buffer, str, Length );
@@ -341,7 +341,7 @@ void CUNICODE_STRING::ReplaceChar( wchar_t which, wchar_t to )
 
 void CUNICODE_STRING::ToLowerCase()
 {
-	for (ULONG i=0;i<Length/2;i++)
+	for (ULONG i=0;i<Length/sizeof(WCHAR);i++)
 	{
 		Buffer[i] = tolower(Buffer[i]);
 	}
@@ -354,7 +354,7 @@ bool CUNICODE_STRING::operator<(const CUNICODE_STRING& in) const
 	if (Length != in.Length)
 		return Length < in.Length;
 
-	for (ULONG i=0; i<Length/2 ;i++) {
+	for (ULONG i=0; i<Length/sizeof(WCHAR) ;i++) {
 		if (Buffer[i] != in.Buffer[i])
 			return Buffer[i] < in.Buffer[i];
 	}
@@ -371,7 +371,7 @@ bool CUNICODE_STRING::Compare( const UNICODE_STRING *b, BOOLEAN case_insensitive
 		return (0 == memcmp( Buffer, b->Buffer, Length ));
 
 	// FIXME: should use windows case table
-	for ( ULONG i = 0; i < Length/2; i++ )
+	for ( ULONG i = 0; i < Length/sizeof(WCHAR); i++ )
 	{
 		WCHAR ai, bi;
 		ai = tolower( Buffer[i] );
@@ -385,7 +385,7 @@ bool CUNICODE_STRING::Compare( const UNICODE_STRING *b, BOOLEAN case_insensitive
 
 NTSTATUS CUNICODE_STRING::Concat(const UNICODE_STRING& str)
 {
-	assert(str.Length % 2 == 0);
+	assert(str.Length % sizeof(WCHAR) == 0);
 	return Concat( str.Buffer, str.Length );
 }
 
@@ -406,20 +406,20 @@ bool CUNICODE_STRING::IsEmpty() const
 
 NTSTATUS CUNICODE_STRING::Concat(PCWSTR Str, LONG StrLenInBytes)
 {
-	assert(Length % 2 == 0);
-	assert(StrLenInBytes % 2 == 0);
+	assert(Length % sizeof(WCHAR) == 0);
+	assert(StrLenInBytes % sizeof(WCHAR) == 0);
 
 
 	WCHAR *OldBuf = Buf;
 
-	Buf = new WCHAR[Length/2 + StrLenInBytes/2];
+	Buf = new WCHAR[Length/sizeof(WCHAR) + StrLenInBytes/sizeof(WCHAR)];
 	if (!Buf) {
 		delete[] OldBuf;
 		return STATUS_NO_MEMORY;
 	}
 
 	memcpy(Buf, Buffer, Length);
-	memcpy(Buf + Length/2, Str, StrLenInBytes);
+	memcpy(Buf + Length/sizeof(WCHAR), Str, StrLenInBytes);
 
 	Buffer = Buf;
 	Length += StrLenInBytes;
@@ -435,7 +435,7 @@ ULONG CUNICODE_STRING::SkipSlashes()
 
 	// skip slashes
 	len = 0;
-	while ((len*2) < Length && Buffer[len] == '\\')
+	while ((len*sizeof(WCHAR)) < Length && Buffer[len] == '\\')
 	{
 		Buffer ++;
 		Length -= sizeof (WCHAR);
@@ -450,7 +450,7 @@ ULONG SkipSlashes(UNICODE_STRING* str)
 
 	// skip slashes
 	len = 0;
-	while ((len*2) < str->Length && str->Buffer[len] == '\\')
+	while ((len*sizeof(WCHAR)) < str->Length && str->Buffer[len] == '\\')
 	{
 		str->Buffer ++;
 		str->Length -= sizeof (WCHAR);
