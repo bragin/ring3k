@@ -163,7 +163,7 @@ NTSTATUS IREGKEY::Query(
 		break;
 
 	case KeyFullInformation:
-		Query( info.full, &keycls );
+		Query( info.full, keycls );
 		sz = sizeof info.full + keycls.Length;
 		if (sz > KeyInformationLength)
 			return STATUS_INFO_LENGTH_MISMATCH;
@@ -197,7 +197,7 @@ bool IREGKEY::AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle )
 						 KEY_ALL_ACCESS );
 }
 
-const CUNICODE_STRING IREGKEY::Cls() const
+const CUNICODE_STRING& IREGKEY::Cls()
 {
 	TRACE("CLS %pus\n", &m_Cls);
 	return m_Cls;

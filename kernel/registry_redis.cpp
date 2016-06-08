@@ -524,7 +524,7 @@ IREGKEY *REGKEY_REDIS::GetChild( ULONG Index )
 	return NULL;
 }
 
-void REGKEY_REDIS::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING* keycls )
+void REGKEY_REDIS::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls )
 {
 	TRACE("full information\n");
 	info.LastWriteTime.QuadPart = 0LL;
@@ -533,20 +533,8 @@ void REGKEY_REDIS::Query( KEY_FULL_INFORMATION& info, UNICODE_STRING* keycls )
 	info.ClassLength = Cls().Length;
 	NumSubkeysAndValues(info.MaxNameLen, info.MaxClassLen, info.MaxValueNameLen, info.MaxValueDataLen, info.SubKeys, info.Values);
 	
-	CUNICODE_STRING cls = Cls();
-	if (cls.Buffer) {
-		//copy
-		USHORT len = std::max(cls.MaximumLength, cls.Length);
-		
-		keycls->Buffer = new WCHAR[(len + 1)/sizeof(WCHAR)];
-		memcpy(keycls->Buffer, cls.Buffer, len);
+	keycls = Cls();
 
-		keycls->MaximumLength = cls.MaximumLength;
-		keycls->Length = cls.Length;
-	} else {
-		*keycls = cls;
-	}
-	
 	TRACE("class = %pus\n", &keycls );
 }
 
@@ -653,7 +641,7 @@ NTSTATUS REGKEY_REDIS::EnumerateValueKey(ULONG Index, KEY_VALUE_INFORMATION_CLAS
 	return STATUS_NO_MORE_ENTRIES;
 }
 
-const CUNICODE_STRING REGKEY_REDIS::Cls() const
+const CUNICODE_STRING& REGKEY_REDIS::Cls()
 {
 	CUNICODE_STRING PathClass(AbsolutePath());
 	PathClass.Concat(CLASS_SUFFIX);
@@ -666,15 +654,16 @@ const CUNICODE_STRING REGKEY_REDIS::Cls() const
 		ERR("%s\n", Reply->str);
 
 	if (Reply->type == REDIS_REPLY_STRING) {
-		CUNICODE_STRING Cls;
-		Cls.Copy(Reply->str);
+		m_Cls.Copy(Reply->str);
 		freeReplyObject(Reply);
-		return Cls;
+		return m_Cls;
 	}
 	freeReplyObject(Reply);
 
-	return CUNICODE_STRING();
+	m_Cls = CUNICODE_STRING();
+	return m_Cls;
 }
+
 void REGKEY_REDIS::SetCls(const CUNICODE_STRING& cls)
 {
 	CUNICODE_STRING PathClass(AbsolutePath());

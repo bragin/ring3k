@@ -67,7 +67,7 @@ class REGKEY_XML : public IREGKEY
 public:
 	REGKEY_XML( REGKEY_XML *_parent, const UNICODE_STRING *_name );
 	virtual ~REGKEY_XML();
-	virtual void Query( KEY_FULL_INFORMATION& info, UNICODE_STRING* keycls );
+	virtual void Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls );
 	virtual void Query( KEY_BASIC_INFORMATION& info, UNICODE_STRING& namestr );
 	//virtual NTSTATUS Query(KEY_INFORMATION_CLASS KeyInformationClass, PVOID KeyInformation, ULONG KeyInformationLength, PULONG ReturnLength);
 	virtual IREGKEY *GetChild( ULONG Index );

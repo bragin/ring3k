@@ -28,14 +28,14 @@
 class IREGVAL;
 class IREGKEY : public OBJECT
 {
-private:
+protected:
 	CUNICODE_STRING m_Cls;
 	CUNICODE_STRING m_Name;
 public:
 
 	IREGKEY(const CUNICODE_STRING& name);
 
-	virtual void Query( KEY_FULL_INFORMATION& info, UNICODE_STRING* keycls ) = 0;
+	virtual void Query( KEY_FULL_INFORMATION& info, UNICODE_STRING& keycls ) = 0;
 	virtual void Query( KEY_BASIC_INFORMATION& info, UNICODE_STRING& namestr ) = 0;
 	virtual IREGKEY *GetChild( ULONG Index ) = 0;
 	virtual bool AccessAllowed( ACCESS_MASK required, ACCESS_MASK handle );
@@ -48,7 +48,7 @@ public:
 	virtual NTSTATUS Query(KEY_INFORMATION_CLASS KeyInformationClass, PVOID KeyInformation, ULONG KeyInformationLength, PULONG ReturnLength);
 
 	virtual const CUNICODE_STRING& Name() const { return m_Name; };
-	virtual const CUNICODE_STRING Cls() const;
+	virtual const CUNICODE_STRING& Cls();
 	virtual void SetCls(const CUNICODE_STRING& cls) { m_Cls = cls; };
 	virtual void PrintDescription() const = 0;
 };
