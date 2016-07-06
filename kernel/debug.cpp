@@ -230,6 +230,8 @@ void DebugPrintf(const char *file, const char *func, int line, const char *fmt, 
 #endif
 }
 
+#include <time.h>
+
 int DebugPrintfEx(enum __kdbp_debug_class cls, struct __kdbp_debug_channel *channel,
 	const char *func, const char *format, ...)
 {
@@ -255,7 +257,7 @@ int DebugPrintfEx(enum __kdbp_debug_class cls, struct __kdbp_debug_channel *chan
 			pid = Current->Process->Id;
 	}
 
-	fprintf(stderr, "%lx.%lx:%s:%s:%s %s", pid, tid, KdbpDebugClasses[cls], channel->name, func, buffer);
+	fprintf(stderr, "%lx.%lx:%d:%s:%s:%s %s", pid, tid, clock(), KdbpDebugClasses[cls], channel->name, func, buffer);
 
 	return 0;
 }
