@@ -41,9 +41,16 @@
 	IMP( NtAreMappedFilesTheSame, 2 ),
 	IMP( NtAssignProcessToJobObject, 2 ),
 	IMP( NtCallbackReturn, 3 ),
+#ifdef SYSCALL_WIN2K
 	IMP( NtCancelIoFile, 2 ),
 	IMP( NtCancelTimer, 2 ),
 	IMP( NtCancelDeviceWakeupRequest, 1 ),
+#endif
+#ifdef SYSCALL_WINXP
+	IMP( NtCancelDeviceWakeupRequest, 1 ),
+	IMP( NtCancelIoFile, 2 ),
+	IMP( NtCancelTimer, 2 ),
+#endif
 	IMP( NtClearEvent, 1 ),
 	IMP( NtClose, 1 ),
 	IMP( NtCloseObjectAuditAlarm, 3 ),
@@ -188,8 +195,14 @@
 	NUL( NtPlugPlayControl ),
 	IMP( NtPowerInformation, 5 ),
 	IMP( NtPrivilegeCheck, 3 ),
+#ifdef SYSCALL_WIN2K
 	IMP( NtPrivilegedServiceAuditAlarm, 5 ),
 	IMP( NtPrivilegeObjectAuditAlarm, 6 ),
+#endif
+#ifdef SYSCALL_WINXP
+	IMP( NtPrivilegeObjectAuditAlarm, 6 ),
+	IMP( NtPrivilegedServiceAuditAlarm, 5 ),
+#endif
 	IMP( NtProtectVirtualMemory, 5 ),
 	IMP( NtPulseEvent, 2 ),
 #ifdef SYSCALL_WIN2K
@@ -226,8 +239,8 @@
 	DEC( NtQueryIoCompletion, 5 ),
 #endif
 	IMP( NtQueryKey, 5 ),
-	IMP( NtQueryMutant, 5 ),
 	DEC( NtQueryMultipleValueKey, 6 ),
+	IMP( NtQueryMutant, 5 ),
 	IMP( NtQueryObject, 5 ),
 	IMP( NtQueryOpenSubKeys, 2 ),
 	IMP( NtQueryPerformanceCounter, 2 ),

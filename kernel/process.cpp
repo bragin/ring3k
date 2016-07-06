@@ -526,6 +526,9 @@ NTSTATUS CreateProcess( PROCESS **pprocess, OBJECT *section )
 	if (TraceIsEnabled("ldrsnaps"))
 		ppeb->NtGlobalFlag |= FLG_SHOW_LDR_SNAPS;
 
+	// FIXME: Should be loaded from HKLM\\Current Control Set\\Session Manager\\CriticalSectionTimeout
+	ppeb->CriticalSectionTimeout.QuadPart = 150 * (-10000000LL); // NT value: 720 * 60 * 60; (30 days)
+
 	*pprocess = p;
 
 	p->Vm->SetTracer( peb_addr, PEB_TRACE );
