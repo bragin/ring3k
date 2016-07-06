@@ -62,7 +62,7 @@ void RemoveLastPart(CUNICODE_STRING& Path)
 		SHORT ch = Path.Buffer[i];
 		Path.Buffer[i] = 0;
 		Path.Length -= 2;
-		if (ch == L'\\')
+		if (ch == L'|')
 			break;
 	}
 }
@@ -70,7 +70,7 @@ void RemoveLastPart(CUNICODE_STRING& Path)
 void GetLocalNameFromPath(const CUNICODE_STRING& Path, CUNICODE_STRING& Result)
 {
 	int i;
-	for (i=Path.Length/2 - 1;i>=0 && Path.Buffer[i] != '\\';i--);
+	for (i=Path.Length/2 - 1;i>=0 && Path.Buffer[i] != '|';i--);
 	i++;
 
 	UNICODE_STRING Temp;
@@ -91,12 +91,6 @@ CUNICODE_STRING ReturnLocalNameFromPath(const CUNICODE_STRING& Path)
 
 REGISTRY_REDIS::REGISTRY_REDIS()
 {
-
-	//TRACE("Starting redis\n");
-	//if (!StartServer())
-	//	Die("Cannot start Redis\n");
-
-	//TRACE("Redis started\n");
 
 	RedisContext = redisConnect("127.0.0.1", 6379);
 
@@ -255,11 +249,12 @@ NTSTATUS REGISTRY_REDIS::CreateKey( IREGKEY **out, OBJECT_ATTRIBUTES *oa, bool& 
 		if (r < STATUS_SUCCESS)
 			return r;
 		Path = Key->Name();
-		Path.Concat(L"\\");
+		Path.Concat(L"|");
 	}
 
 	Path.Concat(*oa->ObjectName);
 	Path.SkipSlashes();
+	Path.ReplaceChar(L'\\', L'|');
 
 	CUNICODE_STRING PathLowercase(Path);
 	PathLowercase.ToLowerCase();
@@ -372,12 +367,13 @@ NTSTATUS REGISTRY_REDIS::OpenKey( IREGKEY **out, OBJECT_ATTRIBUTES *oa )
 	if (oa->ObjectName)
 	{
 		if (!Path.IsEmpty())
-			Path.Concat(L"\\");
+			Path.Concat(L"|");
 
 		Path.Concat(*oa->ObjectName);
 	}
 
 	Path.SkipSlashes();
+	Path.ReplaceChar(L'\\', L'|');
 	CUNICODE_STRING PathLowercase( Path );
 	PathLowercase.ToLowerCase();
 
@@ -408,10 +404,24 @@ redisReply* REGISTRY_REDIS::getRedisValue(const CUNICODE_STRING& Path)
 {
 	char UnicodePath[MAX_PATH_LENGTH];
 	Path.WCharToUtf8(UnicodePath, MAX_PATH_LENGTH);
-	TRACE("GET %s\n", UnicodePath);
-	redisReply* Reply = (redisReply*)redisCommand(RedisContext, "GET %s", UnicodePath);
+	TRACE("GET \"%s\"\n", UnicodePath);
+	redisReply* Reply = (redisReply*)redisCommand(RedisContext, "GET %b", UnicodePath, strlen(UnicodePath));
 	if (Reply->type == REDIS_REPLY_ERROR)
 		ERR("%s\n", Reply->str);
+
+	TRACE("%s %d\n", Reply->str, Reply->len);
+
+	//redis return data with extra slashed. for example if we set "\" redis will return "\\"
+	unsigned int offset = 0;
+	for (unsigned int i=0; i+offset <= Reply->len && Reply->str;i++) {
+		Reply->str[i] = Reply->str[i+offset];
+		if (i+offset < Reply->len && Reply->str[i] == '\\' && Reply->str[i+1] == '\\') {
+			offset++;
+		}
+	}
+
+	TRACE("result \"%s\"\n", Reply->str);
+
 	return Reply;
 }
 
@@ -429,7 +439,10 @@ void REGKEY_REDIS::getValueFromReply(redisReply *Reply, redisReply *ReplyType, U
 	if (Reply->type != REDIS_REPLY_STRING || Reply->type != REDIS_REPLY_STRING)
 		return;
 
-	Type = strtol(ReplyType->str, NULL, 10);
+	if (ReplyType->str)
+		Type = strtol(ReplyType->str, NULL, 10);
+	else
+		Type = 0;
 
 	TRACE("Reply: type %d len %d\n", Type, Reply->len);
 
@@ -462,7 +475,7 @@ void REGKEY_REDIS::getValueFromReply(redisReply *Reply, redisReply *ReplyType, U
 IREGVAL* REGKEY_REDIS::FindValue( const UNICODE_STRING *us )
 {
 	CUNICODE_STRING Path(AbsolutePath());
-	Path.Concat(L"\\");
+	Path.Concat(L"|");
 	Path.Concat(*us);
 
 	REGVAL_REDIS* val = Registry->GetOpenedValue(Path);
@@ -564,7 +577,7 @@ void REGKEY_REDIS::NumSubkeysAndValues(ULONG &MaxNameLen, ULONG &MaxClassLen, UL
 			ChildName.Copy(Reply->element[i]->str);
 
 			CUNICODE_STRING ChildPath(AbsolutePath());
-			ChildPath.Concat(L"\\");
+			ChildPath.Concat(L"|");
 			ChildPath.Concat(ChildName);
 
 			
@@ -619,7 +632,7 @@ NTSTATUS REGKEY_REDIS::EnumerateValueKey(ULONG Index, KEY_VALUE_INFORMATION_CLAS
 			ChildName.Copy(Reply->element[i]->str);
 
 			CUNICODE_STRING ChildPath(AbsolutePath());
-			ChildPath.Concat(L"\\");
+			ChildPath.Concat(L"|");
 			ChildPath.Concat(ChildName);
 			TRACE("Checking %pus\n", &ChildPath);
 
@@ -719,7 +732,7 @@ NTSTATUS REGKEY_REDIS::DeleteValue(const UNICODE_STRING *us )
 	freeReplyObject(Reply);
 	
 	Path.Copy(&AbsolutePath());
-	Path.Concat(L"\\");
+	Path.Concat(L"|");
 	Path.Concat(*us);
 	Path.WCharToUtf8(UTF8Path, MAX_PATH_LENGTH);
 
@@ -795,7 +808,7 @@ NTSTATUS REGKEY_REDIS::SetValue( const CUNICODE_STRING& name, ULONG Type, PVOID 
 		return r;
 
 	CUNICODE_STRING Path(AbsolutePath());
-	Path.Concat(L"\\");
+	Path.Concat(L"|");
 	Path.Concat(name);
 
 	Registry->SetRedisValue(Path, KernelData, DataSize, Type);

@@ -526,10 +526,6 @@ int main(int argc, char **argv)
 	THREAD *initial_thread = NULL;
 	const char *exename;
 
-	for (int i=0;i<argc;i++)
-	{
-		printf("arg %s\n", argv[i]);
-	}
 
 	ParseOptions( argc, argv );
 
