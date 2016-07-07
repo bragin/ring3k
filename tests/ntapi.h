@@ -312,7 +312,7 @@ typedef struct _SECTION_IMAGE_INFORMATION {
 	ULONG StackZeroBits;
 	ULONG StackReserved;
 	ULONG StackCommit;
-	ULONG ImageSubsystem;
+	ULONG SubSystemType;
 	WORD SubsystemVersionLow;
 	WORD SubsystemVersionHigh;
 	ULONG Unknown1;
@@ -320,6 +320,15 @@ typedef struct _SECTION_IMAGE_INFORMATION {
 	ULONG ImageMachineType;
 	ULONG Unknown2[3];
 } SECTION_IMAGE_INFORMATION, *PSECTION_IMAGE_INFORMATION;
+
+typedef struct _RTL_USER_PROCESS_INFORMATION
+{
+	ULONG Size;
+	HANDLE ProcessHandle;
+	HANDLE ThreadHandle;
+	CLIENT_ID ClientId;
+	SECTION_IMAGE_INFORMATION ImageInformation;
+} RTL_USER_PROCESS_INFORMATION, *PRTL_USER_PROCESS_INFORMATION;
 
 typedef struct _VM_COUNTERS {
 	SIZE_T		PeakVirtualSize;
