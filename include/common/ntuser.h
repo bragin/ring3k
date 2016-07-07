@@ -318,5 +318,6 @@ BOOLEAN NTAPI  NtUserUpdatePerUserSystemParameters(ULONG,ULONG);
 BOOLEAN NTAPI  NtUserUnregisterClass(PUNICODE_STRING,HINSTANCE,PNTCLASSMENUNAMES);
 BOOLEAN NTAPI  NtUserValidateRect(HWND,PRECT);
 HWND NTAPI     NtUserWindowFromPoint(POINT);
+BOOLEAN NTAPI  NtUserWaitMessage(VOID);
 
 #endif // __NTUSER_H__

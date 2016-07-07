@@ -1848,6 +1848,21 @@ HWND WINDOW::FromPoint( POINT& pt )
 	return handle;
 }
 
+BOOLEAN NTAPI NtUserWaitMessage(VOID)
+{
+	TRACE("NtUserWaitMessage()\n");
+
+	THREAD_MESSAGE_QUEUE* queue = Current->Queue;
+	if (!queue)
+	{
+		FIXME("No msg queue, creating one!\n");
+		Current->Queue = new THREAD_MESSAGE_QUEUE;
+		queue = Current->Queue;
+	}
+
+	return queue->WaitMessage();
+}
+
 HWND NTAPI NtUserWindowFromPoint( POINT pt )
 {
 	WINDOW *win = DesktopWindow;

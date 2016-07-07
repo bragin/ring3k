@@ -165,6 +165,20 @@ bool THREAD_MESSAGE_QUEUE::GetPostedMessage( HWND Window, MSG& Message )
 	return true;
 }
 
+BOOLEAN THREAD_MESSAGE_QUEUE::WaitMessage()
+{
+	// wait for a message
+	// a thread sending a message will restart us
+	MSG msg;
+	MSG_WAITER wait(msg);
+	WaiterList.Append(&wait);
+	Current->Stop();
+
+	FIXME("Got window message!\n");
+
+	return TRUE;
+}
+
 MSG_WAITER::MSG_WAITER( MSG& m):
 	Msg( m )
 {

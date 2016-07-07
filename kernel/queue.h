@@ -103,6 +103,7 @@ public:
 	BOOLEAN GetMessage( MSG& Message, HWND Window, ULONG MinMessage, ULONG MaxMessage);
 	BOOLEAN GetMessageNoWait( MSG& Message, HWND Window, ULONG MinMessage, ULONG MaxMessage);
 	bool GetPostedMessage( HWND Window, MSG& Message );
+	BOOLEAN WaitMessage();
 	BOOLEAN SetTimer( HWND Window, UINT Identifier, UINT Elapse, PVOID TimerProc );
 	BOOLEAN KillTimer( HWND Window, UINT Identifier );
 	WIN_TIMER* FindTimer( HWND Window, UINT Identifier );

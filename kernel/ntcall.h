@@ -118,6 +118,7 @@ bool SetGraphicsDriver( const char *driver );
 #define GDI_SHARED_HANDLE_TABLE_ADDRESS ((BYTE*)0x00370000)
 #define GDI_SHARED_HANDLE_TABLE_SIZE 0x60000
 
+
 // from ntgdi.cpp
 NTSTATUS Win32kProcessInit(PROCESS *p);
 NTSTATUS Win32kThreadInit(THREAD *t);
