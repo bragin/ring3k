@@ -44,7 +44,7 @@ bool NTGDISHM_TRACER::Enabled() const
 void NTGDISHM_TRACER::OnAccess(MBLOCK *mb, BYTE *address, ULONG eip)
 {
 	ULONG ofs = address - mb->GetBaseAddress();
-	if (ofs < MAX_GDI_HANDLE * 0x10)
+	if (ofs < GDI_HANDLE_COUNT * 0x10)
 	{
 		char unk[16];
 		const char *field = "unknown";
@@ -85,7 +85,7 @@ static inline ULONG get_gdi_type_size(ULONG type)
 ULONG object_from_memory(BYTE *address)
 {
 	GDI_HANDLE_TABLE_ENTRY *table = (GDI_HANDLE_TABLE_ENTRY*)GdiHandleTable;
-	for (ULONG i = 0; i<MAX_GDI_HANDLE; i++)
+	for (ULONG i = 0; i<GDI_HANDLE_COUNT; i++)
 	{
 		ULONG sz = get_gdi_type_size(table[i].Type);
 		if (!sz)
@@ -144,7 +144,7 @@ int FindFreeGdiHandle(void)
 {
 	GDI_HANDLE_TABLE_ENTRY *table = (GDI_HANDLE_TABLE_ENTRY*)GdiHandleTable;
 
-	for (int i = 0; i<MAX_GDI_HANDLE; i++)
+	for (int i = 0; i<GDI_HANDLE_COUNT; i++)
 	{
 		if (!table[i].ProcessId)
 			return i;
@@ -247,7 +247,7 @@ GDI_HANDLE_TABLE_ENTRY *GetHandleTableEntry(HGDIOBJ handle)
 	GDI_HANDLE_TABLE_ENTRY *table = (GDI_HANDLE_TABLE_ENTRY*)GdiHandleTable;
 	ULONG index = (ULONG)handle & 0xffff;
 	ULONG upper = (ULONG)handle >> 16;
-	if (index >= MAX_GDI_HANDLE)
+	if (index >= GDI_HANDLE_COUNT)
 		return 0;
 
 	if (upper != table[index].Upper)

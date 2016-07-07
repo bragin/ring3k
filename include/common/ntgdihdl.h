@@ -32,15 +32,12 @@ use 0x001f0000 as mask to get the base type */
 #define GDI_OBJECT_METADC        0x66
 
 /* GDI handles defines */
+
 /* GDI handle table can hold 0x10000 handles */
 //#define GDI_HANDLE_COUNT 0x10000
-#define MAX_GDI_HANDLE 0x4000
+#define GDI_HANDLE_COUNT 0x4000
 
-// In ReactOS it is this way
-//#define GDI_HANDLE_INDEX_MASK (GDI_HANDLE_COUNT - 1)
-//#define GDI_HANDLE_TYPE_MASK  0x007f0000
-
-#define GDI_HANDLE_INDEX_MASK 0x3fff
+#define GDI_HANDLE_INDEX_MASK (GDI_HANDLE_COUNT - 1)
 #define GDI_HANDLE_TYPE_MASK  0x007f
 
 #define GDI_ENTRY_UPPER_SHIFT 16
@@ -73,7 +70,7 @@ static inline HGDIOBJ GDI_HANDLE_makeHGDIOBJ(
 	ULONG Index)
 {
 	return (HGDIOBJ)(((Top & 0xff) << 24) | ((Stock & 1) << 23) |
-		((ObjectType & 0x7f) << 16) | (Index & 0x3fff));
+		((ObjectType & GDI_HANDLE_TYPE_MASK) << 16) | (Index & GDI_HANDLE_INDEX_MASK));
 }
 
 

@@ -1062,6 +1062,7 @@ BOOLEAN NTAPI NtGdiRestoreDC( HGDIOBJ hdc, int level )
 
 HGDIOBJ NTAPI NtGdiGetDCObject(HGDIOBJ hdc, ULONG object_type)
 {
+	ERR("\n");
 	return Win32kManager->AllocScreenDC();
 }
 
