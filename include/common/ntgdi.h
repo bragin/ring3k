@@ -21,57 +21,6 @@
 #ifndef __NTGDI_H__
 #define __NTGDI_H__
 
-// from FengYuan's Windows Graphics Programming Section 3.2, page 144
-
-#define GDI_OBJECT_DC      0x01
-#define GDI_OBJECT_REGION  0x04
-#define GDI_OBJECT_BITMAP  0x05
-#define GDI_OBJECT_PALETTE 0x08
-#define GDI_OBJECT_FONT    0x0a
-#define GDI_OBJECT_BRUSH   0x10
-#define GDI_OBJECT_EMF     0x21
-#define GDI_OBJECT_PEN     0x30
-#define GDI_OBJECT_EXTPEN  0x50
-
-static inline HGDIOBJ makeHGDIOBJ(
-	ULONG Top,
-	BOOLEAN Stock,
-	ULONG ObjectType,
-	ULONG Index)
-{
-	return (HGDIOBJ)(((Top&0xff)<<24) | ((Stock&1) << 23) |
-			 ((ObjectType&0x7f)<<16) | (Index &0x3fff));
-}
-
-typedef struct _GDI_HANDLE_TABLE_ENTRY {
-	void *kernel_info;
-	USHORT ProcessId;
-	USHORT Count;
-	USHORT Upper;
-	USHORT Type;
-	void *user_info;
-} GDI_HANDLE_TABLE_ENTRY;
-
-static inline ULONG get_handle_type(HGDIOBJ handle)
-{
-	return (((ULONG)handle)>>16)&0x7f;
-}
-
-static inline ULONG get_handle_index(HANDLE handle)
-{
-	return (((ULONG)handle)&0x3fff);
-}
-
-static inline ULONG get_handle_top(HANDLE handle)
-{
-	return (((ULONG)handle)>>24)&0xff;
-}
-
-static inline ULONG get_handle_upper(HANDLE handle)
-{
-	return (((ULONG)handle)>>16);
-}
-
 #undef GetRValue
 static inline BYTE GetRValue(COLORREF rgb)
 {

@@ -374,13 +374,13 @@ void *get_readonly_shared_server_data( void )
 void *get_user_info( HANDLE handle )
 {
 	GDI_HANDLE_TABLE_ENTRY *table = get_gdi_shared_handle_table();
-	ULONG Index = get_handle_index(handle);
+	ULONG Index = GDI_HANDLE_GET_INDEX(handle);
 	return table[Index].user_info;
 }
 
 BOOLEAN check_gdi_handle_any(HANDLE handle)
 {
-	ULONG Index = get_handle_index(handle);
+	ULONG Index = GDI_HANDLE_GET_INDEX(handle);
 	ULONG Top = (((ULONG)handle)>>16);
 
 	GDI_HANDLE_TABLE_ENTRY *table = get_gdi_shared_handle_table();
@@ -417,8 +417,8 @@ BOOLEAN check_gdi_handle(HANDLE handle)
 
 BOOLEAN check_pen_handle(HANDLE handle)
 {
-	ULONG ObjectType = get_handle_type(handle);
-	ULONG Index = get_handle_index(handle);
+	ULONG ObjectType = GDI_HANDLE_GET_TYPE(handle);
+	ULONG Index = GDI_HANDLE_GET_INDEX(handle);
 	GDI_HANDLE_TABLE_ENTRY *table = get_gdi_shared_handle_table();
 
 	if (!check_gdi_handle_any(handle))
@@ -438,7 +438,7 @@ BOOLEAN check_pen_handle(HANDLE handle)
 
 BOOLEAN verify_gdi_handle_deleted(HANDLE handle)
 {
-	ULONG Index = get_handle_index(handle);
+	ULONG Index = GDI_HANDLE_GET_INDEX(handle);
 
 	GDI_HANDLE_TABLE_ENTRY *table = get_gdi_shared_handle_table();
 
@@ -577,7 +577,7 @@ void test_get_dc( void )
 	dc = NtUserGetDC(0);
 	ok( check_gdi_handle(dc), "invalid gdi handle %p\n", dc );
 
-	type = get_handle_type(dc);
+	type = GDI_HANDLE_GET_TYPE(dc);
 	ok( type == GDI_OBJECT_DC, "wrong handle type %ld\n", type );
 
 	dcshm = get_user_info( dc );
@@ -602,7 +602,7 @@ void check_stock_brush( ULONG id )
 	ULONG type;
 
 	brush = NtGdiGetStockObject( id );
-	type = get_handle_type( brush );
+	type = GDI_HANDLE_GET_TYPE( brush );
 	ok( type == GDI_OBJECT_BRUSH, "brush wrong handle type %ld\n", type );
 	ok( get_user_info( brush ) == NULL, "user_info not null\n");
 }
@@ -624,7 +624,7 @@ void test_solid_brush( void )
 	ULONG type;
 
 	brush = NtGdiCreateSolidBrush( RGB(1, 2, 3), 0 );
-	type = get_handle_type( brush );
+	type = GDI_HANDLE_GET_TYPE( brush );
 	ok( type == GDI_OBJECT_BRUSH, "brush wrong handle type %ld\n", type );
 	//ok( get_user_info( brush ) == NULL, "user_info not null\n");
 }
@@ -659,7 +659,7 @@ void test_region( void )
 	info->flags = 0x30;
 	info->type = 0;
 
-	type = get_handle_type( region );
+	type = GDI_HANDLE_GET_TYPE( region );
 	ok( type == GDI_OBJECT_REGION, "region wrong handle type %ld\n", type );
 
 	r = NtGdiSetRectRgn( 0, 0, 0, 0, 0 );
@@ -792,7 +792,7 @@ void test_region_shared( void )
 	region = NtGdiCreateRectRgn( 0, 0, 1, 1 );
 	ok( region != 0, "region was null");
 
-	type = get_handle_type( region );
+	type = GDI_HANDLE_GET_TYPE( region );
 	ok( type == GDI_OBJECT_REGION, "region wrong handle type %ld\n", type );
 	ok( check_gdi_handle( region ), "invalid gdi handle %p\n", region );
 	info = get_user_info( region );
@@ -958,7 +958,7 @@ void test_savedc(void)
 	dc = NtUserGetDC( 0 );
 	ok( check_gdi_handle( dc ), "invalid gdi handle %p\n", dc );
 
-	type = get_handle_type( dc );
+	type = GDI_HANDLE_GET_TYPE( dc );
 	ok( type == GDI_OBJECT_DC, "wrong handle type %ld\n", type );
 
 	r = NtGdiRestoreDC( dc, -1 );
@@ -1050,7 +1050,7 @@ void test_bitmap(void)
 
 	bitmap = NtGdiCreateCompatibleBitmap( hdc, 16, 16 );
 
-	type = get_handle_type( bitmap );
+	type = GDI_HANDLE_GET_TYPE( bitmap );
 	ok( type == GDI_OBJECT_BITMAP, "wrong handle type %ld\n", type );
 	ok( check_gdi_handle( bitmap ), "invalid gdi handle %p\n", bitmap );
 	ok( NULL == get_user_info( bitmap ), "info was not NULL\n");

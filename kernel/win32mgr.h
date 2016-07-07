@@ -23,6 +23,7 @@
 
 #include "ntwin32.h"
 #include "alloc_bitmap.h"
+#include "common/ntgdihdl.h"
 
 // the freetype project certainly has their own way of doing things :/
 #include <ft2build.h>
@@ -47,6 +48,8 @@ public:
 	BYTE* UserHandles;
 	HANDLE StockObject[STOCK_LAST + 1];
 };
+
+#include "gdiobj.h"
 
 class BRUSH;
 class PEN;
@@ -79,51 +82,6 @@ public:
 };
 
 extern WIN32K_MANAGER* Win32kManager;
-
-class GDI_OBJECT
-{
-protected:
-	HGDIOBJ Handle;
-	ULONG RefCount;
-
-	static SECTION *g_GdiSection;
-	static BYTE *g_GdiSharedMemory;
-	static ALLOCATION_BITMAP* g_GdiSharedBitmap;
-
-	static void InitGdiSharedMem();
-	static BYTE *AllocGdiSharedMemory( size_t len, BYTE** kernel_shm = NULL );
-	static void FreeGdiSharedMemory( BYTE* ptr );
-protected:
-	GDI_OBJECT();
-public:
-	HGDIOBJ GetHandle()
-	{
-		return Handle;
-	}
-	virtual ~GDI_OBJECT() {};
-	virtual BOOL Release();
-	void Select()
-	{
-		RefCount++;
-	}
-	void Deselect()
-	{
-		RefCount--;
-	}
-	static HGDIOBJ Alloc( BOOL stock, ULONG type );
-	BYTE *GetSharedMem() const;
-	template<typename T> static T* KernelToUser( T* kernel_ptr )
-	{
-		ULONG ofs = (BYTE*) kernel_ptr - (BYTE*) g_GdiSharedMemory;
-		return (T*) (Current->Process->Win32kInfo->DcSharedMem + ofs);
-	}
-	template<typename T> static T* UserToKernel( T* user_ptr )
-	{
-		ULONG ofs = (BYTE*) user_ptr - (BYTE*) Current->Process->Win32kInfo->DcSharedMem;
-		return (T*) (g_GdiSharedMemory + ofs);
-	}
-	BYTE *GetUserSharedMem() const;
-};
 
 struct StretchDiBitsArgs
 {

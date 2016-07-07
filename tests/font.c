@@ -198,12 +198,12 @@ void test_text_metric( void )
 	table = get_gdi_shared_handle_table();
 
 	//dprintf("table = %p\n", table);
-	index = get_handle_index( hdc );
+	index = GDI_HANDLE_GET_INDEX(hdc);
 	ok( index < 0x4000, "index too large\n");
 
 	ok( table[index].Type == GDI_OBJECT_DC,
 		"not a device context %02x\n", table[index].Type);
-	ok( table[index].Upper == get_handle_upper( hdc ),
+	ok(table[index].Upper == GDI_HANDLE_GET_UPPER(hdc),
 		"handle mismatch\n");
 	ok( (table[index].ProcessId&~1) == (get_process_id()&~3),
 		"process id mismatch %08x %08lx\n",

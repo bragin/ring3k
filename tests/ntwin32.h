@@ -25,6 +25,7 @@
 #include "wingdi.h"
 #include "winuser.h"
 #include "ntgdi.h"
+#include "ntgdihdl.h"
 #include "ntuser.h"
 
 #endif

@@ -73,6 +73,7 @@ CPP_SOURCES = \
 	event.cpp \
 	fiber.cpp \
 	file.cpp \
+	gdiobj.cpp \
 	job.cpp \
 	kthread.cpp \
 	mailslot.cpp \
