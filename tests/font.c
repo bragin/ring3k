@@ -176,7 +176,7 @@ void test_text_metric( void )
 {
 	ULONG buf[8];
 	HANDLE hdc;
-	gdi_handle_table_entry *table;
+	GDI_HANDLE_TABLE_ENTRY *table;
 	ULONG index;
 	ULONG status;
 	PVOID ptr;

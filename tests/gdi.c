@@ -373,7 +373,7 @@ void *get_readonly_shared_server_data( void )
 
 void *get_user_info( HANDLE handle )
 {
-	gdi_handle_table_entry *table = get_gdi_shared_handle_table();
+	GDI_HANDLE_TABLE_ENTRY *table = get_gdi_shared_handle_table();
 	ULONG Index = get_handle_index(handle);
 	return table[Index].user_info;
 }
@@ -383,7 +383,7 @@ BOOLEAN check_gdi_handle_any(HANDLE handle)
 	ULONG Index = get_handle_index(handle);
 	ULONG Top = (((ULONG)handle)>>16);
 
-	gdi_handle_table_entry *table = get_gdi_shared_handle_table();
+	GDI_HANDLE_TABLE_ENTRY *table = get_gdi_shared_handle_table();
 
 	if (sizeof table[0] != 0x10)
 	{
@@ -419,7 +419,7 @@ BOOLEAN check_pen_handle(HANDLE handle)
 {
 	ULONG ObjectType = get_handle_type(handle);
 	ULONG Index = get_handle_index(handle);
-	gdi_handle_table_entry *table = get_gdi_shared_handle_table();
+	GDI_HANDLE_TABLE_ENTRY *table = get_gdi_shared_handle_table();
 
 	if (!check_gdi_handle_any(handle))
 		return FALSE;
@@ -440,7 +440,7 @@ BOOLEAN verify_gdi_handle_deleted(HANDLE handle)
 {
 	ULONG Index = get_handle_index(handle);
 
-	gdi_handle_table_entry *table = get_gdi_shared_handle_table();
+	GDI_HANDLE_TABLE_ENTRY *table = get_gdi_shared_handle_table();
 
 	if (table[Index].Type&0x7f)
 		return FALSE;
