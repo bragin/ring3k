@@ -43,14 +43,14 @@ static inline HGDIOBJ makeHGDIOBJ(
 			 ((ObjectType&0x7f)<<16) | (Index &0x3fff));
 }
 
-typedef struct _gdi_handle_table_entry {
+typedef struct _GDI_HANDLE_TABLE_ENTRY {
 	void *kernel_info;
 	USHORT ProcessId;
 	USHORT Count;
 	USHORT Upper;
 	USHORT Type;
 	void *user_info;
-} gdi_handle_table_entry;
+} GDI_HANDLE_TABLE_ENTRY;
 
 static inline ULONG get_handle_type(HGDIOBJ handle)
 {

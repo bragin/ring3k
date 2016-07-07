@@ -251,7 +251,7 @@ bool REGION::Validate()
 
 REGION* RegionFromHandle( HGDIOBJ handle )
 {
-	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
+	GDI_HANDLE_TABLE_ENTRY *entry = GetHandleTableEntry( handle );
 	if (!entry)
 		return NULL;
 	if (entry->Type != GDI_OBJECT_REGION)

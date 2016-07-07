@@ -304,7 +304,7 @@ extern WINDOW* ActiveWindow;
 void FreeUser32Handles( PROCESS *p );
 HGDIOBJ AllocGdiHandle( BOOL stock, ULONG type, void *user_info, GDI_OBJECT* obj );
 HGDIOBJ AllocGdiObject( BOOL stock, ULONG type );
-gdi_handle_table_entry *GetHandleTableEntry(HGDIOBJ handle);
+GDI_HANDLE_TABLE_ENTRY *GetHandleTableEntry(HGDIOBJ handle);
 BOOLEAN DoGdiInit();
 CBITMAP* BitmapFromHandle( HANDLE handle );
 CBITMAP* AllocBitmap( int width, int height, int depth );

@@ -46,7 +46,7 @@ DEFAULT_DEBUG_CHANNEL(ntgdi);
 
 // shared across all processes (in a window station)
 static SECTION *gdi_ht_section;
-static void *gdi_handle_table = 0;
+static void *GdiHandleTable = 0;
 
 WIN32K_MANAGER* (*Win32kManagerCreate)();
 
@@ -145,7 +145,7 @@ BOOL GDI_OBJECT::Release()
 {
 	if (RefCount)
 		return FALSE;
-	gdi_handle_table_entry *entry = GetHandleTableEntry( Handle );
+	GDI_HANDLE_TABLE_ENTRY *entry = GetHandleTableEntry( Handle );
 	assert( entry );
 	assert( reinterpret_cast<GDI_OBJECT*>( entry->kernel_info ) == this );
 	memset( entry, 0, sizeof *entry );
@@ -321,7 +321,7 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 	if (ppeb->GdiSharedHandleTable)
 		return TRUE;
 
-	if (!gdi_handle_table)
+	if (!GdiHandleTable)
 	{
 		LARGE_INTEGER sz;
 		sz.QuadPart = GDI_SHARED_HANDLE_TABLE_SIZE;
@@ -329,7 +329,7 @@ NTSTATUS Win32kProcessInit(PROCESS *process)
 		if (r < STATUS_SUCCESS)
 			return r;
 
-		gdi_handle_table = (BYTE*) gdi_ht_section->GetKernelAddress();
+		GdiHandleTable = (BYTE*) gdi_ht_section->GetKernelAddress();
 	}
 
 	// read/write for the kernel and read only for processes
@@ -402,7 +402,7 @@ BOOLEAN NTAPI NtGdiAddFontResourceW(
 
 int find_free_gdi_handle(void)
 {
-	gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
+	GDI_HANDLE_TABLE_ENTRY *table = (GDI_HANDLE_TABLE_ENTRY*) GdiHandleTable;
 
 	for (int i=0; i<MAX_GDI_HANDLE; i++)
 	{
@@ -423,7 +423,7 @@ HGDIOBJ AllocGdiHandle( BOOL stock, ULONG type, void *user_info, GDI_OBJECT* obj
 	if (type == GDI_OBJECT_PEN)
 		type = GDI_OBJECT_BRUSH;
 
-	gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
+	GDI_HANDLE_TABLE_ENTRY *table = (GDI_HANDLE_TABLE_ENTRY*) GdiHandleTable;
 	table[index].ProcessId = Current->Process->Id;
 	table[index].Type = type;
 	HGDIOBJ handle = makeHGDIOBJ(0,stock,reported_type,index);
@@ -472,7 +472,7 @@ static inline ULONG get_gdi_type_size( ULONG type )
 
 ULONG object_from_memory( BYTE *address )
 {
-	gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
+	GDI_HANDLE_TABLE_ENTRY *table = (GDI_HANDLE_TABLE_ENTRY*) GdiHandleTable;
 	for (ULONG i=0; i<MAX_GDI_HANDLE; i++)
 	{
 		ULONG sz = get_gdi_type_size( table[i].Type );
@@ -492,7 +492,7 @@ void gdishm_tracer::OnAccess( MBLOCK *mb, BYTE *address, ULONG eip )
 	ULONG n = object_from_memory( address );
 	if (n)
 	{
-		gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
+		GDI_HANDLE_TABLE_ENTRY *table = (GDI_HANDLE_TABLE_ENTRY*) GdiHandleTable;
 		ULONG ofs = address - (BYTE*) table[n].user_info;
 		fprintf(stderr, "%lx.%lx: accessed gdishm[%04lx][%04lx] from %08lx\n",
 			Current->Process->Id, Current->GetID(), n, ofs, eip);
@@ -612,7 +612,7 @@ BYTE* GDI_OBJECT::GetSharedMem() const
 
 BYTE* GDI_OBJECT::GetUserSharedMem() const
 {
-	gdi_handle_table_entry *entry = GetHandleTableEntry( Handle );
+	GDI_HANDLE_TABLE_ENTRY *entry = GetHandleTableEntry( Handle );
 	assert( entry != NULL );
 	return (BYTE*) entry->user_info;
 }
@@ -954,7 +954,7 @@ HANDLE BRUSH::Alloc( UINT style, COLORREF color, ULONG hatch, BOOL stock )
 
 BRUSH* BrushFromHandle( HGDIOBJ handle )
 {
-	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
+	GDI_HANDLE_TABLE_ENTRY *entry = GetHandleTableEntry( handle );
 	if (!entry)
 		return FALSE;
 	if (entry->Type != GDI_OBJECT_BRUSH)
@@ -984,7 +984,7 @@ HANDLE PEN::Alloc( UINT style, UINT width, COLORREF color, BOOL stock )
 
 PEN* PenFromHandle( HGDIOBJ handle )
 {
-	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
+	GDI_HANDLE_TABLE_ENTRY *entry = GetHandleTableEntry( handle );
 	if (!entry)
 		return NULL;
 
@@ -1028,7 +1028,7 @@ POINT& DEVICE_CONTEXT::GetWindowOffset()
 
 DEVICE_CONTEXT* dc_from_handle( HGDIOBJ handle )
 {
-	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
+	GDI_HANDLE_TABLE_ENTRY *entry = GetHandleTableEntry( handle );
 	if (!entry)
 		return FALSE;
 	if (entry->Type != GDI_OBJECT_DC)
@@ -1215,9 +1215,9 @@ HGDIOBJ NTAPI NtGdiGetDCforBitmap(HGDIOBJ Bitmap)
 	return Win32kManager->AllocScreenDC();
 }
 
-gdi_handle_table_entry *GetHandleTableEntry(HGDIOBJ handle)
+GDI_HANDLE_TABLE_ENTRY *GetHandleTableEntry(HGDIOBJ handle)
 {
-	gdi_handle_table_entry *table = (gdi_handle_table_entry*) gdi_handle_table;
+	GDI_HANDLE_TABLE_ENTRY *table = (GDI_HANDLE_TABLE_ENTRY*) GdiHandleTable;
 	ULONG index = (ULONG)handle&0xffff;
 	ULONG upper = (ULONG)handle>>16;
 	if (index >= MAX_GDI_HANDLE)
@@ -1230,7 +1230,7 @@ gdi_handle_table_entry *GetHandleTableEntry(HGDIOBJ handle)
 
 BOOLEAN NTAPI NtGdiDeleteObjectApp(HGDIOBJ Object)
 {
-	gdi_handle_table_entry *entry = GetHandleTableEntry(Object);
+	GDI_HANDLE_TABLE_ENTRY *entry = GetHandleTableEntry(Object);
 	if (!entry)
 		return FALSE;
 	if (entry->ProcessId != Current->Process->Id)

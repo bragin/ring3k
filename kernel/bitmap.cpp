@@ -412,7 +412,7 @@ BOOL CBITMAP::Rectangle(INT left, INT top, INT right, INT bottom, BRUSH* brush)
 
 CBITMAP* BitmapFromHandle( HANDLE handle )
 {
-	gdi_handle_table_entry *entry = GetHandleTableEntry( handle );
+	GDI_HANDLE_TABLE_ENTRY *entry = GetHandleTableEntry( handle );
 	if (!entry)
 		return FALSE;
 	if (entry->Type != GDI_OBJECT_BITMAP)
