@@ -35,7 +35,7 @@ INCLUDE_DIRS += $(srcdir)/../include/common
 CFLAGS_COMMON += $(FREETYPEINCL)
 CFLAGS_COMMON += $(XML_INCLUDES)
 CFLAGS_COMMON += $(INCLUDE_DIRS:%=-I%)
-CFLAGS_COMMON += -g -Wall -O2 -D__i386__ -fshort-wchar -fno-strict-aliasing
+CFLAGS_COMMON += -g -Wall -O2 -D__i386__ -DNTDDI_VERSION=0x05000000 -fshort-wchar -fno-strict-aliasing
 
 DEPFLAG = -Wp,-MD,.$@.d
 CFLAGS = -Wpointer-arith
