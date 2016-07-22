@@ -52,6 +52,7 @@ struct PROCESS : public SYNC_OBJECT
 	WIN32K_INFO *Win32kInfo;
 
 	ULONG ExecuteFlags;
+	ULONG Cookie;
 
 	HANDLE WindowStation;
 

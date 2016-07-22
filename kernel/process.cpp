@@ -812,6 +812,7 @@ NTSTATUS NTAPI NtQueryInformationProcess(
 		PROCESS_SESSION_INFORMATION session;
 		ULONG hard_error_mode;
 		ULONG execute_flags;
+		ULONG Cookie;
 	} info;
 	ULONG len, sz = 0;
 	NTSTATUS r;
@@ -840,6 +841,10 @@ NTSTATUS NTAPI NtQueryInformationProcess(
 
 		case ProcessExecuteFlags:
 			sz = sizeof info.execute_flags;
+			break;
+
+		case ProcessCookie:
+			sz = sizeof info.Cookie;
 			break;
 
 		case ProcessExceptionPort:
@@ -882,6 +887,18 @@ NTSTATUS NTAPI NtQueryInformationProcess(
 
 		case ProcessExecuteFlags:
 			info.execute_flags = p->ExecuteFlags;
+			break;
+
+		case ProcessCookie:
+			info.Cookie = p->Cookie;
+
+			if (!info.Cookie)
+			{
+				// Set a new fake cookie
+				p->Cookie = 0xaabbaabb;
+				info.Cookie = p->Cookie;
+				FIXME("Implement real process cookie generation\n");
+			}
 			break;
 
 		default:
