@@ -28,14 +28,16 @@ do
 		tracespec=$1
 		shift
 		;;
-	--r*)
+	-r*)
 		shift
 		registry="-r $1"
 		if [ "$1" = "redis" ]; then
 			echo "executing redis clean up script"
-			killall -9 redis-server
+			#killall -9 redis-server
+			redis-cli shutdown
 			SCRIPTPATH=`pwd -P`
 			cp -n ./redis/original.rdb ./redis/redis.rdb
+			echo "Staring redis"
 			redis-server --dir "$SCRIPTPATH/redis" 1>/dev/null &
 		fi
 		shift
