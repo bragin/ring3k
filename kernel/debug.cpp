@@ -605,6 +605,12 @@ KdbpCmdProc(ULONG Argc, PCHAR Argv[])
 				"",
 				Process->Exe ? &(((PE_SECTION *)(Process->Exe))->ImageFileName) : NULL,
 				str2);
+			for ( SIBLING_ITER j(Process->Threads); j; j.Next() )
+			{
+				THREAD *t = j;
+				
+				KdbpPrint("			%x.%x	%s\n", Process->Id, t->GetID(), t->IsTerminated()?"terminated":"");
+			}
 		};
 	}
 	else if (Argc >= 2 && strcasecmp(Argv[1], "attach") == 0)
