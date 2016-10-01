@@ -164,10 +164,10 @@ void REGISTRY_XML::LoadRegKey( REGKEY_XML *parent, xmlNode *node )
 			keycls = (const char*) xmlNodeGetContent( (xmlNode*) e );
 	}
 
-	if (!contents)
-		return;
-
-	name.Copy( contents );
+	if (contents)
+		name.Copy( contents );
+	else
+		name.Copy( L"" );
 
 	switch (node->name[0])
 	{
@@ -280,6 +280,7 @@ ULONG REGISTRY_XML::DoOpenSubkey( REGKEY_XML *&key, UNICODE_STRING *name, bool c
 	for (REGKEY_XML_ITER i(key->Children); i; i.Next())
 	{
 		REGKEY_XML *subkey = i;
+		//TRACE("Comparing %pus %pus\n", name, &subkey->Name());
 		if (len != subkey->Name().Length)
 			continue;
 		if (case_insensitive)
@@ -409,6 +410,20 @@ REGKEY_XML::~REGKEY_XML()
 	}
 }
 
+void REGKEY_XML::PrintDescription() const
+{
+	const REGKEY_XML* key = this;
+	CUNICODE_STRING Path;
+	while (key)
+	{
+		CUNICODE_STRING Temp(key->Name());
+		Temp.Concat(L"\\");
+		Temp.Concat(Path);
+		Path = Temp;
+		key = key->Parent();
+	}
+	TRACE("Root: %pus\n", &Path);
+}
 
 NTSTATUS REGKEY_XML::SetValue( const CUNICODE_STRING& name, ULONG Type, PVOID Data, ULONG DataSize )
 {
@@ -431,9 +446,10 @@ NTSTATUS REGKEY_XML::SetValue( const CUNICODE_STRING& name, ULONG Type, PVOID Da
 	return r;
 }
 
-
+//ERROR HERE
 IREGVAL* REGKEY_XML::FindValue( const UNICODE_STRING *us )
 {
+	TRACE("%pus\n", us);
 	for (REGVAL_XML_ITER i(Values); i; i.Next())
 	{
 		IREGVAL *val = i;

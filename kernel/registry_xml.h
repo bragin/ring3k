@@ -80,7 +80,7 @@ public:
 	ULONG NumSubkeys(ULONG& max_name_len, ULONG& max_class_len);
 
 	REGKEY_XML* Parent() const { return m_Parent; }
-	virtual void PrintDescription() const {};
+	virtual void PrintDescription() const;;
 protected:
 	void SetParent(REGKEY_XML* Parent) { m_Parent = Parent; };
 public:
